@@ -248,7 +248,7 @@ function PricingCard({
             }`}>
               /{tier.period.includes('month') || tier.period.includes('year') ? (
                 <>
-                  {tier.period.split(' ')[0]} <span className="font-bold">{tier.period.split(' ')[1]}</span>
+                  {tier.period.split(' ')[0]} <span className="font-medium">{tier.period.split(' ')[1]}</span>
                 </>
               ) : (
                 tier.period
@@ -263,16 +263,16 @@ function PricingCard({
             <div key={index} className="flex items-start gap-3">
               <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5 ${
                 tier.id === 'free' ? 'bg-theme-text/20' : 
-                tier.id === 'pro' ? 'bg-brand-cyan/20' : 
+                tier.id === 'pro' || tier.id === 'pro-yearly' ? 'bg-brand-cyan/20' : 
                 'bg-brand-red/20'
               }`}>
                 <Check className={`w-3 h-3 ${
                   tier.id === 'free' ? 'text-theme-text' : 
-                  tier.id === 'pro' ? 'text-cyan-lighter' : 
+                  tier.id === 'pro' || tier.id === 'pro-yearly' ? 'text-cyan-lighter' : 
                   'text-red-lighter'
                 }`} />
               </div>
-              <span className="text-sm font-raleway text-theme-text leading-relaxed">{feature}</span>
+              <span className="text-sm font-raleway font-normal text-theme-white leading-relaxed">{feature}</span>
             </div>
           ))}
         </div>
@@ -290,43 +290,43 @@ function PricingCard({
                 e.stopPropagation();
                 onUpgrade?.();
               }}
-              className="w-full btn btn-cyan font-raleway text-base transition-colors duration-200 parallax-large flex items-center justify-center gap-2"
+              className="w-full btn btn-cyan font-raleway text-base font-medium transition-colors duration-200 parallax-large flex items-center justify-center gap-2"
             >
               <ArrowUp className="w-4 h-4" />
               Upgrade Now
             </button>
           ) : (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                
-                // Safety check: if user has subscription, don't allow new purchases
-                if (hasSubscription) {
-                  onShowModal?.(
-                    'Already Subscribed',
-                    'You already have an active subscription. Use the upgrade option instead.',
-                    AlertCircle,
-                    'text-orange-400'
-                  );
-                  return;
-                }
-                
-                if (tier.id === 'free') {
-                  window.location.href = '/';
-                } else if (onPurchase) {
-                  onPurchase();
-                }
-              }}
-              className={`w-full btn font-raleway text-base transition-colors duration-200 parallax-large ${
-                tier.id === 'free' 
-                  ? 'btn-cyan' 
-                  : tier.id === 'pro'
-                  ? 'btn-cyan'
-                  : `btn-red ${tier.popular ? 'shadow-lg shadow-brand-red/25' : ''}`
-              }`}
-            >
-              {tier.id === 'free' ? 'Get Started' : 'Subscribe'}
-            </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  
+                  // Safety check: if user has subscription, don't allow new purchases
+                  if (hasSubscription) {
+                    onShowModal?.(
+                      'Already Subscribed',
+                      'You already have an active subscription. Use the upgrade option instead.',
+                      AlertCircle,
+                      'text-orange-400'
+                    );
+                    return;
+                  }
+                  
+                  if (tier.id === 'free') {
+                    window.location.href = '/';
+                  } else if (onPurchase) {
+                    onPurchase();
+                  }
+                }}
+                className={`w-full btn font-raleway text-base font-medium transition-colors duration-200 parallax-large ${
+                  tier.id === 'free' 
+                    ? 'btn-white' 
+                    : tier.id === 'pro' || tier.id === 'pro-yearly'
+                    ? 'btn-cyan'
+                    : `btn-red ${tier.popular ? 'shadow-lg shadow-brand-red/25' : ''}`
+                }`}
+              >
+                {tier.id === 'free' ? 'Get Started' : 'Subscribe'}
+              </button>
           )}
         </div>
       </div>
@@ -633,7 +633,7 @@ export default function Pricing() {
             <h1 className="text-5xl font-normal tracking-tight leading-[1.1] font-raleway mb-6 text-theme-text">
               Choose your plan.
             </h1>
-            <p className="mx-auto mb-6 max-w-2xl text-lg text-theme-white font-raleway">
+            <p className="mx-auto mb-6 max-w-2xl text-lg font-raleway font-normal text-theme-white">
               Unlock the full potential of daily generations.
             </p>
 
@@ -641,7 +641,7 @@ export default function Pricing() {
             <div className="flex items-center justify-center gap-2 mb-8">
               <button
                 onClick={() => setActiveTab('credits')}
-                className={`px-6 py-2 rounded-lg font-raleway transition-colors duration-200 ${
+                className={`px-6 py-2 rounded-full font-raleway text-base font-medium transition-colors duration-200 parallax-large ${
                   activeTab === 'credits'
                     ? 'bg-theme-text text-theme-black'
                     : 'text-theme-white hover:text-theme-text'
@@ -651,7 +651,7 @@ export default function Pricing() {
               </button>
               <button
                 onClick={() => setActiveTab('subscriptions')}
-                className={`px-6 py-2 rounded-lg font-raleway transition-colors duration-200 ${
+                className={`px-6 py-2 rounded-full font-raleway text-base font-medium transition-colors duration-200 parallax-large ${
                   activeTab === 'subscriptions'
                     ? 'bg-theme-text text-theme-black'
                     : 'text-theme-white hover:text-theme-text'
@@ -664,7 +664,7 @@ export default function Pricing() {
             {/* Billing Toggle - Only show for subscriptions */}
             {activeTab === 'subscriptions' && (
               <div className="flex items-center justify-center gap-4 mb-6">
-                <span className={`text-base font-raleway transition-colors ${billingPeriod === 'monthly' ? 'text-theme-text' : 'text-theme-white'}`}>
+                <span className={`text-base font-raleway font-normal transition-colors ${billingPeriod === 'monthly' ? 'text-theme-text' : 'text-theme-white'}`}>
                   Monthly
                 </span>
                 <button
@@ -677,9 +677,9 @@ export default function Pricing() {
                     }`}
                   />
                 </button>
-                <span className={`text-base font-raleway transition-colors ${billingPeriod === 'yearly' ? 'text-theme-text' : 'text-theme-white'}`}>
+                <span className={`text-base font-raleway font-normal transition-colors ${billingPeriod === 'yearly' ? 'text-theme-text' : 'text-theme-white'}`}>
                   Yearly
-                  <span className="ml-1 text-xs text-theme-white font-raleway">(Save 20%)</span>
+                  <span className="ml-1 text-xs font-raleway font-normal text-theme-white">(Save 20%)</span>
                 </span>
               </div>
             )}
@@ -724,7 +724,7 @@ export default function Pricing() {
               <div className="mb-6">
                 <button
                   onClick={() => openCustomerPortal().catch(() => showModal('Portal Error','Unable to open billing portal. Please try again.', AlertCircle, 'text-red-400'))}
-                  className="btn btn-cyan font-raleway"
+                  className="btn btn-white font-raleway text-base font-medium parallax-large"
                 >
                   Manage Billing
                 </button>
@@ -737,21 +737,21 @@ export default function Pricing() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-theme-white/20 flex items-center justify-center">
-                    <Sparkles className="w-4 h-4 text-theme-white" />
+                    <Sparkles className="w-4 h-4 text-theme-text" />
                   </div>
-                  <span className="text-theme-white font-raleway">Unlimited generations (metered billing)</span>
+                  <span className="text-base font-raleway font-normal text-theme-white">Unlimited generations (metered billing)</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-theme-white/20 flex items-center justify-center">
-                    <Zap className="w-4 h-4 text-theme-white" />
+                    <Zap className="w-4 h-4 text-theme-text" />
                   </div>
-                  <span className="text-theme-white font-raleway">Commercial usage rights</span>
+                  <span className="text-base font-raleway font-normal text-theme-white">Commercial usage rights</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-theme-white/20 flex items-center justify-center">
-                    <Crown className="w-4 h-4 text-theme-white" />
+                    <Crown className="w-4 h-4 text-theme-text" />
                   </div>
-                  <span className="text-theme-white font-raleway">Priority processing</span>
+                  <span className="text-base font-raleway font-normal text-theme-white">Priority processing</span>
                 </div>
               </div>
             </div>

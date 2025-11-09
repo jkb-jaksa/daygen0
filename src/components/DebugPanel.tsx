@@ -61,7 +61,7 @@ export function DebugPanel() {
       {isOpen && (
         <div className="fixed bottom-16 right-4 z-50 bg-theme-black/95 text-theme-white p-4 rounded-lg border border-theme-mid min-w-[300px] max-w-[400px] font-mono text-sm">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold">Debug Panel</h3>
+            <h3 className="font-medium">Debug Panel</h3>
             <button
               onClick={() => setIsOpen(false)}
               className="text-theme-white/60 hover:text-theme-white"

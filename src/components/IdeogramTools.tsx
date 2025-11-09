@@ -245,7 +245,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
   return (
     <div className={`${glass.surface} w-full max-w-4xl mx-auto p-6 sm:p-8`}>
       <div className="mb-6 space-y-2">
-        <h2 className="text-2xl font-semibold text-theme-text font-raleway">Ideogram AI Tools</h2>
+        <h2 className="text-2xl font-medium text-theme-text font-raleway">Ideogram AI Tools</h2>
         <p className="text-theme-white/70 font-raleway">Advanced image generation, editing, and enhancement powered by Ideogram 3.0</p>
       </div>
 
@@ -698,7 +698,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
 
           {descriptions.length > 0 && (
             <div className={`mt-4 p-4 rounded-lg ${glass.base}`}>
-            <h3 className="text-lg font-semibold text-theme-text mb-2 font-raleway">Descriptions:</h3>
+            <h3 className="text-lg font-medium text-theme-text mb-2 font-raleway">Descriptions:</h3>
               {descriptions.map((desc, index) => (
                 <p key={index} className="text-theme-white/80 mb-2 font-raleway">{desc}</p>
               ))}
@@ -711,7 +711,7 @@ export const IdeogramTools: React.FC<IdeogramToolsProps> = ({ onImageGenerated }
       {generatedImages.length > 0 && (
         <div className="mt-8">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-theme-text font-raleway">Generated Images</h3>
+            <h3 className="text-lg font-medium text-theme-text font-raleway">Generated Images</h3>
             <button
               onClick={clearGeneratedImages}
               className="text-sm text-theme-white/60 hover:text-theme-text underline font-raleway"

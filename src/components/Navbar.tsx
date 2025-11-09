@@ -105,11 +105,11 @@ export default function Navbar() {
     <button
       type="button"
       onClick={toggleTheme}
-      className={`relative overflow-hidden group ${iconButtons.xl} sm:${iconButtons.sm} duration-100 ${className}`}
+      className={`relative overflow-hidden group ${iconButtons.xl} sm:${iconButtons.sm} ${className}`}
       aria-label={isDay ? "Switch to night mode" : "Switch to day mode"}
       title={isDay ? "Switch to night mode" : "Switch to day mode"}
     >
-      <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-100 opacity-0 group-hover:opacity-100" />
+      <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
       {isDay ? (
         <Moon className="w-4 h-4 relative z-10" aria-hidden="true" />
       ) : (
@@ -325,7 +325,7 @@ export default function Navbar() {
                   key={item.label}
                   to={item.path}
                   className={({ isActive }) =>
-                    `relative overflow-hidden group parallax-small transition-colors duration-200 px-4 h-9 flex items-center rounded-2xl font-normal ${isActive ? "text-theme-text" : "text-theme-white hover:text-theme-text"}`
+                    `relative overflow-hidden group parallax-small transition-colors duration-200 px-4 h-9 flex items-center rounded-full font-normal ${isActive ? "text-theme-text" : "text-theme-white hover:text-theme-text"}`
                   }
                   onMouseEnter={() => {
                     item.prefetch?.();
@@ -350,7 +350,7 @@ export default function Navbar() {
                 >
                   {({ isActive }) => (
                     <>
-                      <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-2xl transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                      <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
                       <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 ${isActive ? 'opacity-0' : 'opacity-0 group-hover:opacity-10'}`} />
                       <span className="relative z-10">{item.label}</span>
                     </>
@@ -364,40 +364,40 @@ export default function Navbar() {
               <>
                 <div className="flex items-center gap-0">
                   <button
-                    className={`relative overflow-hidden group ${iconButtons.xl} sm:${iconButtons.sm} duration-100`}
+                    className={`relative overflow-hidden group ${iconButtons.xl} sm:${iconButtons.sm}`}
                     onClick={() => window.open('https://discord.gg/daygen', '_blank')}
                     aria-label="Discord"
                   >
-                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-100 opacity-0 group-hover:opacity-100" />
+                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
                     <DiscordIcon className="size-4 relative z-10" />
                   </button>
                   <button
-                    className={`relative overflow-hidden group ${iconButtons.xl} sm:${iconButtons.sm} duration-100`}
+                    className={`relative overflow-hidden group ${iconButtons.xl} sm:${iconButtons.sm}`}
                     onClick={() => window.open('https://x.com', '_blank')}
                     aria-label="X"
                   >
-                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-100 opacity-0 group-hover:opacity-100" />
+                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
                     <XIcon className="size-4 relative z-10" />
                   </button>
                   <button
-                    className={`relative overflow-hidden group ${iconButtons.xl} sm:${iconButtons.sm} duration-100`}
+                    className={`relative overflow-hidden group ${iconButtons.xl} sm:${iconButtons.sm}`}
                     onClick={() => window.open('https://instagram.com', '_blank')}
                     aria-label="Instagram"
                   >
-                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-100 opacity-0 group-hover:opacity-100" />
+                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
                     <InstagramIcon className="size-4 relative z-10" />
                   </button>
                 </div>
                 <div className="hidden sm:block h-6 w-px bg-theme-white/20"></div>
                 <button 
-                  className="hidden sm:flex relative overflow-hidden group parallax-large text-theme-white hover:text-theme-text transition-colors duration-200 px-4 h-9 items-center rounded-2xl font-raleway font-normal"
+                  className="hidden sm:flex relative overflow-hidden group parallax-large text-theme-white hover:text-theme-text transition-colors duration-200 px-4 h-9 items-center rounded-full font-raleway font-normal"
                   onClick={() => {
                     setActiveMenu(null);
                     setMenuOpen(false);
                     navigate('/upgrade');
                   }}
                 >
-                  <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-2xl transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                  <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
                   <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 opacity-0 group-hover:opacity-10" />
                   <span className="relative z-10">Pricing</span>
                 </button>
@@ -428,31 +428,31 @@ export default function Navbar() {
                 <div className="flex items-center gap-0">
                   {/* Discord Button */}
                   <button
-                    className={`relative overflow-hidden group ${iconButtons.xl} sm:${iconButtons.sm} duration-100`}
+                    className={`relative overflow-hidden group ${iconButtons.xl} sm:${iconButtons.sm}`}
                     onClick={() => window.open('https://discord.gg/daygen', '_blank')}
                     aria-label="Discord"
                   >
-                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-100 opacity-0 group-hover:opacity-100" />
+                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
                     <DiscordIcon className="size-4 relative z-10" />
                   </button>
                   
                   {/* X Button */}
                   <button
-                    className={`relative overflow-hidden group ${iconButtons.xl} sm:${iconButtons.sm} duration-100`}
+                    className={`relative overflow-hidden group ${iconButtons.xl} sm:${iconButtons.sm}`}
                     onClick={() => window.open('https://x.com', '_blank')}
                     aria-label="X"
                   >
-                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-100 opacity-0 group-hover:opacity-100" />
+                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
                     <XIcon className="size-4 relative z-10" />
                   </button>
                   
                   {/* Instagram Button */}
                   <button
-                    className={`relative overflow-hidden group ${iconButtons.xl} sm:${iconButtons.sm} duration-100`}
+                    className={`relative overflow-hidden group ${iconButtons.xl} sm:${iconButtons.sm}`}
                     onClick={() => window.open('https://instagram.com', '_blank')}
                     aria-label="Instagram"
                   >
-                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-100 opacity-0 group-hover:opacity-100" />
+                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
                     <InstagramIcon className="size-4 relative z-10" />
                   </button>
                 </div>
@@ -506,7 +506,7 @@ export default function Navbar() {
                       />
                     ) : (
                       <span
-                        className="inline-grid place-items-center size-5 rounded-full text-theme-black text-xs font-bold font-raleway bg-theme-white/90"
+                        className="inline-grid place-items-center size-5 rounded-full text-theme-black text-xs font-medium font-raleway bg-theme-white/90"
                       >
                         {(currentUser.displayName || currentUser.email)[0]?.toUpperCase()}
                       </span>
@@ -534,8 +534,8 @@ export default function Navbar() {
             <div className="hidden lg:flex">
               <ThemeToggleButton />
             </div>
-            <button aria-label="Search" className={`relative overflow-hidden group ${iconButtons.xl} sm:${iconButtons.sm} duration-100`}>
-              <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-100 opacity-0 group-hover:opacity-100" />
+            <button aria-label="Search" className={`relative overflow-hidden group ${iconButtons.xl} sm:${iconButtons.sm}`}>
+              <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
               <Search className="w-4 h-4 relative z-10" />
             </button>
           </div>
@@ -563,11 +563,11 @@ export default function Navbar() {
                       <button
                         key={category.key}
                         onClick={() => handleCategoryClick(category.key)}
-                        className="relative overflow-hidden group inline-flex items-center gap-2 px-4 h-9 w-[9rem] transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text rounded-2xl"
+                        className="relative overflow-hidden group inline-flex items-center gap-2 px-4 h-9 w-[9rem] transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text rounded-full"
                       >
-                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-2xl transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
                         <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-gradient-to-br ${category.gradient} transition-opacity duration-200 opacity-0 group-hover:opacity-10`} />
-                        <div className={`size-6 grid place-items-center rounded-2xl transition-colors duration-100 relative overflow-hidden z-10`}>
+                        <div className={`size-6 grid place-items-center rounded-full transition-colors duration-100 relative overflow-hidden z-10`}>
                           <category.Icon className="h-4 w-4 text-theme-white group-hover:text-theme-text" />
                         </div>
                         <span className="relative z-10">{category.label}</span>
@@ -583,11 +583,11 @@ export default function Navbar() {
                         key={item.to}
                         to={item.to}
                         onClick={() => setActiveMenu(null)}
-                        className="relative overflow-hidden group inline-flex items-center gap-2 px-4 h-9 w-[9rem] transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text rounded-2xl"
+                        className="relative overflow-hidden group inline-flex items-center gap-2 px-4 h-9 w-[9rem] transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text rounded-full"
                       >
-                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-2xl transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
                         <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 opacity-0 group-hover:opacity-10" />
-                        <div className={`size-6 grid place-items-center rounded-2xl transition-colors duration-100 relative overflow-hidden z-10`}>
+                        <div className={`size-6 grid place-items-center rounded-full transition-colors duration-100 relative overflow-hidden z-10`}>
                           <item.Icon className="h-4 w-4 text-theme-text group-hover:text-theme-text" />
                         </div>
                         <span className="relative z-10">{item.label}</span>
@@ -601,11 +601,11 @@ export default function Navbar() {
                         key={item.to}
                         to={item.to}
                         onClick={() => setActiveMenu(null)}
-                        className="relative overflow-hidden group inline-flex items-center gap-2 px-4 h-9 w-[9rem] transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text rounded-2xl"
+                        className="relative overflow-hidden group inline-flex items-center gap-2 px-4 h-9 w-[9rem] transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text rounded-full"
                       >
-                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-2xl transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
                         <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 opacity-0 group-hover:opacity-10" />
-                        <div className={`size-6 grid place-items-center rounded-2xl transition-colors duration-100 relative overflow-hidden z-10`}>
+                        <div className={`size-6 grid place-items-center rounded-full transition-colors duration-100 relative overflow-hidden z-10`}>
                           <item.Icon className="h-4 w-4 text-theme-text group-hover:text-theme-text" />
                         </div>
                         <span className="relative z-10">{item.label}</span>
@@ -640,7 +640,7 @@ export default function Navbar() {
                     key={`mobile-${item.label}`}
                     to={item.path}
                     className={({ isActive }) =>
-                      `relative overflow-hidden group block rounded-2xl px-4 py-2 text-base font-raleway transition-colors duration-200 ${
+                      `relative overflow-hidden group block rounded-full px-4 py-2 text-base font-raleway font-normal transition-colors duration-200 ${
                         isActive ? "bg-theme-white/10 text-theme-text" : "text-theme-white hover:text-theme-text hover:bg-theme-white/10"
                       }`
                     }
@@ -833,7 +833,7 @@ export default function Navbar() {
                   navigate("/account");
                 }
               }}
-              className="relative overflow-hidden group block w-[9rem] text-left px-4 py-1.5 text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-colors font-raleway font-normal rounded-2xl"
+              className="relative overflow-hidden group block w-[9rem] text-left px-4 py-1.5 text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-colors font-raleway font-normal rounded-full"
               role="menuitem"
             >
               <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 opacity-0 group-hover:opacity-10" />
@@ -846,7 +846,7 @@ export default function Navbar() {
                 navigate("/gallery");
                 emitNavigateToCategory("gallery");
               }}
-              className="relative overflow-hidden group block w-[9rem] text-left px-4 py-1.5 text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-colors font-raleway font-normal rounded-2xl"
+              className="relative overflow-hidden group block w-[9rem] text-left px-4 py-1.5 text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-colors font-raleway font-normal rounded-full"
               role="menuitem"
             >
               <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 opacity-0 group-hover:opacity-10" />
@@ -863,7 +863,7 @@ export default function Navbar() {
                 }
                 navigate("/");
               }}
-              className="relative overflow-hidden group block w-[9rem] text-left px-4 py-1.5 text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-colors font-raleway font-normal rounded-2xl"
+              className="relative overflow-hidden group block w-[9rem] text-left px-4 py-1.5 text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-colors font-raleway font-normal rounded-full"
               role="menuitem"
             >
               <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 opacity-0 group-hover:opacity-10" />

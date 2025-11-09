@@ -79,7 +79,7 @@ export function ProfileCard({
                   key={user.profileImage} // Force re-render when URL changes
                 />
               ) : (
-                <div className="size-12 rounded-full flex items-center justify-center text-theme-text text-lg font-bold font-raleway border-2 border-theme-dark group-hover:opacity-80 transition-opacity bg-theme-dark">
+                <div className="size-12 rounded-full flex items-center justify-center text-theme-text text-lg font-medium font-raleway border-2 border-theme-dark group-hover:opacity-80 transition-opacity bg-theme-dark">
                   {(user.displayName || user.email)[0]?.toUpperCase()}
                 </div>
               )}

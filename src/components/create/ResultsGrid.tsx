@@ -720,7 +720,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                   // Could open in modal if that functionality is added
                                 }}
                               />
-                              <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold font-raleway">
+                              <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
                                 {refIdx + 1}
                               </div>
                             </div>

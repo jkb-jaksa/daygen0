@@ -1264,7 +1264,7 @@ export default function Avatars() {
     return (
       <div
         key={`${keyPrefix}-${avatar.id}`}
-        className={`group flex flex-col overflow-hidden rounded-2xl border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small${
+        className={`group flex flex-col overflow-hidden rounded-[28px] border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small${
           isInteractive ? " cursor-pointer" : ""
         }`}
         role={isInteractive ? "button" : undefined}
@@ -1632,7 +1632,7 @@ export default function Avatars() {
   const renderCreationImageCard = (image: GalleryImageLike) => (
     <div
       key={`creation-${image.url}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small cursor-pointer"
+      className="group flex flex-col overflow-hidden rounded-[28px] border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small cursor-pointer"
       onClick={() => openFullSizeView(image)}
     >
       <div
@@ -1888,8 +1888,8 @@ export default function Avatars() {
 
       {missingAvatarSlug && (
         <div className="w-full max-w-3xl rounded-2xl border border-theme-dark bg-theme-black/70 p-5 text-left shadow-lg">
-          <p className="text-sm font-raleway text-theme-white/80">
-            We couldn't find an avatar for <span className="font-semibold text-theme-text">{missingAvatarSlug}</span>. It may have been renamed or deleted.
+          <p className="text-sm font-raleway font-normal text-theme-white/80">
+            We couldn't find an avatar for <span className="font-medium text-theme-text">{missingAvatarSlug}</span>. It may have been renamed or deleted.
           </p>
           <button
             type="button"
@@ -2932,7 +2932,7 @@ export default function Avatars() {
       {/* Publish confirmation dialog */}
       {publishConfirmation.show && (
         <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 py-12">
-          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+          <div className={`${glass.promptDark} rounded-[28px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Globe className="default-orange-icon mx-auto" />
@@ -2965,7 +2965,7 @@ export default function Avatars() {
       {/* Unpublish confirmation dialog */}
       {unpublishConfirmation.show && (
         <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 py-12">
-          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+          <div className={`${glass.promptDark} rounded-[28px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <Lock className="default-orange-icon mx-auto" />
@@ -2998,7 +2998,7 @@ export default function Avatars() {
       {/* Add to folder dialog */}
       {addToFolderDialog && selectedImageForFolder && (
         <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 py-12">
-          <div className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+          <div className={`${glass.promptDark} rounded-[28px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <FolderPlus className="default-orange-icon mx-auto" />
@@ -3113,7 +3113,7 @@ export default function Avatars() {
 
       {avatarToDelete && (
         <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 px-4 py-10">
-          <div className={`${glass.promptDark} w-full max-w-sm min-w-[20rem] rounded-[24px] px-6 py-10 transition-colors duration-200`}>
+          <div className={`${glass.promptDark} w-full max-w-sm min-w-[20rem] rounded-[28px] px-6 py-10 transition-colors duration-200`}>
             <div className="space-y-4 text-center">
               <div className="space-y-3">
                 <Trash2 className="default-orange-icon mx-auto" />
@@ -3145,7 +3145,7 @@ export default function Avatars() {
 
       {avatarToPublish && (
         <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 px-4 py-10">
-          <div className={`${glass.promptDark} w-full max-w-sm min-w-[20rem] rounded-[24px] px-6 py-10 transition-colors duration-200`}>
+          <div className={`${glass.promptDark} w-full max-w-sm min-w-[20rem] rounded-[28px] px-6 py-10 transition-colors duration-200`}>
             <div className="space-y-4 text-center">
               <div className="space-y-3">
                 <Globe className="default-orange-icon mx-auto" />
@@ -3215,7 +3215,7 @@ export default function Avatars() {
 
       {/* Copy notification */}
       {copyNotification && (
-        <div className={`fixed top-1/2 left-1/2 ${creationsModalAvatar ? 'z-[12000]' : 'z-[100]'} -translate-x-1/2 -translate-y-1/2 transform px-4 py-2 text-sm text-theme-white font-raleway transition-all duration-100 ${glass.promptDark} rounded-[20px]`}>
+        <div className={`fixed top-1/2 left-1/2 ${creationsModalAvatar ? 'z-[12000]' : 'z-[100]'} -translate-x-1/2 -translate-y-1/2 transform px-4 py-2 text-sm text-theme-white font-raleway transition-all duration-200 ${glass.promptDark} rounded-[28px]`}>
           {copyNotification}
         </div>
       )}

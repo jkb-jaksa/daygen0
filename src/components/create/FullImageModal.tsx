@@ -607,7 +607,7 @@ const FullImageModal = memo(() => {
                         className={`absolute inset-0 bg-gradient-to-br ${fullSizeImage.savedFrom.avatarColor ?? 'from-theme-white/40 via-theme-white/10 to-theme-dark/40'}`}
                         aria-hidden="true"
                       />
-                      <span className="relative flex h-full w-full items-center justify-center text-[10px] font-semibold text-white">
+                      <span className="relative flex h-full w-full items-center justify-center text-[10px] font-medium text-white">
                         {getInitials(fullSizeImage.savedFrom.name)}
                       </span>
                     </a>
@@ -617,7 +617,7 @@ const FullImageModal = memo(() => {
                         className={`absolute inset-0 bg-gradient-to-br ${fullSizeImage.savedFrom.avatarColor ?? 'from-theme-white/40 via-theme-white/10 to-theme-dark/40'}`}
                         aria-hidden="true"
                       />
-                      <span className="relative flex h-full w-full items-center justify-center text-[10px] font-semibold text-white">
+                      <span className="relative flex h-full w-full items-center justify-center text-[10px] font-medium text-white">
                         {getInitials(fullSizeImage.savedFrom.name)}
                       </span>
                     </div>

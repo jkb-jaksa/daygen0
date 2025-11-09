@@ -210,8 +210,8 @@ html[data-theme="day"] .animate-gradient-colors {
   --font-size-small: clamp(0.85rem, 0.8rem + 0.2vw, 0.95rem);
   --font-size-eyebrow: clamp(0.7rem, 0.64rem + 0.18vw, 0.8rem);
   --font-size-heading-sm: clamp(1.5rem, 1.3rem + 1.6vw, 2.5rem);
-  --font-size-heading-md: clamp(2rem, 1.6rem + 2vw, 3.5rem);
-  --font-size-heading-lg: clamp(2rem, 1.8rem + 2vw, 3.5rem);
+  --font-size-heading-md: clamp(2rem, 1.6rem + 2vw, 3rem);
+  --font-size-heading-lg: clamp(2rem, 1.8rem + 2vw, 3rem);
   --line-length-max: 72ch;
 
   /* Daygen palette – night (default) */
@@ -701,7 +701,7 @@ html[data-theme="day"] .footer-gradient-bg {
   font-family: inherit;
   font-weight: 500;
   gap: 0.5rem;
-  height: 40px;
+  height: 36px;
   justify-content: center;
   line-height: 1;
   min-width: 120px;
@@ -741,7 +741,7 @@ html[data-theme="day"] .footer-gradient-bg {
   font-family: 'Raleway', sans-serif;
   position: relative;
   overflow: hidden;
-  transition: all 0.1s;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 .btn-ghost::before {
@@ -751,7 +751,7 @@ html[data-theme="day"] .footer-gradient-bg {
   background-color: rgb(var(--theme-white-rgb) / 0.1);
   opacity: 0;
   border-radius: inherit;
-  transition: opacity 0.1s;
+  transition: opacity 0.2s ease;
   pointer-events: none;
 }
 
@@ -1003,8 +1003,8 @@ html[data-theme="day"] .prompt-surface {
 /* Action button styles with day/night mode support */
 /* Dark variant - uses dark glass background */
 .glass-prompt-action-dark {
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(32px);
+  backdrop-filter: blur(32px);
   background: var(--glass-dark-bg);
   border: 1px solid var(--glass-border);
   color: var(--theme-white);
@@ -1017,8 +1017,8 @@ html[data-theme="day"] .prompt-surface {
 
 /* Light variant - uses lighter glass background */
 .glass-prompt-action {
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(32px);
+  backdrop-filter: blur(32px);
   background: var(--glass-base-bg);
   border: 1px solid var(--glass-border);
   color: var(--theme-white);
@@ -2219,7 +2219,7 @@ html[data-theme="day"] .faq-section {
   --li: 1;
   background: var(--theme-black);
   border: 1px solid var(--theme-dark);
-  border-radius: 24px;
+  border-radius: 28px;
   color: var(--theme-white);
   transition: border-color 0.2s ease;
 }
@@ -2295,7 +2295,7 @@ html[data-theme="day"] .faq-section {
 
 @media (max-width: 768px) {
   .faq-card {
-    border-radius: 20px;
+    border-radius: 28px;
   }
 
   .faq-card__trigger {

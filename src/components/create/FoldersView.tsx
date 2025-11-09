@@ -97,7 +97,7 @@ export default function FoldersView({
                       ))}
                       {folder.imageIds.length > 4 && (
                         <div className="w-6 h-6 rounded bg-theme-text/20 flex items-center justify-center">
-                          <span className="text-xs text-theme-text font-bold font-raleway">
+                          <span className="text-xs text-theme-text font-medium font-raleway">
                             +{folder.imageIds.length - 4}
                           </span>
                         </div>
@@ -148,7 +148,7 @@ export default function FoldersView({
                       ))}
                       {folder.imageIds.length > 4 && (
                         <div className="w-6 h-6 rounded bg-theme-text/20 flex items-center justify-center">
-                          <span className="text-xs text-theme-text font-bold font-raleway">
+                          <span className="text-xs text-theme-text font-medium font-raleway">
                             +{folder.imageIds.length - 4}
                           </span>
                         </div>

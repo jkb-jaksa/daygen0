@@ -657,7 +657,7 @@ const AvatarCard: React.FC<{
           <div className="flex items-center gap-3">
             <div className="relative size-10 overflow-hidden rounded-full border border-white/20">
               <div className={`absolute inset-0 bg-gradient-to-br ${item.creator.avatarColor}`} aria-hidden="true" />
-              <span className="relative flex h-full w-full items-center justify-center text-sm font-semibold text-white">
+              <span className="relative flex h-full w-full items-center justify-center text-sm font-medium text-white">
                 {getInitials(item.creator.name)}
               </span>
             </div>
@@ -1734,13 +1734,13 @@ const Explore: React.FC = () => {
 
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap items-center gap-3">
-                <span className="text-xs font-semibold uppercase tracking-[0.28em] text-theme-white/60">View</span>
+                <span className="text-xs font-medium uppercase tracking-[0.28em] text-theme-white/60">View</span>
                 <div className="inline-flex rounded-full border border-theme-dark/70 bg-theme-black/40 p-1">
                   <button
                     type="button"
                     aria-pressed={activeGalleryView === 'creations'}
                     onClick={() => setActiveGalleryView('creations')}
-                    className={`px-4 py-1.5 text-xs font-semibold font-raleway rounded-full transition-colors duration-200 ${
+                    className={`px-4 py-1.5 text-xs font-medium font-raleway rounded-full transition-colors duration-200 ${
                       activeGalleryView === 'creations'
                         ? 'bg-theme-white text-theme-black shadow-lg shadow-theme-white/20'
                         : 'text-theme-white/70 hover:text-theme-text'
@@ -1752,7 +1752,7 @@ const Explore: React.FC = () => {
                     type="button"
                     aria-pressed={activeGalleryView === 'avatars'}
                     onClick={() => setActiveGalleryView('avatars')}
-                    className={`px-4 py-1.5 text-xs font-semibold font-raleway rounded-full transition-colors duration-200 ${
+                    className={`px-4 py-1.5 text-xs font-medium font-raleway rounded-full transition-colors duration-200 ${
                       activeGalleryView === 'avatars'
                         ? 'bg-theme-white text-theme-black shadow-lg shadow-theme-white/20'
                         : 'text-theme-white/70 hover:text-theme-text'
@@ -2433,15 +2433,15 @@ const Explore: React.FC = () => {
                       className="aspect-square w-full object-cover"
                     />
                   </div>
-                  <div className="space-y-3 rounded-[20px] border border-theme-dark/70 bg-theme-black/40 p-4">
+                    <div className="space-y-3 rounded-[20px] border border-theme-dark/70 bg-theme-black/40 p-4">
                     <span className="inline-flex items-center gap-2 rounded-full border border-theme-dark/70 px-3 py-1 text-[11px] font-raleway uppercase tracking-[0.24em] text-theme-white/60">
                       Save inspiration
-                      {savePrompt.alreadySaved && <span className="rounded-full bg-theme-white/10 px-2 py-0.5 text-[10px] font-semibold text-theme-text">updated</span>}
+                      {savePrompt.alreadySaved && <span className="rounded-full bg-theme-white/10 px-2 py-0.5 text-[10px] font-medium text-theme-text">updated</span>}
                     </span>
                     <div className="flex items-center gap-3">
                       <div className="relative size-8 overflow-hidden rounded-full">
                         <div className={`absolute inset-0 bg-gradient-to-br ${savePrompt.item.creator.avatarColor}`} aria-hidden="true" />
-                        <span className="relative flex h-full w-full items-center justify-center text-xs font-semibold text-white">
+                        <span className="relative flex h-full w-full items-center justify-center text-xs font-medium text-white">
                           {getInitials(savePrompt.item.creator.name)}
                         </span>
                       </div>

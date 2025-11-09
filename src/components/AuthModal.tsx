@@ -122,7 +122,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
   if (showMagicLinkSent) {
     return (
       <div className="fixed inset-0 z-[120] bg-theme-black/80 flex items-center justify-center py-12" aria-modal="true" role="dialog">
-        <div className={`glass-liquid willchange-backdrop isolate backdrop-blur-[60px] border border-theme-mid border-t border-r border-b border-l bg-theme-black-subtle rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+        <div className={`glass-liquid willchange-backdrop isolate backdrop-blur-[60px] border border-theme-mid border-t border-r border-b border-l bg-theme-black-subtle rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
           <div className="text-center space-y-4">
             <div className="space-y-3">
               <h3 className="text-theme-text font-raleway font-normal text-xl">Check your email</h3>
@@ -136,7 +136,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
                 setShowMagicLinkSent(false);
                 setMode("login");
               }}
-              className={`${buttons.blockPrimary} font-raleway`}
+              className={`${buttons.blockPrimary} font-raleway font-medium`}
             >
               Back to Sign In
             </button>
@@ -149,7 +149,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
   if (showForgotPassword) {
     return (
       <div className="fixed inset-0 z-[120] bg-theme-black/80 flex items-center justify-center py-12" aria-modal="true" role="dialog">
-        <div className={`glass-liquid willchange-backdrop isolate backdrop-blur-[60px] border border-theme-mid border-t border-r border-b border-l bg-theme-black-subtle rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+        <div className={`glass-liquid willchange-backdrop isolate backdrop-blur-[60px] border border-theme-mid border-t border-r border-b border-l bg-theme-black-subtle rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
           <div className="text-center space-y-4">
             <div className="space-y-3">
               <h3 className="text-theme-text font-raleway font-normal text-xl">Reset Password</h3>
@@ -173,12 +173,12 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
               <div aria-live="polite" role="status" className="min-h-[1rem] text-left">
                 {error && (
                   <div className="text-xs font-raleway text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg p-3 mt-2">
-                    <p className="font-semibold mb-1">Error</p>
+                    <p className="font-medium mb-1">Error</p>
                     <p>{error}</p>
                   </div>
                 )}
               </div>
-              <button type="submit" className={`${buttons.blockPrimary} font-raleway ${isSubmitting ? "cursor-wait opacity-80" : ""}`} disabled={isSubmitting}>
+              <button type="submit" className={`${buttons.blockPrimary} font-raleway font-medium ${isSubmitting ? "cursor-wait opacity-80" : ""}`} disabled={isSubmitting}>
                 {isSubmitting ? "Sending..." : "Send Reset Link"}
               </button>
             </form>
@@ -190,7 +190,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
 
   return (
     <div className="fixed inset-0 z-[120] bg-theme-black/80 flex items-center justify-center py-12" aria-modal="true" role="dialog">
-      <div className={`glass-liquid willchange-backdrop isolate backdrop-blur-[60px] border border-theme-mid border-t border-r border-b border-l bg-theme-black-subtle rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+      <div className={`glass-liquid willchange-backdrop isolate backdrop-blur-[60px] border border-theme-mid border-t border-r border-b border-l bg-theme-black-subtle rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
         <div className="text-center space-y-4">
           <div className="space-y-3">
             <h3 className="text-theme-text font-raleway font-normal text-xl">{mode === "login" ? "Sign In" : "Create Account"}</h3>
@@ -199,8 +199,8 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
           </div>
 
           <div className="flex gap-3">
-            <button onClick={() => setMode("login")} className={`px-4 py-2 rounded-lg border text-sm font-raleway transition-colors ${mode==="login"?"bg-theme-dark border-theme-mid text-theme-text":"bg-transparent border-theme-dark text-theme-light hover:border-theme-mid hover:text-theme-text"}`}>Sign In</button>
-            <button onClick={() => setMode("signup")} className={`px-4 py-2 rounded-lg border text-sm font-raleway transition-colors ${mode==="signup"?"bg-theme-dark border-theme-mid text-theme-text":"bg-transparent border-theme-dark text-theme-light hover:border-theme-mid hover:text-theme-text"}`}>Sign Up</button>
+            <button onClick={() => setMode("login")} className={`px-4 py-2 rounded-full border text-sm font-raleway font-medium transition-colors ${mode==="login"?"bg-theme-dark border-theme-mid text-theme-text":"bg-transparent border-theme-dark text-theme-light hover:border-theme-mid hover:text-theme-text"}`}>Sign In</button>
+            <button onClick={() => setMode("signup")} className={`px-4 py-2 rounded-full border text-sm font-raleway font-medium transition-colors ${mode==="signup"?"bg-theme-dark border-theme-mid text-theme-text":"bg-transparent border-theme-dark text-theme-light hover:border-theme-mid hover:text-theme-text"}`}>Sign Up</button>
           </div>
 
           <div className="space-y-4">
@@ -216,7 +216,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
               <button
                 onClick={handleDevLogin}
                 disabled={isSubmitting}
-                className="w-full px-4 py-3 rounded-lg border-2 border-yellow-500/50 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 hover:border-yellow-500 transition-all font-raleway text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full px-4 py-3 rounded-full border-2 border-yellow-500/50 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 hover:border-yellow-500 transition-all font-raleway text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 type="button"
               >
                 <span>⚡</span>
@@ -227,7 +227,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
             {/* Show OAuth errors near the Google button */}
             {error && (error.includes('Google') || error.includes('OAuth') || error.includes('configuration') || error.includes('redirect')) && (
               <div className="text-xs font-raleway text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg p-3">
-                <p className="font-semibold mb-1">Google Sign-In Error</p>
+                <p className="font-medium mb-1">Google Sign-In Error</p>
                 <p className="whitespace-pre-line">{error}</p>
                 <p className="text-xs text-red-300/80 mt-2">
                   Check the browser console (F12) for more details.
@@ -278,7 +278,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
               <div aria-live="polite" role="status" className="min-h-[1rem] text-left">
                 {error && (
                   <div className="text-xs font-raleway text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg p-3 mt-2">
-                    <p className="font-semibold mb-1">Authentication Error</p>
+                    <p className="font-medium mb-1">Authentication Error</p>
                     <p className="whitespace-pre-line">{error}</p>
                     <p className="text-xs text-red-300/80 mt-2">
                       Check the browser console (F12) for more details.
@@ -286,7 +286,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
                   </div>
                 )}
               </div>
-              <button type="submit" className={`${buttons.blockPrimary} font-raleway ${isSubmitting ? "cursor-wait opacity-80" : ""}`} disabled={isSubmitting}>
+              <button type="submit" className={`${buttons.blockPrimary} font-raleway font-medium ${isSubmitting ? "cursor-wait opacity-80" : ""}`} disabled={isSubmitting}>
                 {isSubmitting ? "Please wait…" : mode === "login" ? "Sign In" : "Create Account"}
               </button>
               {mode === "login" && (

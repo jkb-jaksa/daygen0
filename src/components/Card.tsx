@@ -1,5 +1,6 @@
 import type React from "react";
 import useParallaxHover from "../hooks/useParallaxHover";
+import { cards } from "../styles/designSystem";
 
 interface AIToolCardProps {
   title: string;
@@ -18,7 +19,7 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
 
   return (
     <div
-      className="relative rounded-[28px] border border-theme-dark hover:border-theme-mid transition-all duration-200 group h-full min-w-0 cursor-pointer p-5 flex flex-col bg-theme-black mouse-glow parallax-small"
+      className={`${cards.shell} group relative h-full min-w-0 cursor-pointer p-6 flex flex-col bg-theme-black transition-all duration-200 mouse-glow parallax-small`}
       onPointerMove={onPointerMove}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
@@ -32,7 +33,7 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
       <div className="parallax-isolate">
         <button
           onClick={onClick}
-          className="self-start btn btn-ghost btn-ghost-compact parallax-large mt-2"
+          className="self-start btn btn-ghost btn-ghost-compact font-raleway text-base font-medium parallax-large mt-2"
         >
           {buttonText}
         </button>

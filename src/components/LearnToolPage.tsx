@@ -55,7 +55,7 @@ export default function LearnToolPage() {
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <span className="text-2xl font-semibold uppercase text-theme-white/80">
+                    <span className="text-2xl font-medium uppercase text-theme-white/80">
                       {toolContent.name.charAt(0)}
                     </span>
                   )}

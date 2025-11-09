@@ -58,7 +58,7 @@ export function CreditWarningBanner({
           <div className="flex flex-wrap gap-2">
             <button
               onClick={onBuyCredits}
-              className="btn btn-sm btn-cyan flex items-center gap-1"
+              className="btn btn-cyan font-raleway text-sm font-medium px-3 py-1.5 h-auto flex items-center gap-1"
             >
               <CreditCard className="w-3 h-3" />
               Buy Credits
@@ -66,7 +66,7 @@ export function CreditWarningBanner({
             
             <button
               onClick={onSubscribe}
-              className="btn btn-sm btn-outline flex items-center gap-1"
+              className="btn btn-ghost font-raleway text-sm font-medium px-3 py-1.5 h-auto flex items-center gap-1"
             >
               <Crown className="w-3 h-3" />
               Subscribe

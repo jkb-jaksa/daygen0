@@ -49,7 +49,7 @@ export function CreditPackages({ onPurchase }: CreditPackagesProps) {
         <h2 className="text-3xl font-raleway font-normal text-theme-text mb-4">
           Buy Credits
         </h2>
-        <p className="text-theme-white">
+        <p className="text-base font-raleway font-normal text-theme-white">
           Purchase credits to generate images, videos, and more
         </p>
       </div>
@@ -138,10 +138,10 @@ function CreditPackageCard({ package: pkg, isSelected, isLoading, onPurchase }: 
 
         {/* Credits */}
         <div className="mb-4">
-          <div className="text-2xl font-raleway font-medium text-theme-white">
+          <div className="text-2xl font-raleway font-normal text-theme-white">
             {pkg.credits.toLocaleString()} Credits
           </div>
-          <div className="text-sm text-theme-text">
+          <div className="text-sm font-raleway text-theme-white">
             {formatPrice(pkg.price / pkg.credits)} per credit
           </div>
         </div>
@@ -150,17 +150,17 @@ function CreditPackageCard({ package: pkg, isSelected, isLoading, onPurchase }: 
         <div className="space-y-2 mb-6">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-full bg-theme-text/20 flex items-center justify-center">
-              <Check className="w-2.5 h-2.5 text-theme-text" />
+              <Check className="w-3 h-3 text-theme-text" />
             </div>
-            <span className="text-sm font-raleway text-theme-text">
+            <span className="text-sm font-raleway font-normal text-theme-white">
               Instant credit addition
             </span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-full bg-theme-text/20 flex items-center justify-center">
-              <Check className="w-2.5 h-2.5 text-theme-text" />
+              <Check className="w-3 h-3 text-theme-text" />
             </div>
-            <span className="text-sm font-raleway text-theme-text">
+            <span className="text-sm font-raleway font-normal text-theme-white">
               No expiration date
             </span>
           </div>
@@ -170,8 +170,8 @@ function CreditPackageCard({ package: pkg, isSelected, isLoading, onPurchase }: 
         <div className="mt-auto">
           <button
             disabled={isLoading}
-            className={`w-full btn font-raleway text-sm transition-colors duration-200 parallax-large ${
-              isLoading ? 'btn-disabled' : 'btn-cyan'
+            className={`w-full btn font-raleway text-base font-medium transition-colors duration-200 parallax-large ${
+              isLoading ? 'opacity-50 cursor-not-allowed btn-white' : 'btn-white'
             }`}
           >
             {isLoading ? 'Processing...' : 'Buy Now'}

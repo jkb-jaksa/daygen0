@@ -52,7 +52,7 @@ export function PaymentStatusBanner({
           {failedPayments.length === 1 && failedPayments[0].reason && (
             <div className="bg-red-500/10 border border-red-500/20 rounded p-2 mb-3">
               <p className="text-red-400 text-xs">
-                <strong>Reason:</strong> {failedPayments[0].reason}
+                <span className="font-medium">Reason:</span> {failedPayments[0].reason}
               </p>
             </div>
           )}
@@ -60,7 +60,7 @@ export function PaymentStatusBanner({
           <div className="flex flex-wrap gap-2">
             <button
               onClick={onRetry}
-              className="btn btn-sm btn-red flex items-center gap-1"
+              className="btn btn-red font-raleway text-sm font-medium px-3 py-1.5 h-auto flex items-center gap-1"
             >
               <RefreshCw className="w-3 h-3" />
               Retry Payment
@@ -68,7 +68,7 @@ export function PaymentStatusBanner({
             
             <button
               onClick={onViewHistory}
-              className="btn btn-sm btn-outline flex items-center gap-1"
+              className="btn btn-ghost font-raleway text-sm font-medium px-3 py-1.5 h-auto flex items-center gap-1"
             >
               <CreditCard className="w-3 h-3" />
               View History

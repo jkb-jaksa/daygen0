@@ -235,7 +235,7 @@ export function ToolInfoHover({ toolName, className, iconClassName }: ToolInfoHo
                     />
                   </div>
                 ) : (
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-theme-dark/60 bg-theme-black/60 text-sm font-semibold text-theme-white/80">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-theme-dark/60 bg-theme-black/60 text-sm font-medium text-theme-white/80">
                     {displayName.charAt(0)}
                   </div>
                 )}
