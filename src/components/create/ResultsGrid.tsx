@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { Heart, Globe, MoreHorizontal, Check, Image as ImageIcon, Video as VideoIcon, Copy, BookmarkPlus, Bookmark, Square, Trash2, FileText } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
-import { buttons, glass } from '../../styles/designSystem';
+import { glass } from '../../styles/designSystem';
 import { debugError } from '../../utils/debug';
 import { createCardImageStyle } from '../../utils/cardImageStyle';
 import { useSavedPrompts } from '../../hooks/useSavedPrompts';
@@ -83,7 +83,7 @@ const renderPlaceholderGrid = (
 const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, onFocusPrompt }) => {
   const { user, storagePrefix } = useAuth();
   const { showToast } = useToast();
-  const { state, toggleItemSelection, isLoading, error, refresh, filteredItems: contextFilteredItems } = useGallery();
+  const { state, toggleItemSelection, isLoading, filteredItems: contextFilteredItems } = useGallery();
   const {
     handleImageClick,
     handleImageActionMenu,
@@ -98,7 +98,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   } = useGalleryActions();
   const { selectedItems, isBulkMode, imageActionMenu } = state;
   const [editMenu, setEditMenu] = useState<{ id: string; anchor: HTMLElement | null } | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [storedAvatars, setStoredAvatars] = useState<StoredAvatar[]>([]);
   const [storedProducts, setStoredProducts] = useState<StoredProduct[]>([]);
   const [hoveredPromptButton, setHoveredPromptButton] = useState<string | null>(null);
@@ -223,17 +222,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     tooltip.classList.add('opacity-0');
   }, []);
   
-  const handleRefresh = useCallback(async () => {
-    try {
-      setIsRefreshing(true);
-      await refresh();
-    } catch (refreshError) {
-      debugError('[gallery] Failed to refresh grid', refreshError);
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [refresh]);
-  
   // Helper to convert styleId to StoredStyle
   const styleIdToStoredStyle = useCallback((styleId: string): StoredStyle | null => {
     // Extract style components from styleId (format: "gender-section-styleId")
@@ -252,7 +240,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     } as StoredStyle;
   }, []);
   let statusBanner: React.ReactNode = null;
-  if (isLoading || isRefreshing) {
+  if (isLoading) {
     statusBanner = (
       <div className="flex items-center gap-3 rounded-lg border border-theme-accent/30 bg-theme-accent/10 px-3 py-2 text-sm text-theme-accent">
         <span className="inline-flex h-4 w-4 items-center justify-center">
@@ -262,21 +250,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       </div>
     );
   }
-  // Error banner removed - errors now fail silently
-  // else if (error) {
-  //   statusBanner = (
-  //     <div className="flex flex-wrap items-center gap-3 rounded-lg border border-theme-red/30 bg-theme-red/10 px-3 py-2 text-sm text-theme-red">
-  //       <span>Could not load your latest gallery items.</span>
-  //       <button
-  //         onClick={() => void handleRefresh()}
-  //         disabled={isRefreshing}
-  //         className={`${buttons.ghost} px-3 py-1 text-sm`}
-  //       >
-  //         {isRefreshing ? 'Retrying…' : 'Retry'}
-  //       </button>
-  //     </div>
-  //   );
-  // }
   
   // Handle item click
   const handleItemClick = useCallback((item: GalleryImageLike | GalleryVideoLike, index: number) => {
