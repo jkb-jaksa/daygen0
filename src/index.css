@@ -331,11 +331,11 @@ html[data-theme="day"] .animate-gradient-colors {
 
   /* Glass surface tokens */
   --glass-border: var(--theme-dark);
-  --glass-base-bg: rgb(var(--n-light-rgb) / 0.15);
+  --glass-base-bg: rgb(var(--n-light-rgb) / 0.5);
   --glass-surface-bg: rgb(var(--n-black-rgb) / 0.15);
   --glass-tight-bg: var(--glass-base-bg);
-  --glass-dark-bg: rgb(var(--n-black-rgb) / 0.8);
-  --glass-prompt-bg: rgb(var(--n-mid-rgb) / 0.85);
+  --glass-dark-bg: rgb(var(--n-black-rgb) / 0.65);
+  --glass-prompt-bg: rgb(var(--n-mid-rgb) / 0.70);
   --glass-prompt-text: var(--n-text);
   --glass-prompt-text-rgb: var(--n-text-rgb);
   --glass-prompt-border: var(--n-dark);
@@ -374,11 +374,11 @@ html[data-theme="day"] {
   --theme-orange-2-rgb: var(--d-orange-2-rgb);
 
   --glass-border: color-mix(in srgb, var(--theme-dark) 70%, var(--theme-mid) 30%);
-  --glass-base-bg: rgb(var(--d-dark-rgb) / 0.65);
+  --glass-base-bg: rgb(var(--d-dark-rgb) / 0.5);
   --glass-surface-bg: rgb(var(--d-black-rgb) / 0.85);
   --glass-tight-bg: var(--glass-base-bg);
-  --glass-dark-bg: rgb(var(--d-black-rgb) / 0.8);
-  --glass-prompt-bg: rgb(var(--n-mid-rgb) / 0.85);
+  --glass-dark-bg: rgb(var(--d-black-rgb) / 0.65);
+  --glass-prompt-bg: rgb(var(--n-mid-rgb) / 0.70);
   --glass-prompt-text: var(--n-text);
   --glass-prompt-text-rgb: var(--n-text-rgb);
   --glass-prompt-border: var(--n-dark);
@@ -820,8 +820,8 @@ html[data-theme="day"] .footer-gradient-bg {
   --glass-base-bg: rgb(var(--theme-light-rgb) / 0.15);
   --glass-surface-bg: rgb(var(--theme-black-rgb) / 0.15);
   --glass-tight-bg: var(--glass-base-bg);
-  --glass-dark-bg: rgb(var(--theme-black-rgb) / 0.8);
-  --glass-prompt-bg: rgb(var(--theme-mid-rgb) / 0.85);
+  --glass-dark-bg: rgb(var(--theme-black-rgb) / 0.65);
+  --glass-prompt-bg: rgb(var(--theme-mid-rgb) / 0.70);
   --glass-prompt-text: var(--theme-text);
   --glass-prompt-text-rgb: var(--theme-text-rgb);
   --glass-prompt-border: var(--theme-dark);
@@ -849,8 +849,8 @@ html[data-theme="day"] .prompt-surface {
   --glass-base-bg: rgb(var(--n-light-rgb) / 0.15);
   --glass-surface-bg: rgb(var(--n-black-rgb) / 0.15);
   --glass-tight-bg: var(--glass-base-bg);
-  --glass-dark-bg: rgb(var(--n-black-rgb) / 0.8);
-  --glass-prompt-bg: rgb(var(--n-mid-rgb) / 0.85);
+  --glass-dark-bg: rgb(var(--n-black-rgb) / 0.65);
+  --glass-prompt-bg: rgb(var(--n-mid-rgb) / 0.70);
   --glass-prompt-text: var(--n-text);
   --glass-prompt-text-rgb: var(--n-text-rgb);
   --glass-prompt-border: var(--n-dark);
@@ -877,8 +877,8 @@ html[data-theme="day"] .prompt-surface {
   --glass-base-bg: rgb(var(--n-light-rgb) / 0.15);
   --glass-surface-bg: rgb(var(--n-black-rgb) / 0.15);
   --glass-tight-bg: var(--glass-base-bg);
-  --glass-dark-bg: rgb(var(--n-black-rgb) / 0.8);
-  --glass-prompt-bg: rgb(var(--n-mid-rgb) / 0.85);
+  --glass-dark-bg: rgb(var(--n-black-rgb) / 0.65);
+  --glass-prompt-bg: rgb(var(--n-mid-rgb) / 0.70);
   --glass-prompt-text: var(--n-text);
   --glass-prompt-text-rgb: var(--n-text-rgb);
   --glass-prompt-border: var(--n-dark);
@@ -1017,8 +1017,8 @@ html[data-theme="day"] .prompt-surface {
 
 /* Light variant - uses lighter glass background */
 .glass-prompt-action {
-  -webkit-backdrop-filter: blur(32px);
-  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(48px);
+  backdrop-filter: blur(48px);
   background: var(--glass-base-bg);
   border: 1px solid var(--glass-border);
   color: var(--theme-white);
@@ -1838,14 +1838,14 @@ html[data-theme="night"] .PromptDescriptionBar {
   --prompt-bar-gradient-direction: to top;
   background: linear-gradient(
     var(--prompt-bar-gradient-direction),
-    rgb(var(--prompt-bar-color-rgb) / 1.0) 0%,
-    rgb(var(--prompt-bar-color-rgb) / 0.98) 10%,
-    rgb(var(--prompt-bar-color-rgb) / 0.96) 25%,
-    rgb(var(--prompt-bar-color-rgb) / 0.92) 40%,
-    rgb(var(--prompt-bar-color-rgb) / 0.86) 60%,
-    rgb(var(--prompt-bar-color-rgb) / 0.76) 80%,
-    rgb(var(--prompt-bar-color-rgb) / 0.62) 95%,
-    rgb(var(--prompt-bar-color-rgb) / 0.48) 100%
+    rgb(var(--prompt-bar-color-rgb) / 0.85) 0%,
+    rgb(var(--prompt-bar-color-rgb) / 0.83) 10%,
+    rgb(var(--prompt-bar-color-rgb) / 0.81) 25%,
+    rgb(var(--prompt-bar-color-rgb) / 0.77) 40%,
+    rgb(var(--prompt-bar-color-rgb) / 0.71) 60%,
+    rgb(var(--prompt-bar-color-rgb) / 0.61) 80%,
+    rgb(var(--prompt-bar-color-rgb) / 0.47) 95%,
+    rgb(var(--prompt-bar-color-rgb) / 0.33) 100%
   );
 }
 
@@ -1853,14 +1853,14 @@ html[data-theme="night"] .PromptDescriptionBarTop {
   --prompt-bar-gradient-direction: to top;
   background: linear-gradient(
     var(--prompt-bar-gradient-direction),
-    rgb(var(--prompt-bar-color-rgb) / 0.96) 0%,
-    rgb(var(--prompt-bar-color-rgb) / 0.92) 10%,
-    rgb(var(--prompt-bar-color-rgb) / 0.84) 25%,
-    rgb(var(--prompt-bar-color-rgb) / 0.74) 40%,
-    rgb(var(--prompt-bar-color-rgb) / 0.58) 60%,
-    rgb(var(--prompt-bar-color-rgb) / 0.42) 80%,
-    rgb(var(--prompt-bar-color-rgb) / 0.22) 95%,
-    rgb(var(--prompt-bar-color-rgb) / 0.12) 100%
+    rgb(var(--prompt-bar-color-rgb) / 0.81) 0%,
+    rgb(var(--prompt-bar-color-rgb) / 0.77) 10%,
+    rgb(var(--prompt-bar-color-rgb) / 0.69) 25%,
+    rgb(var(--prompt-bar-color-rgb) / 0.59) 40%,
+    rgb(var(--prompt-bar-color-rgb) / 0.43) 60%,
+    rgb(var(--prompt-bar-color-rgb) / 0.27) 80%,
+    rgb(var(--prompt-bar-color-rgb) / 0.12) 95%,
+    rgb(var(--prompt-bar-color-rgb) / 0.00) 100%
   );
 }
 
@@ -1868,14 +1868,14 @@ html[data-theme="day"] .PromptDescriptionBar {
   --prompt-bar-gradient-direction: to bottom;
   background: linear-gradient(
     var(--prompt-bar-gradient-direction),
-    rgb(var(--prompt-bar-color-rgb) / 0.98) 0%,
-    rgb(var(--prompt-bar-color-rgb) / 0.96) 10%,
-    rgb(var(--prompt-bar-color-rgb) / 0.92) 25%,
-    rgb(var(--prompt-bar-color-rgb) / 0.86) 40%,
-    rgb(var(--prompt-bar-color-rgb) / 0.78) 60%,
-    rgb(var(--prompt-bar-color-rgb) / 0.66) 80%,
-    rgb(var(--prompt-bar-color-rgb) / 0.52) 95%,
-    rgb(var(--prompt-bar-color-rgb) / 0.40) 100%
+    rgb(var(--prompt-bar-color-rgb) / 0.83) 0%,
+    rgb(var(--prompt-bar-color-rgb) / 0.81) 10%,
+    rgb(var(--prompt-bar-color-rgb) / 0.77) 25%,
+    rgb(var(--prompt-bar-color-rgb) / 0.71) 40%,
+    rgb(var(--prompt-bar-color-rgb) / 0.63) 60%,
+    rgb(var(--prompt-bar-color-rgb) / 0.51) 80%,
+    rgb(var(--prompt-bar-color-rgb) / 0.37) 95%,
+    rgb(var(--prompt-bar-color-rgb) / 0.25) 100%
   );
 }
 
@@ -1883,14 +1883,14 @@ html[data-theme="day"] .PromptDescriptionBarTop {
   --prompt-bar-gradient-direction: to bottom;
   background: linear-gradient(
     var(--prompt-bar-gradient-direction),
-    rgb(var(--prompt-bar-color-rgb) / 0.78) 0%,
-    rgb(var(--prompt-bar-color-rgb) / 0.73) 10%,
-    rgb(var(--prompt-bar-color-rgb) / 0.64) 25%,
-    rgb(var(--prompt-bar-color-rgb) / 0.54) 40%,
-    rgb(var(--prompt-bar-color-rgb) / 0.40) 60%,
-    rgb(var(--prompt-bar-color-rgb) / 0.28) 80%,
-    rgb(var(--prompt-bar-color-rgb) / 0.14) 95%,
-    rgb(var(--prompt-bar-color-rgb) / 0.08) 100%
+    rgb(var(--prompt-bar-color-rgb) / 0.63) 0%,
+    rgb(var(--prompt-bar-color-rgb) / 0.58) 10%,
+    rgb(var(--prompt-bar-color-rgb) / 0.49) 25%,
+    rgb(var(--prompt-bar-color-rgb) / 0.39) 40%,
+    rgb(var(--prompt-bar-color-rgb) / 0.25) 60%,
+    rgb(var(--prompt-bar-color-rgb) / 0.18) 80%,
+    rgb(var(--prompt-bar-color-rgb) / 0.04) 95%,
+    rgb(var(--prompt-bar-color-rgb) / 0.00) 100%
   );
 }
 
