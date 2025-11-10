@@ -1,6 +1,6 @@
 import { buttons, inputs, text } from "../styles/designSystem";
 import { useAuth } from "../auth/useAuth";
-import { useState, useCallback, type ReactNode } from "react";
+import { useState, useCallback, useEffect, type ReactNode } from "react";
 import GoogleSignIn from "./GoogleSignIn";
 import { apiFetch } from "../utils/api";
 import { supabase } from "../lib/supabase";
@@ -10,13 +10,14 @@ interface AuthModalProps {
   open: boolean;
   onClose: () => void;
   defaultMode?: "login" | "signup";
+  onModeChange?: (mode: "login" | "signup") => void;
 }
 
-export default function AuthModal({ open, onClose, defaultMode = "login" }: AuthModalProps) {
-  const [mode, setMode] = useState<"login" | "signup">(defaultMode);
+export default function AuthModal({ open, onClose, defaultMode = "login", onModeChange }: AuthModalProps) {
+  const normalizedDefaultMode = defaultMode === "signup" ? "signup" : "login";
+  const [mode, setMode] = useState<"login" | "signup">(normalizedDefaultMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -28,6 +29,23 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
     requestPasswordReset 
   } = useAuth();
 
+  const handleModeChange = useCallback(
+    (nextMode: "login" | "signup") => {
+      setMode(nextMode);
+      onModeChange?.(nextMode);
+    },
+    [onModeChange]
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    setMode((currentMode) => {
+      if (currentMode === normalizedDefaultMode) return currentMode;
+      onModeChange?.(normalizedDefaultMode);
+      return normalizedDefaultMode;
+    });
+  }, [normalizedDefaultMode, open, onModeChange]);
+
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -36,7 +54,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
     try {
       if (mode === "signup") {
         // For signup, use password-based authentication with email confirmation
-        await signUp(email, password, displayName);
+        await signUp(email, password, "");
         setShowMagicLinkSent(true);
       } else {
         // For login, use password authentication
@@ -48,7 +66,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
     } finally {
       setIsSubmitting(false);
     }
-  }, [mode, email, password, displayName, signUp, signIn, onClose]);
+  }, [mode, email, password, signUp, signIn, onClose]);
 
   const handleGoogleSignInSuccess = useCallback(() => {
     setError(null);
@@ -136,7 +154,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
             loading="eager"
             className="absolute inset-0 h-full w-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/30 lg:bg-gradient-to-r" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-black/15 to-black/35 lg:bg-gradient-to-r" />
           <div className="relative z-10 flex max-w-xl flex-col items-center px-6 -mt-12 text-center">
             <h2 className="text-[clamp(2rem,1.6rem+1.8vw,3rem)] font-raleway font-normal leading-tight text-[#FAFAFA]">
               Your Daily AI Generations.
@@ -146,14 +164,14 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
             </p>
           </div>
         </div>
-        <div className="flex w-full items-start justify-center px-6 pt-6 pb-10 sm:px-10 lg:w-1/2 lg:px-16 lg:border-l lg:border-theme-dark">
+        <div className="flex w-full items-start justify-center px-8 pt-6 pb-10 sm:px-14 lg:w-1/2 lg:px-20 lg:border-l lg:border-theme-dark">
           <div className="w-full max-w-md space-y-3 sm:space-y-4">
             <h3 className={text.logoText}>{title}</h3>
             {showModeSwitcher && (
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => setMode("login")}
+                  onClick={() => handleModeChange("login")}
                   className={`btn btn-ghost w-full justify-center font-raleway text-base font-medium parallax-large ${
                     mode === "login" ? "border-theme-mid text-theme-text bg-theme-white/5" : "text-theme-light"
                   }`}
@@ -162,7 +180,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
                 </button>
                 <button
                   type="button"
-                  onClick={() => setMode("signup")}
+                  onClick={() => handleModeChange("signup")}
                   className={`btn btn-ghost w-full justify-center font-raleway text-base font-medium parallax-large ${
                     mode === "signup" ? "border-theme-mid text-theme-text bg-theme-white/5" : "text-theme-light"
                   }`}
@@ -182,7 +200,12 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
         >
           ✕
         </button>
-        <div className="pointer-events-none absolute left-6 top-6 hidden sm:block">
+        <div className="pointer-events-none absolute left-6 top-6 hidden sm:flex items-center gap-2">
+          <img
+            src="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/daygen-color-nobg.png"
+            alt="DayGen logo"
+            className="h-7 w-7 object-contain"
+          />
           <span className={`${text.logoText} leading-none !text-[#FAFAFA]`}>daygen</span>
         </div>
       </div>
@@ -202,7 +225,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
           <button
             onClick={() => {
               setShowMagicLinkSent(false);
-              setMode("login");
+              handleModeChange("login");
             }}
             className={`${buttons.blockPrimary} font-raleway font-medium`}
           >
@@ -299,24 +322,12 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
           </div>
         )}
       </div>
-      <div className="flex items-center gap-3 text-xs font-raleway text-theme-light">
+      <div className="flex items-center gap-3 py-4 text-xs font-raleway text-theme-light">
         <span className="h-px flex-1 bg-theme-dark/60" />
         <span>or continue with email</span>
         <span className="h-px flex-1 bg-theme-dark/60" />
       </div>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {mode === "signup" && (
-          <div className="space-y-2">
-            <label className="block text-sm font-raleway text-theme-white">Name</label>
-            <input
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              className={inputs.compact}
-              placeholder="Enter your name"
-              disabled={isSubmitting}
-            />
-          </div>
-        )}
+      <form onSubmit={handleSubmit} className="space-y-3">
         <div className="space-y-2">
           <label className="block text-sm font-raleway text-theme-white">Email</label>
           <input
@@ -365,7 +376,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
               onClick={() => setShowForgotPassword(true)}
               className="text-sm font-raleway text-theme-light underline decoration-theme-light/50 underline-offset-4 transition-colors hover:text-theme-text"
             >
-              Forgot password?
+              Forgot Password?
             </button>
           </div>
         )}
