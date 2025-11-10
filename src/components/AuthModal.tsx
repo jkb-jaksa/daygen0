@@ -1,6 +1,6 @@
-import { buttons, inputs } from "../styles/designSystem";
+import { buttons, inputs, text } from "../styles/designSystem";
 import { useAuth } from "../auth/useAuth";
-import { useState, useCallback } from "react";
+import { useState, useCallback, type ReactNode } from "react";
 import GoogleSignIn from "./GoogleSignIn";
 import { apiFetch } from "../utils/api";
 import { supabase } from "../lib/supabase";
@@ -117,199 +117,267 @@ export default function AuthModal({ open, onClose, defaultMode = "login" }: Auth
     }
   }, [onClose]);
 
-  if (!open) return null;
+  type SplitLayoutConfig = {
+    title: string;
+    body: ReactNode;
+    showModeSwitcher?: boolean;
+  };
 
-  if (showMagicLinkSent) {
-    return (
-      <div className="fixed inset-0 z-[120] bg-theme-black/80 flex items-center justify-center py-12" aria-modal="true" role="dialog">
-        <div className={`glass-liquid willchange-backdrop isolate backdrop-blur-[60px] border border-theme-mid border-t border-r border-b border-l bg-theme-black-subtle rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
-          <div className="text-center space-y-4">
-            <div className="space-y-3">
-              <h3 className="text-theme-text font-raleway font-normal text-xl">Check your email</h3>
-              <p className="text-theme-light text-sm font-raleway font-normal">
-                We've sent you a confirmation link to complete your account setup.
-              </p>
-              <button onClick={onClose} className="absolute top-6 right-6 text-theme-light hover:text-theme-text transition-colors">✕</button>
-            </div>
-            <button 
-              onClick={() => {
-                setShowMagicLinkSent(false);
-                setMode("login");
-              }}
-              className={`${buttons.blockPrimary} font-raleway font-medium`}
-            >
-              Back to Sign In
-            </button>
+  const renderSplitLayout = ({ title, body, showModeSwitcher = false }: SplitLayoutConfig) => (
+    <div className="fixed inset-0 z-[120] bg-theme-black-subtle text-theme-text" aria-modal="true" role="dialog">
+      <div className="relative flex min-h-[100dvh] flex-col lg:flex-row">
+        <div
+          className="relative flex min-h-[45vh] w-full items-center justify-center overflow-hidden bg-[#060806] lg:min-h-full lg:w-1/2"
+          aria-hidden="true"
+        >
+          <img
+            src="/deepdream.png"
+            alt="Dreamlike creative landscape"
+            loading="eager"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/30 lg:bg-gradient-to-r" />
+          <div className="relative z-10 flex max-w-xl flex-col items-center px-6 -mt-12 text-center">
+            <h2 className="text-[clamp(2rem,1.6rem+1.8vw,3rem)] font-raleway font-normal leading-tight text-[#FAFAFA]">
+              Your Daily AI Generations.
+            </h2>
+            <p className="mt-4 max-w-lg text-base font-raleway text-[#FAFAFA] leading-relaxed">
+              Master all the best Creative AI Tools in one place.
+            </p>
           </div>
         </div>
-      </div>
-    );
-  }
-
-  if (showForgotPassword) {
-    return (
-      <div className="fixed inset-0 z-[120] bg-theme-black/80 flex items-center justify-center py-12" aria-modal="true" role="dialog">
-        <div className={`glass-liquid willchange-backdrop isolate backdrop-blur-[60px] border border-theme-mid border-t border-r border-b border-l bg-theme-black-subtle rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
-          <div className="text-center space-y-4">
-            <div className="space-y-3">
-              <h3 className="text-theme-text font-raleway font-normal text-xl">Reset Password</h3>
-              <p className="text-theme-light text-sm font-raleway font-normal">Enter your email to receive a reset link</p>
-              <button onClick={() => setShowForgotPassword(false)} className="absolute top-6 right-6 text-theme-light hover:text-theme-text transition-colors">✕</button>
-            </div>
-
-            <form onSubmit={(e) => { e.preventDefault(); handleForgotPassword(); }} className="space-y-4">
-              <div className="space-y-2">
-                <label className="block text-sm text-theme-text font-raleway">Email</label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={inputs.compact}
-                  placeholder="Enter your email"
-                  disabled={isSubmitting}
-                />
-              </div>
-              <div aria-live="polite" role="status" className="min-h-[1rem] text-left">
-                {error && (
-                  <div className="text-xs font-raleway text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg p-3 mt-2">
-                    <p className="font-medium mb-1">Error</p>
-                    <p>{error}</p>
-                  </div>
-                )}
-              </div>
-              <button type="submit" className={`${buttons.blockPrimary} font-raleway font-medium ${isSubmitting ? "cursor-wait opacity-80" : ""}`} disabled={isSubmitting}>
-                {isSubmitting ? "Sending..." : "Send Reset Link"}
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="fixed inset-0 z-[120] bg-theme-black/80 flex items-center justify-center py-12" aria-modal="true" role="dialog">
-      <div className={`glass-liquid willchange-backdrop isolate backdrop-blur-[60px] border border-theme-mid border-t border-r border-b border-l bg-theme-black-subtle rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
-        <div className="text-center space-y-4">
-          <div className="space-y-3">
-            <h3 className="text-theme-text font-raleway font-normal text-xl">{mode === "login" ? "Sign In" : "Create Account"}</h3>
-            <p className="text-theme-light text-sm font-raleway font-normal">Welcome to DayGen</p>
-            <button onClick={onClose} className="absolute top-6 right-6 text-theme-light hover:text-theme-text transition-colors">✕</button>
-          </div>
-
-          <div className="flex gap-3">
-            <button onClick={() => setMode("login")} className={`px-4 py-2 rounded-full border text-sm font-raleway font-medium transition-colors ${mode==="login"?"bg-theme-dark border-theme-mid text-theme-text":"bg-transparent border-theme-dark text-theme-light hover:border-theme-mid hover:text-theme-text"}`}>Sign In</button>
-            <button onClick={() => setMode("signup")} className={`px-4 py-2 rounded-full border text-sm font-raleway font-medium transition-colors ${mode==="signup"?"bg-theme-dark border-theme-mid text-theme-text":"bg-transparent border-theme-dark text-theme-light hover:border-theme-mid hover:text-theme-text"}`}>Sign Up</button>
-          </div>
-
-          <div className="space-y-4">
-            {/* Google Sign In Button */}
-            <GoogleSignIn
-              onSuccess={handleGoogleSignInSuccess}
-              onError={handleGoogleSignInError}
-              disabled={isSubmitting}
-            />
-
-            {/* Dev Login Button - Only shown in development */}
-            {import.meta.env.DEV && (
-              <button
-                onClick={handleDevLogin}
-                disabled={isSubmitting}
-                className="w-full px-4 py-3 rounded-full border-2 border-yellow-500/50 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 hover:border-yellow-500 transition-all font-raleway text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                type="button"
-              >
-                <span>⚡</span>
-                <span>Quick Login (Dev)</span>
-              </button>
-            )}
-            
-            {/* Show OAuth errors near the Google button */}
-            {error && (error.includes('Google') || error.includes('OAuth') || error.includes('configuration') || error.includes('redirect')) && (
-              <div className="text-xs font-raleway text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg p-3">
-                <p className="font-medium mb-1">Google Sign-In Error</p>
-                <p className="whitespace-pre-line">{error}</p>
-                <p className="text-xs text-red-300/80 mt-2">
-                  Check the browser console (F12) for more details.
-                </p>
+        <div className="flex w-full items-start justify-center px-6 pt-6 pb-10 sm:px-10 lg:w-1/2 lg:px-16 lg:border-l lg:border-theme-dark">
+          <div className="w-full max-w-md space-y-3 sm:space-y-4">
+            <h3 className={text.logoText}>{title}</h3>
+            {showModeSwitcher && (
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setMode("login")}
+                  className={`btn btn-ghost w-full justify-center font-raleway text-base font-medium parallax-large ${
+                    mode === "login" ? "border-theme-mid text-theme-text bg-theme-white/5" : "text-theme-light"
+                  }`}
+                >
+                  Sign in
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode("signup")}
+                  className={`btn btn-ghost w-full justify-center font-raleway text-base font-medium parallax-large ${
+                    mode === "signup" ? "border-theme-mid text-theme-text bg-theme-white/5" : "text-theme-light"
+                  }`}
+                >
+                  Sign up
+                </button>
               </div>
             )}
-
-            <div className="text-center text-xs text-theme-light font-raleway">or continue with email</div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {mode === "signup" && (
-                <div className="space-y-2">
-                  <label className="block text-sm text-theme-text font-raleway">Name</label>
-                  <input
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    className={inputs.compact}
-                    placeholder="Enter your name"
-                    disabled={isSubmitting}
-                  />
-                </div>
-              )}
-              <div className="space-y-2">
-                <label className="block text-sm text-theme-text font-raleway">Email</label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={inputs.compact}
-                  placeholder="Enter your email"
-                  disabled={isSubmitting}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="block text-sm text-theme-text font-raleway">Password</label>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={inputs.compact}
-                  placeholder="Enter your password"
-                  disabled={isSubmitting}
-                  minLength={8}
-                />
-              </div>
-              <div aria-live="polite" role="status" className="min-h-[1rem] text-left">
-                {error && (
-                  <div className="text-xs font-raleway text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg p-3 mt-2">
-                    <p className="font-medium mb-1">Authentication Error</p>
-                    <p className="whitespace-pre-line">{error}</p>
-                    <p className="text-xs text-red-300/80 mt-2">
-                      Check the browser console (F12) for more details.
-                    </p>
-                  </div>
-                )}
-              </div>
-              <button type="submit" className={`${buttons.blockPrimary} font-raleway font-medium ${isSubmitting ? "cursor-wait opacity-80" : ""}`} disabled={isSubmitting}>
-                {isSubmitting ? "Please wait…" : mode === "login" ? "Sign In" : "Create Account"}
-              </button>
-              {mode === "login" && (
-                <div className="text-center">
-                  <button
-                    type="button"
-                    onClick={() => setShowForgotPassword(true)}
-                    className="text-xs text-theme-light hover:text-theme-text transition-colors font-raleway underline"
-                  >
-                    Forgot password?
-                  </button>
-                </div>
-              )}
-            </form>
+            {body}
           </div>
         </div>
-        <p className="text-xs text-theme-light text-center font-raleway mt-4">
-          {mode === "signup" 
-            ? "We'll send you a confirmation email to verify your account."
-            : "Secure authentication powered by Supabase."
-          }
-        </p>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close sign in"
+          className="absolute right-4 top-4 rounded-full border border-theme-dark/70 bg-theme-black/60 w-8 h-8 flex items-center justify-center text-sm text-theme-light transition-colors hover:border-theme-mid hover:text-theme-text parallax-large sm:right-6 sm:top-6"
+        >
+          ✕
+        </button>
+        <div className="pointer-events-none absolute left-6 top-6 hidden sm:block">
+          <span className={`${text.logoText} leading-none !text-[#FAFAFA]`}>daygen</span>
+        </div>
       </div>
     </div>
   );
+
+  if (!open) return null;
+
+  if (showMagicLinkSent) {
+    return renderSplitLayout({
+      title: "Check your email",
+      body: (
+        <div className="space-y-6">
+          <p className="text-sm font-raleway text-theme-light leading-relaxed">
+            We just dropped a confirmation link in your inbox. Follow it to verify your email and unlock the DayGen studio.
+          </p>
+          <button
+            onClick={() => {
+              setShowMagicLinkSent(false);
+              setMode("login");
+            }}
+            className={`${buttons.blockPrimary} font-raleway font-medium`}
+          >
+            Back to sign in
+          </button>
+        </div>
+      ),
+    });
+  }
+
+  if (showForgotPassword) {
+    return renderSplitLayout({
+      title: "Reset your password",
+      body: (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleForgotPassword();
+          }}
+          className="space-y-4"
+        >
+          <div className="space-y-2">
+            <label className="block text-sm font-raleway text-theme-white">Email</label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={inputs.compact}
+              placeholder="Enter your email"
+              disabled={isSubmitting}
+            />
+          </div>
+          <div aria-live="polite" role="status" className="min-h-[1rem] text-left">
+            {error && (
+              <div className="mt-2 rounded-xl border border-red-400/20 bg-red-400/10 p-3 text-xs font-raleway text-red-300">
+                <p className="font-medium text-red-200">Error</p>
+                <p>{error}</p>
+              </div>
+            )}
+          </div>
+          <button
+            type="submit"
+            className={`${buttons.blockPrimary} font-raleway font-medium ${isSubmitting ? "cursor-wait opacity-80" : ""}`}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Sending..." : "Send reset link"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowForgotPassword(false)}
+            className="w-full text-center text-sm font-raleway text-theme-light underline decoration-theme-light/50 decoration-dotted underline-offset-4 hover:text-theme-text"
+          >
+            Never mind, take me back
+          </button>
+        </form>
+      ),
+    });
+  }
+
+  const socialError =
+    error &&
+    (error.includes("Google") || error.includes("OAuth") || error.includes("configuration") || error.includes("redirect"));
+
+  const mainBody = (
+    <div className="space-y-3">
+      <div className="space-y-3">
+        <GoogleSignIn onSuccess={handleGoogleSignInSuccess} onError={handleGoogleSignInError} disabled={isSubmitting} />
+        <button
+          type="button"
+          className="btn btn-white w-full justify-center gap-3 font-raleway text-base font-medium parallax-large"
+        >
+          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+          </svg>
+          Sign in with Apple
+        </button>
+        {import.meta.env.DEV && (
+          <button
+            onClick={handleDevLogin}
+            disabled={isSubmitting}
+            className="btn btn-ghost w-full justify-center gap-2 font-raleway text-base font-medium text-yellow-200 border-yellow-400/60 parallax-large"
+            type="button"
+          >
+            <span>⚡</span>
+            <span>Quick Login (Dev)</span>
+          </button>
+        )}
+        {socialError && (
+          <div className="rounded-xl border border-red-400/30 bg-red-400/5 p-4 text-xs font-raleway text-red-200">
+            <p className="mb-1 font-medium text-red-100">Google Sign-In Error</p>
+            <p className="whitespace-pre-line">{error}</p>
+            <p className="mt-2 text-[0.65rem] text-red-200/80">Check the console for detailed logs.</p>
+          </div>
+        )}
+      </div>
+      <div className="flex items-center gap-3 text-xs font-raleway text-theme-light">
+        <span className="h-px flex-1 bg-theme-dark/60" />
+        <span>or continue with email</span>
+        <span className="h-px flex-1 bg-theme-dark/60" />
+      </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {mode === "signup" && (
+          <div className="space-y-2">
+            <label className="block text-sm font-raleway text-theme-white">Name</label>
+            <input
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              className={inputs.compact}
+              placeholder="Enter your name"
+              disabled={isSubmitting}
+            />
+          </div>
+        )}
+        <div className="space-y-2">
+          <label className="block text-sm font-raleway text-theme-white">Email</label>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={inputs.compact}
+            placeholder="Enter your email"
+            disabled={isSubmitting}
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="block text-sm font-raleway text-theme-white">Password</label>
+          <input
+            type="password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className={inputs.compact}
+            placeholder="Enter your password"
+            disabled={isSubmitting}
+            minLength={8}
+          />
+        </div>
+        <div aria-live="polite" role="status" className="min-h-[1rem]">
+          {error && !socialError && (
+            <div className="mt-2 rounded-xl border border-red-400/30 bg-red-400/10 p-4 text-xs font-raleway text-red-200">
+              <p className="mb-1 font-medium text-red-100">Authentication Error</p>
+              <p className="whitespace-pre-line">{error}</p>
+              <p className="mt-2 text-[0.65rem] text-red-200/80">Review the details and try again.</p>
+            </div>
+          )}
+        </div>
+        <button
+          type="submit"
+          className={`${buttons.blockPrimary} font-raleway font-medium ${isSubmitting ? "cursor-wait opacity-80" : ""}`}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
+        </button>
+        {mode === "login" && (
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => setShowForgotPassword(true)}
+              className="text-sm font-raleway text-theme-light underline decoration-theme-light/50 underline-offset-4 transition-colors hover:text-theme-text"
+            >
+              Forgot password?
+            </button>
+          </div>
+        )}
+      </form>
+    </div>
+  );
+
+  const title = mode === "login" ? "Sign in" : "Create your account";
+
+  return renderSplitLayout({
+    title,
+    body: mainBody,
+    showModeSwitcher: true,
+  });
 }

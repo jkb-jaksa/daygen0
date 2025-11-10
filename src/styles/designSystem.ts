@@ -33,7 +33,7 @@ export const layout = {
  * All text uses font-normal (400) for body, font-medium (500) for emphasis
  */
 export const text = {
-  heroHeading: "font-normal tracking-tight leading-[1.05] font-raleway text-[clamp(2rem,1.8rem+2vw,3rem)]",
+  heroHeading: "font-normal tracking-tight leading-[1.05] font-raleway text-[clamp(2rem,1.8rem+2vw,2.5rem)]",
   subHeading: "font-normal text-theme-text font-raleway text-[clamp(1.8rem,1.4rem+2vw,3rem)]",
   sectionHeading: "font-normal text-theme-text font-raleway text-[clamp(2rem,1.6rem+1.8vw,3rem)]",
   logoText: "font-normal text-theme-text font-raleway text-[clamp(1.5rem,1.3rem+0.8vw,2rem)]",
@@ -146,11 +146,12 @@ const inputCore =
  * Input field utilities
  * All inputs use rounded-xl or rounded-lg (never rounded-full except pill variant)
  * Includes glass effect, focus states, and disabled styling
+ * Standard height: h-10 (40px) to match button heights
  */
 export const inputs = {
-  base: `${inputCore} rounded-xl py-1.5`, // Standard input (rounded-xl)
-  compact: `${inputCore} rounded-lg py-3 text-sm`, // Smaller input (rounded-lg)
-  pill: `${inputCore} rounded-full py-3`, // Pill-shaped input
+  base: `${inputCore} rounded-xl h-10`, // Standard input (rounded-xl, 40px)
+  compact: `${inputCore} rounded-lg h-10 text-sm`, // Smaller input (rounded-lg, 40px)
+  pill: `${inputCore} rounded-full h-10`, // Pill-shaped input (40px)
   textarea: `${inputCore} rounded-xl py-3 min-h-[140px] resize-y`, // Multi-line input
 };
 
