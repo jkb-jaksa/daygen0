@@ -168,9 +168,9 @@ export default function SupabaseAuthModal({
                   <button
                     type="button"
                     onClick={() => {/* Add forgot password functionality here */}}
-                    className="text-xs text-theme-light hover:text-theme-text transition-colors font-raleway underline"
+                    className="text-xs text-theme-white hover:text-theme-text transition-colors font-raleway"
                   >
-                    Forgot password?
+                    Forgot password
                   </button>
                 </div>
               )}

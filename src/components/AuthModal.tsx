@@ -155,7 +155,9 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
             loading="eager"
             className="absolute inset-0 h-full w-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-black/15 to-black/35 lg:bg-gradient-to-r" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/25 to-black/45 lg:bg-gradient-to-r" />
+          <div className="absolute top-0 left-0 right-0 h-[70px] bg-gradient-to-b from-black/90 to-transparent pointer-events-none" />
+          <div className="absolute bottom-0 left-0 right-0 h-[70px] bg-gradient-to-t from-black/90 to-transparent pointer-events-none" />
           <div className="relative z-10 flex max-w-xl flex-col items-center px-6 -mt-12 text-center">
             <h2 className="text-[clamp(2rem,1.6rem+1.8vw,3rem)] font-raleway font-normal leading-tight text-[#FAFAFA]">
               Your Daily AI Generations.
@@ -369,9 +371,9 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
             <button
               type="button"
               onClick={() => setShowForgotPassword(true)}
-              className="text-sm font-raleway text-theme-light underline decoration-theme-light/50 underline-offset-4 transition-colors hover:text-theme-text"
+              className="text-sm font-raleway text-theme-white transition-colors hover:text-theme-text"
             >
-              Forgot Password?
+              Forgot Password
             </button>
           </div>
         )}
