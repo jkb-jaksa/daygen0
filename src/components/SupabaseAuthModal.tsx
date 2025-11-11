@@ -89,7 +89,7 @@ export default function SupabaseAuthModal({
                   : 'bg-transparent border-theme-dark text-theme-light hover:border-theme-mid hover:text-theme-text'
               }`}
             >
-              Login
+              Sign In
             </button>
             <button 
               onClick={() => handleModeChange('signup')} 
@@ -99,7 +99,7 @@ export default function SupabaseAuthModal({
                   : 'bg-transparent border-theme-dark text-theme-light hover:border-theme-mid hover:text-theme-text'
               }`}
             >
-              Sign up
+              Sign Up
             </button>
           </div>
 
@@ -107,39 +107,36 @@ export default function SupabaseAuthModal({
             <form onSubmit={handleSubmit} className="space-y-3">
               {mode === 'signup' && (
                 <div className="space-y-2">
-                  <label className="block text-sm text-theme-text font-raleway">Name</label>
                   <input
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     className={inputs.compact}
-                    placeholder="Enter your name"
+                    placeholder="Enter Your Name"
                     disabled={isSubmitting}
                   />
                 </div>
               )}
               
               <div className="space-y-2">
-                <label className="block text-sm text-theme-text font-raleway">Email</label>
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className={inputs.compact}
-                  placeholder="Enter your email"
+                  placeholder="Enter Your Email"
                   disabled={isSubmitting}
                 />
               </div>
               
               <div className="space-y-2">
-                <label className="block text-sm text-theme-text font-raleway">Password</label>
                 <input
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className={inputs.compact}
-                  placeholder="Enter your password"
+                  placeholder="Enter Your Password"
                   disabled={isSubmitting}
                   minLength={8}
                 />
@@ -158,8 +155,8 @@ export default function SupabaseAuthModal({
                 {isSubmitting 
                   ? 'Please wait…' 
                   : mode === 'login' 
-                    ? 'Log in' 
-                    : 'Create account'
+                    ? 'Sign In' 
+                    : 'Create Account'
                 }
               </button>
 
