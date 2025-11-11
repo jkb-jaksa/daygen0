@@ -150,7 +150,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
           aria-hidden="true"
         >
           <img
-            src="/deepdream.png"
+            src="/deepdream1.png"
             alt="Dreamlike creative landscape"
             loading="eager"
             className="absolute inset-0 h-full w-full object-cover"
