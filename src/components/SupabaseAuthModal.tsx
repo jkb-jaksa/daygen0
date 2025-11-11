@@ -104,7 +104,7 @@ export default function SupabaseAuthModal({
           </div>
 
           <div className="space-y-4">
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-3">
               {mode === 'signup' && (
                 <div className="space-y-2">
                   <label className="block text-sm text-theme-text font-raleway">Name</label>

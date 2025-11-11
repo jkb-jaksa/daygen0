@@ -139,11 +139,12 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
     title: string;
     body: ReactNode;
     showModeSwitcher?: boolean;
+    onCloseClick?: () => void;
   };
 
-  const renderSplitLayout = ({ title, body, showModeSwitcher = false }: SplitLayoutConfig) => (
+  const renderSplitLayout = ({ title, body, showModeSwitcher = false, onCloseClick }: SplitLayoutConfig) => (
     <div className="fixed inset-0 z-[120] bg-theme-black-subtle text-theme-text" aria-modal="true" role="dialog">
-      <div className="relative flex min-h-[100dvh] flex-col lg:flex-row">
+      <div className="relative flex h-[100dvh] flex-col lg:flex-row">
         <div
           className="relative flex min-h-[45vh] w-full items-center justify-center overflow-hidden bg-[#060806] lg:min-h-full lg:w-1/2"
           aria-hidden="true"
@@ -164,7 +165,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
             </p>
           </div>
         </div>
-        <div className="flex w-full items-start justify-center px-8 pt-6 pb-10 sm:px-14 lg:w-1/2 lg:px-20 lg:border-l lg:border-theme-dark">
+        <div className="flex w-full items-start justify-center px-8 pt-6 pb-10 sm:px-14 lg:w-1/2 lg:px-20 lg:border-l lg:border-theme-dark overflow-y-auto">
           <div className="w-full max-w-md space-y-3 sm:space-y-4">
             <h3 className={text.logoText}>{title}</h3>
             {showModeSwitcher && (
@@ -194,7 +195,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
         </div>
         <button
           type="button"
-          onClick={onClose}
+          onClick={onCloseClick ?? onClose}
           aria-label="Close sign in"
           className="absolute right-4 top-4 rounded-full border border-theme-dark/70 bg-theme-black/60 w-8 h-8 flex items-center justify-center text-sm text-theme-light transition-colors hover:border-theme-mid hover:text-theme-text parallax-large sm:right-6 sm:top-6"
         >
@@ -238,7 +239,8 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
 
   if (showForgotPassword) {
     return renderSplitLayout({
-      title: "Reset your password",
+      title: "Reset Password",
+      onCloseClick: () => setShowForgotPassword(false),
       body: (
         <form
           onSubmit={(e) => {
@@ -273,13 +275,6 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
             disabled={isSubmitting}
           >
             {isSubmitting ? "Sending..." : "Send reset link"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowForgotPassword(false)}
-            className="w-full text-center text-sm font-raleway text-theme-light underline decoration-theme-light/50 decoration-dotted underline-offset-4 hover:text-theme-text"
-          >
-            Never mind, take me back
           </button>
         </form>
       ),
