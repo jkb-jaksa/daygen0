@@ -1,249 +1,59 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import { useAuth } from "../auth/useAuth";
-import { X, CheckCircle2, Lock, Eye, EyeOff } from "lucide-react";
-import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { X } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import ProfileCropModal from "./ProfileCropModal";
 import { getPersistedValue, migrateKeyToIndexedDb } from "../lib/clientStorage";
-import { buttons, glass, inputs } from "../styles/designSystem";
 import { debugError, debugLog } from "../utils/debug";
-import GoogleLogin from "./GoogleLogin";
-import { useEmailAuthForm } from "../hooks/useEmailAuthForm";
-import { getDestinationLabel, safeResolveNext } from "../utils/navigation";
+import { getDestinationLabel, safeResolveNext, consumePendingAuthRedirect } from "../utils/navigation";
 import { ProfileCard } from "./account/ProfileCard";
 import { AtAGlance } from "./account/AtAGlance";
 import { useToast } from "../hooks/useToast";
 import SubscriptionManager from "./payments/SubscriptionManager";
+import AuthModal from "./AuthModal";
 
 type GalleryItem = { url: string; prompt: string; model: string; timestamp: string; ownerId?: string };
 
 type AccountAuthScreenProps = {
   nextPath?: string | null;
-  destinationLabel: string;
 };
 
-function AccountAuthScreen({ nextPath, destinationLabel }: AccountAuthScreenProps) {
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
-  const {
-    mode,
-    setMode,
-    email,
-    setEmail,
-    name,
-    setName,
-    password,
-    setPassword,
-    confirmPassword,
-    setConfirmPassword,
-    isSubmitting,
-    error,
-    handleSubmit,
-  } = useEmailAuthForm({
-    initialMode: nextPath ? "login" : "signup",
-  });
+function AccountAuthScreen({ nextPath }: AccountAuthScreenProps) {
+  const navigate = useNavigate();
+  const [isModalOpen, setIsModalOpen] = useState(true);
+  const closeReasonRef = useRef<"auth" | null>(null);
 
-  const destinationCopy = destinationLabel;
-  const heading = useMemo(() => {
-    // Use the destination label to derive appropriate heading
-    if (destinationLabel.includes("Edit")) return "Log in to continue editing";
-    if (destinationLabel.includes("Create")) return "Log in to start creating";
-    return "Welcome back to DayGen";
-  }, [destinationLabel]);
+  const defaultMode = nextPath ? "login" : "signup";
 
-  const subheading = useMemo(() => {
-    if (nextPath) {
-      return "Unlock your daily generations. Complete the quick sign-in below to continue.";
+  const handleAuthenticated = useCallback(() => {
+    closeReasonRef.current = "auth";
+  }, []);
+
+  const handleClose = useCallback(() => {
+    setIsModalOpen(false);
+
+    if (closeReasonRef.current === "auth") {
+      closeReasonRef.current = null;
+      return;
     }
-    return "Sign in with your DayGen account to sync prompts, credits, and creative preferences across devices.";
+
+    navigate("/", { replace: true });
+  }, [navigate]);
+
+  useEffect(() => {
+    setIsModalOpen(true);
+    closeReasonRef.current = null;
   }, [nextPath]);
 
-  const highlights = useMemo(
-    () => [
-      {
-        title: "Stay in the flow",
-        description:
-          "Pick up right where you left off. We remember your recent prompts, favorite tools, and credit balance while you explore.",
-      },
-      {
-        title: "Instant hand-off",
-        description: `The moment you're signed in, we’ll guide you straight to ${destinationCopy} so you can keep creating without friction.`,
-      },
-      {
-        title: "Secure authentication",
-        description:
-          "Passwords are encrypted and verified by our backend so your creative workspace stays protected.",
-      },
-    ],
-    [destinationCopy],
-  );
-
   return (
-    <main className="relative min-h-screen overflow-hidden bg-theme-black-subtle text-theme-text edit-page">
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-12 px-6 pt-[calc(var(--nav-h,4rem)+16px)] pb-16 lg:flex-row lg:items-stretch lg:justify-between lg:gap-20 lg:px-8">
-        <section className="flex w-full flex-col justify-start gap-8 lg:max-w-xl mt-2">
-          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-theme-mid/40 bg-theme-black/40 px-4 py-2 text-[0.65rem] font-raleway uppercase tracking-[0.35em] text-theme-white/70">
-            Login required
-          </span>
-          <div className="space-y-4 -mt-4">
-            <h1 className="text-4xl font-normal leading-tight text-theme-text font-raleway sm:text-5xl">{heading}</h1>
-            <p className="max-w-xl text-base font-raleway leading-relaxed text-theme-white">{subheading}</p>
-          </div>
-          <ul className="space-y-4">
-            {highlights.map((item) => (
-              <li key={item.title} className="flex items-start gap-3">
-                <span className="mt-1 inline-flex size-7 items-center justify-center rounded-full bg-theme-white/10 text-theme-text">
-                  <CheckCircle2 className="h-4 w-4" />
-                </span>
-                <div className="space-y-1">
-                  <p className="font-raleway text-base font-medium text-theme-text">{item.title}</p>
-                  <p className="text-sm font-raleway leading-relaxed text-theme-white">{item.description}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-        <section className="w-full lg:max-w-md">
-          <div className={`${glass.promptDark} rounded-[28px] p-8 shadow-[0_24px_80px_rgba(8,5,24,0.45)]`}>
-            <div className="space-y-3 text-center">
-              <h2 className="text-2xl font-raleway font-normal text-theme-text">Enter the studio</h2>
-              <p className="text-sm font-raleway text-theme-white">Log in below to get full access to DayGen.</p>
-            </div>
-            <div className="mt-6 space-y-5">
-              <GoogleLogin />
-              <div className="flex rounded-full border border-theme-dark bg-theme-black/40 p-1 text-sm font-raleway">
-                <button
-                  type="button"
-                  onClick={() => setMode("login")}
-                  className={`flex-1 rounded-full px-4 py-2 transition-colors duration-200 ${mode === "login" ? "bg-theme-white/10 text-theme-text" : "text-theme-white/70 hover:text-theme-text"}`}
-                >
-                  Log in
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMode("signup")}
-                  className={`flex-1 rounded-full px-4 py-2 transition-colors duration-200 ${mode === "signup" ? "bg-theme-white/10 text-theme-text" : "text-theme-white/70 hover:text-theme-text"}`}
-                >
-                  Sign up
-                </button>
-              </div>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {mode === "signup" && (
-                  <div className="space-y-1">
-                    <label htmlFor="auth-name" className="block text-sm font-raleway text-theme-white/80">
-                      Name
-                    </label>
-                    <input
-                      id="auth-name"
-                      type="text"
-                      value={name}
-                      onChange={(event) => setName(event.target.value)}
-                      className={inputs.base}
-                      placeholder="How should we call you?"
-                      autoComplete="name"
-                      disabled={isSubmitting}
-                    />
-                  </div>
-                )}
-                <div className="space-y-1">
-                  <label htmlFor="auth-email" className="block text-sm font-raleway text-theme-white/80">
-                    Email
-                  </label>
-                  <input
-                    id="auth-email"
-                    type="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    className={inputs.base}
-                    placeholder="Enter your email"
-                    autoComplete="email"
-                    required
-                    disabled={isSubmitting}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label htmlFor="auth-password" className="block text-sm font-raleway text-theme-white/80">
-                    Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      id="auth-password"
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      className={inputs.base}
-                      placeholder="Enter your password"
-                      autoComplete={mode === "login" ? "current-password" : "new-password"}
-                      required
-                      minLength={8}
-                      disabled={isSubmitting}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-theme-white/60 hover:text-theme-text transition-colors"
-                      disabled={isSubmitting}
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-                {mode === "signup" && (
-                  <div className="space-y-1">
-                    <label htmlFor="auth-confirm" className="block text-sm font-raleway text-theme-white/80">
-                      Confirm password
-                    </label>
-                    <div className="relative">
-                      <input
-                        id="auth-confirm"
-                        type={showConfirmPassword ? "text" : "password"}
-                        value={confirmPassword}
-                        onChange={(event) => setConfirmPassword(event.target.value)}
-                        className={inputs.base}
-                        placeholder="Re-enter your password"
-                        autoComplete="new-password"
-                        required
-                        minLength={8}
-                        disabled={isSubmitting}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-theme-white/60 hover:text-theme-text transition-colors"
-                        disabled={isSubmitting}
-                      >
-                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-                )}
-                <div aria-live="polite" role="status" className="min-h-[1rem]">
-                  {error && <p className="text-xs font-raleway text-red-400">{error}</p>}
-                </div>
-                <button
-                  type="submit"
-                  className={`${buttons.blockPrimary} ${isSubmitting ? "cursor-wait opacity-80" : ""}`}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Please wait…" : mode === "login" ? "Log in" : "Create account"}
-                </button>
-              </form>
-              <p className="flex items-center justify-center gap-2 text-xs font-raleway text-theme-white/60">
-                <Lock className="h-3.5 w-3.5" />
-                Passwords are handled securely by the DayGen backend with JWT-based sessions.
-              </p>
-            </div>
-            <p className="mt-6 text-center text-[0.7rem] font-raleway text-theme-white/50">
-              By continuing you agree to our{" "}
-              <Link to="/privacy-policy" className="text-theme-white hover:text-theme-text underline decoration-theme-white/40 decoration-dotted underline-offset-4">
-                Privacy Policy
-              </Link>
-              .
-            </p>
-          </div>
-        </section>
-      </div>
+    <main className="min-h-screen bg-theme-black-subtle">
+      <AuthModal
+        open={isModalOpen}
+        onClose={handleClose}
+        defaultMode={defaultMode}
+        onAuthenticated={handleAuthenticated}
+      />
     </main>
   );
 }
@@ -264,9 +74,24 @@ export default function Account() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const rawNext = searchParams.get("next");
+  const [storedNextPath, setStoredNextPath] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (rawNext) {
+      setStoredNextPath(null);
+      return;
+    }
+    const stored = consumePendingAuthRedirect();
+    if (stored) {
+      setStoredNextPath(stored);
+    }
+  }, [rawNext]);
+
+  const effectiveNextSource = rawNext ?? storedNextPath ?? "/create";
+
   const sanitizedNextPath = useMemo(
-    () => safeResolveNext(rawNext ?? ""),
-    [rawNext],
+    () => safeResolveNext(effectiveNextSource),
+    [effectiveNextSource],
   );
 
   const destinationLabel = useMemo(
@@ -496,7 +321,7 @@ export default function Account() {
   // The next parameter will be used when they explicitly choose to return
 
   if (!user) {
-    return <AccountAuthScreen nextPath={sanitizedNextPath ?? undefined} destinationLabel={destinationLabel} />;
+    return <AccountAuthScreen nextPath={sanitizedNextPath ?? undefined} />;
   }
 
   // Show return button when there's a next parameter

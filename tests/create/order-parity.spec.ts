@@ -44,7 +44,7 @@ test.describe('Model selector and prompt controls order parity (V1 vs V2)', () =
   test('model list and control buttons order match', async ({ page, context }) => {
     // V1
     await page.goto('/create/image', { waitUntil: 'domcontentloaded' });
-    if (new URL(page.url()).pathname.startsWith('/account')) {
+    if (new URL(page.url()).pathname.startsWith('/signup')) {
       test.skip(true, 'Authentication required. Log in first.');
     }
     await openModelMenu(page);
@@ -62,7 +62,6 @@ test.describe('Model selector and prompt controls order parity (V1 vs V2)', () =
     expect(v2PromptOrder).toEqual(v1PromptOrder);
   });
 });
-
 
 
 

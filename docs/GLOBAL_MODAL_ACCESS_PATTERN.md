@@ -134,7 +134,8 @@ function RequireAuth({ children }: { children: ReactNode }) {
 
   if (!user) {
     // Handle unauthenticated user
-    return <Navigate to={`/account?next=${location.pathname}`} replace />;
+    setPendingAuthRedirect(location.pathname);
+    return <Navigate to="/signup" replace />;
   }
 
   // If user is authenticated but URL has query parameters, clean them up
@@ -306,4 +307,3 @@ Use descriptive query parameter names:
 ## Example: Complete Implementation
 
 See `src/contexts/StyleModalProvider.tsx` and `src/components/create/PromptForm.tsx` for a complete working example of this pattern.
-

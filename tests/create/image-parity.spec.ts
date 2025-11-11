@@ -46,8 +46,8 @@ test.describe('Create/Image visual parity (V1 vs V2)', () => {
     const v1Url = '/create/image';
     await page.goto(v1Url, { waitUntil: 'domcontentloaded' });
 
-    // Detect auth gate by URL change to /account
-    if (new URL(page.url()).pathname.startsWith('/account')) {
+    // Detect auth gate by URL change to /signup
+    if (new URL(page.url()).pathname.startsWith('/signup')) {
       test.skip(true, 'Authentication required; provide TEST_EMAIL/TEST_PASSWORD or run with an authenticated preview.');
     }
 
@@ -64,5 +64,4 @@ test.describe('Create/Image visual parity (V1 vs V2)', () => {
     expect(ratio, `Pixels diff ratio ${ratio} should be <= 0.005`).toBeLessThanOrEqual(0.005);
   });
 });
-
 

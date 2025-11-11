@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { useFooter } from "./contexts/useFooter";
 import { useAuth } from "./auth/useAuth";
 import { layout, text, buttons, headings, glass } from "./styles/designSystem";
-import { safeResolveNext } from "./utils/navigation";
+import { safeResolveNext, AUTH_ENTRY_PATH, setPendingAuthRedirect } from "./utils/navigation";
 import { authMetrics } from "./utils/authMetrics";
 import useParallaxHover from "./hooks/useParallaxHover";
 import { Edit as EditIcon, Image as ImageIcon, Video as VideoIcon, Volume2 } from "lucide-react";
@@ -405,15 +405,14 @@ function RequireAuth({ children }: { children: ReactNode }) {
   }
 
   if (!user) {
-    const params = new URLSearchParams();
     const nextPath = safeResolveNext(location, { isEditProtected: true });
 
     // Track guard redirects for monitoring
     authMetrics.increment('guard_redirect', location.pathname);
 
-    params.set("next", nextPath);
+    setPendingAuthRedirect(nextPath);
 
-    return <Navigate to={`/account?${params.toString()}`} replace />;
+    return <Navigate to={AUTH_ENTRY_PATH} replace />;
   }
 
   // If user is authenticated but URL has query parameters, clean them up
@@ -456,6 +455,13 @@ function RouteFallback() {
 
 function AppContent() {
   const { isFooterVisible } = useFooter();
+  const accountRouteElement = (
+    <Suspense fallback={<RouteFallback />}>
+      <AuthErrorBoundary fallbackRoute="/" context="authentication">
+        <Account />
+      </AuthErrorBoundary>
+    </Suspense>
+  );
 
   return (
     <StyleModalProvider>
@@ -538,16 +544,8 @@ function AppContent() {
                 </RequireAuth>
               )}
             />
-            <Route 
-              path="/account" 
-              element={
-                <Suspense fallback={<RouteFallback />}>
-                  <AuthErrorBoundary fallbackRoute="/" context="authentication">
-                    <Account />
-                  </AuthErrorBoundary>
-                </Suspense>
-              } 
-            />
+            <Route path="/account" element={accountRouteElement} />
+            <Route path="/signup" element={accountRouteElement} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/auth/reset-password" element={<ResetPassword />} />

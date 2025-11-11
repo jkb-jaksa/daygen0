@@ -1,7 +1,7 @@
 import { debugLog, debugWarn } from './debug';
 
 type AuthMetricType =
-  | 'guard_redirect'           // RequireAuth redirects to /account
+  | 'guard_redirect'           // RequireAuth redirects to /signup
   | 'next_decode_failure'      // decodeURIComponent fails
   | 'next_sanitized'           // safeNext changed the path
   | 'next_protocol_rejected'   // Protocol (://) detected

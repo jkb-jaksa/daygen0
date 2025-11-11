@@ -4,13 +4,12 @@ import { useLocation, useNavigate, NavLink, Link } from "react-router-dom";
 import { useLayoutEffect, useRef, useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "../auth/useAuth";
-import AuthModal from "./AuthModal";
 import DiscordIcon from "./DiscordIcon";
 import XIcon from "./XIcon";
 import InstagramIcon from "./InstagramIcon";
 import { buttons, glass, iconButtons, layout } from "../styles/designSystem";
 import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
-import { safeResolveNext } from "../utils/navigation";
+import { safeResolveNext, AUTH_ENTRY_PATH, setPendingAuthRedirect } from "../utils/navigation";
 import { useTheme } from "../hooks/useTheme";
 import { apiFetch } from "../utils/api";
 import type { User as AuthUser } from "../auth/context";
@@ -69,7 +68,6 @@ export default function Navbar() {
   const navRef = useRef<HTMLElement | null>(null);
   const [navH, setNavH] = useState(0);
   const { user, logOut, mockSignIn } = useAuth();
-  const [showAuth, setShowAuth] = useState<false | "login" | "signup">(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
@@ -100,6 +98,12 @@ export default function Navbar() {
       setIsDevLoginLoading(false);
     }
   }, []);
+
+  const openAuthEntry = useCallback(() => {
+    const nextPath = safeResolveNext(location);
+    setPendingAuthRedirect(nextPath);
+    navigate(AUTH_ENTRY_PATH);
+  }, [location, navigate]);
 
   const ThemeToggleButton = ({ showLabel = false, className = "" }: { showLabel?: boolean; className?: string }) => (
     <button
@@ -419,7 +423,7 @@ export default function Navbar() {
                     <span>{isDevLoginLoading ? 'Logging in...' : 'Dev Login'}</span>
                   </button>
                 )}
-                <button className="btn btn-white btn-compact font-raleway text-base font-medium parallax-large" onClick={()=>setShowAuth("login")}>
+                <button className="btn btn-white btn-compact font-raleway text-base font-medium parallax-large" onClick={openAuthEntry}>
                   Sign In
                 </button>
               </>
@@ -755,7 +759,7 @@ export default function Navbar() {
                     <button
                       onClick={() => {
                         setMobileNavOpen(false);
-                        setShowAuth('login');
+                        openAuthEntry();
                       }}
                       className="btn btn-white w-full justify-center font-raleway text-base font-medium gap-2 parallax-large"
                     >
@@ -793,8 +797,6 @@ export default function Navbar() {
         </div>
       )}
 
-      {/* Auth modals */}
-      <AuthModal open={!!showAuth} onClose={()=>setShowAuth(false)} defaultMode={showAuth || "login"} />
       {/* User dropdown - anchored to trigger via portal */}
       {menuOpen &&
         createPortal(

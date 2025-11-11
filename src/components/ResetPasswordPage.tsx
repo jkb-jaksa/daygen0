@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import ResetPasswordModal from "./ResetPasswordModal";
 import { layout, text } from "../styles/designSystem";
+import { AUTH_ENTRY_PATH } from "../utils/navigation";
 
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
@@ -22,7 +23,7 @@ export default function ResetPasswordPage() {
 
   const handleSuccess = () => {
     setShowModal(false);
-    navigate("/account", { replace: true });
+    navigate(AUTH_ENTRY_PATH, { replace: true });
   };
 
   const handleClose = () => {

@@ -11,9 +11,10 @@ interface AuthModalProps {
   onClose: () => void;
   defaultMode?: "login" | "signup";
   onModeChange?: (mode: "login" | "signup") => void;
+  onAuthenticated?: () => void;
 }
 
-export default function AuthModal({ open, onClose, defaultMode = "login", onModeChange }: AuthModalProps) {
+export default function AuthModal({ open, onClose, defaultMode = "login", onModeChange, onAuthenticated }: AuthModalProps) {
   const normalizedDefaultMode = defaultMode === "signup" ? "signup" : "login";
   const [mode, setMode] = useState<"login" | "signup">(normalizedDefaultMode);
   const [email, setEmail] = useState("");
@@ -59,6 +60,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
       } else {
         // For login, use password authentication
         await signIn(email, password);
+        onAuthenticated?.();
         onClose();
       }
     } catch (err) {
@@ -66,12 +68,13 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
     } finally {
       setIsSubmitting(false);
     }
-  }, [mode, email, password, signUp, signIn, onClose]);
+  }, [mode, email, password, signUp, signIn, onClose, onAuthenticated]);
 
   const handleGoogleSignInSuccess = useCallback(() => {
     setError(null);
+    onAuthenticated?.();
     onClose();
-  }, [onClose]);
+  }, [onAuthenticated, onClose]);
 
   const handleGoogleSignInError = useCallback((error: string) => {
     // Provide more helpful error messages for OAuth failures
@@ -127,13 +130,14 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
       }
 
       // Close the modal
+      onAuthenticated?.();
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Dev login failed");
     } finally {
       setIsSubmitting(false);
     }
-  }, [onClose]);
+  }, [onAuthenticated, onClose]);
 
   type SplitLayoutConfig = {
     title: string;
@@ -143,7 +147,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
   };
 
   const renderSplitLayout = ({ title, body, showModeSwitcher = false, onCloseClick }: SplitLayoutConfig) => (
-    <div className="fixed inset-0 z-[120] bg-theme-black-subtle text-theme-text" aria-modal="true" role="dialog">
+    <div className="fixed inset-0 z-[12050] bg-theme-black-subtle text-theme-text" aria-modal="true" role="dialog">
       <div className="relative flex h-[100dvh] flex-col lg:flex-row">
         <div
           className="relative flex min-h-[45vh] w-full items-center justify-center overflow-hidden bg-[#060806] lg:min-h-full lg:w-1/2"

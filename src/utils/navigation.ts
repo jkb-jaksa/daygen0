@@ -1,13 +1,18 @@
 import { authMetrics } from './authMetrics';
 import { debugLog } from './debug';
 
+export const ACCOUNT_ROUTE = "/account" as const;
+export const AUTH_ENTRY_PATH = "/signup" as const;
+const AUTH_RETURN_STORAGE_KEY = "daygen::auth:return";
+const isBrowserEnvironment = typeof window !== "undefined";
+
 const ALLOWED_DESTINATIONS = [
   "/create",
   "/edit", 
   "/gallery",
   "/learn",
   "/upgrade",
-  "/account",
+  ACCOUNT_ROUTE,
 ] as const;
 
 type AllowedDestination = (typeof ALLOWED_DESTINATIONS)[number];
@@ -18,7 +23,7 @@ const DESTINATION_LABELS: Record<AllowedDestination, string> = {
   "/gallery": "your gallery",
   "/learn": "the Learn hub",
   "/upgrade": "the Upgrade page",
-  "/account": "your account",
+  [ACCOUNT_ROUTE]: "your account",
 };
 
 const formatSegment = (segment: string) =>
@@ -169,6 +174,50 @@ export function safeResolveNext(
   
   const fullPath = location.pathname + location.search;
   return safeNext(fullPath);
+}
+
+function setAuthReturnStorage(value: string | null) {
+  if (!isBrowserEnvironment) {
+    return;
+  }
+
+  try {
+    if (value) {
+      window.sessionStorage.setItem(AUTH_RETURN_STORAGE_KEY, value);
+    } else {
+      window.sessionStorage.removeItem(AUTH_RETURN_STORAGE_KEY);
+    }
+  } catch {
+    // Ignore storage failures (e.g., Safari private mode)
+  }
+}
+
+function getAuthReturnStorage({ consume = false }: { consume?: boolean } = {}): string | null {
+  if (!isBrowserEnvironment) {
+    return null;
+  }
+
+  try {
+    const value = window.sessionStorage.getItem(AUTH_RETURN_STORAGE_KEY);
+    if (value && consume) {
+      window.sessionStorage.removeItem(AUTH_RETURN_STORAGE_KEY);
+    }
+    return value;
+  } catch {
+    return null;
+  }
+}
+
+export function setPendingAuthRedirect(path: string): void {
+  setAuthReturnStorage(path);
+}
+
+export function consumePendingAuthRedirect(): string | null {
+  return getAuthReturnStorage({ consume: true });
+}
+
+export function peekPendingAuthRedirect(): string | null {
+  return getAuthReturnStorage({ consume: false });
 }
 
 // Category to path mapping for navigation

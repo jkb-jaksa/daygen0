@@ -33,7 +33,7 @@ async function capture() {
   await page.goto(`${baseUrl}/create/image`, { waitUntil: 'domcontentloaded' });
   // If auth redirects, bail with message so caller can handle
   const url1 = new URL(page.url());
-  if (url1.pathname.startsWith('/account')) {
+  if (url1.pathname.startsWith('/signup')) {
     console.error('Auth required. Log in to the app and re-run.');
     await browser.close();
     process.exit(2);
@@ -59,5 +59,4 @@ capture().catch((err) => {
   console.error(err);
   process.exit(1);
 });
-
 
