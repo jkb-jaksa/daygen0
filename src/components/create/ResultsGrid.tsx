@@ -20,7 +20,6 @@ import { normalizeStoredProducts } from '../../utils/products';
 import { getPersistedValue } from '../../lib/clientStorage';
 
 // Lazy load components
-const GenerationProgress = lazy(() => import('./GenerationProgress'));
 const ModelBadge = lazy(() => import('../ModelBadge'));
 const AvatarBadge = lazy(() => import('../avatars/AvatarBadge'));
 const ProductBadge = lazy(() => import('../products/ProductBadge'));
@@ -921,11 +920,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           );
         })}
       </div>
-      
-      {/* Generation progress */}
-      <Suspense fallback={null}>
-        <GenerationProgress />
-      </Suspense>
     </div>
   );
 });
