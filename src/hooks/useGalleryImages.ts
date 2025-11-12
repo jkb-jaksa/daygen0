@@ -34,14 +34,15 @@ export interface GalleryImagesState {
 }
 
 const getImageKey = (image: GalleryImageLike): string | null => {
+  const normalizedUrl = image.url?.trim();
+  if (normalizedUrl) {
+    return normalizedUrl;
+  }
   if (image.r2FileId && image.r2FileId.trim().length > 0) {
-    return image.r2FileId;
+    return `r2:${image.r2FileId.trim()}`;
   }
   if (image.jobId && image.jobId.trim().length > 0) {
-    return image.jobId;
-  }
-  if (image.url && image.url.trim().length > 0) {
-    return image.url;
+    return `job:${image.jobId.trim()}`;
   }
   return null;
 };
@@ -72,8 +73,9 @@ export const useGalleryImages = () => {
   // Convert R2File response to GalleryImageLike format
   const convertR2FileToGalleryItem = useCallback(
     (r2File: R2FileResponse): GalleryImageLike | GalleryVideoLike => {
+      const normalizedUrl = r2File.fileUrl?.trim() ?? r2File.fileUrl;
       const base: GalleryImageLike = {
-        url: r2File.fileUrl,
+        url: normalizedUrl,
         prompt: r2File.prompt || '',
         model: r2File.model,
         timestamp: r2File.createdAt,
@@ -89,7 +91,7 @@ export const useGalleryImages = () => {
 
       const mimeType = r2File.mimeType?.toLowerCase() ?? '';
       const fileName = r2File.fileName?.toLowerCase() ?? '';
-      const fileUrl = r2File.fileUrl?.toLowerCase() ?? '';
+      const fileUrl = normalizedUrl?.toLowerCase() ?? '';
       const looksLikeVideo =
         mimeType.startsWith('video/') ||
         /\.(mp4|mov|webm|m4v|mkv)$/i.test(fileName) ||
@@ -253,6 +255,18 @@ export const useGalleryImages = () => {
         localImagesCount: localImages.length,
         base64Count: localImages.filter(img => isBase64Url(img.url)).length
       });
+
+      if (storagePrefix) {
+        try {
+          await setPersistedValue(
+            storagePrefix,
+            'gallery',
+            serializeGallery(dedupedImages),
+          );
+        } catch (error) {
+          debugError('Failed to persist gallery snapshot:', error);
+        }
+      }
       
       setState({
         images: dedupedImages,

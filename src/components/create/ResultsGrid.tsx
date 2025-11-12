@@ -26,7 +26,7 @@ const ProductBadge = lazy(() => import('../products/ProductBadge'));
 const StyleBadge = lazy(() => import('../styles/StyleBadge'));
 const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
 
-// Helper to get consistent item identifier (matches getGalleryItemKey logic)
+// Helper to get consistent item identifier for UI actions (jobId → r2FileId → url)
 const getItemIdentifier = (item: GalleryImageLike | GalleryVideoLike): string | null => {
   if (item.jobId && item.jobId.trim().length > 0) {
     return item.jobId.trim();

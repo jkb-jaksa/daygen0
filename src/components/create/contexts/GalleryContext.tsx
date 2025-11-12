@@ -118,16 +118,17 @@ const initialState: GalleryState = {
 const JOB_ROUTE_PREFIX = '/job/';
 
 const getGalleryItemKey = (item: GalleryImageLike | GalleryVideoLike): string | null => {
-  if (item.jobId && item.jobId.trim().length > 0) {
-    return item.jobId.trim();
+  const normalizedUrl = item.url?.trim();
+  if (normalizedUrl) {
+    return normalizedUrl;
   }
 
   if (item.r2FileId && item.r2FileId.trim().length > 0) {
-    return item.r2FileId.trim();
+    return `r2:${item.r2FileId.trim()}`;
   }
 
-  if (item.url && item.url.trim().length > 0) {
-    return item.url.trim();
+  if (item.jobId && item.jobId.trim().length > 0) {
+    return `job:${item.jobId.trim()}`;
   }
 
   return null;
