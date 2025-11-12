@@ -3,6 +3,7 @@ import { lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { Heart, Globe, MoreHorizontal, Check, Image as ImageIcon, Video as VideoIcon, Copy, BookmarkPlus, Bookmark, Square, Trash2, FileText } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
+import { useGeneration } from './contexts/GenerationContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
 import { glass } from '../../styles/designSystem';
 import { debugError } from '../../utils/debug';
@@ -94,7 +95,9 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     handleUseAsReference,
     handleReusePrompt,
     handleMakeVideo,
+    navigateToJobUrl,
   } = useGalleryActions();
+  const { state: generationState } = useGeneration();
   const { selectedItems, isBulkMode, imageActionMenu } = state;
   const [editMenu, setEditMenu] = useState<{ id: string; anchor: HTMLElement | null } | null>(null);
   const [storedAvatars, setStoredAvatars] = useState<StoredAvatar[]>([]);
@@ -115,7 +118,25 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     return contextFilteredItems;
   }, [activeCategory, contextFilteredItems]);
   
-  const showLoadingState = useMemo(() => isLoading && filteredItems.length === 0, [isLoading, filteredItems.length]);
+  const isGenerationCategory = activeCategory === 'image' || activeCategory === 'video';
+  const activeJobPlaceholders = useMemo(() => {
+    if (!isGenerationCategory || !generationState.activeJobs.length) {
+      return [];
+    }
+
+    const completedJobIds = new Set(
+      filteredItems
+        .map((item) => item.jobId)
+        .filter((jobId): jobId is string => typeof jobId === 'string' && jobId.trim().length > 0),
+    );
+
+    return generationState.activeJobs.filter((job) => !completedJobIds.has(job.id));
+  }, [filteredItems, generationState.activeJobs, isGenerationCategory]);
+
+  const showLoadingState = useMemo(
+    () => isLoading && filteredItems.length === 0 && activeJobPlaceholders.length === 0,
+    [activeJobPlaceholders.length, filteredItems.length, isLoading],
+  );
   
   // Saved prompts functionality
   const userKey = user?.id || user?.email || "anon";
@@ -384,9 +405,9 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   }
 
   // Empty state check
-  if (filteredItems.length === 0) {
+  if (filteredItems.length === 0 && activeJobPlaceholders.length === 0) {
     // Show placeholder grid ONLY for generation categories (image/video)
-    if (activeCategory === 'image' || activeCategory === 'video') {
+    if (isGenerationCategory) {
       const PlaceholderIcon = activeCategory === 'image' ? ImageIcon : VideoIcon;
       return renderPlaceholderGrid(PlaceholderIcon, {
         className,
@@ -415,12 +436,82 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const gridCols = isGalleryView 
     ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6'
     : 'grid-cols-2 sm:grid-cols-3 xl:grid-cols-4';
+
+  const renderJobStatus = (status: string): string => {
+    switch (status) {
+      case 'processing':
+        return 'Processing';
+      case 'completed':
+        return 'Completed';
+      case 'failed':
+        return 'Failed';
+      case 'queued':
+      default:
+        return 'Queued';
+    }
+  };
+
+  const renderActiveJobCard = (job: { id: string; model: string; prompt: string; status: string; progress?: number }) => {
+    const progressValue =
+      typeof job.progress === 'number'
+        ? Math.max(0, Math.min(100, Math.round(job.progress)))
+        : undefined;
+
+    const statusLabel = renderJobStatus(job.status);
+
+    return (
+      <div
+        key={`active-job-${job.id}`}
+        className="group flex flex-col overflow-hidden rounded-[24px] border border-theme-accent/30 bg-theme-black/80 transition-all duration-100 shadow-lg parallax-large cursor-pointer relative hover:border-theme-accent"
+        role="button"
+        tabIndex={0}
+        onClick={() => navigateToJobUrl(job.id)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            navigateToJobUrl(job.id);
+          }
+        }}
+      >
+        <div className="relative aspect-square flex flex-col items-center justify-center gap-3 bg-theme-dark">
+          <div className="flex items-center justify-center">
+            <span className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-theme-accent/30 bg-theme-accent/10">
+              <span className="h-6 w-6 rounded-full border-2 border-theme-accent/30 border-t-theme-accent animate-spin" />
+            </span>
+          </div>
+          <div className="flex flex-col items-center gap-1 px-4 text-center">
+            <span className="text-sm font-raleway font-medium text-theme-accent">
+              Generating with {job.model}
+            </span>
+            <span className="text-xs text-theme-white/70 line-clamp-2">
+              {job.prompt}
+            </span>
+          </div>
+        </div>
+        <div className="px-4 py-3 bg-theme-black/60">
+          <div className="flex items-center justify-between text-xs font-raleway text-theme-white/70">
+            <span>{statusLabel}</span>
+            {progressValue !== undefined && <span>{progressValue}%</span>}
+          </div>
+          {progressValue !== undefined && (
+            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-theme-mid/40">
+              <div
+                className="h-full bg-theme-accent transition-all duration-300"
+                style={{ width: `${Math.max(6, progressValue)}%` }}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
   
   return (
     <div className={`space-y-4 ${className}`}>
       {statusBanner}
       {/* Grid */}
       <div className={`grid ${gridCols} gap-1 w-full p-1`}>
+        {activeJobPlaceholders.map(renderActiveJobCard)}
         {filteredItems.map((item, index) => {
           const isSelected = isItemSelected(item);
           const itemId = getItemIdentifier(item);

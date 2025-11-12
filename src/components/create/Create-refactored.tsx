@@ -1,9 +1,8 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import PromptForm from './PromptForm';
 import ComingSoonCategory from './ComingSoonCategory';
-import ResultsGrid from './ResultsGrid';
-import FullImageModal from './FullImageModal';
-const GenerationProgress = lazy(() => import('./GenerationProgress'));
+const ResultsGrid = lazy(() => import('./ResultsGrid'));
+const FullImageModal = lazy(() => import('./FullImageModal'));
 const ImageActionMenu = lazy(() => import('./ImageActionMenu'));
 const BulkActionsMenu = lazy(() => import('./BulkActionsMenu'));
 const GallerySelectionBar = lazy(() => import('./GallerySelectionBar'));
@@ -554,12 +553,11 @@ function CreateRefactoredView() {
                       </button>
                     </div>
                   )}
-                  <ResultsGrid
-                    activeCategory={activeCategory as 'image' | 'video'}
-                    onFocusPrompt={focusPromptBar}
-                  />
                   <Suspense fallback={null}>
-                    <GenerationProgress />
+                    <ResultsGrid
+                      activeCategory={activeCategory}
+                      onFocusPrompt={focusPromptBar}
+                    />
                   </Suspense>
                 </>
               )}
