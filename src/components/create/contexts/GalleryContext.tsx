@@ -219,7 +219,7 @@ function galleryReducer(state: GalleryState, action: GalleryAction): GalleryStat
     case 'SET_VIDEOS':
       return { ...state, videos: action.payload };
     case 'ADD_IMAGE':
-      return { ...state, images: [...state.images, action.payload] };
+      return { ...state, images: [action.payload, ...state.images] };
     case 'ADD_VIDEO':
       return { ...state, videos: [...state.videos, action.payload] };
     case 'UPDATE_IMAGE':

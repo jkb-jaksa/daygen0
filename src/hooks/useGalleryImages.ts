@@ -384,12 +384,13 @@ export const useGalleryImages = () => {
           return image;
         });
 
-        // Apply upserts (existing logic remains the same)
+        // Apply upserts - prepend new images, update existing in place
         if (upserts.length > 0) {
+          const newImages: GalleryImageLike[] = [];
           for (const incoming of upserts) {
             const key = getImageKey(incoming);
             if (!key) {
-              nextImages.push(incoming);
+              newImages.push(incoming);
               continue;
             }
 
@@ -397,8 +398,20 @@ export const useGalleryImages = () => {
             if (existingIndex !== undefined) {
               nextImages[existingIndex] = mergeImageDetails(nextImages[existingIndex], incoming);
             } else {
-              existingByKey.set(key, nextImages.length);
-              nextImages.push(incoming);
+              // New image - prepend to beginning
+              newImages.push(incoming);
+              existingByKey.set(key, newImages.length - 1);
+            }
+          }
+          // Prepend all new images at the beginning
+          if (newImages.length > 0) {
+            nextImages.unshift(...newImages);
+            // Update indices for existing images after prepending
+            for (let i = newImages.length; i < nextImages.length; i++) {
+              const key = getImageKey(nextImages[i]);
+              if (key) {
+                existingByKey.set(key, i);
+              }
             }
           }
         }
