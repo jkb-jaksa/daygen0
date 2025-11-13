@@ -499,7 +499,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
     </div>
   );
 
-  const title = mode === "login" ? "Log into your account." : "Create your account";
+  const title = mode === "login" ? "Log into your account." : "Create your account.";
 
   return renderSplitLayout({
     title,
