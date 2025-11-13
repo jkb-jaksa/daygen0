@@ -3,6 +3,7 @@ import { useAuth } from '../../../auth/useAuth';
 import { createProductRecord, normalizeStoredProducts } from '../../../utils/products';
 import { getPersistedValue, setPersistedValue } from '../../../lib/clientStorage';
 import { debugLog, debugError } from '../../../utils/debug';
+import { dispatchStorageChange } from '../../../utils/storageEvents';
 import type { StoredProduct, ProductSelection } from '../../products/types';
 
 export function useProductHandlers() {
@@ -42,7 +43,7 @@ export function useProductHandlers() {
     if (!storagePrefix) return;
     
     try {
-      const stored = await getPersistedValue<StoredProduct[]>(`${storagePrefix}:products`, []);
+      const stored = await getPersistedValue<StoredProduct[]>(storagePrefix, 'products') ?? [];
       const normalized = normalizeStoredProducts(stored);
       setStoredProducts(normalized);
       debugLog('[useProductHandlers] Loaded stored products:', normalized.length);
@@ -57,8 +58,9 @@ export function useProductHandlers() {
     
     try {
       const updated = [...storedProducts, product];
-      await setPersistedValue(`${storagePrefix}:products`, updated);
+      await setPersistedValue(storagePrefix, 'products', updated);
       setStoredProducts(updated);
+      dispatchStorageChange('products');
       debugLog('[useProductHandlers] Saved product:', product.name);
     } catch (error) {
       debugError('[useProductHandlers] Error saving product:', error);
@@ -71,8 +73,9 @@ export function useProductHandlers() {
     
     try {
       const updated = storedProducts.filter(product => product.id !== productId);
-      await setPersistedValue(`${storagePrefix}:products`, updated);
+      await setPersistedValue(storagePrefix, 'products', updated);
       setStoredProducts(updated);
+      dispatchStorageChange('products');
       
       // Clear selection if deleted product was selected
       if (selectedProduct?.id === productId) {

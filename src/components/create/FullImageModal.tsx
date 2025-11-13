@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -14,10 +14,18 @@ import { useAuth } from '../../auth/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { loadSavedPrompts } from '../../lib/savedPrompts';
 import CreateSidebar from './CreateSidebar';
+import type { StoredAvatar } from '../avatars/types';
+import type { StoredProduct } from '../products/types';
+import { normalizeStoredAvatars } from '../../utils/avatars';
+import { normalizeStoredProducts } from '../../utils/products';
+import { getPersistedValue } from '../../lib/clientStorage';
+import { STORAGE_CHANGE_EVENT } from '../../utils/storageEvents';
 
 // Lazy load VerticalGalleryNav
 const VerticalGalleryNav = lazy(() => import('../shared/VerticalGalleryNav'));
 const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
+const AvatarBadge = lazy(() => import('../avatars/AvatarBadge'));
+const ProductBadge = lazy(() => import('../products/ProductBadge'));
 
 // Helper function to get initials from name
 const getInitials = (name: string) =>
@@ -53,9 +61,11 @@ const FullImageModal = memo(() => {
   const [editMenu, setEditMenu] = useState<{ id: string; anchor: HTMLElement | null } | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
+  const [storedAvatars, setStoredAvatars] = useState<StoredAvatar[]>([]);
+  const [storedProducts, setStoredProducts] = useState<StoredProduct[]>([]);
   
   // Save prompt functionality
-  const { user } = useAuth();
+  const { user, storagePrefix } = useAuth();
   const { savePrompt, isPromptSaved, removePrompt } = useSavedPrompts(user?.id || 'guest');
   const { showToast } = useToast();
   
@@ -80,6 +90,23 @@ const FullImageModal = memo(() => {
   }, [location.pathname]);
   
   const activeCategory = getActiveCategory();
+  
+  // Create maps for quick lookup
+  const avatarMap = useMemo(() => {
+    const map = new Map<string, StoredAvatar>();
+    for (const avatar of storedAvatars) {
+      map.set(avatar.id, avatar);
+    }
+    return map;
+  }, [storedAvatars]);
+  
+  const productMap = useMemo(() => {
+    const map = new Map<string, StoredProduct>();
+    for (const product of storedProducts) {
+      map.set(product.id, product);
+    }
+    return map;
+  }, [storedProducts]);
   
   // Handle category selection
   const handleSelectCategory = useCallback((category: string) => {
@@ -186,6 +213,61 @@ const FullImageModal = memo(() => {
     syncJobUrlForImage(fullSizeImage);
   }, [open, fullSizeImage, syncJobUrlForImage]);
   
+  // Load avatars and products from storage
+  useEffect(() => {
+    if (!storagePrefix) return;
+    
+    const loadData = async () => {
+      try {
+        const avatars = await getPersistedValue<StoredAvatar[]>(storagePrefix, 'avatars');
+        if (avatars) {
+          setStoredAvatars(normalizeStoredAvatars(avatars, { ownerId: user?.id }));
+        }
+        
+        const products = await getPersistedValue<StoredProduct[]>(storagePrefix, 'products');
+        if (products) {
+          setStoredProducts(normalizeStoredProducts(products, { ownerId: user?.id }));
+        }
+      } catch (err) {
+        debugError('[FullImageModal] Failed to load avatars/products:', err);
+      }
+    };
+    
+    void loadData();
+  }, [storagePrefix, user?.id]);
+  
+  // Listen for storage changes and reload data
+  useEffect(() => {
+    if (!storagePrefix) return;
+    
+    const loadData = async () => {
+      try {
+        const avatars = await getPersistedValue<StoredAvatar[]>(storagePrefix, 'avatars');
+        if (avatars) {
+          setStoredAvatars(normalizeStoredAvatars(avatars, { ownerId: user?.id }));
+        }
+        
+        const products = await getPersistedValue<StoredProduct[]>(storagePrefix, 'products');
+        if (products) {
+          setStoredProducts(normalizeStoredProducts(products, { ownerId: user?.id }));
+        }
+      } catch (err) {
+        debugError('[FullImageModal] Failed to load avatars/products:', err);
+      }
+    };
+    
+    const handleStorageChange = (event: Event) => {
+      const customEvent = event as CustomEvent<{ key: 'avatars' | 'products' }>;
+      if (customEvent.detail.key === 'avatars' || customEvent.detail.key === 'products') {
+        void loadData();
+      }
+    };
+    
+    window.addEventListener(STORAGE_CHANGE_EVENT, handleStorageChange);
+    return () => {
+      window.removeEventListener(STORAGE_CHANGE_EVENT, handleStorageChange);
+    };
+  }, [storagePrefix, user?.id]);
 
   // Handle toggle like
   const handleToggleLikeClick = useCallback(async (e: React.MouseEvent) => {
@@ -684,7 +766,7 @@ const FullImageModal = memo(() => {
                     })()}
                   </div>
                   <div className="mt-2 flex justify-center items-center gap-1 md:gap-2">
-                    <div className="flex items-center gap-1 md:gap-2">
+                    <div className="flex items-center gap-1 md:gap-2 flex-wrap">
                       <Suspense fallback={null}>
                         <ModelBadge 
                           model={fullSizeImage.model || 'unknown'} 
@@ -695,6 +777,30 @@ const FullImageModal = memo(() => {
                         aspectRatio={fullSizeImage.aspectRatio} 
                         size="md" 
                       />
+                      {fullSizeImage.avatarId && (() => {
+                        const avatarForImage = avatarMap.get(fullSizeImage.avatarId);
+                        if (!avatarForImage) return null;
+                        return (
+                          <Suspense fallback={null}>
+                            <AvatarBadge
+                              avatar={avatarForImage}
+                              onClick={() => navigate(`/create/avatars/${avatarForImage.slug}`)}
+                            />
+                          </Suspense>
+                        );
+                      })()}
+                      {fullSizeImage.productId && (() => {
+                        const productForImage = productMap.get(fullSizeImage.productId);
+                        if (!productForImage) return null;
+                        return (
+                          <Suspense fallback={null}>
+                            <ProductBadge
+                              product={productForImage}
+                              onClick={() => navigate(`/create/products/${productForImage.slug}`)}
+                            />
+                          </Suspense>
+                        );
+                      })()}
                     </div>
                     {fullSizeImage.isPublic && !fullSizeImage.savedFrom && (
                       <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>

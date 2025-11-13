@@ -19,6 +19,7 @@ import type { StoredStyle } from '../styles/types';
 import { normalizeStoredAvatars } from '../../utils/avatars';
 import { normalizeStoredProducts } from '../../utils/products';
 import { getPersistedValue } from '../../lib/clientStorage';
+import { STORAGE_CHANGE_EVENT } from '../../utils/storageEvents';
 
 // Lazy load components
 const ModelBadge = lazy(() => import('../ModelBadge'));
@@ -180,6 +181,39 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     };
     
     void loadData();
+  }, [storagePrefix, user?.id]);
+  
+  // Listen for storage changes and reload data
+  useEffect(() => {
+    if (!storagePrefix) return;
+    
+    const loadData = async () => {
+      try {
+        const avatars = await getPersistedValue<StoredAvatar[]>(storagePrefix, 'avatars');
+        if (avatars) {
+          setStoredAvatars(normalizeStoredAvatars(avatars, { ownerId: user?.id }));
+        }
+        
+        const products = await getPersistedValue<StoredProduct[]>(storagePrefix, 'products');
+        if (products) {
+          setStoredProducts(normalizeStoredProducts(products, { ownerId: user?.id }));
+        }
+      } catch (err) {
+        debugError('[ResultsGrid] Failed to load avatars/products:', err);
+      }
+    };
+    
+    const handleStorageChange = (event: Event) => {
+      const customEvent = event as CustomEvent<{ key: 'avatars' | 'products' }>;
+      if (customEvent.detail.key === 'avatars' || customEvent.detail.key === 'products') {
+        void loadData();
+      }
+    };
+    
+    window.addEventListener(STORAGE_CHANGE_EVENT, handleStorageChange);
+    return () => {
+      window.removeEventListener(STORAGE_CHANGE_EVENT, handleStorageChange);
+    };
   }, [storagePrefix, user?.id]);
   // Handler for copying prompt to clipboard
   const handleCopyPrompt = useCallback(async (prompt: string, event: React.MouseEvent) => {
@@ -797,7 +831,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                     
                     {/* Model Badge and other badges */}
                     <div className="flex justify-between items-center mt-2">
-                      <div className="flex items-center gap-1 md:gap-2 flex-wrap">
+                      <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
                         <Suspense fallback={null}>
                           <ModelBadge model={item.model ?? 'unknown'} size="md" />
                         </Suspense>
