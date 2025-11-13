@@ -1,11 +1,11 @@
-import React, { memo, useCallback, useMemo, useState, useEffect } from 'react';
+import React, { memo, useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { Heart, Globe, MoreHorizontal, Check, Image as ImageIcon, Video as VideoIcon, Copy, BookmarkPlus, Bookmark, Square, Trash2, FileText } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
-import { glass } from '../../styles/designSystem';
+import { glass, buttons } from '../../styles/designSystem';
 import { debugError } from '../../utils/debug';
 import { createCardImageStyle } from '../../utils/cardImageStyle';
 import { useSavedPrompts } from '../../hooks/useSavedPrompts';
@@ -104,6 +104,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const [storedAvatars, setStoredAvatars] = useState<StoredAvatar[]>([]);
   const [storedProducts, setStoredProducts] = useState<StoredProduct[]>([]);
   const [hoveredPromptButton, setHoveredPromptButton] = useState<string | null>(null);
+  const [savePromptModalState, setSavePromptModalState] = useState<{ prompt: string; originalPrompt: string } | null>(null);
+  const savePromptModalRef = useRef<HTMLDivElement>(null);
   
   // Apply category-specific filtering
   const filteredItems = useMemo(() => {
@@ -243,14 +245,57 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           showToast('Prompt unsaved');
         }
       } else {
-        savePrompt(prompt);
-        showToast('Prompt saved!');
+        // Open the Save Prompt modal instead of directly saving
+        setSavePromptModalState({ prompt: prompt.trim(), originalPrompt: prompt.trim() });
       }
     } catch (err) {
       debugError('Failed to save prompt:', err);
       showToast('Failed to save prompt');
     }
-  }, [savePrompt, isPromptSaved, showToast, userKey, removePrompt]);
+  }, [isPromptSaved, showToast, userKey, removePrompt]);
+  
+  // Save Prompt modal handlers
+  const handleSavePromptModalClose = useCallback(() => {
+    setSavePromptModalState(null);
+  }, []);
+  
+  const handleSavePromptModalSave = useCallback(() => {
+    if (!savePromptModalState || !savePromptModalState.prompt.trim()) return;
+    
+    try {
+      savePrompt(savePromptModalState.prompt.trim());
+      showToast('Prompt saved!');
+      setSavePromptModalState(null);
+    } catch (err) {
+      debugError('Failed to save prompt:', err);
+      showToast('Failed to save prompt');
+    }
+  }, [savePromptModalState, savePrompt, showToast]);
+  
+  // Handle modal click outside and escape key
+  useEffect(() => {
+    if (!savePromptModalState) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (savePromptModalRef.current && !savePromptModalRef.current.contains(e.target as Node)) {
+        setSavePromptModalState(null);
+      }
+    };
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSavePromptModalState(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [savePromptModalState]);
   
   // Tooltip helper functions (viewport-based positioning for portaled tooltips)
   const showHoverTooltip = useCallback((target: HTMLElement, tooltipId: string) => {
@@ -541,10 +586,55 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   };
   
   return (
-    <div className={`space-y-4 ${className}`}>
-      {statusBanner}
-      {/* Grid */}
-      <div className={`grid ${gridCols} gap-1 w-full p-1`}>
+    <>
+      {/* Save Prompt Modal */}
+      {savePromptModalState && createPortal(
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-n-black/80 py-12">
+          <div ref={savePromptModalRef} className={`${glass.promptDark} rounded-[20px] w-full max-w-lg mx-4 py-8 px-6 transition-colors duration-200`}>
+            <div className="space-y-6">
+              <div className="space-y-3 text-center">
+                <BookmarkPlus className="w-10 h-10 mx-auto text-n-text" />
+                <h3 className="text-xl font-raleway font-normal text-n-text">
+                  Save Prompt
+                </h3>
+                <p className="text-base font-raleway text-n-white">
+                  Edit your prompt before saving it for future creations.
+                </p>
+              </div>
+
+              <textarea
+                value={savePromptModalState.prompt}
+                onChange={(e) => setSavePromptModalState(prev => prev ? { ...prev, prompt: e.target.value } : null)}
+                className="w-full min-h-[120px] bg-n-black/40 text-n-text placeholder-d-white border border-n-mid rounded-xl px-4 py-3 focus:outline-none focus:border-n-text transition-colors duration-200 font-raleway text-base resize-none"
+                placeholder="Enter your prompt..."
+                autoFocus
+              />
+
+              <div className="flex justify-center gap-3">
+                <button
+                  onClick={handleSavePromptModalClose}
+                  className={`${buttons.ghost}`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSavePromptModalSave}
+                  disabled={!savePromptModalState.prompt.trim()}
+                  className={`${buttons.primary} disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+      
+      <div className={`space-y-4 ${className}`}>
+        {statusBanner}
+        {/* Grid */}
+        <div className={`grid ${gridCols} gap-1 w-full p-1`}>
         {activeJobPlaceholders.map(renderActiveJobCard)}
         {filteredItems.map((item, index) => {
           const isSelected = isItemSelected(item);
@@ -1117,6 +1207,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
         })}
       </div>
     </div>
+    </>
   );
 });
 

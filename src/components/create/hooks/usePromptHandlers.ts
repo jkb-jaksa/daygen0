@@ -1,7 +1,9 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { usePromptHistory } from '../../../hooks/usePromptHistory';
 import { useSavedPrompts } from '../../../hooks/useSavedPrompts';
 import { useAuth } from '../../../auth/useAuth';
+import { STORAGE_CHANGE_EVENT } from '../../../utils/storageEvents';
+import { loadSavedPrompts } from '../../../lib/savedPrompts';
 
 type StyleOption = {
   id: string;
@@ -28,6 +30,51 @@ export function usePromptHandlers(
   // Prompt history and saved prompts
   const { history, addPrompt, removePrompt: removeRecentPrompt } = usePromptHistory(userKey, 10);
   const { savedPrompts, savePrompt, removePrompt, updatePrompt, isPromptSaved } = useSavedPrompts(userKey);
+  
+  // Track saved prompts refresh timestamp for forcing dropdown updates
+  const [savedPromptsRefreshKey, setSavedPromptsRefreshKey] = useState(0);
+  const savedPromptsRef = useRef(savedPrompts);
+  
+  // Keep ref in sync
+  useEffect(() => {
+    savedPromptsRef.current = savedPrompts;
+  }, [savedPrompts]);
+  
+  // Listen for saved prompts changes to update refresh key
+  useEffect(() => {
+    setSavedPromptsRefreshKey(prev => prev + 1);
+  }, [savedPrompts.length, savedPrompts[0]?.id]);
+  
+  // Also listen directly to storage change events to ensure we catch all updates
+  useEffect(() => {
+    const handleStorageChange = (event: Event) => {
+      const customEvent = event as CustomEvent<{ key: 'avatars' | 'products' | 'savedPrompts' }>;
+      if (customEvent.detail?.key === 'savedPrompts') {
+        // Force refresh by incrementing the key and reloading from localStorage
+        const freshPrompts = loadSavedPrompts(userKey);
+        // Only update if the data actually changed
+        if (JSON.stringify(freshPrompts) !== JSON.stringify(savedPromptsRef.current)) {
+          setSavedPromptsRefreshKey(prev => prev + 1);
+        }
+      }
+    };
+    
+    window.addEventListener(STORAGE_CHANGE_EVENT, handleStorageChange);
+    return () => {
+      window.removeEventListener(STORAGE_CHANGE_EVENT, handleStorageChange);
+    };
+  }, [userKey]);
+  
+  // Force refresh saved prompts when dropdown opens to ensure latest data
+  useEffect(() => {
+    if (isPromptsDropdownOpen) {
+      // Reload from localStorage when dropdown opens
+      const freshPrompts = loadSavedPrompts(userKey);
+      if (JSON.stringify(freshPrompts) !== JSON.stringify(savedPromptsRef.current)) {
+        setSavedPromptsRefreshKey(prev => prev + 1);
+      }
+    }
+  }, [isPromptsDropdownOpen, userKey]);
   
   // Copy notification state
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
@@ -132,9 +179,15 @@ export function usePromptHandlers(
   }, [history]);
   
   // Get saved prompts (limited to 10 for dropdown)
+  // Include refreshKey in dependencies to force recalculation when prompts are saved elsewhere
   const savedPromptsList = useMemo(() => {
+    // When refresh key changes, reload from localStorage to ensure we have latest data
+    if (savedPromptsRefreshKey > 0) {
+      const freshPrompts = loadSavedPrompts(userKey);
+      return freshPrompts.slice(0, 10);
+    }
     return savedPrompts.slice(0, 10);
-  }, [savedPrompts]);
+  }, [savedPrompts, savedPromptsRefreshKey, userKey]);
   
   return {
     // State
@@ -144,6 +197,7 @@ export function usePromptHandlers(
     copyNotification,
     recentPrompts,
     savedPromptsList,
+    savedPromptsRefreshKey,
     isCurrentPromptSaved,
     
     // Handlers

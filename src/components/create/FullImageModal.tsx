@@ -5,7 +5,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { X, Download, Heart, ChevronLeft, ChevronRight, Copy, Globe, Lock, FolderPlus, Trash2, Edit as EditIcon, User, RefreshCw, Camera, Bookmark, BookmarkPlus, MoreHorizontal } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
-import { glass } from '../../styles/designSystem';
+import { glass, buttons } from '../../styles/designSystem';
 import ModelBadge from '../ModelBadge';
 import AspectRatioBadge from '../shared/AspectRatioBadge';
 import { debugError } from '../../utils/debug';
@@ -66,8 +66,11 @@ const FullImageModal = memo(() => {
   
   // Save prompt functionality
   const { user, storagePrefix } = useAuth();
-  const { savePrompt, isPromptSaved, removePrompt } = useSavedPrompts(user?.id || 'guest');
+  const userKey = user?.id || user?.email || "anon";
+  const { savePrompt, isPromptSaved, removePrompt } = useSavedPrompts(userKey);
   const { showToast } = useToast();
+  const [savePromptModalState, setSavePromptModalState] = useState<{ prompt: string; originalPrompt: string } | null>(null);
+  const savePromptModalRef = useRef<HTMLDivElement>(null);
   
   const { fullSizeImage, fullSizeIndex, isFullSizeOpen } = state;
   const open = isFullSizeOpen;
@@ -432,22 +435,69 @@ const FullImageModal = memo(() => {
         const wasSaved = isPromptSaved(fullSizeImage.prompt);
         if (wasSaved) {
           // Find the saved prompt and remove it
-          const savedPrompts = loadSavedPrompts(user?.id || 'guest');
+          const savedPrompts = loadSavedPrompts(userKey);
           const existing = savedPrompts.find(p => p.text.toLowerCase() === fullSizeImage.prompt.trim().toLowerCase());
           if (existing) {
             removePrompt(existing.id);
             showToast('Prompt unsaved');
           }
         } else {
-          savePrompt(fullSizeImage.prompt);
-          showToast('Prompt saved!');
+          // Open the Save Prompt modal instead of directly saving
+          setSavePromptModalState({ prompt: fullSizeImage.prompt.trim(), originalPrompt: fullSizeImage.prompt.trim() });
         }
       } catch (error) {
         debugError('Failed to save prompt:', error);
         showToast('Failed to save prompt');
       }
     }
-  }, [fullSizeImage, savePrompt, isPromptSaved, showToast, user?.id, removePrompt]);
+  }, [fullSizeImage, isPromptSaved, removePrompt, showToast, userKey]);
+  
+  // Save Prompt modal handlers
+  const handleSavePromptModalClose = useCallback(() => {
+    setSavePromptModalState(null);
+  }, []);
+  
+  const handleSavePromptModalSave = useCallback(() => {
+    if (!savePromptModalState || !savePromptModalState.prompt.trim()) return;
+    
+    try {
+      savePrompt(savePromptModalState.prompt.trim());
+      showToast('Prompt saved!');
+      setSavePromptModalState(null);
+    } catch (err) {
+      debugError('Failed to save prompt:', err);
+      showToast('Failed to save prompt');
+    }
+  }, [savePromptModalState, savePrompt, showToast]);
+  
+  // Handle modal click outside and escape key
+  useEffect(() => {
+    if (!savePromptModalState) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      // Only close if clicking outside the modal, and stop propagation to prevent closing full-size modal
+      if (savePromptModalRef.current && !savePromptModalRef.current.contains(e.target as Node)) {
+        e.stopPropagation();
+        setSavePromptModalState(null);
+      }
+    };
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setSavePromptModalState(null);
+      }
+    };
+
+    // Use capture phase to catch events before they reach the full-size modal
+    document.addEventListener('mousedown', handleClickOutside, true);
+    document.addEventListener('keydown', handleEscape, true);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside, true);
+      document.removeEventListener('keydown', handleEscape, true);
+    };
+  }, [savePromptModalState]);
 
   // Tooltip helper functions (viewport-based positioning for portaled tooltips)
   const showHoverTooltip = useCallback((target: HTMLElement, tooltipId: string) => {
@@ -483,6 +533,63 @@ const FullImageModal = memo(() => {
   
   return (
     <>
+      {/* Save Prompt Modal */}
+      {savePromptModalState && createPortal(
+        <div 
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-n-black/80 py-12"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div 
+            ref={savePromptModalRef} 
+            className={`${glass.promptDark} rounded-[20px] w-full max-w-lg mx-4 py-8 px-6 transition-colors duration-200`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="space-y-6">
+              <div className="space-y-3 text-center">
+                <BookmarkPlus className="w-10 h-10 mx-auto text-n-text" />
+                <h3 className="text-xl font-raleway font-normal text-n-text">
+                  Save Prompt
+                </h3>
+                <p className="text-base font-raleway text-n-white">
+                  Edit your prompt before saving it for future creations.
+                </p>
+              </div>
+
+              <textarea
+                value={savePromptModalState.prompt}
+                onChange={(e) => setSavePromptModalState(prev => prev ? { ...prev, prompt: e.target.value } : null)}
+                className="w-full min-h-[120px] bg-n-black/40 text-n-text placeholder-d-white border border-n-mid rounded-xl px-4 py-3 focus:outline-none focus:border-n-text transition-colors duration-200 font-raleway text-base resize-none"
+                placeholder="Enter your prompt..."
+                autoFocus
+              />
+
+              <div className="flex justify-center gap-3">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSavePromptModalClose();
+                  }}
+                  className={`${buttons.ghost}`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSavePromptModalSave();
+                  }}
+                  disabled={!savePromptModalState.prompt.trim()}
+                  className={`${buttons.primary} disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+      
       {/* Left Navigation Sidebar */}
       {open && fullSizeImage && (
         <CreateSidebar
