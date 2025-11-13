@@ -172,54 +172,60 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
             </p>
           </div>
         </div>
-        <div className="flex w-full items-start justify-center px-8 pt-6 pb-10 sm:px-14 lg:w-1/2 lg:px-20 lg:border-l lg:border-theme-dark overflow-y-auto">
-          <div className="w-full max-w-md space-y-3 sm:space-y-4">
+        <div className="flex flex-col w-full px-8 pt-6 pb-10 sm:px-14 lg:w-1/2 lg:px-20 lg:border-l lg:border-theme-dark overflow-y-auto">
+          <div className="w-full max-w-md mx-auto">
             <h3 className={text.logoText}>{title}</h3>
-            {showEmailForm && !showForgotPassword && (
-              <button
-                type="button"
-                onClick={() => setShowEmailForm(false)}
-                className="text-sm font-raleway text-theme-light hover:text-theme-text transition-colors text-center"
-              >
-                ← Go back
-              </button>
-            )}
-            {showForgotPassword && (
-              <button
-                type="button"
-                onClick={() => {
-                  setShowForgotPassword(false);
-                  setShowEmailForm(true);
-                }}
-                className="text-sm font-raleway text-theme-light hover:text-theme-text transition-colors text-center"
-              >
-                ← Go back
-              </button>
-            )}
-            {showModeSwitcher && (
-              <div className="grid grid-cols-2 gap-3">
+          </div>
+          <div className="flex-1 flex items-center justify-center w-full">
+            <div className="w-full max-w-md space-y-3 sm:space-y-4">
+              {showEmailForm && !showForgotPassword && (
                 <button
                   type="button"
-                  onClick={() => handleModeChange("login")}
-                  className={`btn btn-ghost w-full justify-center font-raleway text-base font-medium parallax-large ${
-                    mode === "login" ? "border-theme-mid text-theme-text bg-theme-white/5" : "text-theme-light"
-                  }`}
+                  onClick={() => setShowEmailForm(false)}
+                  className="text-sm font-raleway text-theme-light hover:text-theme-text transition-colors text-center"
                 >
-                  Sign In
+                  ← Go back
                 </button>
+              )}
+              {showForgotPassword && (
                 <button
                   type="button"
-                  onClick={() => handleModeChange("signup")}
-                  className={`btn btn-ghost w-full justify-center font-raleway text-base font-medium parallax-large ${
-                    mode === "signup" ? "border-theme-mid text-theme-text bg-theme-white/5" : "text-theme-light"
-                  }`}
+                  onClick={() => {
+                    setShowForgotPassword(false);
+                    setShowEmailForm(true);
+                  }}
+                  className="text-sm font-raleway text-theme-light hover:text-theme-text transition-colors text-center"
                 >
-                  Sign Up
+                  ← Go back
                 </button>
-              </div>
-            )}
-            {body}
-            <p className="text-xs text-theme-light text-center font-raleway mt-4">
+              )}
+              {showModeSwitcher && (
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleModeChange("login")}
+                    className={`btn btn-ghost w-full justify-center font-raleway text-base font-medium parallax-large ${
+                      mode === "login" ? "border-theme-mid text-theme-text bg-theme-white/5" : "text-theme-light"
+                    }`}
+                  >
+                    Log In
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleModeChange("signup")}
+                    className={`btn btn-ghost w-full justify-center font-raleway text-base font-medium parallax-large ${
+                      mode === "signup" ? "border-theme-mid text-theme-text bg-theme-white/5" : "text-theme-light"
+                    }`}
+                  >
+                    Sign Up
+                  </button>
+                </div>
+              )}
+              {body}
+            </div>
+          </div>
+          <div className="w-full max-w-md mx-auto pb-4">
+            <p className="text-xs text-theme-light text-center font-raleway">
               By continuing, you agree to DayGen{' '}
               <a 
                 href="/terms-of-service" 
@@ -374,6 +380,32 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
               <span>Quick Login (Dev)</span>
             </button>
           )}
+          {mode === "login" && (
+            <p className="text-base text-theme-light text-center font-raleway">
+              Don't have an account?{' '}
+              <button
+                type="button"
+                onClick={() => handleModeChange("signup")}
+                className="text-theme-white hover:text-theme-text transition-colors underline"
+              >
+                Sign up
+              </button>
+              .
+            </p>
+          )}
+          {mode === "signup" && (
+            <p className="text-base text-theme-light text-center font-raleway">
+              Already have an account?{' '}
+              <button
+                type="button"
+                onClick={() => handleModeChange("login")}
+                className="text-theme-white hover:text-theme-text transition-colors underline"
+              >
+                Log in
+              </button>
+              .
+            </p>
+          )}
           {socialError && (
             <div className="rounded-xl border border-red-400/30 bg-red-400/5 p-4 text-xs font-raleway text-red-200">
               <p className="mb-1 font-medium text-red-100">Google Sign-In Error</p>
@@ -436,12 +468,38 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
           {isSubmitting ? "Please wait…" : mode === "login" ? "Sign In" : "Create Account"}
         </button>
           </form>
+          {mode === "login" && (
+            <p className="text-base text-theme-light text-center font-raleway">
+              Don't have an account?{' '}
+              <button
+                type="button"
+                onClick={() => handleModeChange("signup")}
+                className="text-theme-white hover:text-theme-text transition-colors underline"
+              >
+                Sign up
+              </button>
+              .
+            </p>
+          )}
+          {mode === "signup" && (
+            <p className="text-base text-theme-light text-center font-raleway">
+              Already have an account?{' '}
+              <button
+                type="button"
+                onClick={() => handleModeChange("login")}
+                className="text-theme-white hover:text-theme-text transition-colors underline"
+              >
+                Log in
+              </button>
+              .
+            </p>
+          )}
         </div>
       )}
     </div>
   );
 
-  const title = mode === "login" ? "Sign in" : "Create your account";
+  const title = mode === "login" ? "Log into your account." : "Create your account";
 
   return renderSplitLayout({
     title,
