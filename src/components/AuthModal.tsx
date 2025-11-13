@@ -176,29 +176,33 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
           <div className="w-full max-w-md mx-auto">
             <h3 className={text.logoText}>{title}</h3>
           </div>
+          {(showEmailForm && !showForgotPassword) && (
+            <div className="w-full max-w-md mx-auto mt-4">
+              <button
+                type="button"
+                onClick={() => setShowEmailForm(false)}
+                className="text-sm font-raleway text-theme-light hover:text-theme-text transition-colors"
+              >
+                ← Go back
+              </button>
+            </div>
+          )}
+          {showForgotPassword && (
+            <div className="w-full max-w-md mx-auto mt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForgotPassword(false);
+                  setShowEmailForm(true);
+                }}
+                className="text-sm font-raleway text-theme-light hover:text-theme-text transition-colors"
+              >
+                ← Go back
+              </button>
+            </div>
+          )}
           <div className="flex-1 flex items-center justify-center w-full">
             <div className="w-full max-w-md space-y-3 sm:space-y-4">
-              {showEmailForm && !showForgotPassword && (
-                <button
-                  type="button"
-                  onClick={() => setShowEmailForm(false)}
-                  className="text-sm font-raleway text-theme-light hover:text-theme-text transition-colors text-center"
-                >
-                  ← Go back
-                </button>
-              )}
-              {showForgotPassword && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowForgotPassword(false);
-                    setShowEmailForm(true);
-                  }}
-                  className="text-sm font-raleway text-theme-light hover:text-theme-text transition-colors text-center"
-                >
-                  ← Go back
-                </button>
-              )}
               {showModeSwitcher && (
                 <div className="grid grid-cols-2 gap-3">
                   <button
@@ -347,7 +351,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
   const mainBody = (
     <div className="space-y-3">
       {!showEmailForm ? (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <button
             type="button"
             onClick={() => setShowEmailForm(true)}
@@ -420,7 +424,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
           )}
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <form onSubmit={handleSubmit} className="space-y-3">
         <div className="space-y-2">
           <input
