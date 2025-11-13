@@ -783,6 +783,21 @@ html[data-theme="day"] .footer-gradient-bg {
   opacity: 1;
 }
 
+/* Auth modal mode toggles should keep their active styling even when unfocused */
+.auth-mode-toggle {
+  color: rgb(var(--theme-light-rgb));
+}
+
+.auth-mode-toggle[data-active="true"] {
+  color: rgb(var(--theme-text-rgb));
+  border-color: rgb(var(--theme-mid-rgb));
+  background-color: rgb(var(--theme-white-rgb) / 0.05);
+}
+
+.auth-mode-toggle[data-active="true"]::before {
+  opacity: 1;
+}
+
 /* Slim ghost button variant - reduced horizontal padding */
 .btn-ghost-slim {
   height: 36px;

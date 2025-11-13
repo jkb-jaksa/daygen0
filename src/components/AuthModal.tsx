@@ -207,19 +207,19 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
+                    aria-pressed={mode === "login"}
+                    data-active={mode === "login"}
                     onClick={() => handleModeChange("login")}
-                    className={`btn btn-ghost w-full justify-center font-raleway text-base font-medium parallax-large ${
-                      mode === "login" ? "border-theme-mid text-theme-text bg-theme-white/5" : "text-theme-light"
-                    }`}
+                    className="auth-mode-toggle btn btn-ghost w-full justify-center font-raleway text-base font-medium parallax-large text-theme-light"
                   >
                     Log In
                   </button>
                   <button
                     type="button"
+                    aria-pressed={mode === "signup"}
+                    data-active={mode === "signup"}
                     onClick={() => handleModeChange("signup")}
-                    className={`btn btn-ghost w-full justify-center font-raleway text-base font-medium parallax-large ${
-                      mode === "signup" ? "border-theme-mid text-theme-text bg-theme-white/5" : "text-theme-light"
-                    }`}
+                    className="auth-mode-toggle btn btn-ghost w-full justify-center font-raleway text-base font-medium parallax-large text-theme-light"
                   >
                     Sign Up
                   </button>
