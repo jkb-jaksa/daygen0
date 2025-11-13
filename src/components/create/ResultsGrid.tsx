@@ -853,7 +853,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                             {item.isPublic && (
                               <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
                                 <div className="flex items-center gap-1">
-                                  <Globe className="w-3 h-3 text-theme-text" />
+                                  <Globe className="w-3.5 h-3.5 text-theme-text" />
                                   <span className="leading-none">Public</span>
                                 </div>
                               </div>
@@ -912,7 +912,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                             {item.isPublic && (
                               <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
                                 <div className="flex items-center gap-1">
-                                  <Globe className="w-3 h-3 text-theme-text" />
+                                  <Globe className="w-3.5 h-3.5 text-theme-text" />
                                   <span className="leading-none">Public</span>
                                 </div>
                               </div>

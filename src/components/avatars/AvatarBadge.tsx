@@ -20,7 +20,7 @@ export default function AvatarBadge({ avatar, onClick, className }: AvatarBadgeP
       aria-label={`View creations for ${avatar.name}`}
     >
       <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full blur-3xl bg-white transition-opacity duration-100 opacity-0 group-hover:opacity-20" />
-      <span className="relative z-10 inline-flex w-3 h-3 shrink-0 items-center justify-center overflow-hidden rounded-full border border-theme-mid bg-theme-black/60">
+      <span className="relative z-10 inline-flex w-3.5 h-3.5 shrink-0 items-center justify-center overflow-hidden rounded-full border border-theme-mid bg-theme-black/60">
         <img
           src={avatar.imageUrl}
           alt=""
