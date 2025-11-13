@@ -381,7 +381,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
             </button>
           )}
           {mode === "login" && (
-            <p className="text-base text-theme-light text-center font-raleway mt-4">
+            <p className="text-base text-theme-light text-center font-raleway mt-8">
               Don't have an account?{' '}
               <button
                 type="button"
@@ -394,7 +394,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
             </p>
           )}
           {mode === "signup" && (
-            <p className="text-base text-theme-light text-center font-raleway mt-4">
+            <p className="text-base text-theme-light text-center font-raleway mt-8">
               Already have an account?{' '}
               <button
                 type="button"
@@ -469,7 +469,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
         </button>
           </form>
           {mode === "login" && (
-            <p className="text-base text-theme-light text-center font-raleway mt-4">
+            <p className="text-base text-theme-light text-center font-raleway mt-8">
               Don't have an account?{' '}
               <button
                 type="button"
@@ -482,7 +482,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
             </p>
           )}
           {mode === "signup" && (
-            <p className="text-base text-theme-light text-center font-raleway mt-4">
+            <p className="text-base text-theme-light text-center font-raleway mt-8">
               Already have an account?{' '}
               <button
                 type="button"
