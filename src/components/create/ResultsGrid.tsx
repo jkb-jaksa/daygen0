@@ -829,62 +829,133 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                       </div>
                     )}
                     
-                    {/* Model Badge and other badges */}
-                    <div className="flex justify-between items-center mt-2">
-                      <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
-                        <Suspense fallback={null}>
-                          <ModelBadge model={item.model ?? 'unknown'} size="md" />
-                        </Suspense>
-                        
-                        {/* Avatar Badge */}
-                        {avatarForImage && (
-                          <Suspense fallback={null}>
-                            <AvatarBadge
-                              avatar={avatarForImage}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                // Could navigate to avatar creations
-                              }}
-                            />
-                          </Suspense>
-                        )}
-                        
-                        {/* Product Badge */}
-                        {productForImage && (
-                          <Suspense fallback={null}>
-                            <ProductBadge
-                              product={productForImage}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                // Could navigate to product creations
-                              }}
-                            />
-                          </Suspense>
-                        )}
-                        
-                        {/* Style Badge */}
-                        {styleForImage && (
-                          <Suspense fallback={null}>
-                            <StyleBadge
-                              style={styleForImage}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                              }}
-                            />
-                          </Suspense>
-                        )}
-                      </div>
-                      
-                      {/* Public indicator */}
-                      {item.isPublic && (
-                        <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
+                    {(() => {
+                      // Count total badges to determine layout
+                      const totalBadges = 
+                        1 + // ModelBadge always present
+                        (item.isPublic ? 1 : 0) +
+                        (avatarForImage ? 1 : 0) +
+                        (productForImage ? 1 : 0) +
+                        (styleForImage ? 1 : 0);
+
+                      const useTwoRowLayout = totalBadges >= 3;
+
+                      return useTwoRowLayout ? (
+                        /* Two-row layout for 3+ badges */
+                        <div className="mt-2 space-y-1.5">
+                          {/* Row 1: Model Badge + Public Badge */}
                           <div className="flex items-center gap-1">
-                            <Globe className="w-3 h-3 text-theme-text" />
-                            <span className="leading-none">Public</span>
+                            <Suspense fallback={null}>
+                              <ModelBadge model={item.model ?? 'unknown'} size="md" />
+                            </Suspense>
+                            
+                            {/* Public indicator */}
+                            {item.isPublic && (
+                              <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
+                                <div className="flex items-center gap-1">
+                                  <Globe className="w-3 h-3 text-theme-text" />
+                                  <span className="leading-none">Public</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Row 2: Avatar, Product, Style Badges */}
+                          {(avatarForImage || productForImage || styleForImage) && (
+                            <div className="flex items-center gap-1">
+                              {avatarForImage && (
+                                <Suspense fallback={null}>
+                                  <AvatarBadge
+                                    avatar={avatarForImage}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      // Could navigate to avatar creations
+                                    }}
+                                  />
+                                </Suspense>
+                              )}
+                              
+                              {productForImage && (
+                                <Suspense fallback={null}>
+                                  <ProductBadge
+                                    product={productForImage}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      // Could navigate to product creations
+                                    }}
+                                  />
+                                </Suspense>
+                              )}
+                              
+                              {styleForImage && (
+                                <Suspense fallback={null}>
+                                  <StyleBadge
+                                    style={styleForImage}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                    }}
+                                  />
+                                </Suspense>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        /* Single-row layout for 1-2 badges */
+                        <div className="mt-2">
+                          <div className="flex items-center gap-1">
+                            <Suspense fallback={null}>
+                              <ModelBadge model={item.model ?? 'unknown'} size="md" />
+                            </Suspense>
+                            
+                            {/* Public indicator */}
+                            {item.isPublic && (
+                              <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
+                                <div className="flex items-center gap-1">
+                                  <Globe className="w-3 h-3 text-theme-text" />
+                                  <span className="leading-none">Public</span>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {avatarForImage && (
+                              <Suspense fallback={null}>
+                                <AvatarBadge
+                                  avatar={avatarForImage}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    // Could navigate to avatar creations
+                                  }}
+                                />
+                              </Suspense>
+                            )}
+                            
+                            {productForImage && (
+                              <Suspense fallback={null}>
+                                <ProductBadge
+                                  product={productForImage}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    // Could navigate to product creations
+                                  }}
+                                />
+                              </Suspense>
+                            )}
+                            
+                            {styleForImage && (
+                              <Suspense fallback={null}>
+                                <StyleBadge
+                                  style={styleForImage}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                  }}
+                                />
+                              </Suspense>
+                            )}
                           </div>
                         </div>
-                      )}
-                    </div>
+                      );
+                    })()}
                   </div>
                 </div>
               )}
