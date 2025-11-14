@@ -21,6 +21,7 @@ import { normalizeStoredAvatars } from '../../utils/avatars';
 import { normalizeStoredProducts } from '../../utils/products';
 import { getPersistedValue } from '../../lib/clientStorage';
 import { STORAGE_CHANGE_EVENT } from '../../utils/storageEvents';
+import { CircularProgressRing } from '../CircularProgressRing';
 
 // Lazy load components
 const ModelBadge = lazy(() => import('../ModelBadge'));
@@ -29,6 +30,7 @@ const ProductBadge = lazy(() => import('../products/ProductBadge'));
 const StyleBadge = lazy(() => import('../styles/StyleBadge'));
 const PublicBadge = lazy(() => import('./PublicBadge'));
 const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
+const GenerationProgress = lazy(() => import('./GenerationProgress'));
 
 // Helper to get consistent item identifier for UI actions (jobId → r2FileId → url)
 const getItemIdentifier = (item: GalleryImageLike | GalleryVideoLike): string | null => {
@@ -98,7 +100,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     handleUseAsReference,
     handleReusePrompt,
     handleMakeVideo,
-    navigateToJobUrl,
   } = useGalleryActions();
   const { state: generationState } = useGeneration();
   const { selectedItems, isBulkMode, imageActionMenu } = state;
@@ -524,70 +525,72 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6'
     : 'grid-cols-2 sm:grid-cols-3 xl:grid-cols-4';
 
-  const renderJobStatus = (status: string): string => {
-    switch (status) {
-      case 'processing':
-        return 'Processing';
-      case 'completed':
-        return 'Completed';
-      case 'failed':
-        return 'Failed';
-      case 'queued':
-      default:
-        return 'Queued';
-    }
-  };
+  type ActiveJob = typeof generationState.activeJobs[number];
 
-  const renderActiveJobCard = (job: { id: string; model: string; prompt: string; status: string; progress?: number }) => {
-    const progressValue =
-      typeof job.progress === 'number'
+  const renderActiveJobCard = (job: ActiveJob) => {
+    const progressValue = Number.isFinite(job.backendProgress)
+      ? Math.max(0, Math.min(100, Math.round(job.backendProgress!)))
+      : Number.isFinite(job.progress)
         ? Math.max(0, Math.min(100, Math.round(job.progress)))
         : undefined;
+    const hasProgress = typeof progressValue === 'number' && progressValue > 0;
+    const statusLabel = (() => {
+      switch (job.status) {
+        case 'processing':
+          return 'Generating';
+        case 'completed':
+          return 'Finishing';
+        case 'failed':
+          return 'Retry needed';
+        default:
+          return 'Preparing';
+      }
+    })();
 
-    const statusLabel = renderJobStatus(job.status);
+    if (!hasProgress) {
+      return (
+        <div
+          key={`active-job-${job.id}`}
+          className="group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black animate-pulse"
+        >
+          <div className="w-full aspect-square animate-gradient-colors"></div>
+          <div className="absolute inset-0 flex items-center justify-center bg-theme-black/55 backdrop-blur-sm">
+            <div className="text-center">
+              <div className="mx-auto mb-3 w-8 h-8 border-2 border-theme-white/30 border-t-theme-white rounded-full animate-spin"></div>
+              <div className="text-theme-white text-xs font-raleway animate-pulse">
+                Generating...
+              </div>
+            </div>
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 p-3 gallery-prompt-gradient">
+            <p className="text-theme-text text-xs font-raleway line-clamp-2 opacity-75">
+              {job.prompt}
+            </p>
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div
         key={`active-job-${job.id}`}
-        className="group flex flex-col overflow-hidden rounded-[24px] border border-theme-accent/30 bg-theme-black/80 transition-all duration-100 shadow-lg parallax-large cursor-pointer relative hover:border-theme-accent"
-        role="button"
-        tabIndex={0}
-        onClick={() => navigateToJobUrl(job.id)}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            navigateToJobUrl(job.id);
-          }
-        }}
+        className="group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black"
       >
-        <div className="relative aspect-square flex flex-col items-center justify-center gap-3 bg-theme-dark">
-          <div className="flex items-center justify-center">
-            <span className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-theme-accent/30 bg-theme-accent/10">
-              <span className="h-6 w-6 rounded-full border-2 border-theme-accent/30 border-t-theme-accent animate-spin" />
-            </span>
-          </div>
-          <div className="flex flex-col items-center gap-1 px-4 text-center">
-            <span className="text-sm font-raleway font-medium text-theme-accent">
-              Generating with {job.model}
-            </span>
-            <span className="text-xs text-theme-white/70 line-clamp-2">
-              {job.prompt}
-            </span>
-          </div>
-        </div>
-        <div className="px-4 py-3 bg-theme-black/60">
-          <div className="flex items-center justify-between text-xs font-raleway text-theme-white/70">
-            <span>{statusLabel}</span>
-            {progressValue !== undefined && <span>{progressValue}%</span>}
-          </div>
-          {progressValue !== undefined && (
-            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-theme-mid/40">
-              <div
-                className="h-full bg-theme-accent transition-all duration-300"
-                style={{ width: `${Math.max(6, progressValue)}%` }}
-              />
-            </div>
-          )}
+        <div className="w-full aspect-square animate-gradient-colors"></div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-theme-black/65 backdrop-blur-[10px] px-5 py-6 text-center">
+          <CircularProgressRing
+            progress={progressValue}
+            size={58}
+            strokeWidth={4}
+            showPercentage
+            className="drop-shadow-[0_0_18px_rgba(168,176,176,0.35)]"
+          />
+          <span className="uppercase tracking-[0.12em] text-[11px] font-raleway text-theme-white/80">
+            {statusLabel}
+          </span>
+          <p className="mt-2 text-theme-white/70 text-xs font-raleway leading-relaxed line-clamp-3">
+            {job.prompt}
+          </p>
         </div>
       </div>
     );
@@ -822,7 +825,10 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                       >
                         <MoreHorizontal className="w-3 h-3" />
                       </button>
-                    </div>
+        </div>
+        <Suspense fallback={null}>
+          <GenerationProgress />
+        </Suspense>
                   </div>
                 )}
               </div>
@@ -1208,6 +1214,9 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           );
         })}
       </div>
+        <Suspense fallback={null}>
+          <GenerationProgress />
+        </Suspense>
     </div>
     </>
   );
