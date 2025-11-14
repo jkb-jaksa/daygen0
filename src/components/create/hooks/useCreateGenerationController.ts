@@ -187,66 +187,21 @@ export function useCreateGenerationController(): CreateGenerationController {
     () => {},
   );
 
-  const {
-    generateImage: generateGeminiImage,
-    isLoading: isGeminiLoading,
-  } = useGeminiImageGeneration();
-  const {
-    generateImage: generateFluxImage,
-    isLoading: isFluxLoading,
-  } = useFluxImageGeneration();
-  const {
-    generateImage: generateChatGPTImage,
-    isLoading: isChatGPTLoading,
-  } = useChatGPTImageGeneration();
-  const {
-    generateImage: generateIdeogramImage,
-    isLoading: isIdeogramLoading,
-  } = useIdeogramImageGeneration();
-  const {
-    generateImage: generateQwenImage,
-    isLoading: isQwenLoading,
-  } = useQwenImageGeneration();
-  const {
-    generateImage: generateRunwayImage,
-    isLoading: isRunwayImageLoading,
-  } = useRunwayImageGeneration();
-  const {
-    generateImage: generateReveImage,
-    isLoading: isReveLoading,
-  } = useReveImageGeneration();
-  const {
-    generateImage: generateLumaImage,
-    isLoading: isLumaImageLoading,
-  } = useLumaImageGeneration();
-  const {
-    startGeneration: startVeoGeneration,
-    isLoading: isVeoLoading,
-  } = useVeoVideoGeneration();
-  const {
-    status: runwayVideoStatus,
-    generate: generateRunwayVideo,
-  } = useRunwayVideoGeneration();
-  const {
-    status: wanVideoStatus,
-    generateVideo: generateWanVideo,
-  } = useWanVideoGeneration();
-  const {
-    status: hailuoStatus,
-    generateVideo: generateHailuoVideo,
-  } = useHailuoVideoGeneration();
-  const {
-    status: klingStatus,
-    generateVideo: generateKlingVideo,
-  } = useKlingVideoGeneration();
-  const {
-    isLoading: isSeedanceLoading,
-    generateVideo: generateSeedanceVideo,
-  } = useSeedanceVideoGeneration();
-  const {
-    isLoading: isLumaVideoLoading,
-    generate: generateLumaVideo,
-  } = useLumaVideoGeneration();
+  const { generateImage: generateGeminiImage } = useGeminiImageGeneration();
+  const { generateImage: generateFluxImage } = useFluxImageGeneration();
+  const { generateImage: generateChatGPTImage } = useChatGPTImageGeneration();
+  const { generateImage: generateIdeogramImage } = useIdeogramImageGeneration();
+  const { generateImage: generateQwenImage } = useQwenImageGeneration();
+  const { generateImage: generateRunwayImage } = useRunwayImageGeneration();
+  const { generateImage: generateReveImage } = useReveImageGeneration();
+  const { generateImage: generateLumaImage } = useLumaImageGeneration();
+  const { startGeneration: startVeoGeneration } = useVeoVideoGeneration();
+  const { generate: generateRunwayVideo } = useRunwayVideoGeneration();
+  const { generateVideo: generateWanVideo } = useWanVideoGeneration();
+  const { generateVideo: generateHailuoVideo } = useHailuoVideoGeneration();
+  const { generateVideo: generateKlingVideo } = useKlingVideoGeneration();
+  const { generateVideo: generateSeedanceVideo } = useSeedanceVideoGeneration();
+  const { generate: generateLumaVideo } = useLumaVideoGeneration();
 
   const [localError, setLocalError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -526,6 +481,25 @@ export function useCreateGenerationController(): CreateGenerationController {
       return;
     }
 
+    const normalizedBatchSize = Math.max(1, Math.min(4, batchSize));
+    const isVideoModel = VIDEO_MODEL_IDS.has(selectedModel);
+    const jobsPlanned = isVideoModel ? 1 : normalizedBatchSize;
+    const activeJobCount = activeJobs.length;
+    const availableSlots = MAX_PARALLEL_GENERATIONS - activeJobCount;
+
+    if (availableSlots <= 0) {
+      setLocalError(
+        `You can run up to ${MAX_PARALLEL_GENERATIONS} generations at once. Please wait for one to finish.`,
+      );
+      return;
+    }
+
+    if (jobsPlanned > availableSlots) {
+      const plural = availableSlots === 1 ? '' : 's';
+      setLocalError(`You can only add ${availableSlots} more generation${plural} right now.`);
+      return;
+    }
+
     setLocalError(null);
     setIsSubmitting(true);
     setButtonSpinning(true);
@@ -536,11 +510,20 @@ export function useCreateGenerationController(): CreateGenerationController {
     const references = referencesBase64.length ? referencesBase64 : undefined;
     const finalPrompt = promptHandlers.getFinalPrompt();
 
-    // Centralized job lifecycle tracking
-    const startedAt = Date.now();
-    let activeJobId = ensureJobId(null);
-    // Note: For models using runGenerationJob(), the tracker will handle job tracking automatically
-    // We only manually add jobs for gemini which has special client-to-server job ID transition handling
+    const resolveErrorMessage = (error: unknown) => {
+      const withStatus = error as (Error & { status?: number }) | undefined;
+      if (withStatus && typeof withStatus.status === 'number') {
+        return resolveApiErrorMessage({
+          status: withStatus.status,
+          message: withStatus.message,
+          context: 'generation',
+        });
+      }
+      return resolveGenerationCatchError(
+        error,
+        'We could not start that generation. Try again in a moment.',
+      );
+    };
 
     const persistImageResults = (
       result: unknown,
@@ -594,7 +577,9 @@ export function useCreateGenerationController(): CreateGenerationController {
       result: unknown,
       overrides: Partial<GalleryVideoLike> = {},
     ) => {
-      const videos = toArray<Partial<GalleryVideoLike> & { jobId?: string | null; taskId?: string | null }>(
+      const videos = toArray<
+        Partial<GalleryVideoLike> & { jobId?: string | null; taskId?: string | null }
+      >(
         result as
           | (Partial<GalleryVideoLike> & { jobId?: string | null; taskId?: string | null })
           | Array<
@@ -681,68 +666,77 @@ export function useCreateGenerationController(): CreateGenerationController {
       references: references?.length ?? 0,
     });
 
-    try {
-      switch (selectedModel) {
-        case 'gemini-2.5-flash-image': {
-          // Gemini has special handling: manually add client job, then transition to server job ID
-          addActiveJob({
-            id: activeJobId,
-            prompt: finalPrompt,
-            model: selectedModel,
-            status: 'queued',
-            progress: 1,
-            backendProgress: 0,
-            backendProgressUpdatedAt: Date.now(),
-            startedAt,
-            jobId: activeJobId,
-          });
-          
-          const geminiImage = await generateGeminiImage({
-            prompt: finalPrompt,
-            model: selectedModel,
-            references,
-            temperature,
-            outputLength,
-            topP,
-            aspectRatio: geminiAspectRatio,
-            avatarId: selectedAvatarId,
-            avatarImageId: activeAvatarImageId,
-            productId: selectedProductId,
-            styleId: selectedStyleId,
-            clientJobId: activeJobId,
-            onProgress: (update) => {
-              const nextStatus = update.status ?? 'queued';
-              const nextProgress = typeof update.progress === 'number' ? update.progress : undefined;
+    const runGeminiGeneration = async () => {
+      const startedAt = Date.now();
+      const clientJobId = ensureJobId(null);
+      let trackedJobId = clientJobId;
+      let isClientJobActive = true;
 
-              // If backend issued a real jobId, promote this client job to the real id
-              if (update.jobId && update.jobId !== activeJobId) {
-                // Remove the client job and re-add with the real id to enable deep-linking
-                // Note: runGenerationJob() will also add the server job via tracker, so we need to remove it first
-                removeActiveJob(activeJobId);
-                // The tracker will add the server job, so we don't need to add it here
-                activeJobId = update.jobId;
-                return;
-              }
+      addActiveJob({
+        id: clientJobId,
+        prompt: finalPrompt,
+        model: selectedModel,
+        status: 'queued',
+        progress: 1,
+        backendProgress: 0,
+        backendProgressUpdatedAt: Date.now(),
+        startedAt,
+        jobId: clientJobId,
+      });
 
-              // Update current job status/progress
-              updateJobStatus(activeJobId, nextStatus, {
-                backendProgress: typeof nextProgress === 'number' ? nextProgress : undefined,
-                backendProgressUpdatedAt:
-                  typeof nextProgress === 'number' ? Date.now() : undefined,
-              });
-              if (typeof nextProgress === 'number') {
-                updateJobProgress(activeJobId, nextProgress);
-              }
-            },
-          });
+      try {
+        const geminiImage = await generateGeminiImage({
+          prompt: finalPrompt,
+          model: selectedModel,
+          references,
+          temperature,
+          outputLength,
+          topP,
+          aspectRatio: geminiAspectRatio,
+          avatarId: selectedAvatarId,
+          avatarImageId: activeAvatarImageId,
+          productId: selectedProductId,
+          styleId: selectedStyleId,
+          clientJobId,
+          onProgress: (update) => {
+            const nextStatus = update.status ?? 'queued';
+            const nextProgress =
+              typeof update.progress === 'number' ? update.progress : undefined;
 
-          persistImageResults(geminiImage, {
-            aspectRatio: geminiAspectRatio,
-          });
-          break;
+            if (update.jobId && update.jobId !== trackedJobId) {
+              removeActiveJob(trackedJobId);
+              trackedJobId = update.jobId;
+              isClientJobActive = false;
+              return;
+            }
+
+            updateJobStatus(trackedJobId, nextStatus, {
+              backendProgress: typeof nextProgress === 'number' ? nextProgress : undefined,
+              backendProgressUpdatedAt:
+                typeof nextProgress === 'number' ? Date.now() : undefined,
+            });
+
+            if (typeof nextProgress === 'number') {
+              updateJobProgress(trackedJobId, nextProgress);
+            }
+          },
+        });
+
+        persistImageResults(geminiImage, {
+          aspectRatio: geminiAspectRatio,
+        });
+      } finally {
+        if (isClientJobActive && trackedJobId.startsWith('local-')) {
+          removeActiveJob(trackedJobId);
         }
+      }
+    };
+
+    const executeGeneration = async () => {
+      switch (selectedModel) {
+        case 'gemini-2.5-flash-image':
+          return runGeminiGeneration();
         case 'flux-1.1': {
-          // Flux uses runGenerationJob() which handles job tracking via tracker
           const fluxImage = await generateFluxImage({
             prompt: finalPrompt,
             model: 'flux-pro-1.1',
@@ -753,10 +747,9 @@ export function useCreateGenerationController(): CreateGenerationController {
           });
 
           persistImageResults(fluxImage);
-          break;
+          return;
         }
         case 'chatgpt-image': {
-          // ChatGPT uses runGenerationJob() which handles job tracking via tracker
           const chatgptImage = await generateChatGPTImage({
             prompt: finalPrompt,
             size: '1024x1024',
@@ -769,10 +762,9 @@ export function useCreateGenerationController(): CreateGenerationController {
           });
 
           persistImageResults(chatgptImage, { aspectRatio: '1:1' });
-          break;
+          return;
         }
         case 'ideogram': {
-          // Ideogram uses runGenerationJob() which handles job tracking via tracker
           const ideogramResult = await generateIdeogramImage({
             prompt: finalPrompt,
             aspect_ratio: '1:1',
@@ -789,10 +781,9 @@ export function useCreateGenerationController(): CreateGenerationController {
           }
 
           persistImageResults(ideogramResult, { aspectRatio: '1:1' });
-          break;
+          return;
         }
         case 'qwen-image': {
-          // Qwen uses runGenerationJob() which handles job tracking via tracker
           const qwenResult = await generateQwenImage({
             prompt: finalPrompt,
             size: qwenSize,
@@ -809,10 +800,9 @@ export function useCreateGenerationController(): CreateGenerationController {
           }
 
           persistImageResults(qwenResult, { aspectRatio: qwenSize });
-          break;
+          return;
         }
         case 'runway-gen4': {
-          // Runway uses runGenerationJob() which handles job tracking via tracker
           const runwayImage = await generateRunwayImage({
             prompt: finalPrompt,
             model: 'gen4_image',
@@ -828,10 +818,9 @@ export function useCreateGenerationController(): CreateGenerationController {
           persistImageResults(runwayImage, {
             aspectRatio: '1920:1080',
           });
-          break;
+          return;
         }
         case 'reve-image': {
-          // Reve uses runGenerationJob() which handles job tracking via tracker
           const reveImage = await generateReveImage({
             prompt: finalPrompt,
             model: 'reve-image-1.0',
@@ -845,11 +834,10 @@ export function useCreateGenerationController(): CreateGenerationController {
           });
 
           persistImageResults(reveImage, { aspectRatio: '1:1' });
-          break;
+          return;
         }
         case 'luma-photon-1':
         case 'luma-photon-flash-1': {
-          // Luma uses runGenerationJob() which handles job tracking via tracker
           const lumaImage = await generateLumaImage({
             prompt: finalPrompt,
             model: selectedModel,
@@ -858,10 +846,9 @@ export function useCreateGenerationController(): CreateGenerationController {
           });
 
           persistImageResults(lumaImage, { aspectRatio: geminiAspectRatio });
-          break;
+          return;
         }
         case 'veo-3': {
-          // Veo uses runGenerationJob() which handles job tracking via tracker
           const veoVideo = await startVeoGeneration({
             prompt: finalPrompt,
             model: 'veo-3.0-generate-001',
@@ -872,10 +859,9 @@ export function useCreateGenerationController(): CreateGenerationController {
             aspectRatio: normalizedVeoAspectRatio,
             operationName: 'veo_video_generate',
           });
-          break;
+          return;
         }
         case 'runway-video-gen4': {
-          // Runway video uses runGenerationJob() which handles job tracking via tracker
           const runwayVideo = await generateRunwayVideo({
             prompt: finalPrompt,
             model: 'gen4_turbo',
@@ -884,10 +870,9 @@ export function useCreateGenerationController(): CreateGenerationController {
           });
 
           persistVideoResults(runwayVideo, { aspectRatio: normalizedRunwayVideoRatio });
-          break;
+          return;
         }
         case 'wan-video-2.2': {
-          // Wan video uses runGenerationJob() which handles job tracking via tracker
           const wanVideo = await generateWanVideo({
             prompt: finalPrompt,
             model: 'wan2.2-t2v-plus',
@@ -899,10 +884,9 @@ export function useCreateGenerationController(): CreateGenerationController {
           });
 
           persistVideoResults(wanVideo, { aspectRatio: wanSize });
-          break;
+          return;
         }
         case 'hailuo-02': {
-          // Hailuo uses runGenerationJob() which handles job tracking via tracker
           const hailuoVideo = await generateHailuoVideo({
             prompt: finalPrompt,
             model: 'hailuo-02',
@@ -913,10 +897,9 @@ export function useCreateGenerationController(): CreateGenerationController {
           });
 
           persistVideoResults(hailuoVideo);
-          break;
+          return;
         }
         case 'kling-video': {
-          // Kling uses runGenerationJob() which handles job tracking via tracker
           const klingVideo = await generateKlingVideo({
             prompt: finalPrompt,
             model: 'kling-v2.1-master',
@@ -928,10 +911,9 @@ export function useCreateGenerationController(): CreateGenerationController {
           persistVideoResults(klingVideo, {
             aspectRatio: (klingAspectRatio as string | undefined) ?? '16:9',
           });
-          break;
+          return;
         }
         case 'seedance-1.0-pro': {
-          // Seedance uses runGenerationJob() which handles job tracking via tracker
           const seedanceVideo = await generateSeedanceVideo({
             prompt: finalPrompt,
             model: 'seedance-1.0-pro',
@@ -942,10 +924,9 @@ export function useCreateGenerationController(): CreateGenerationController {
           });
 
           persistVideoResults(seedanceVideo, { aspectRatio: seedanceRatio });
-          break;
+          return;
         }
         case 'luma-ray-2': {
-          // Luma video uses runGenerationJob() which handles job tracking via tracker
           const lumaVideo = await generateLumaVideo({
             prompt: finalPrompt,
             model: 'luma-ray-2',
@@ -954,7 +935,7 @@ export function useCreateGenerationController(): CreateGenerationController {
           });
 
           persistVideoResults(lumaVideo);
-          break;
+          return;
         }
         case 'recraft':
           throw new Error('Recraft support is not yet available in the modular Create surface.');
@@ -963,41 +944,27 @@ export function useCreateGenerationController(): CreateGenerationController {
             `Model "${selectedModel || 'unknown'}" is not supported in the modular Create surface yet.`,
           );
       }
+    };
 
-      promptHandlers.handlePromptSubmit(finalPrompt);
+    try {
+      const generationPromises = Array.from({ length: jobsPlanned }, () => executeGeneration());
+
+      setIsSubmitting(false);
+      setButtonSpinning(false);
+
+      const results = await Promise.allSettled(generationPromises);
+      const successCount = results.filter(result => result.status === 'fulfilled').length;
+
+      if (successCount > 0) {
+        promptHandlers.handlePromptSubmit(finalPrompt);
+      } else {
+        const firstError = results.find(result => result.status === 'rejected')?.reason;
+        setLocalError(resolveErrorMessage(firstError));
+      }
     } catch (error) {
       debugError('[create] Failed to start modular generation', error);
-      
-      // Check if error has HTTP status code (from apiFetch)
-      type ErrorWithStatus = Error & { status?: number };
-      const errorWithStatus = error as ErrorWithStatus;
-      const status = errorWithStatus?.status;
-      const errorMessage = error instanceof Error ? error.message : undefined;
-      
-      // Use appropriate error resolution based on whether we have a status code
-      const resolvedMessage = status !== undefined && typeof status === 'number'
-        ? resolveApiErrorMessage({
-            status,
-            message: errorMessage,
-            context: 'generation',
-          })
-        : resolveGenerationCatchError(
-            error,
-            'We could not start that generation. Try again in a moment.',
-          );
-      
-      setLocalError(resolvedMessage);
+      setLocalError(resolveErrorMessage(error));
     } finally {
-      // Clean up: For gemini, we manually added a client job that may need cleanup
-      // For other models using runGenerationJob(), the tracker handles cleanup via tracker.finalize()
-      try {
-        // Only remove if it's a client job (gemini case) - tracker handles server jobs
-        if (activeJobId.startsWith('local-')) {
-          removeActiveJob(activeJobId);
-        }
-      } catch {
-        // ignore
-      }
       setIsSubmitting(false);
       setButtonSpinning(false);
     }
@@ -1005,6 +972,8 @@ export function useCreateGenerationController(): CreateGenerationController {
     selectedModel,
     promptHandlers,
     referenceHandlers.referenceFiles,
+    batchSize,
+    activeJobs.length,
     temperature,
     outputLength,
     topP,
@@ -1047,29 +1016,11 @@ export function useCreateGenerationController(): CreateGenerationController {
     updateJobStatus,
     removeActiveJob,
   ]);
-
   const clearError = useCallback(() => {
     setLocalError(null);
   }, []);
 
-  const isGenerating =
-    generation.isGenerating ||
-    isSubmitting ||
-    isGeminiLoading ||
-    isFluxLoading ||
-    isChatGPTLoading ||
-    isIdeogramLoading ||
-    isQwenLoading ||
-    isRunwayImageLoading ||
-    isReveLoading ||
-    isLumaImageLoading ||
-    isVeoLoading ||
-    isSeedanceLoading ||
-    isLumaVideoLoading ||
-    runwayVideoStatus === 'running' ||
-    ['creating', 'queued', 'polling'].includes(wanVideoStatus) ||
-    ['creating', 'queued', 'polling'].includes(hailuoStatus) ||
-    ['creating', 'polling'].includes(klingStatus);
+  const isGenerating = isSubmitting;
 
   return {
     promptHandlers,
