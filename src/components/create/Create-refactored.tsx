@@ -1,9 +1,8 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import PromptForm from './PromptForm';
 import ComingSoonCategory from './ComingSoonCategory';
-import ResultsGrid from './ResultsGrid';
-import FullImageModal from './FullImageModal';
-const GenerationProgress = lazy(() => import('./GenerationProgress'));
+const ResultsGrid = lazy(() => import('./ResultsGrid'));
+const FullImageModal = lazy(() => import('./FullImageModal'));
 const ImageActionMenu = lazy(() => import('./ImageActionMenu'));
 const BulkActionsMenu = lazy(() => import('./BulkActionsMenu'));
 const GallerySelectionBar = lazy(() => import('./GallerySelectionBar'));
@@ -17,6 +16,7 @@ import CreateSidebar from './CreateSidebar';
 import { useGallery } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
+import { useCreateGenerationController } from './hooks/useCreateGenerationController';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { layout } from '../../styles/designSystem';
 import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from './sidebarData';
@@ -28,6 +28,8 @@ import { useSavedPrompts } from '../../hooks/useSavedPrompts';
 import type { Folder, GalleryImageLike, GalleryVideoLike } from './types';
 import { CreateBridgeProvider, type GalleryBridgeActions } from './contexts/CreateBridgeContext';
 import { createInitialBridgeActions } from './contexts/hooks';
+import { useBadgeNavigation } from './hooks/useBadgeNavigation';
+import { pathForCategory } from '../../utils/navigation';
 
 const COMING_SOON_CATEGORIES = ['text'] as const;
 type ComingSoonCategoryKey = (typeof COMING_SOON_CATEGORIES)[number];
@@ -111,6 +113,14 @@ function CreateRefactoredView() {
   const galleryActions = useGalleryActions();
   const promptsUserKey = user?.id || user?.email || 'anon';
   const { isPromptSaved } = useSavedPrompts(promptsUserKey);
+  const controller = useCreateGenerationController();
+  const { avatarHandlers, productHandlers } = controller;
+  const {
+    goToAvatarProfile,
+    goToProductProfile,
+    goToPublicGallery,
+    goToModelGallery,
+  } = useBadgeNavigation();
 
   // Folder-specific local state
   const [newFolderName, setNewFolderName] = useState('');
@@ -157,6 +167,152 @@ function CreateRefactoredView() {
     const randomImage = dummyImages[Math.floor(Math.random() * dummyImages.length)];
     await addImage(randomImage);
   }, [addImage]);
+
+  const addDummyImageWithAvatar = useCallback(async () => {
+    // Create or reuse test avatar
+    let testAvatar = avatarHandlers.storedAvatars.find(a => a.id === 'test-avatar-badge');
+    if (!testAvatar && user?.id) {
+      testAvatar = {
+        id: 'test-avatar-badge',
+        slug: 'test-avatar',
+        name: 'Test Avatar',
+        imageUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400',
+        createdAt: new Date().toISOString(),
+        source: 'upload' as const,
+        published: false,
+        ownerId: user.id,
+        primaryImageId: 'test-avatar-img-1',
+        images: [{
+          id: 'test-avatar-img-1',
+          url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400',
+          createdAt: new Date().toISOString(),
+          source: 'upload' as const,
+        }],
+      };
+      if (testAvatar) {
+        await avatarHandlers.saveAvatar(testAvatar);
+      }
+    }
+    
+    const dummyImageWithAvatar = {
+      url: `https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1024&t=${Date.now()}`,
+      prompt: 'Test image with avatar badge - Mountain landscape',
+      model: 'flux-pro-1.1',
+      jobId: `dummy-avatar-${Date.now()}`,
+      r2FileId: `r2-avatar-${Date.now()}`,
+      avatarId: 'test-avatar-badge',
+      isLiked: false,
+      isPublic: false,
+      timestamp: new Date().toISOString(),
+    };
+    await addImage(dummyImageWithAvatar);
+  }, [addImage, avatarHandlers, user?.id]);
+
+  const addDummyImageWithProduct = useCallback(async () => {
+    // Create or reuse test product
+    let testProduct = productHandlers.storedProducts.find(p => p.id === 'test-product-badge');
+    if (!testProduct && user?.id) {
+      testProduct = {
+        id: 'test-product-badge',
+        slug: 'test-product',
+        name: 'Test Product',
+        imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400',
+        createdAt: new Date().toISOString(),
+        source: 'upload' as const,
+        published: false,
+        ownerId: user.id,
+        primaryImageId: 'test-product-img-1',
+        images: [{
+          id: 'test-product-img-1',
+          url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400',
+          createdAt: new Date().toISOString(),
+          source: 'upload' as const,
+        }],
+      };
+      if (testProduct) {
+        await productHandlers.saveProduct(testProduct);
+      }
+    }
+    
+    const dummyImageWithProduct = {
+      url: `https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1024&t=${Date.now()}`,
+      prompt: 'Test image with product badge - Starry night sky',
+      model: 'gemini-2.5-flash-image',
+      jobId: `dummy-product-${Date.now()}`,
+      r2FileId: `r2-product-${Date.now()}`,
+      productId: 'test-product-badge',
+      isLiked: false,
+      isPublic: false,
+      timestamp: new Date().toISOString(),
+    };
+    await addImage(dummyImageWithProduct);
+  }, [addImage, productHandlers, user?.id]);
+
+  const addDummyImageWithBoth = useCallback(async () => {
+    // Create or reuse test avatar
+    let testAvatar = avatarHandlers.storedAvatars.find(a => a.id === 'test-avatar-badge');
+    if (!testAvatar && user?.id) {
+      testAvatar = {
+        id: 'test-avatar-badge',
+        slug: 'test-avatar',
+        name: 'Test Avatar',
+        imageUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400',
+        createdAt: new Date().toISOString(),
+        source: 'upload' as const,
+        published: false,
+        ownerId: user.id,
+        primaryImageId: 'test-avatar-img-1',
+        images: [{
+          id: 'test-avatar-img-1',
+          url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400',
+          createdAt: new Date().toISOString(),
+          source: 'upload' as const,
+        }],
+      };
+      if (testAvatar) {
+        await avatarHandlers.saveAvatar(testAvatar);
+      }
+    }
+    
+    // Create or reuse test product
+    let testProduct = productHandlers.storedProducts.find(p => p.id === 'test-product-badge');
+    if (!testProduct && user?.id) {
+      testProduct = {
+        id: 'test-product-badge',
+        slug: 'test-product',
+        name: 'Test Product',
+        imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400',
+        createdAt: new Date().toISOString(),
+        source: 'upload' as const,
+        published: false,
+        ownerId: user.id,
+        primaryImageId: 'test-product-img-1',
+        images: [{
+          id: 'test-product-img-1',
+          url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400',
+          createdAt: new Date().toISOString(),
+          source: 'upload' as const,
+        }],
+      };
+      if (testProduct) {
+        await productHandlers.saveProduct(testProduct);
+      }
+    }
+    
+    const dummyImageWithBoth = {
+      url: `https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1024&t=${Date.now()}`,
+      prompt: 'Test image with both avatar and product badges - Forest path',
+      model: 'luma-photon-1',
+      jobId: `dummy-both-${Date.now()}`,
+      r2FileId: `r2-both-${Date.now()}`,
+      avatarId: 'test-avatar-badge',
+      productId: 'test-product-badge',
+      isLiked: false,
+      isPublic: false,
+      timestamp: new Date().toISOString(),
+    };
+    await addImage(dummyImageWithBoth);
+  }, [addImage, avatarHandlers, productHandlers, user?.id]);
 
   const resolvedCategory = useMemo<SupportedCategory>(() => {
     const fromParam = normalizeCategory(params.category);
@@ -232,15 +388,21 @@ function CreateRefactoredView() {
   }, [isGenerationCategory, setPromptBarReservedSpace]);
 
   const handleSelectCategory = useCallback((category: string) => {
-    // For categories that use dedicated routes outside the modular shell
-    if (category === 'avatars' || category === 'products') {
-      navigate(`/create/${category}`);
+    // Use pathForCategory to get the correct route for all categories
+    const nextPath = pathForCategory(category);
+    
+    if (!nextPath) {
+      // Fallback to image if category not found
+      const normalized = normalizeCategory(category) ?? 'image';
+      const fallbackPath = `/create/${normalized}`;
+      if (location.pathname === fallbackPath && location.search === location.search) {
+        return;
+      }
+      navigate({ pathname: fallbackPath, search: location.search });
       return;
     }
 
-    // For supported categories, navigate to create path
-    const normalized = normalizeCategory(category) ?? 'image';
-    const nextPath = `/create/${normalized}`;
+    // Check if we're already on the target path
     if (location.pathname === nextPath && location.search === location.search) {
       return;
     }
@@ -546,21 +708,38 @@ function CreateRefactoredView() {
                 <>
                   <PromptForm onPromptBarHeightChange={handlePromptBarResize} />
                   {isDevelopment && (
-                    <div className="mb-4 px-4">
+                    <div className="mb-4 px-4 flex gap-2 flex-wrap">
                       <button
                         onClick={addDummyImage}
                         className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
                       >
-                        🧪 Add Test Image (Dev Only)
+                        🧪 Add Test Image
+                      </button>
+                      <button
+                        onClick={addDummyImageWithAvatar}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                      >
+                        👤 Test Avatar Badge
+                      </button>
+                      <button
+                        onClick={addDummyImageWithProduct}
+                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                      >
+                        📦 Test Product Badge
+                      </button>
+                      <button
+                        onClick={addDummyImageWithBoth}
+                        className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                      >
+                        🏷️ Test Both Badges
                       </button>
                     </div>
                   )}
-                  <ResultsGrid
-                    activeCategory={activeCategory as 'image' | 'video'}
-                    onFocusPrompt={focusPromptBar}
-                  />
                   <Suspense fallback={null}>
-                    <GenerationProgress />
+                    <ResultsGrid
+                      activeCategory={activeCategory}
+                      onFocusPrompt={focusPromptBar}
+                    />
                   </Suspense>
                 </>
               )}
@@ -575,12 +754,30 @@ function CreateRefactoredView() {
               {!isGenerationCategory && shouldShowResultsGrid && !FOLDERS_CATEGORY_SET.has(activeCategory) && activeCategory !== 'inspirations' && (
                 <>
                   {isDevelopment && (
-                    <div className="mb-4 px-4">
+                    <div className="mb-4 px-4 flex gap-2 flex-wrap">
                       <button
                         onClick={addDummyImage}
                         className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
                       >
-                        🧪 Add Test Image (Dev Only)
+                        🧪 Add Test Image
+                      </button>
+                      <button
+                        onClick={addDummyImageWithAvatar}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                      >
+                        👤 Test Avatar Badge
+                      </button>
+                      <button
+                        onClick={addDummyImageWithProduct}
+                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                      >
+                        📦 Test Product Badge
+                      </button>
+                      <button
+                        onClick={addDummyImageWithBoth}
+                        className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                      >
+                        🏷️ Test Both Badges
                       </button>
                     </div>
                   )}
@@ -633,6 +830,10 @@ function CreateRefactoredView() {
                     moreActionMenu={null}
                     onEditMenuSelect={handleFolderEditMenuSelect}
                     onMoreButtonClick={undefined}
+                    onAvatarClick={avatar => goToAvatarProfile(avatar)}
+                    onProductClick={product => goToProductProfile(product)}
+                    onModelClick={(modelId, type) => goToModelGallery(modelId, type)}
+                    onPublicClick={goToPublicGallery}
                   />
                 </Suspense>
               )}
@@ -650,12 +851,30 @@ function CreateRefactoredView() {
                     return (
                       <>
                         {isDevelopment && (
-                          <div className="mb-4 px-4">
+                          <div className="mb-4 px-4 flex gap-2 flex-wrap">
                             <button
                               onClick={addDummyImage}
                               className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
                             >
-                              🧪 Add Test Image (Dev Only)
+                              🧪 Add Test Image
+                            </button>
+                            <button
+                              onClick={addDummyImageWithAvatar}
+                              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                            >
+                              👤 Test Avatar Badge
+                            </button>
+                            <button
+                              onClick={addDummyImageWithProduct}
+                              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                            >
+                              📦 Test Product Badge
+                            </button>
+                            <button
+                              onClick={addDummyImageWithBoth}
+                              className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                            >
+                              🏷️ Test Both Badges
                             </button>
                           </div>
                         )}

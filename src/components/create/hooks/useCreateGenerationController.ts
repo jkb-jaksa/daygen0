@@ -539,13 +539,8 @@ export function useCreateGenerationController(): CreateGenerationController {
     // Centralized job lifecycle tracking
     const startedAt = Date.now();
     let activeJobId = ensureJobId(null);
-    addActiveJob({
-      id: activeJobId,
-      prompt: finalPrompt,
-      model: selectedModel,
-      status: 'queued',
-      startedAt,
-    });
+    // Note: For models using runGenerationJob(), the tracker will handle job tracking automatically
+    // We only manually add jobs for gemini which has special client-to-server job ID transition handling
 
     const persistImageResults = (
       result: unknown,
@@ -689,6 +684,15 @@ export function useCreateGenerationController(): CreateGenerationController {
     try {
       switch (selectedModel) {
         case 'gemini-2.5-flash-image': {
+          // Gemini has special handling: manually add client job, then transition to server job ID
+          addActiveJob({
+            id: activeJobId,
+            prompt: finalPrompt,
+            model: selectedModel,
+            status: 'queued',
+            startedAt,
+          });
+          
           const geminiImage = await generateGeminiImage({
             prompt: finalPrompt,
             model: selectedModel,
@@ -709,16 +713,10 @@ export function useCreateGenerationController(): CreateGenerationController {
               // If backend issued a real jobId, promote this client job to the real id
               if (update.jobId && update.jobId !== activeJobId) {
                 // Remove the client job and re-add with the real id to enable deep-linking
+                // Note: runGenerationJob() will also add the server job via tracker, so we need to remove it first
                 removeActiveJob(activeJobId);
+                // The tracker will add the server job, so we don't need to add it here
                 activeJobId = update.jobId;
-                addActiveJob({
-                  id: activeJobId,
-                  prompt: finalPrompt,
-                  model: selectedModel,
-                  status: nextStatus,
-                  progress: nextProgress,
-                  startedAt,
-                });
                 return;
               }
 
@@ -736,7 +734,7 @@ export function useCreateGenerationController(): CreateGenerationController {
           break;
         }
         case 'flux-1.1': {
-          updateJobStatus(activeJobId, 'processing', 5);
+          // Flux uses runGenerationJob() which handles job tracking via tracker
           const fluxImage = await generateFluxImage({
             prompt: finalPrompt,
             model: 'flux-pro-1.1',
@@ -750,7 +748,7 @@ export function useCreateGenerationController(): CreateGenerationController {
           break;
         }
         case 'chatgpt-image': {
-          updateJobStatus(activeJobId, 'processing', 5);
+          // ChatGPT uses runGenerationJob() which handles job tracking via tracker
           const chatgptImage = await generateChatGPTImage({
             prompt: finalPrompt,
             size: '1024x1024',
@@ -766,7 +764,7 @@ export function useCreateGenerationController(): CreateGenerationController {
           break;
         }
         case 'ideogram': {
-          updateJobStatus(activeJobId, 'processing', 5);
+          // Ideogram uses runGenerationJob() which handles job tracking via tracker
           const ideogramResult = await generateIdeogramImage({
             prompt: finalPrompt,
             aspect_ratio: '1:1',
@@ -786,7 +784,7 @@ export function useCreateGenerationController(): CreateGenerationController {
           break;
         }
         case 'qwen-image': {
-          updateJobStatus(activeJobId, 'processing', 5);
+          // Qwen uses runGenerationJob() which handles job tracking via tracker
           const qwenResult = await generateQwenImage({
             prompt: finalPrompt,
             size: qwenSize,
@@ -806,7 +804,7 @@ export function useCreateGenerationController(): CreateGenerationController {
           break;
         }
         case 'runway-gen4': {
-          updateJobStatus(activeJobId, 'processing', 5);
+          // Runway uses runGenerationJob() which handles job tracking via tracker
           const runwayImage = await generateRunwayImage({
             prompt: finalPrompt,
             model: 'gen4_image',
@@ -825,7 +823,7 @@ export function useCreateGenerationController(): CreateGenerationController {
           break;
         }
         case 'reve-image': {
-          updateJobStatus(activeJobId, 'processing', 5);
+          // Reve uses runGenerationJob() which handles job tracking via tracker
           const reveImage = await generateReveImage({
             prompt: finalPrompt,
             model: 'reve-image-1.0',
@@ -843,7 +841,7 @@ export function useCreateGenerationController(): CreateGenerationController {
         }
         case 'luma-photon-1':
         case 'luma-photon-flash-1': {
-          updateJobStatus(activeJobId, 'processing', 5);
+          // Luma uses runGenerationJob() which handles job tracking via tracker
           const lumaImage = await generateLumaImage({
             prompt: finalPrompt,
             model: selectedModel,
@@ -855,7 +853,7 @@ export function useCreateGenerationController(): CreateGenerationController {
           break;
         }
         case 'veo-3': {
-          updateJobStatus(activeJobId, 'processing', 5);
+          // Veo uses runGenerationJob() which handles job tracking via tracker
           const veoVideo = await startVeoGeneration({
             prompt: finalPrompt,
             model: 'veo-3.0-generate-001',
@@ -869,7 +867,7 @@ export function useCreateGenerationController(): CreateGenerationController {
           break;
         }
         case 'runway-video-gen4': {
-          updateJobStatus(activeJobId, 'processing', 5);
+          // Runway video uses runGenerationJob() which handles job tracking via tracker
           const runwayVideo = await generateRunwayVideo({
             prompt: finalPrompt,
             model: 'gen4_turbo',
@@ -881,7 +879,7 @@ export function useCreateGenerationController(): CreateGenerationController {
           break;
         }
         case 'wan-video-2.2': {
-          updateJobStatus(activeJobId, 'processing', 5);
+          // Wan video uses runGenerationJob() which handles job tracking via tracker
           const wanVideo = await generateWanVideo({
             prompt: finalPrompt,
             model: 'wan2.2-t2v-plus',
@@ -896,7 +894,7 @@ export function useCreateGenerationController(): CreateGenerationController {
           break;
         }
         case 'hailuo-02': {
-          updateJobStatus(activeJobId, 'processing', 5);
+          // Hailuo uses runGenerationJob() which handles job tracking via tracker
           const hailuoVideo = await generateHailuoVideo({
             prompt: finalPrompt,
             model: 'hailuo-02',
@@ -910,7 +908,7 @@ export function useCreateGenerationController(): CreateGenerationController {
           break;
         }
         case 'kling-video': {
-          updateJobStatus(activeJobId, 'processing', 5);
+          // Kling uses runGenerationJob() which handles job tracking via tracker
           const klingVideo = await generateKlingVideo({
             prompt: finalPrompt,
             model: 'kling-v2.1-master',
@@ -925,7 +923,7 @@ export function useCreateGenerationController(): CreateGenerationController {
           break;
         }
         case 'seedance-1.0-pro': {
-          updateJobStatus(activeJobId, 'processing', 5);
+          // Seedance uses runGenerationJob() which handles job tracking via tracker
           const seedanceVideo = await generateSeedanceVideo({
             prompt: finalPrompt,
             model: 'seedance-1.0-pro',
@@ -939,7 +937,7 @@ export function useCreateGenerationController(): CreateGenerationController {
           break;
         }
         case 'luma-ray-2': {
-          updateJobStatus(activeJobId, 'processing', 5);
+          // Luma video uses runGenerationJob() which handles job tracking via tracker
           const lumaVideo = await generateLumaVideo({
             prompt: finalPrompt,
             model: 'luma-ray-2',
@@ -982,9 +980,13 @@ export function useCreateGenerationController(): CreateGenerationController {
       
       setLocalError(resolvedMessage);
     } finally {
-      // Ensure any active job is cleared from the progress list
+      // Clean up: For gemini, we manually added a client job that may need cleanup
+      // For other models using runGenerationJob(), the tracker handles cleanup via tracker.finalize()
       try {
-        removeActiveJob(activeJobId);
+        // Only remove if it's a client job (gemini case) - tracker handles server jobs
+        if (activeJobId.startsWith('local-')) {
+          removeActiveJob(activeJobId);
+        }
       } catch {
         // ignore
       }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { buttons, glass, text, layout } from "../../../styles/designSystem";
+import { buttons, text } from "../../../styles/designSystem";
 import {
   Mic,
   Upload,
@@ -7,7 +7,6 @@ import {
   Wand2,
   Sparkles,
   Activity,
-  X,
   Loader2,
 } from "lucide-react";
 import { useToast } from "../../../hooks/useToast";
@@ -18,7 +17,7 @@ import {
   type ElevenLabsVoiceSummary,
 } from "../../../utils/audioApi";
 
-type VoiceFlowMode = "menu" | "upload" | "record" | "design";
+type VoiceFlowMode = "menu" | "record" | "design";
 
 type RecordingState = {
   isRecording: boolean;
@@ -50,7 +49,6 @@ const base64ToObjectUrl = (base64: string, contentType: string) => {
 };
 
 export function AudioVoiceStudio() {
-  const [isModalOpen, setIsModalOpen] = useState(true);
   const [mode, setMode] = useState<VoiceFlowMode>("menu");
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -127,7 +125,6 @@ export function AudioVoiceStudio() {
 
   useEffect(() => {
     if (
-      !isModalOpen ||
       mode !== "design" ||
       isLoadingVoices ||
       availableVoices.length > 0
@@ -173,7 +170,6 @@ export function AudioVoiceStudio() {
   }, [
     availableVoices.length,
     isLoadingVoices,
-    isModalOpen,
     mode,
     showToast,
   ]);
@@ -204,27 +200,6 @@ export function AudioVoiceStudio() {
     }
   }, [filePreviewUrl]);
 
-  const handleCloseModal = useCallback(() => {
-    if (generatedPreviewUrl) {
-      URL.revokeObjectURL(generatedPreviewUrl);
-    }
-    setIsModalOpen(false);
-    setMode("menu");
-    resetUpload();
-    if (recordingState.audioUrl) {
-      URL.revokeObjectURL(recordingState.audioUrl);
-    }
-    setRecordingState({
-      isRecording: false,
-      durationMs: 0,
-      audioUrl: null,
-      blob: null,
-      error: null,
-    });
-    setGeneratedPreviewUrl(null);
-    setDesignError(null);
-    setCloneError(null);
-  }, [generatedPreviewUrl, recordingState.audioUrl, resetUpload]);
 
   const handleReturnToMenu = useCallback(() => {
     setMode("menu");
@@ -548,10 +523,20 @@ export function AudioVoiceStudio() {
 
   const renderMenu = () => (
     <div
-      className={`relative w-full max-w-2xl overflow-hidden rounded-[32px] border border-theme-dark ${glass.surface} p-10`}
+      className="relative w-full"
+      onDragOver={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsDraggingFile(true);
+      }}
+      onDragLeave={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsDraggingFile(false);
+      }}
+      onDrop={handleDrop}
     >
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-cyan-400/10 via-purple-500/5 to-transparent" />
-      <div className="relative flex flex-col items-center gap-8 text-center">
+      <div className="flex flex-col items-center gap-8 text-center">
         <div className="grid size-16 place-items-center rounded-[28px] border border-white/10 bg-theme-black/40">
           <Mic className="size-8 text-cyan-300" />
         </div>
@@ -568,7 +553,7 @@ export function AudioVoiceStudio() {
         <div className="flex flex-wrap justify-center gap-4">
           <button
             className={`${buttons.primary} inline-flex items-center gap-2`}
-            onClick={() => setMode("upload")}
+            onClick={() => fileInputRef.current?.click()}
           >
             <Upload className="size-4" />
             Upload
@@ -588,177 +573,112 @@ export function AudioVoiceStudio() {
             Design
           </button>
         </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="audio/*"
+          onChange={handleFileInputChange}
+          className="hidden"
+        />
+        {selectedFile && filePreviewUrl && (
+          <div className="mt-8 w-full space-y-6">
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="flex flex-col text-left text-sm font-raleway text-theme-text">
+                Voice name
+                <input
+                  type="text"
+                  value={voiceName}
+                  onChange={(event) => setVoiceName(event.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-theme-dark bg-theme-black/60 px-4 py-3 text-sm text-theme-white focus:border-theme-text focus:outline-none focus:ring-0"
+                  placeholder="Digital Copy Voice"
+                />
+              </label>
+              <label className="md:col-span-2 flex flex-col text-left text-sm font-raleway text-theme-text">
+                Notes for ElevenLabs
+                <textarea
+                  value={voiceDescription}
+                  onChange={(event) => setVoiceDescription(event.target.value)}
+                  className="mt-2 h-28 w-full resize-none rounded-2xl border border-theme-dark bg-theme-black/60 px-4 py-3 text-sm text-theme-white focus:border-theme-text focus:outline-none focus:ring-0"
+                  placeholder="What makes this voice unique? Mention accent, pacing, or context."
+                />
+              </label>
+            </div>
+            <div className="rounded-3xl border border-theme-dark bg-theme-black/40 p-6">
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <Mic className="size-5 text-cyan-300" />
+                    <div className="text-left">
+                      <p className="text-sm font-raleway text-theme-text">
+                        {selectedFile.name}
+                      </p>
+                      <p className="text-xs font-raleway text-theme-white/60">
+                        {Math.round(selectedFile.size / 1024)} KB
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleFileSelect(null)}
+                    className="text-xs font-raleway text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
+                  >
+                    Remove
+                  </button>
+                </div>
+                <audio
+                  src={filePreviewUrl}
+                  controls
+                  className="w-full"
+                  style={{ borderRadius: "12px", height: "46px" }}
+                />
+              </div>
+            </div>
+            <div className="flex flex-col items-center gap-3 text-center">
+              <button
+                className={`${buttons.pillWarm} inline-flex items-center gap-2`}
+                onClick={handleUploadClone}
+                disabled={isUploadingVoiceClone}
+              >
+                {isUploadingVoiceClone ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" />
+                    Saving voice…
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="size-4" />
+                    Save to ElevenLabs
+                  </>
+                )}
+              </button>
+              <p className="text-xs font-raleway text-theme-white/60">
+                We'll create a private voice profile in ElevenLabs with this
+                sample.
+              </p>
+            </div>
+            {cloneError && (
+              <p className="text-center text-sm font-raleway text-red-400">
+                {cloneError}
+              </p>
+            )}
+            {recentVoice && (
+              <div className="rounded-3xl border border-theme-dark bg-theme-black/40 p-6 text-left">
+                <p className="text-sm font-raleway text-theme-text">
+                  Last saved voice: {recentVoice.name}
+                </p>
+                <p className="text-xs font-mono text-theme-white/60">
+                  Voice ID: {recentVoice.id}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
 
-  const renderUpload = () => (
-    <div
-      className={`relative w-full max-w-2xl overflow-hidden rounded-[32px] border border-theme-dark ${glass.surface} p-10`}
-    >
-      <button
-        onClick={handleReturnToMenu}
-        className="absolute left-6 top-6 inline-flex items-center gap-2 text-sm font-raleway text-theme-white/80 transition-colors duration-200 hover:text-theme-text"
-      >
-        ← Back
-      </button>
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-cyan-300/10 via-indigo-500/5 to-transparent" />
-      <div className="relative flex flex-col gap-8">
-        <header className="text-center space-y-3">
-          <div className="mx-auto grid size-14 place-items-center rounded-3xl border border-white/10 bg-theme-black/40">
-            <Upload className="size-6 text-cyan-300" />
-          </div>
-          <h2 className="text-2xl font-raleway text-theme-text">
-            Upload an audio file
-          </h2>
-          <p className="mx-auto max-w-lg text-sm font-raleway text-theme-white/80">
-            Drag and drop your recording, click to browse, or paste directly
-            from clipboard. We accept WAV, MP3, M4A, and more.
-          </p>
-        </header>
-        <div className="grid gap-4 md:grid-cols-2">
-          <label className="flex flex-col text-left text-sm font-raleway text-theme-text">
-            Voice name
-            <input
-              type="text"
-              value={voiceName}
-              onChange={(event) => setVoiceName(event.target.value)}
-              className="mt-2 w-full rounded-2xl border border-theme-dark bg-theme-black/60 px-4 py-3 text-sm text-theme-white focus:border-theme-text focus:outline-none focus:ring-0"
-              placeholder="Digital Copy Voice"
-            />
-          </label>
-          <label className="md:col-span-2 flex flex-col text-left text-sm font-raleway text-theme-text">
-            Notes for ElevenLabs
-            <textarea
-              value={voiceDescription}
-              onChange={(event) => setVoiceDescription(event.target.value)}
-              className="mt-2 h-28 w-full resize-none rounded-2xl border border-theme-dark bg-theme-black/60 px-4 py-3 text-sm text-theme-white focus:border-theme-text focus:outline-none focus:ring-0"
-              placeholder="What makes this voice unique? Mention accent, pacing, or context."
-            />
-          </label>
-        </div>
-        <div
-          onDragOver={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            setIsDraggingFile(true);
-          }}
-          onDragLeave={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            setIsDraggingFile(false);
-          }}
-          onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
-          className={`flex cursor-pointer flex-col items-center justify-center gap-4 rounded-3xl border-2 border-dashed p-16 text-center transition-colors duration-200 ${
-            isDraggingFile
-              ? "border-cyan-400 bg-cyan-400/5"
-              : "border-theme-white/30 hover:border-theme-text/50"
-          }`}
-        >
-          <Mic className="size-10 text-cyan-300" />
-          <p className="text-lg font-raleway text-theme-text">
-            Drop your voice clip here
-          </p>
-          <p className="max-w-md text-sm font-raleway text-theme-white/70">
-            .wav, .mp3, .m4a, .aac · up to 25 MB per file
-          </p>
-          <div className={`${buttons.primary} inline-flex items-center gap-2`}>
-            <Upload className="size-4" />
-            Choose file
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="audio/*"
-            onChange={handleFileInputChange}
-            className="hidden"
-          />
-        </div>
-        {selectedFile && filePreviewUrl && (
-          <div className="rounded-3xl border border-theme-dark bg-theme-black/40 p-6">
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <Mic className="size-5 text-cyan-300" />
-                  <div className="text-left">
-                    <p className="text-sm font-raleway text-theme-text">
-                      {selectedFile.name}
-                    </p>
-                    <p className="text-xs font-raleway text-theme-white/60">
-                      {Math.round(selectedFile.size / 1024)} KB
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleFileSelect(null)}
-                  className="text-xs font-raleway text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
-                >
-                  Remove
-                </button>
-              </div>
-              <audio
-                src={filePreviewUrl}
-                controls
-                className="w-full"
-                style={{ borderRadius: "12px", height: "46px" }}
-              />
-            </div>
-          </div>
-        )}
-        {selectedFile && (
-          <div className="flex flex-col items-center gap-3 text-center">
-            <button
-              className={`${buttons.pillWarm} inline-flex items-center gap-2`}
-              onClick={handleUploadClone}
-              disabled={isUploadingVoiceClone}
-            >
-              {isUploadingVoiceClone ? (
-                <>
-                  <Loader2 className="size-4 animate-spin" />
-                  Saving voice…
-                </>
-              ) : (
-                <>
-                  <Sparkles className="size-4" />
-                  Save to ElevenLabs
-                </>
-              )}
-            </button>
-            <p className="text-xs font-raleway text-theme-white/60">
-              We'll create a private voice profile in ElevenLabs with this
-              sample.
-            </p>
-          </div>
-        )}
-        {cloneError && (
-          <p className="text-center text-sm font-raleway text-red-400">
-            {cloneError}
-          </p>
-        )}
-        {recentVoice && (
-          <div className="rounded-3xl border border-theme-dark bg-theme-black/40 p-6 text-left">
-            <p className="text-sm font-raleway text-theme-text">
-              Last saved voice: {recentVoice.name}
-            </p>
-            <p className="text-xs font-mono text-theme-white/60">
-              Voice ID: {recentVoice.id}
-            </p>
-          </div>
-        )}
-        {recordingState.error && (
-          <p className="text-center text-sm font-raleway text-red-400">
-            {recordingState.error}
-          </p>
-        )}
-      </div>
-    </div>
-  );
 
   const renderRecording = () => (
-    <div
-      className={`relative w-full max-w-2xl overflow-hidden rounded-[32px] border border-theme-dark ${glass.surface} p-10`}
-    >
+    <div className="relative w-full">
       <button
         onClick={() => {
           if (recordingState.isRecording) {
@@ -766,12 +686,11 @@ export function AudioVoiceStudio() {
           }
           handleReturnToMenu();
         }}
-        className="absolute left-6 top-6 inline-flex items-center gap-2 text-sm font-raleway text-theme-white/80 transition-colors duration-200 hover:text-theme-text"
+        className="mb-6 inline-flex items-center gap-2 text-sm font-raleway text-theme-white/80 transition-colors duration-200 hover:text-theme-text"
       >
         ← Back
       </button>
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-purple-400/10 via-cyan-500/10 to-transparent" />
-      <div className="relative flex flex-col items-center gap-8 text-center">
+      <div className="flex flex-col items-center gap-8 text-center">
         <div className="grid size-20 place-items-center rounded-[36px] border border-white/10 bg-theme-black/40">
           <Mic className="size-10 text-cyan-300" />
         </div>
@@ -895,17 +814,14 @@ export function AudioVoiceStudio() {
   );
 
   const renderDesign = () => (
-    <div
-      className={`relative w-full max-w-3xl overflow-hidden rounded-[32px] border border-theme-dark ${glass.surface} p-10`}
-    >
+    <div className="relative w-full">
       <button
         onClick={handleReturnToMenu}
-        className="absolute left-6 top-6 inline-flex items-center gap-2 text-sm font-raleway text-theme-white/80 transition-colors duration-200 hover:text-theme-text"
+        className="mb-6 inline-flex items-center gap-2 text-sm font-raleway text-theme-white/80 transition-colors duration-200 hover:text-theme-text"
       >
         ← Back
       </button>
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-300/10 via-pink-400/5 to-transparent" />
-      <div className="relative flex flex-col gap-8">
+      <div className="flex flex-col gap-8">
         <header className="space-y-3 text-center">
           <div className="mx-auto grid size-14 place-items-center rounded-3xl border border-white/10 bg-theme-black/40">
             <Wand2 className="size-6 text-amber-300" />
@@ -1062,52 +978,10 @@ export function AudioVoiceStudio() {
   );
 
   return (
-    <div className="relative py-16">
-      {!isModalOpen && (
-        <div
-          className={`${layout.container} flex flex-col items-center gap-4 text-center`}
-        >
-          <div className="grid size-12 place-items-center rounded-2xl border border-white/10 bg-theme-black/40">
-            <Mic className="size-6 text-cyan-300" />
-          </div>
-          <div className="space-y-2">
-            <h2 className={`${text.sectionHeading} text-theme-text`}>
-              Voice studio ready
-            </h2>
-            <p className="max-w-md text-sm font-raleway text-theme-white/80">
-              Re-open the voice creation modal to upload, record, or design your
-              avatar voice.
-            </p>
-          </div>
-          <button
-            className={`${buttons.primary} inline-flex items-center gap-2`}
-            onClick={() => {
-              setIsModalOpen(true);
-              setMode("menu");
-            }}
-          >
-            <Mic className="size-4" />
-            Open voice studio
-          </button>
-        </div>
-      )}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-theme-black/80 px-4 py-8">
-          <button
-            onClick={handleCloseModal}
-            className="absolute right-6 top-6 rounded-full bg-theme-black/70 p-2 text-theme-white transition-colors duration-200 hover:bg-theme-black hover:text-theme-text"
-            aria-label="Close voice studio"
-          >
-            <X className="size-5" />
-          </button>
-          <div className="relative flex w-full max-w-5xl justify-center">
-            {mode === "menu" && renderMenu()}
-            {mode === "upload" && renderUpload()}
-            {mode === "record" && renderRecording()}
-            {mode === "design" && renderDesign()}
-          </div>
-        </div>
-      )}
+    <div className="relative w-full">
+      {mode === "menu" && renderMenu()}
+      {mode === "record" && renderRecording()}
+      {mode === "design" && renderDesign()}
     </div>
   );
 }

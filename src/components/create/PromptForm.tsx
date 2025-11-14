@@ -133,6 +133,7 @@ const PromptForm = memo<PromptFormProps>(
       isPromptsDropdownOpen,
       recentPrompts,
       savedPromptsList,
+      savedPromptsRefreshKey,
       handlePromptChange,
       handlePromptsDropdownToggle,
       handlePromptsDropdownClose,
@@ -1600,6 +1601,7 @@ const PromptForm = memo<PromptFormProps>(
 
       <Suspense fallback={null}>
         <PromptsDropdown
+          key={`prompts-${savedPromptsRefreshKey}-${savedPromptsList.length}-${savedPromptsList.map(p => p.id).join('-')}`}
           isOpen={isPromptsDropdownOpen}
           onClose={handlePromptsDropdownClose}
           anchorEl={promptsButtonRef.current}

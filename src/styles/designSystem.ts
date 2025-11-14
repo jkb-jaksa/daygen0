@@ -39,7 +39,7 @@ export const text = {
   logoText: "font-normal text-theme-text font-raleway text-[clamp(1.5rem,1.3rem+0.8vw,2rem)]",
   eyebrow: "font-raleway font-medium uppercase tracking-[0.2em] text-[clamp(0.7rem,0.64rem+0.18vw,0.8rem)] text-theme-white/60",
   body: "text-theme-white font-raleway font-normal text-[clamp(0.95rem,0.9rem+0.3vw,1.125rem)] leading-relaxed",
-  finePrint: "text-theme-white/70 font-raleway font-normal text-[clamp(0.85rem,0.8rem+0.2vw,0.95rem)]",
+  finePrint: "text-theme-light font-raleway font-normal text-[clamp(0.85rem,0.8rem+0.2vw,0.95rem)]",
 };
 
 export const headings = {
@@ -113,8 +113,8 @@ export const glass = {
   base: glassBase, // Default glass container
   surface: `${glassCore} bg-[color:var(--glass-surface-bg)] rounded-[20px]`, // Content panels
   tight: `${glassBase} rounded-lg`, // Small glass boxes
-  prompt: `prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[24px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)]`, // Prompt surfaces
-  promptBorderless: `prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[24px] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)]`,
+  prompt: `prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)]`, // Prompt surfaces
+  promptBorderless: `prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)]`,
   promptDark: `glass-liquid willchange-backdrop isolate backdrop-blur-[40px] border border-[color:var(--glass-border)] bg-[color:var(--glass-dark-bg)]`, // Navbar, dropdowns
   sidebarIcon: `glass-liquid willchange-backdrop isolate backdrop-blur-[20px] border border-[color:var(--glass-border)] bg-[color:var(--glass-base-bg)] text-[color:var(--theme-text)]`,
 };

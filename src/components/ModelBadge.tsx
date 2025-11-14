@@ -1,13 +1,14 @@
-import React from 'react';
+import React, { type MouseEvent } from 'react';
 import { getToolLogo, hasToolLogo } from '../utils/toolLogos';
-import { glass } from '../styles/designSystem';
 import { normalizeModelId } from '../utils/modelUtils';
+import { badgeBaseClasses, badgeInnerGlowClass } from './shared/badgeStyles';
 
 interface ModelBadgeProps {
   model: string;
   size?: 'sm' | 'md' | 'lg';
   showIcon?: boolean;
   className?: string;
+  onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
 }
 
 // Model configuration with display names and icons
@@ -204,7 +205,8 @@ export const ModelBadge: React.FC<ModelBadgeProps> = ({
   model, 
   size = 'sm', 
   showIcon = true,
-  className = '' 
+  className = '',
+  onClick,
 }) => {
   // Clean and normalize the model string
   const cleanModel = (model || '').trim();
@@ -240,24 +242,25 @@ export const ModelBadge: React.FC<ModelBadgeProps> = ({
     };
   }
 
-  const sizeClasses = {
-    sm: 'px-2 py-2 text-xs',
-    md: 'px-2.5 py-2 text-xs',
-    lg: 'px-3 py-2 text-xs'
-  };
+const sizeClasses = {
+  sm: 'px-2 py-1 text-xs',
+  md: 'px-2 py-1 text-xs',
+  lg: 'px-2 py-1 text-xs'
+};
 
   return (
-    <div 
-      className={`
-        ${glass.promptDark} 
-        text-theme-white 
-        ${sizeClasses[size]} 
-        rounded-full 
-        font-medium font-raleway 
-        ${className}
-      `}
+    <button 
+      type="button"
+      className={`${badgeBaseClasses} ${sizeClasses[size]} ${className}`}
       title={config.description}
+      onClick={(event) => {
+        if (onClick) {
+          event.stopPropagation();
+          onClick(event);
+        }
+      }}
     >
+      <div className={badgeInnerGlowClass} />
       <div className="flex items-center gap-1">
         {showIcon && (
           hasToolLogo(config.name) ? (
@@ -266,7 +269,7 @@ export const ModelBadge: React.FC<ModelBadgeProps> = ({
               alt={`${config.name} logo`}
               loading="lazy"
               decoding="async"
-              className="w-3 h-3 object-contain rounded flex-shrink-0"
+              className="w-3.5 h-3.5 object-contain rounded flex-shrink-0"
             />
           ) : (
             <span className="text-xs leading-none">
@@ -278,7 +281,7 @@ export const ModelBadge: React.FC<ModelBadgeProps> = ({
           {config.name}
         </span>
       </div>
-    </div>
+    </button>
   );
 };
 

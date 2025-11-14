@@ -8,7 +8,7 @@ import { useAuth } from '../../../auth/useAuth';
 import { debugLog, debugError } from '../../../utils/debug';
 import type { GalleryImageLike, GalleryVideoLike } from '../types';
 
-// Helper to get consistent item identifier (matches getGalleryItemKey logic)
+// Helper to get consistent item identifier for UI actions (jobId → r2FileId → url)
 const getItemIdentifier = (item: GalleryImageLike | GalleryVideoLike): string | null => {
   if (item.jobId && item.jobId.trim().length > 0) {
     return item.jobId.trim();

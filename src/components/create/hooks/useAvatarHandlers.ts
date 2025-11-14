@@ -3,6 +3,7 @@ import { useAuth } from '../../../auth/useAuth';
 import { createAvatarRecord, normalizeStoredAvatars } from '../../../utils/avatars';
 import { getPersistedValue, setPersistedValue } from '../../../lib/clientStorage';
 import { debugLog, debugError } from '../../../utils/debug';
+import { dispatchStorageChange } from '../../../utils/storageEvents';
 import type { StoredAvatar, AvatarSelection } from '../../avatars/types';
 
 export function useAvatarHandlers() {
@@ -65,7 +66,7 @@ export function useAvatarHandlers() {
     if (!storagePrefix) return;
     
     try {
-      const stored = await getPersistedValue<StoredAvatar[]>(`${storagePrefix}:avatars`, []);
+      const stored = await getPersistedValue<StoredAvatar[]>(storagePrefix, 'avatars') ?? [];
       const normalized = normalizeStoredAvatars(stored);
       setStoredAvatars(normalized);
       debugLog('[useAvatarHandlers] Loaded stored avatars:', normalized.length);
@@ -80,8 +81,9 @@ export function useAvatarHandlers() {
     
     try {
       const updated = [...storedAvatars, avatar];
-      await setPersistedValue(`${storagePrefix}:avatars`, updated);
+      await setPersistedValue(storagePrefix, 'avatars', updated);
       setStoredAvatars(updated);
+      dispatchStorageChange('avatars');
       debugLog('[useAvatarHandlers] Saved avatar:', avatar.name);
     } catch (error) {
       debugError('[useAvatarHandlers] Error saving avatar:', error);
@@ -94,8 +96,9 @@ export function useAvatarHandlers() {
     
     try {
       const updated = storedAvatars.filter(avatar => avatar.id !== avatarId);
-      await setPersistedValue(`${storagePrefix}:avatars`, updated);
+      await setPersistedValue(storagePrefix, 'avatars', updated);
       setStoredAvatars(updated);
+      dispatchStorageChange('avatars');
       
       // Clear selection if deleted avatar was selected
       if (selectedAvatar?.id === avatarId) {

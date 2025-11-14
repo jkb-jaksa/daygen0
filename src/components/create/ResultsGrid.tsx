@@ -1,10 +1,12 @@
-import React, { memo, useCallback, useMemo, useState, useEffect } from 'react';
+import React, { memo, useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
-import { Heart, Globe, MoreHorizontal, Check, Image as ImageIcon, Video as VideoIcon, Copy, BookmarkPlus, Bookmark, Square, Trash2, FileText } from 'lucide-react';
+import { Heart, MoreHorizontal, Check, Image as ImageIcon, Video as VideoIcon, Copy, BookmarkPlus, Bookmark, Square, Trash2, FileText } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
+import { useGeneration } from './contexts/GenerationContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
-import { glass } from '../../styles/designSystem';
+import { useBadgeNavigation } from './hooks/useBadgeNavigation';
+import { glass, buttons } from '../../styles/designSystem';
 import { debugError } from '../../utils/debug';
 import { createCardImageStyle } from '../../utils/cardImageStyle';
 import { useSavedPrompts } from '../../hooks/useSavedPrompts';
@@ -18,16 +20,19 @@ import type { StoredStyle } from '../styles/types';
 import { normalizeStoredAvatars } from '../../utils/avatars';
 import { normalizeStoredProducts } from '../../utils/products';
 import { getPersistedValue } from '../../lib/clientStorage';
+import { STORAGE_CHANGE_EVENT } from '../../utils/storageEvents';
+import { CircularProgressRing } from '../CircularProgressRing';
 
 // Lazy load components
-const GenerationProgress = lazy(() => import('./GenerationProgress'));
 const ModelBadge = lazy(() => import('../ModelBadge'));
 const AvatarBadge = lazy(() => import('../avatars/AvatarBadge'));
 const ProductBadge = lazy(() => import('../products/ProductBadge'));
 const StyleBadge = lazy(() => import('../styles/StyleBadge'));
+const PublicBadge = lazy(() => import('./PublicBadge'));
 const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
+const GenerationProgress = lazy(() => import('./GenerationProgress'));
 
-// Helper to get consistent item identifier (matches getGalleryItemKey logic)
+// Helper to get consistent item identifier for UI actions (jobId → r2FileId → url)
 const getItemIdentifier = (item: GalleryImageLike | GalleryVideoLike): string | null => {
   if (item.jobId && item.jobId.trim().length > 0) {
     return item.jobId.trim();
@@ -96,11 +101,20 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     handleReusePrompt,
     handleMakeVideo,
   } = useGalleryActions();
+  const { state: generationState } = useGeneration();
   const { selectedItems, isBulkMode, imageActionMenu } = state;
   const [editMenu, setEditMenu] = useState<{ id: string; anchor: HTMLElement | null } | null>(null);
   const [storedAvatars, setStoredAvatars] = useState<StoredAvatar[]>([]);
   const [storedProducts, setStoredProducts] = useState<StoredProduct[]>([]);
   const [hoveredPromptButton, setHoveredPromptButton] = useState<string | null>(null);
+  const [savePromptModalState, setSavePromptModalState] = useState<{ prompt: string; originalPrompt: string } | null>(null);
+  const savePromptModalRef = useRef<HTMLDivElement>(null);
+  const {
+    goToAvatarProfile,
+    goToProductProfile,
+    goToPublicGallery,
+    goToModelGallery,
+  } = useBadgeNavigation();
   
   // Apply category-specific filtering
   const filteredItems = useMemo(() => {
@@ -116,7 +130,25 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     return contextFilteredItems;
   }, [activeCategory, contextFilteredItems]);
   
-  const showLoadingState = useMemo(() => isLoading && filteredItems.length === 0, [isLoading, filteredItems.length]);
+  const isGenerationCategory = activeCategory === 'image' || activeCategory === 'video';
+  const activeJobPlaceholders = useMemo(() => {
+    if (!isGenerationCategory || !generationState.activeJobs.length) {
+      return [];
+    }
+
+    const completedJobIds = new Set(
+      filteredItems
+        .map((item) => item.jobId)
+        .filter((jobId): jobId is string => typeof jobId === 'string' && jobId.trim().length > 0),
+    );
+
+    return generationState.activeJobs.filter((job) => !completedJobIds.has(job.id));
+  }, [filteredItems, generationState.activeJobs, isGenerationCategory]);
+
+  const showLoadingState = useMemo(
+    () => isLoading && filteredItems.length === 0 && activeJobPlaceholders.length === 0,
+    [activeJobPlaceholders.length, filteredItems.length, isLoading],
+  );
   
   // Saved prompts functionality
   const userKey = user?.id || user?.email || "anon";
@@ -161,6 +193,39 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     
     void loadData();
   }, [storagePrefix, user?.id]);
+  
+  // Listen for storage changes and reload data
+  useEffect(() => {
+    if (!storagePrefix) return;
+    
+    const loadData = async () => {
+      try {
+        const avatars = await getPersistedValue<StoredAvatar[]>(storagePrefix, 'avatars');
+        if (avatars) {
+          setStoredAvatars(normalizeStoredAvatars(avatars, { ownerId: user?.id }));
+        }
+        
+        const products = await getPersistedValue<StoredProduct[]>(storagePrefix, 'products');
+        if (products) {
+          setStoredProducts(normalizeStoredProducts(products, { ownerId: user?.id }));
+        }
+      } catch (err) {
+        debugError('[ResultsGrid] Failed to load avatars/products:', err);
+      }
+    };
+    
+    const handleStorageChange = (event: Event) => {
+      const customEvent = event as CustomEvent<{ key: 'avatars' | 'products' }>;
+      if (customEvent.detail.key === 'avatars' || customEvent.detail.key === 'products') {
+        void loadData();
+      }
+    };
+    
+    window.addEventListener(STORAGE_CHANGE_EVENT, handleStorageChange);
+    return () => {
+      window.removeEventListener(STORAGE_CHANGE_EVENT, handleStorageChange);
+    };
+  }, [storagePrefix, user?.id]);
   // Handler for copying prompt to clipboard
   const handleCopyPrompt = useCallback(async (prompt: string, event: React.MouseEvent) => {
     event.stopPropagation();
@@ -189,14 +254,57 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           showToast('Prompt unsaved');
         }
       } else {
-        savePrompt(prompt);
-        showToast('Prompt saved!');
+        // Open the Save Prompt modal instead of directly saving
+        setSavePromptModalState({ prompt: prompt.trim(), originalPrompt: prompt.trim() });
       }
     } catch (err) {
       debugError('Failed to save prompt:', err);
       showToast('Failed to save prompt');
     }
-  }, [savePrompt, isPromptSaved, showToast, userKey, removePrompt]);
+  }, [isPromptSaved, showToast, userKey, removePrompt]);
+  
+  // Save Prompt modal handlers
+  const handleSavePromptModalClose = useCallback(() => {
+    setSavePromptModalState(null);
+  }, []);
+  
+  const handleSavePromptModalSave = useCallback(() => {
+    if (!savePromptModalState || !savePromptModalState.prompt.trim()) return;
+    
+    try {
+      savePrompt(savePromptModalState.prompt.trim());
+      showToast('Prompt saved!');
+      setSavePromptModalState(null);
+    } catch (err) {
+      debugError('Failed to save prompt:', err);
+      showToast('Failed to save prompt');
+    }
+  }, [savePromptModalState, savePrompt, showToast]);
+  
+  // Handle modal click outside and escape key
+  useEffect(() => {
+    if (!savePromptModalState) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (savePromptModalRef.current && !savePromptModalRef.current.contains(e.target as Node)) {
+        setSavePromptModalState(null);
+      }
+    };
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSavePromptModalState(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [savePromptModalState]);
   
   // Tooltip helper functions (viewport-based positioning for portaled tooltips)
   const showHoverTooltip = useCallback((target: HTMLElement, tooltipId: string) => {
@@ -385,9 +493,9 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   }
 
   // Empty state check
-  if (filteredItems.length === 0) {
+  if (filteredItems.length === 0 && activeJobPlaceholders.length === 0) {
     // Show placeholder grid ONLY for generation categories (image/video)
-    if (activeCategory === 'image' || activeCategory === 'video') {
+    if (isGenerationCategory) {
       const PlaceholderIcon = activeCategory === 'image' ? ImageIcon : VideoIcon;
       return renderPlaceholderGrid(PlaceholderIcon, {
         className,
@@ -416,12 +524,129 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const gridCols = isGalleryView 
     ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6'
     : 'grid-cols-2 sm:grid-cols-3 xl:grid-cols-4';
+
+  type ActiveJob = typeof generationState.activeJobs[number];
+
+  const renderActiveJobCard = (job: ActiveJob) => {
+    const progressValue = Number.isFinite(job.backendProgress)
+      ? Math.max(0, Math.min(100, Math.round(job.backendProgress!)))
+      : Number.isFinite(job.progress)
+        ? Math.max(0, Math.min(100, Math.round(job.progress)))
+        : undefined;
+    const hasProgress = typeof progressValue === 'number' && progressValue > 0;
+    const statusLabel = (() => {
+      switch (job.status) {
+        case 'processing':
+          return 'Generating';
+        case 'completed':
+          return 'Finishing';
+        case 'failed':
+          return 'Retry needed';
+        default:
+          return 'Preparing';
+      }
+    })();
+
+    if (!hasProgress) {
+      return (
+        <div
+          key={`active-job-${job.id}`}
+          className="group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black animate-pulse"
+        >
+          <div className="w-full aspect-square animate-gradient-colors"></div>
+          <div className="absolute inset-0 flex items-center justify-center bg-theme-black/55 backdrop-blur-sm">
+            <div className="text-center">
+              <div className="mx-auto mb-3 w-8 h-8 border-2 border-theme-white/30 border-t-theme-white rounded-full animate-spin"></div>
+              <div className="text-theme-white text-xs font-raleway animate-pulse">
+                Generating...
+              </div>
+            </div>
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 p-3 gallery-prompt-gradient">
+            <p className="text-theme-text text-xs font-raleway line-clamp-2 opacity-75">
+              {job.prompt}
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div
+        key={`active-job-${job.id}`}
+        className="group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black"
+      >
+        <div className="w-full aspect-square animate-gradient-colors"></div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-theme-black/65 backdrop-blur-[10px] px-5 py-6 text-center">
+          <CircularProgressRing
+            progress={progressValue}
+            size={58}
+            strokeWidth={4}
+            showPercentage
+            className="drop-shadow-[0_0_18px_rgba(168,176,176,0.35)]"
+          />
+          <span className="uppercase tracking-[0.12em] text-[11px] font-raleway text-theme-white/80">
+            {statusLabel}
+          </span>
+          <p className="mt-2 text-theme-white/70 text-xs font-raleway leading-relaxed line-clamp-3">
+            {job.prompt}
+          </p>
+        </div>
+      </div>
+    );
+  };
   
   return (
-    <div className={`space-y-4 ${className}`}>
-      {statusBanner}
-      {/* Grid */}
-      <div className={`grid ${gridCols} gap-1 w-full p-1`}>
+    <>
+      {/* Save Prompt Modal */}
+      {savePromptModalState && createPortal(
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-n-black/80 py-12">
+          <div ref={savePromptModalRef} className={`${glass.promptDark} rounded-[20px] w-full max-w-lg mx-4 py-8 px-6 transition-colors duration-200`}>
+            <div className="space-y-6">
+              <div className="space-y-3 text-center">
+                <BookmarkPlus className="w-10 h-10 mx-auto text-n-text" />
+                <h3 className="text-xl font-raleway font-normal text-n-text">
+                  Save Prompt
+                </h3>
+                <p className="text-base font-raleway text-n-white">
+                  Edit your prompt before saving it for future creations.
+                </p>
+              </div>
+
+              <textarea
+                value={savePromptModalState.prompt}
+                onChange={(e) => setSavePromptModalState(prev => prev ? { ...prev, prompt: e.target.value } : null)}
+                className="w-full min-h-[120px] bg-n-black/40 text-n-text placeholder-d-white border border-n-mid rounded-xl px-4 py-3 focus:outline-none focus:border-n-text transition-colors duration-200 font-raleway text-base resize-none"
+                placeholder="Enter your prompt..."
+                autoFocus
+              />
+
+              <div className="flex justify-center gap-3">
+                <button
+                  onClick={handleSavePromptModalClose}
+                  className={`${buttons.ghost}`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSavePromptModalSave}
+                  disabled={!savePromptModalState.prompt.trim()}
+                  className={`${buttons.primary} disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+      
+      <div className={`space-y-4 ${className}`}>
+        {statusBanner}
+        {/* Grid */}
+        <div className={`grid ${gridCols} gap-1 w-full p-1`}>
+        {activeJobPlaceholders.map(renderActiveJobCard)}
         {filteredItems.map((item, index) => {
           const isSelected = isItemSelected(item);
           const itemId = getItemIdentifier(item);
@@ -430,6 +655,10 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           const productForImage = item.productId ? productMap.get(item.productId) : undefined;
           const styleForImage = item.styleId ? styleIdToStoredStyle(item.styleId) : null;
           const shouldDim = (isBulkMode || selectedItems.size > 0) && !isSelected;
+          const isVideoItem = isVideo(item);
+          const displayModelName = item.model ?? 'unknown';
+          const modelIdForFilter = item.model;
+          const filterType: 'image' | 'video' = isVideoItem ? 'video' : 'image';
           
           return (
           <div
@@ -596,7 +825,10 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                       >
                         <MoreHorizontal className="w-3 h-3" />
                       </button>
-                    </div>
+        </div>
+        <Suspense fallback={null}>
+          <GenerationProgress />
+        </Suspense>
                   </div>
                 )}
               </div>
@@ -705,62 +937,123 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                       </div>
                     )}
                     
-                    {/* Model Badge and other badges */}
-                    <div className="flex justify-between items-center mt-2">
-                      <div className="flex items-center gap-1 md:gap-2 flex-wrap">
-                        <Suspense fallback={null}>
-                          <ModelBadge model={item.model ?? 'unknown'} size="md" />
-                        </Suspense>
-                        
-                        {/* Avatar Badge */}
-                        {avatarForImage && (
-                          <Suspense fallback={null}>
-                            <AvatarBadge
-                              avatar={avatarForImage}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                // Could navigate to avatar creations
-                              }}
-                            />
-                          </Suspense>
-                        )}
-                        
-                        {/* Product Badge */}
-                        {productForImage && (
-                          <Suspense fallback={null}>
-                            <ProductBadge
-                              product={productForImage}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                // Could navigate to product creations
-                              }}
-                            />
-                          </Suspense>
-                        )}
-                        
-                        {/* Style Badge */}
-                        {styleForImage && (
-                          <Suspense fallback={null}>
-                            <StyleBadge
-                              style={styleForImage}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                              }}
-                            />
-                          </Suspense>
-                        )}
-                      </div>
-                      
-                      {/* Public indicator */}
-                      {item.isPublic && (
-                        <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
+                    {(() => {
+                      // Count total badges to determine layout
+                      const totalBadges = 
+                        1 + // ModelBadge always present
+                        (item.isPublic ? 1 : 0) +
+                        (avatarForImage ? 1 : 0) +
+                        (productForImage ? 1 : 0) +
+                        (styleForImage ? 1 : 0);
+
+                      const useTwoRowLayout = totalBadges >= 3;
+
+                      return useTwoRowLayout ? (
+                        /* Two-row layout for 3+ badges */
+                        <div className="mt-2 space-y-1.5">
+                          {/* Row 1: Model Badge + Public Badge */}
                           <div className="flex items-center gap-1">
-                            <Globe className="w-3 h-3 text-theme-text" />
-                            <span className="leading-none">Public</span>
+                            <Suspense fallback={null}>
+                              <ModelBadge
+                                model={displayModelName}
+                                size="md"
+                                onClick={() => goToModelGallery(modelIdForFilter, filterType)}
+                              />
+                            </Suspense>
+                            
+                            {/* Public indicator */}
+                            {item.isPublic && (
+                              <Suspense fallback={null}>
+                                <PublicBadge onClick={goToPublicGallery} />
+                              </Suspense>
+                            )}
+                          </div>
+                          
+                          {/* Row 2: Avatar, Product, Style Badges */}
+                          {(avatarForImage || productForImage || styleForImage) && (
+                            <div className="flex items-center gap-1">
+                              {avatarForImage && (
+                                <Suspense fallback={null}>
+                                  <AvatarBadge
+                                    avatar={avatarForImage}
+                                    onClick={() => goToAvatarProfile(avatarForImage)}
+                                  />
+                                </Suspense>
+                              )}
+                              
+                              {productForImage && (
+                                <Suspense fallback={null}>
+                                  <ProductBadge
+                                    product={productForImage}
+                                    onClick={() => goToProductProfile(productForImage)}
+                                  />
+                                </Suspense>
+                              )}
+                              
+                              {styleForImage && (
+                                <Suspense fallback={null}>
+                                  <StyleBadge
+                                    style={styleForImage}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                    }}
+                                  />
+                                </Suspense>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        /* Single-row layout for 1-2 badges */
+                        <div className="mt-2">
+                          <div className="flex items-center gap-1">
+                            <Suspense fallback={null}>
+                              <ModelBadge
+                                model={displayModelName}
+                                size="md"
+                                onClick={() => goToModelGallery(modelIdForFilter, filterType)}
+                              />
+                            </Suspense>
+                            
+                            {/* Public indicator */}
+                            {item.isPublic && (
+                              <Suspense fallback={null}>
+                                <PublicBadge onClick={goToPublicGallery} />
+                              </Suspense>
+                            )}
+                            
+                            {avatarForImage && (
+                              <Suspense fallback={null}>
+                                <AvatarBadge
+                                  avatar={avatarForImage}
+                                  onClick={() => goToAvatarProfile(avatarForImage)}
+                                />
+                              </Suspense>
+                            )}
+                            
+                            {productForImage && (
+                              <Suspense fallback={null}>
+                                <ProductBadge
+                                  product={productForImage}
+                                  onClick={() => goToProductProfile(productForImage)}
+                                />
+                              </Suspense>
+                            )}
+                            
+                            {styleForImage && (
+                              <Suspense fallback={null}>
+                                <StyleBadge
+                                  style={styleForImage}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                  }}
+                                />
+                              </Suspense>
+                            )}
                           </div>
                         </div>
-                      )}
-                    </div>
+                      );
+                    })()}
                   </div>
                 </div>
               )}
@@ -921,12 +1214,11 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           );
         })}
       </div>
-      
-      {/* Generation progress */}
-      <Suspense fallback={null}>
-        <GenerationProgress />
-      </Suspense>
+        <Suspense fallback={null}>
+          <GenerationProgress />
+        </Suspense>
     </div>
+    </>
   );
 });
 

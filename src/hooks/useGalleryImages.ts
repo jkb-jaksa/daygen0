@@ -34,14 +34,15 @@ export interface GalleryImagesState {
 }
 
 const getImageKey = (image: GalleryImageLike): string | null => {
+  const normalizedUrl = image.url?.trim();
+  if (normalizedUrl) {
+    return normalizedUrl;
+  }
   if (image.r2FileId && image.r2FileId.trim().length > 0) {
-    return image.r2FileId;
+    return `r2:${image.r2FileId.trim()}`;
   }
   if (image.jobId && image.jobId.trim().length > 0) {
-    return image.jobId;
-  }
-  if (image.url && image.url.trim().length > 0) {
-    return image.url;
+    return `job:${image.jobId.trim()}`;
   }
   return null;
 };
@@ -72,8 +73,9 @@ export const useGalleryImages = () => {
   // Convert R2File response to GalleryImageLike format
   const convertR2FileToGalleryItem = useCallback(
     (r2File: R2FileResponse): GalleryImageLike | GalleryVideoLike => {
+      const normalizedUrl = r2File.fileUrl?.trim() ?? r2File.fileUrl;
       const base: GalleryImageLike = {
-        url: r2File.fileUrl,
+        url: normalizedUrl,
         prompt: r2File.prompt || '',
         model: r2File.model,
         timestamp: r2File.createdAt,
@@ -89,7 +91,7 @@ export const useGalleryImages = () => {
 
       const mimeType = r2File.mimeType?.toLowerCase() ?? '';
       const fileName = r2File.fileName?.toLowerCase() ?? '';
-      const fileUrl = r2File.fileUrl?.toLowerCase() ?? '';
+      const fileUrl = normalizedUrl?.toLowerCase() ?? '';
       const looksLikeVideo =
         mimeType.startsWith('video/') ||
         /\.(mp4|mov|webm|m4v|mkv)$/i.test(fileName) ||
@@ -253,6 +255,18 @@ export const useGalleryImages = () => {
         localImagesCount: localImages.length,
         base64Count: localImages.filter(img => isBase64Url(img.url)).length
       });
+
+      if (storagePrefix) {
+        try {
+          await setPersistedValue(
+            storagePrefix,
+            'gallery',
+            serializeGallery(dedupedImages),
+          );
+        } catch (error) {
+          debugError('Failed to persist gallery snapshot:', error);
+        }
+      }
       
       setState({
         images: dedupedImages,
@@ -370,12 +384,13 @@ export const useGalleryImages = () => {
           return image;
         });
 
-        // Apply upserts (existing logic remains the same)
+        // Apply upserts - prepend new images, update existing in place
         if (upserts.length > 0) {
+          const newImages: GalleryImageLike[] = [];
           for (const incoming of upserts) {
             const key = getImageKey(incoming);
             if (!key) {
-              nextImages.push(incoming);
+              newImages.push(incoming);
               continue;
             }
 
@@ -383,8 +398,20 @@ export const useGalleryImages = () => {
             if (existingIndex !== undefined) {
               nextImages[existingIndex] = mergeImageDetails(nextImages[existingIndex], incoming);
             } else {
-              existingByKey.set(key, nextImages.length);
-              nextImages.push(incoming);
+              // New image - prepend to beginning
+              newImages.push(incoming);
+              existingByKey.set(key, newImages.length - 1);
+            }
+          }
+          // Prepend all new images at the beginning
+          if (newImages.length > 0) {
+            nextImages.unshift(...newImages);
+            // Update indices for existing images after prepending
+            for (let i = newImages.length; i < nextImages.length; i++) {
+              const key = getImageKey(nextImages[i]);
+              if (key) {
+                existingByKey.set(key, i);
+              }
             }
           }
         }

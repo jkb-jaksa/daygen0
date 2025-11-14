@@ -13,6 +13,7 @@ import { useGeneration } from './GenerationContext';
 import { useAuth } from '../../../auth/useAuth';
 import { getPersistedValue, setPersistedValue } from '../../../lib/clientStorage';
 import { debugError } from '../../../utils/debug';
+import { consumePendingBadgeFilters } from '../hooks/badgeNavigationStorage';
 import type {
   GalleryImageLike,
   GalleryVideoLike,
@@ -118,16 +119,17 @@ const initialState: GalleryState = {
 const JOB_ROUTE_PREFIX = '/job/';
 
 const getGalleryItemKey = (item: GalleryImageLike | GalleryVideoLike): string | null => {
-  if (item.jobId && item.jobId.trim().length > 0) {
-    return item.jobId.trim();
+  const normalizedUrl = item.url?.trim();
+  if (normalizedUrl) {
+    return normalizedUrl;
   }
 
   if (item.r2FileId && item.r2FileId.trim().length > 0) {
-    return item.r2FileId.trim();
+    return `r2:${item.r2FileId.trim()}`;
   }
 
-  if (item.url && item.url.trim().length > 0) {
-    return item.url.trim();
+  if (item.jobId && item.jobId.trim().length > 0) {
+    return `job:${item.jobId.trim()}`;
   }
 
   return null;
@@ -218,7 +220,7 @@ function galleryReducer(state: GalleryState, action: GalleryAction): GalleryStat
     case 'SET_VIDEOS':
       return { ...state, videos: action.payload };
     case 'ADD_IMAGE':
-      return { ...state, images: [...state.images, action.payload] };
+      return { ...state, images: [action.payload, ...state.images] };
     case 'ADD_VIDEO':
       return { ...state, videos: [...state.videos, action.payload] };
     case 'UPDATE_IMAGE':
@@ -906,6 +908,17 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
       setFullSizeOpen(true);
     }
   }, [filteredItems, location.pathname, setFullSizeImage, setFullSizeOpen, isGalleryLoading, fetchGalleryImages]);
+
+  useEffect(() => {
+    if (!location.pathname.startsWith('/gallery')) {
+      return;
+    }
+
+    const pendingFilters = consumePendingBadgeFilters();
+    if (pendingFilters) {
+      dispatch({ type: 'SET_FILTERS', payload: pendingFilters });
+    }
+  }, [location.pathname]);
 
   // Initialize previousActiveJobsRef on mount
   useEffect(() => {

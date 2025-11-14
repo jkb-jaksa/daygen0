@@ -172,54 +172,64 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
             </p>
           </div>
         </div>
-        <div className="flex w-full items-start justify-center px-8 pt-6 pb-10 sm:px-14 lg:w-1/2 lg:px-20 lg:border-l lg:border-theme-dark overflow-y-auto">
-          <div className="w-full max-w-md space-y-3 sm:space-y-4">
+        <div className="flex flex-col w-full px-8 pt-6 pb-10 sm:px-14 lg:w-1/2 lg:px-20 lg:border-l lg:border-theme-dark overflow-y-auto">
+          <div className="w-full max-w-md mx-auto">
             <h3 className={text.logoText}>{title}</h3>
-            {showEmailForm && !showForgotPassword && (
+          </div>
+          {(showEmailForm && !showForgotPassword) && (
+            <div className="w-full max-w-md mx-auto mt-4">
               <button
                 type="button"
                 onClick={() => setShowEmailForm(false)}
-                className="text-sm font-raleway text-theme-light hover:text-theme-text transition-colors text-center"
+                className="text-sm font-raleway text-theme-light hover:text-theme-text transition-colors"
               >
                 ← Go back
               </button>
-            )}
-            {showForgotPassword && (
+            </div>
+          )}
+          {showForgotPassword && (
+            <div className="w-full max-w-md mx-auto mt-4">
               <button
                 type="button"
                 onClick={() => {
                   setShowForgotPassword(false);
                   setShowEmailForm(true);
                 }}
-                className="text-sm font-raleway text-theme-light hover:text-theme-text transition-colors text-center"
+                className="text-sm font-raleway text-theme-light hover:text-theme-text transition-colors"
               >
                 ← Go back
               </button>
-            )}
-            {showModeSwitcher && (
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => handleModeChange("login")}
-                  className={`btn btn-ghost w-full justify-center font-raleway text-base font-medium parallax-large ${
-                    mode === "login" ? "border-theme-mid text-theme-text bg-theme-white/5" : "text-theme-light"
-                  }`}
-                >
-                  Sign In
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleModeChange("signup")}
-                  className={`btn btn-ghost w-full justify-center font-raleway text-base font-medium parallax-large ${
-                    mode === "signup" ? "border-theme-mid text-theme-text bg-theme-white/5" : "text-theme-light"
-                  }`}
-                >
-                  Sign Up
-                </button>
-              </div>
-            )}
-            {body}
-            <p className="text-xs text-theme-light text-center font-raleway mt-4">
+            </div>
+          )}
+          <div className="flex-1 flex items-center justify-center w-full">
+            <div className="w-full max-w-md space-y-3 sm:space-y-4">
+              {showModeSwitcher && (
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    aria-pressed={mode === "login"}
+                    data-active={mode === "login"}
+                    onClick={() => handleModeChange("login")}
+                    className="auth-mode-toggle btn btn-ghost w-full justify-center font-raleway text-base font-medium parallax-large text-theme-light"
+                  >
+                    Log In
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={mode === "signup"}
+                    data-active={mode === "signup"}
+                    onClick={() => handleModeChange("signup")}
+                    className="auth-mode-toggle btn btn-ghost w-full justify-center font-raleway text-base font-medium parallax-large text-theme-light"
+                  >
+                    Sign Up
+                  </button>
+                </div>
+              )}
+              {body}
+            </div>
+          </div>
+          <div className="w-full max-w-md mx-auto pb-4">
+            <p className="text-xs text-theme-light text-center font-raleway">
               By continuing, you agree to DayGen{' '}
               <a 
                 href="/terms-of-service" 
@@ -341,7 +351,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
   const mainBody = (
     <div className="space-y-3">
       {!showEmailForm ? (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <button
             type="button"
             onClick={() => setShowEmailForm(true)}
@@ -351,9 +361,14 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
               <rect x="3" y="5" width="18" height="14" rx="2" />
               <path d="M3 7l9 6 9-6" />
             </svg>
-            Log in with email
+            {mode === "login" ? "Log in with Email" : "Sign up with Email"}
           </button>
-          <GoogleSignIn onSuccess={handleGoogleSignInSuccess} onError={handleGoogleSignInError} disabled={isSubmitting} />
+          <GoogleSignIn 
+            onSuccess={handleGoogleSignInSuccess} 
+            onError={handleGoogleSignInError} 
+            disabled={isSubmitting}
+            buttonText={mode === "login" ? "Log in with Google" : "Sign up with Google"}
+          />
           <button
             type="button"
             className="btn btn-white w-full justify-center gap-3 font-raleway text-base font-medium parallax-large"
@@ -361,7 +376,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
             <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
               <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
             </svg>
-            Sign in with Apple
+            {mode === "login" ? "Log in with Apple" : "Sign up with Apple"}
           </button>
           {import.meta.env.DEV && (
             <button
@@ -374,6 +389,32 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
               <span>Quick Login (Dev)</span>
             </button>
           )}
+          {mode === "login" && (
+            <p className="text-base text-theme-light text-center font-raleway !mt-8">
+              Don't have an account?{' '}
+              <button
+                type="button"
+                onClick={() => handleModeChange("signup")}
+                className="text-theme-white hover:text-theme-text transition-colors underline"
+              >
+                Sign up
+              </button>
+              .
+            </p>
+          )}
+          {mode === "signup" && (
+            <p className="text-base text-theme-light text-center font-raleway !mt-8">
+              Already have an account?{' '}
+              <button
+                type="button"
+                onClick={() => handleModeChange("login")}
+                className="text-theme-white hover:text-theme-text transition-colors underline"
+              >
+                Log in
+              </button>
+              .
+            </p>
+          )}
           {socialError && (
             <div className="rounded-xl border border-red-400/30 bg-red-400/5 p-4 text-xs font-raleway text-red-200">
               <p className="mb-1 font-medium text-red-100">Google Sign-In Error</p>
@@ -383,7 +424,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
           )}
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <form onSubmit={handleSubmit} className="space-y-3">
         <div className="space-y-2">
           <input
@@ -436,12 +477,38 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
           {isSubmitting ? "Please wait…" : mode === "login" ? "Sign In" : "Create Account"}
         </button>
           </form>
+          {mode === "login" && (
+            <p className="text-base text-theme-light text-center font-raleway !mt-8">
+              Don't have an account?{' '}
+              <button
+                type="button"
+                onClick={() => handleModeChange("signup")}
+                className="text-theme-white hover:text-theme-text transition-colors underline"
+              >
+                Sign up
+              </button>
+              .
+            </p>
+          )}
+          {mode === "signup" && (
+            <p className="text-base text-theme-light text-center font-raleway !mt-8">
+              Already have an account?{' '}
+              <button
+                type="button"
+                onClick={() => handleModeChange("login")}
+                className="text-theme-white hover:text-theme-text transition-colors underline"
+              >
+                Log in
+              </button>
+              .
+            </p>
+          )}
         </div>
       )}
     </div>
   );
 
-  const title = mode === "login" ? "Sign in" : "Create your account";
+  const title = mode === "login" ? "Log into your account." : "Create your account.";
 
   return renderSplitLayout({
     title,
