@@ -34,6 +34,8 @@ export function usePromptHandlers(
   // Track saved prompts refresh timestamp for forcing dropdown updates
   const [savedPromptsRefreshKey, setSavedPromptsRefreshKey] = useState(0);
   const savedPromptsRef = useRef(savedPrompts);
+  const savedPromptsLength = savedPrompts.length;
+  const firstSavedPromptId = savedPrompts[0]?.id ?? null;
   
   // Keep ref in sync
   useEffect(() => {
@@ -43,7 +45,7 @@ export function usePromptHandlers(
   // Listen for saved prompts changes to update refresh key
   useEffect(() => {
     setSavedPromptsRefreshKey(prev => prev + 1);
-  }, [savedPrompts.length, savedPrompts[0]?.id]);
+  }, [savedPromptsLength, firstSavedPromptId]);
   
   // Also listen directly to storage change events to ensure we catch all updates
   useEffect(() => {
