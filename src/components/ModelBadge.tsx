@@ -1,7 +1,7 @@
 import React from 'react';
 import { getToolLogo, hasToolLogo } from '../utils/toolLogos';
-import { glass } from '../styles/designSystem';
 import { normalizeModelId } from '../utils/modelUtils';
+import { badgeBaseClasses, badgeInnerGlowClass } from './shared/badgeStyles';
 
 interface ModelBadgeProps {
   model: string;
@@ -240,24 +240,19 @@ export const ModelBadge: React.FC<ModelBadgeProps> = ({
     };
   }
 
-  const sizeClasses = {
-    sm: 'px-2 py-2 text-xs',
-    md: 'px-2.5 py-2 text-xs',
-    lg: 'px-3 py-2 text-xs'
-  };
+const sizeClasses = {
+  sm: 'px-2 py-1 text-xs',
+  md: 'px-2 py-1 text-xs',
+  lg: 'px-2 py-1 text-xs'
+};
 
   return (
-    <div 
-      className={`
-        ${glass.promptDark} 
-        text-theme-white 
-        ${sizeClasses[size]} 
-        rounded-full 
-        font-medium font-raleway 
-        ${className}
-      `}
+    <button 
+      type="button"
+      className={`${badgeBaseClasses} ${sizeClasses[size]} ${className}`}
       title={config.description}
     >
+      <div className={badgeInnerGlowClass} />
       <div className="flex items-center gap-1">
         {showIcon && (
           hasToolLogo(config.name) ? (
@@ -278,7 +273,7 @@ export const ModelBadge: React.FC<ModelBadgeProps> = ({
           {config.name}
         </span>
       </div>
-    </div>
+    </button>
   );
 };
 

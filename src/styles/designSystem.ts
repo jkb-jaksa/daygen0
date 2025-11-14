@@ -113,8 +113,8 @@ export const glass = {
   base: glassBase, // Default glass container
   surface: `${glassCore} bg-[color:var(--glass-surface-bg)] rounded-[20px]`, // Content panels
   tight: `${glassBase} rounded-lg`, // Small glass boxes
-  prompt: `prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[24px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)]`, // Prompt surfaces
-  promptBorderless: `prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[24px] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)]`,
+  prompt: `prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)]`, // Prompt surfaces
+  promptBorderless: `prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)]`,
   promptDark: `glass-liquid willchange-backdrop isolate backdrop-blur-[40px] border border-[color:var(--glass-border)] bg-[color:var(--glass-dark-bg)]`, // Navbar, dropdowns
   sidebarIcon: `glass-liquid willchange-backdrop isolate backdrop-blur-[20px] border border-[color:var(--glass-border)] bg-[color:var(--glass-base-bg)] text-[color:var(--theme-text)]`,
 };

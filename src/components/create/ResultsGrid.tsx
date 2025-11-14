@@ -1,7 +1,7 @@
 import React, { memo, useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
-import { Heart, Globe, MoreHorizontal, Check, Image as ImageIcon, Video as VideoIcon, Copy, BookmarkPlus, Bookmark, Square, Trash2, FileText } from 'lucide-react';
+import { Heart, MoreHorizontal, Check, Image as ImageIcon, Video as VideoIcon, Copy, BookmarkPlus, Bookmark, Square, Trash2, FileText } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
@@ -26,6 +26,7 @@ const ModelBadge = lazy(() => import('../ModelBadge'));
 const AvatarBadge = lazy(() => import('../avatars/AvatarBadge'));
 const ProductBadge = lazy(() => import('../products/ProductBadge'));
 const StyleBadge = lazy(() => import('../styles/StyleBadge'));
+const PublicBadge = lazy(() => import('./PublicBadge'));
 const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
 
 // Helper to get consistent item identifier for UI actions (jobId → r2FileId → url)
@@ -941,12 +942,9 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                             
                             {/* Public indicator */}
                             {item.isPublic && (
-                              <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
-                                <div className="flex items-center gap-1">
-                                  <Globe className="w-3.5 h-3.5 text-theme-text" />
-                                  <span className="leading-none">Public</span>
-                                </div>
-                              </div>
+                              <Suspense fallback={null}>
+                                <PublicBadge />
+                              </Suspense>
                             )}
                           </div>
                           
@@ -1000,12 +998,9 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                             
                             {/* Public indicator */}
                             {item.isPublic && (
-                              <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
-                                <div className="flex items-center gap-1">
-                                  <Globe className="w-3.5 h-3.5 text-theme-text" />
-                                  <span className="leading-none">Public</span>
-                                </div>
-                              </div>
+                              <Suspense fallback={null}>
+                                <PublicBadge />
+                              </Suspense>
                             )}
                             
                             {avatarForImage && (
