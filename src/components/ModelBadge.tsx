@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { type MouseEvent } from 'react';
 import { getToolLogo, hasToolLogo } from '../utils/toolLogos';
 import { normalizeModelId } from '../utils/modelUtils';
 import { badgeBaseClasses, badgeInnerGlowClass } from './shared/badgeStyles';
@@ -8,6 +8,7 @@ interface ModelBadgeProps {
   size?: 'sm' | 'md' | 'lg';
   showIcon?: boolean;
   className?: string;
+  onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
 }
 
 // Model configuration with display names and icons
@@ -204,7 +205,8 @@ export const ModelBadge: React.FC<ModelBadgeProps> = ({
   model, 
   size = 'sm', 
   showIcon = true,
-  className = '' 
+  className = '',
+  onClick,
 }) => {
   // Clean and normalize the model string
   const cleanModel = (model || '').trim();
@@ -251,6 +253,12 @@ const sizeClasses = {
       type="button"
       className={`${badgeBaseClasses} ${sizeClasses[size]} ${className}`}
       title={config.description}
+      onClick={(event) => {
+        if (onClick) {
+          event.stopPropagation();
+          onClick(event);
+        }
+      }}
     >
       <div className={badgeInnerGlowClass} />
       <div className="flex items-center gap-1">

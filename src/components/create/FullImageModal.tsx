@@ -16,16 +16,19 @@ import { loadSavedPrompts } from '../../lib/savedPrompts';
 import CreateSidebar from './CreateSidebar';
 import type { StoredAvatar } from '../avatars/types';
 import type { StoredProduct } from '../products/types';
+import type { GalleryImageLike, GalleryVideoLike } from './types';
 import { normalizeStoredAvatars } from '../../utils/avatars';
 import { normalizeStoredProducts } from '../../utils/products';
 import { getPersistedValue } from '../../lib/clientStorage';
 import { STORAGE_CHANGE_EVENT } from '../../utils/storageEvents';
+import { useBadgeNavigation } from './hooks/useBadgeNavigation';
 
 // Lazy load VerticalGalleryNav
 const VerticalGalleryNav = lazy(() => import('../shared/VerticalGalleryNav'));
 const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
 const AvatarBadge = lazy(() => import('../avatars/AvatarBadge'));
 const ProductBadge = lazy(() => import('../products/ProductBadge'));
+const PublicBadge = lazy(() => import('./PublicBadge'));
 
 // Helper function to get initials from name
 const getInitials = (name: string) =>
@@ -36,6 +39,13 @@ const getInitials = (name: string) =>
     .join("")
     .slice(0, 2)
     .toUpperCase();
+
+const getGalleryItemType = (item: GalleryImageLike | GalleryVideoLike | null): 'image' | 'video' => {
+  if (item && 'type' in item && item.type === 'video') {
+    return 'video';
+  }
+  return 'image';
+};
 
 const FullImageModal = memo(() => {
   const { state, setFullSizeImage, filteredItems } = useGallery();
@@ -71,9 +81,16 @@ const FullImageModal = memo(() => {
   const { showToast } = useToast();
   const [savePromptModalState, setSavePromptModalState] = useState<{ prompt: string; originalPrompt: string } | null>(null);
   const savePromptModalRef = useRef<HTMLDivElement>(null);
+  const {
+    goToAvatarProfile,
+    goToProductProfile,
+    goToPublicGallery,
+    goToModelGallery,
+  } = useBadgeNavigation();
   
   const { fullSizeImage, fullSizeIndex, isFullSizeOpen } = state;
   const open = isFullSizeOpen;
+  const fullSizeItemType: 'image' | 'video' = getGalleryItemType(fullSizeImage);
   
   console.log('[FullImageModal] Render', { 
     open, 
@@ -877,7 +894,8 @@ const FullImageModal = memo(() => {
                       <Suspense fallback={null}>
                         <ModelBadge 
                           model={fullSizeImage.model || 'unknown'} 
-                          size="md" 
+                          size="md"
+                          onClick={() => goToModelGallery(fullSizeImage.model, fullSizeItemType)}
                         />
                       </Suspense>
                       <AspectRatioBadge 
@@ -889,33 +907,30 @@ const FullImageModal = memo(() => {
                         if (!avatarForImage) return null;
                         return (
                           <Suspense fallback={null}>
-                            <AvatarBadge
-                              avatar={avatarForImage}
-                              onClick={() => navigate(`/create/avatars/${avatarForImage.slug}`)}
-                            />
-                          </Suspense>
-                        );
+                          <AvatarBadge
+                            avatar={avatarForImage}
+                            onClick={() => goToAvatarProfile(avatarForImage)}
+                          />
+                        </Suspense>
+                      );
                       })()}
                       {fullSizeImage.productId && (() => {
                         const productForImage = productMap.get(fullSizeImage.productId);
                         if (!productForImage) return null;
                         return (
                           <Suspense fallback={null}>
-                            <ProductBadge
-                              product={productForImage}
-                              onClick={() => navigate(`/create/products/${productForImage.slug}`)}
-                            />
-                          </Suspense>
-                        );
+                          <ProductBadge
+                            product={productForImage}
+                            onClick={() => goToProductProfile(productForImage)}
+                          />
+                        </Suspense>
+                      );
                       })()}
                     </div>
                     {fullSizeImage.isPublic && !fullSizeImage.savedFrom && (
-                      <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
-                        <div className="flex items-center gap-1">
-                          <Globe className="w-3.5 h-3.5 text-theme-text" />
-                          <span className="leading-none">Public</span>
-                        </div>
-                      </div>
+                      <Suspense fallback={null}>
+                        <PublicBadge onClick={goToPublicGallery} />
+                      </Suspense>
                     )}
                   </div>
                 </div>

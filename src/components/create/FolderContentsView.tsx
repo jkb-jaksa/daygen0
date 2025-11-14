@@ -10,6 +10,7 @@ const ModelBadge = lazy(() => import('../ModelBadge'));
 const AvatarBadge = lazy(() => import('../avatars/AvatarBadge'));
 const ProductBadge = lazy(() => import('../products/ProductBadge'));
 const StyleBadge = lazy(() => import('../styles/StyleBadge'));
+const PublicBadge = lazy(() => import('./PublicBadge'));
 const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
 
 interface FolderContentsViewProps {
@@ -38,6 +39,8 @@ interface FolderContentsViewProps {
   styleIdToStoredStyle?: (styleId: string) => StoredStyle | null;
   onAvatarClick?: (avatar: StoredAvatar, imageUrl?: string) => void;
   onProductClick?: (product: StoredProduct) => void;
+  onModelClick?: (modelId: string, type: 'image' | 'video') => void;
+  onPublicClick?: () => void;
   // Tooltip handlers
   showHoverTooltip?: (element: HTMLElement, id: string) => void;
   hideHoverTooltip?: (id: string) => void;
@@ -76,6 +79,8 @@ export default function FolderContentsView({
   styleIdToStoredStyle,
   onAvatarClick,
   onProductClick,
+  onModelClick,
+  onPublicClick,
   showHoverTooltip,
   hideHoverTooltip,
 }: FolderContentsViewProps) {
@@ -243,9 +248,18 @@ export default function FolderContentsView({
 
                         {/* Model Badge and Public Indicator */}
                         <div className="flex justify-between items-center mt-2">
-                          <div className="flex items-center gap-1 md:gap-2">
+                          <div className="flex items-center gap-1 md:gap-2 flex-wrap">
                             <Suspense fallback={null}>
-                              <ModelBadge model={img.model ?? 'unknown'} size="md" />
+                              <ModelBadge
+                                model={img.model ?? 'unknown'}
+                                size="md"
+                                onClick={() => {
+                                  if (img.model) {
+                                    const isVideoItem = 'type' in img && img.type === 'video';
+                                    onModelClick?.(img.model, isVideoItem ? 'video' : 'image');
+                                  }
+                                }}
+                              />
                             </Suspense>
 
                             {/* Avatar Badge */}
@@ -258,10 +272,7 @@ export default function FolderContentsView({
                                     avatar={avatarForImage}
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      const avatarImageUrl = img.avatarImageId
-                                        ? avatarForImage.images?.find((avatarImg: AvatarImage) => avatarImg.id === img.avatarImageId)?.url
-                                        : avatarForImage.imageUrl;
-                                      onAvatarClick?.(avatarForImage, avatarImageUrl ?? avatarForImage.imageUrl);
+                                      onAvatarClick?.(avatarForImage);
                                     }}
                                   />
                                 </Suspense>
@@ -303,12 +314,9 @@ export default function FolderContentsView({
                           </div>
 
                           {img.isPublic && (
-                            <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
-                              <div className="flex items-center gap-1">
-                                <Globe className="w-3 h-3 text-theme-text" />
-                                <span className="leading-none">Public</span>
-                              </div>
-                            </div>
+                            <Suspense fallback={null}>
+                              <PublicBadge onClick={onPublicClick} />
+                            </Suspense>
                           )}
                         </div>
                       </div>
@@ -408,4 +416,3 @@ export default function FolderContentsView({
     </div>
   );
 }
-

@@ -27,6 +27,7 @@ import { useSavedPrompts } from '../../hooks/useSavedPrompts';
 import type { Folder, GalleryImageLike, GalleryVideoLike } from './types';
 import { CreateBridgeProvider, type GalleryBridgeActions } from './contexts/CreateBridgeContext';
 import { createInitialBridgeActions } from './contexts/hooks';
+import { useBadgeNavigation } from './hooks/useBadgeNavigation';
 
 const COMING_SOON_CATEGORIES = ['text', 'audio'] as const;
 type ComingSoonCategoryKey = (typeof COMING_SOON_CATEGORIES)[number];
@@ -112,6 +113,12 @@ function CreateRefactoredView() {
   const { isPromptSaved } = useSavedPrompts(promptsUserKey);
   const controller = useCreateGenerationController();
   const { avatarHandlers, productHandlers } = controller;
+  const {
+    goToAvatarProfile,
+    goToProductProfile,
+    goToPublicGallery,
+    goToModelGallery,
+  } = useBadgeNavigation();
 
   // Folder-specific local state
   const [newFolderName, setNewFolderName] = useState('');
@@ -810,6 +817,10 @@ function CreateRefactoredView() {
                     moreActionMenu={null}
                     onEditMenuSelect={handleFolderEditMenuSelect}
                     onMoreButtonClick={undefined}
+                    onAvatarClick={avatar => goToAvatarProfile(avatar)}
+                    onProductClick={product => goToProductProfile(product)}
+                    onModelClick={(modelId, type) => goToModelGallery(modelId, type)}
+                    onPublicClick={goToPublicGallery}
                   />
                 </Suspense>
               )}

@@ -5,6 +5,7 @@ import { Heart, MoreHorizontal, Check, Image as ImageIcon, Video as VideoIcon, C
 import { useGallery } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
+import { useBadgeNavigation } from './hooks/useBadgeNavigation';
 import { glass, buttons } from '../../styles/designSystem';
 import { debugError } from '../../utils/debug';
 import { createCardImageStyle } from '../../utils/cardImageStyle';
@@ -107,6 +108,12 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const [hoveredPromptButton, setHoveredPromptButton] = useState<string | null>(null);
   const [savePromptModalState, setSavePromptModalState] = useState<{ prompt: string; originalPrompt: string } | null>(null);
   const savePromptModalRef = useRef<HTMLDivElement>(null);
+  const {
+    goToAvatarProfile,
+    goToProductProfile,
+    goToPublicGallery,
+    goToModelGallery,
+  } = useBadgeNavigation();
   
   // Apply category-specific filtering
   const filteredItems = useMemo(() => {
@@ -645,6 +652,10 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           const productForImage = item.productId ? productMap.get(item.productId) : undefined;
           const styleForImage = item.styleId ? styleIdToStoredStyle(item.styleId) : null;
           const shouldDim = (isBulkMode || selectedItems.size > 0) && !isSelected;
+          const isVideoItem = isVideo(item);
+          const displayModelName = item.model ?? 'unknown';
+          const modelIdForFilter = item.model;
+          const filterType: 'image' | 'video' = isVideoItem ? 'video' : 'image';
           
           return (
           <div
@@ -937,13 +948,17 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                           {/* Row 1: Model Badge + Public Badge */}
                           <div className="flex items-center gap-1">
                             <Suspense fallback={null}>
-                              <ModelBadge model={item.model ?? 'unknown'} size="md" />
+                              <ModelBadge
+                                model={displayModelName}
+                                size="md"
+                                onClick={() => goToModelGallery(modelIdForFilter, filterType)}
+                              />
                             </Suspense>
                             
                             {/* Public indicator */}
                             {item.isPublic && (
                               <Suspense fallback={null}>
-                                <PublicBadge />
+                                <PublicBadge onClick={goToPublicGallery} />
                               </Suspense>
                             )}
                           </div>
@@ -955,10 +970,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                 <Suspense fallback={null}>
                                   <AvatarBadge
                                     avatar={avatarForImage}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      // Could navigate to avatar creations
-                                    }}
+                                    onClick={() => goToAvatarProfile(avatarForImage)}
                                   />
                                 </Suspense>
                               )}
@@ -967,10 +979,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                 <Suspense fallback={null}>
                                   <ProductBadge
                                     product={productForImage}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      // Could navigate to product creations
-                                    }}
+                                    onClick={() => goToProductProfile(productForImage)}
                                   />
                                 </Suspense>
                               )}
@@ -993,13 +1002,17 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                         <div className="mt-2">
                           <div className="flex items-center gap-1">
                             <Suspense fallback={null}>
-                              <ModelBadge model={item.model ?? 'unknown'} size="md" />
+                              <ModelBadge
+                                model={displayModelName}
+                                size="md"
+                                onClick={() => goToModelGallery(modelIdForFilter, filterType)}
+                              />
                             </Suspense>
                             
                             {/* Public indicator */}
                             {item.isPublic && (
                               <Suspense fallback={null}>
-                                <PublicBadge />
+                                <PublicBadge onClick={goToPublicGallery} />
                               </Suspense>
                             )}
                             
@@ -1007,10 +1020,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                               <Suspense fallback={null}>
                                 <AvatarBadge
                                   avatar={avatarForImage}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    // Could navigate to avatar creations
-                                  }}
+                                  onClick={() => goToAvatarProfile(avatarForImage)}
                                 />
                               </Suspense>
                             )}
@@ -1019,10 +1029,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                               <Suspense fallback={null}>
                                 <ProductBadge
                                   product={productForImage}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    // Could navigate to product creations
-                                  }}
+                                  onClick={() => goToProductProfile(productForImage)}
                                 />
                               </Suspense>
                             )}

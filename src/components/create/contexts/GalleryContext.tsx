@@ -13,6 +13,7 @@ import { useGeneration } from './GenerationContext';
 import { useAuth } from '../../../auth/useAuth';
 import { getPersistedValue, setPersistedValue } from '../../../lib/clientStorage';
 import { debugError } from '../../../utils/debug';
+import { consumePendingBadgeFilters } from '../hooks/badgeNavigationStorage';
 import type {
   GalleryImageLike,
   GalleryVideoLike,
@@ -907,6 +908,17 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
       setFullSizeOpen(true);
     }
   }, [filteredItems, location.pathname, setFullSizeImage, setFullSizeOpen, isGalleryLoading, fetchGalleryImages]);
+
+  useEffect(() => {
+    if (!location.pathname.startsWith('/gallery')) {
+      return;
+    }
+
+    const pendingFilters = consumePendingBadgeFilters();
+    if (pendingFilters) {
+      dispatch({ type: 'SET_FILTERS', payload: pendingFilters });
+    }
+  }, [location.pathname]);
 
   // Initialize previousActiveJobsRef on mount
   useEffect(() => {
