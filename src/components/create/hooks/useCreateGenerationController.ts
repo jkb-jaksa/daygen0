@@ -690,7 +690,11 @@ export function useCreateGenerationController(): CreateGenerationController {
             prompt: finalPrompt,
             model: selectedModel,
             status: 'queued',
+            progress: 1,
+            backendProgress: 0,
+            backendProgressUpdatedAt: Date.now(),
             startedAt,
+            jobId: activeJobId,
           });
           
           const geminiImage = await generateGeminiImage({
@@ -721,7 +725,11 @@ export function useCreateGenerationController(): CreateGenerationController {
               }
 
               // Update current job status/progress
-              updateJobStatus(activeJobId, nextStatus, nextProgress);
+              updateJobStatus(activeJobId, nextStatus, {
+                backendProgress: typeof nextProgress === 'number' ? nextProgress : undefined,
+                backendProgressUpdatedAt:
+                  typeof nextProgress === 'number' ? Date.now() : undefined,
+              });
               if (typeof nextProgress === 'number') {
                 updateJobProgress(activeJobId, nextProgress);
               }

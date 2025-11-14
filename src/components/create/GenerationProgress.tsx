@@ -2,6 +2,7 @@ import React, { memo, useCallback, useMemo } from 'react';
 import { useGeneration } from './contexts/GenerationContext';
 import { debugLog } from '../../utils/debug';
 import { useGalleryActions } from './hooks/useGalleryActions';
+import { CircularProgressRing } from '../CircularProgressRing';
 const statusLabelMap = (status: string) => {
   switch (status) {
     case 'processing':
@@ -37,7 +38,7 @@ const GenerationProgress = memo(() => {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {activeJobs.map(job => {
         const progressValue = Number.isFinite(job.backendProgress)
           ? Math.max(0, Math.min(100, Math.round(job.backendProgress!)))
@@ -50,7 +51,7 @@ const GenerationProgress = memo(() => {
           <div
             key={job.id}
             onClick={() => handleJobClick(job.id)}
-            className="p-4 rounded-lg bg-theme-accent/10 border border-theme-accent/20 cursor-pointer hover:bg-theme-accent/20 transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-theme-text/60 focus-visible:outline-none"
+            className="group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black cursor-pointer focus-visible:ring-2 focus-visible:ring-theme-text/60 focus-visible:outline-none"
             tabIndex={0}
             onKeyDown={event => {
               if (event.key === 'Enter' || event.key === ' ') {
@@ -59,38 +60,34 @@ const GenerationProgress = memo(() => {
               }
             }}
           >
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-theme-accent/20 rounded-full flex items-center justify-center">
-                  <div className="w-4 h-4 border-2 border-theme-accent border-t-transparent rounded-full animate-spin" />
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-theme-accent">
-                    Generating with {job.model}
-                  </div>
-                  <div className="text-xs text-theme-white/70 line-clamp-2">
-                    {job.prompt}
-                  </div>
-                </div>
-              </div>
-              <div className="text-xs text-theme-white/70">
+            <div className="w-full aspect-square animate-gradient-colors" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-theme-black/65 backdrop-blur-[10px] px-5 py-6 text-center">
+              {hasProgress ? (
+                <CircularProgressRing
+                  progress={progressValue ?? 0}
+                  size={58}
+                  strokeWidth={4}
+                  showPercentage
+                  className="drop-shadow-[0_0_18px_rgba(168,176,176,0.35)]"
+                />
+              ) : (
+                <div className="mx-auto mb-1 w-10 h-10 border-2 border-theme-white/20 border-t-theme-white rounded-full animate-spin" />
+              )}
+
+              <span className="uppercase tracking-[0.12em] text-[11px] font-raleway text-theme-white/80">
                 {statusLabelMap(job.status)}
-              </div>
+              </span>
+
+              <p className="mt-2 text-theme-white/70 text-xs font-raleway leading-relaxed line-clamp-3">
+                {job.prompt}
+              </p>
             </div>
 
-            {hasProgress && (
-              <>
-                <div className="w-full bg-theme-mid/50 rounded-full h-2">
-                  <div
-                    className="bg-theme-accent h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${progressValue}%` }}
-                  />
-                </div>
-                <div className="text-xs text-theme-white/70 mt-1">
-                  {progressValue}% complete
-                </div>
-              </>
-            )}
+            <div className="absolute bottom-0 left-0 right-0 p-3 gallery-prompt-gradient">
+              <p className="text-theme-text text-xs font-raleway line-clamp-2 opacity-75">
+                {job.prompt}
+              </p>
+            </div>
           </div>
         );
       })}

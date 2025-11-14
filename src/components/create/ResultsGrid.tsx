@@ -579,7 +579,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
         <div className="w-full aspect-square animate-gradient-colors"></div>
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-theme-black/65 backdrop-blur-[10px] px-5 py-6 text-center">
           <CircularProgressRing
-            progress={progressValue}
+            progress={progressValue ?? 0}
             size={58}
             strokeWidth={4}
             showPercentage
@@ -592,10 +592,15 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
             {job.prompt}
           </p>
         </div>
+        <div className="absolute bottom-0 left-0 right-0 p-3 gallery-prompt-gradient">
+          <p className="text-theme-text text-xs font-raleway line-clamp-2 opacity-75">
+            {job.prompt}
+          </p>
+        </div>
       </div>
     );
   };
-  
+
   return (
     <>
       {/* Save Prompt Modal */}

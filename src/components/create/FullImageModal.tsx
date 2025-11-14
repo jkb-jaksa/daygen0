@@ -69,6 +69,7 @@ const FullImageModal = memo(() => {
   const [isLoading, setIsLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [editMenu, setEditMenu] = useState<{ id: string; anchor: HTMLElement | null } | null>(null);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const [storedAvatars, setStoredAvatars] = useState<StoredAvatar[]>([]);
@@ -183,15 +184,27 @@ const FullImageModal = memo(() => {
   
   // Handle click outside
   useEffect(() => {
+    if (!open) return;
+
     const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+      const overlayEl = overlayRef.current;
+      const modalEl = modalRef.current;
+      if (!overlayEl || !modalEl) {
+        return;
+      }
+
+      const target = event.target as Node;
+      if (!overlayEl.contains(target)) {
+        // Click happened outside the overlay (e.g., navbar/theme toggle), ignore
+        return;
+      }
+
+      if (!modalEl.contains(target)) {
         clearJobUrl();
       }
     };
     
-    if (open) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
+    document.addEventListener('mousedown', handleClickOutside);
     
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
@@ -618,6 +631,7 @@ const FullImageModal = memo(() => {
       )}
       
       <div
+        ref={overlayRef}
         className="fixed inset-0 z-[110] bg-theme-black/80 backdrop-blur-[16px] flex items-center justify-center p-4"
         onClick={clearJobUrl}
       >
