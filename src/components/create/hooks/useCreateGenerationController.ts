@@ -169,6 +169,7 @@ export function useCreateGenerationController(): CreateGenerationController {
     wanNegativePrompt,
     wanPromptExtend,
     wanWatermark,
+    activeJobs,
     isButtonSpinning: contextSpinner,
   } = state;
 
