@@ -12,6 +12,7 @@ const GalleryConfirmationModals = lazy(() => import('./modals/GalleryConfirmatio
 const FoldersView = lazy(() => import('./FoldersView'));
 const FolderContentsView = lazy(() => import('./FolderContentsView'));
 const InspirationsEmptyState = lazy(() => import('./InspirationsView'));
+const AudioVoiceStudio = lazy(() => import('./audio/AudioVoiceStudio'));
 import CreateSidebar from './CreateSidebar';
 import { useGallery } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
@@ -28,7 +29,7 @@ import type { Folder, GalleryImageLike, GalleryVideoLike } from './types';
 import { CreateBridgeProvider, type GalleryBridgeActions } from './contexts/CreateBridgeContext';
 import { createInitialBridgeActions } from './contexts/hooks';
 
-const COMING_SOON_CATEGORIES = ['text', 'audio'] as const;
+const COMING_SOON_CATEGORIES = ['text'] as const;
 type ComingSoonCategoryKey = (typeof COMING_SOON_CATEGORIES)[number];
 
 const SUPPORTED_CATEGORIES = ['text', 'image', 'video', 'audio', 'gallery', 'my-folders', 'folder-view', 'inspirations'] as const;
@@ -565,6 +566,11 @@ function CreateRefactoredView() {
               )}
               {!isGenerationCategory && isComingSoonCategory && (
                 <ComingSoonCategory category={activeCategory as ComingSoonCategoryKey} />
+              )}
+              {activeCategory === 'audio' && (
+                <Suspense fallback={null}>
+                  <AudioVoiceStudio />
+                </Suspense>
               )}
               {!isGenerationCategory && shouldShowResultsGrid && !FOLDERS_CATEGORY_SET.has(activeCategory) && activeCategory !== 'inspirations' && (
                 <>

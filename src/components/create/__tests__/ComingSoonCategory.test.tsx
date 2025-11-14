@@ -10,11 +10,5 @@ describe('ComingSoonCategory', () => {
 
     expect(screen.getByText('Coming soon.')).toBeInTheDocument();
   });
-
-  it('renders coming soon text for audio category', () => {
-    render(<ComingSoonCategory category="audio" />);
-
-    expect(screen.getByText('Coming soon.')).toBeInTheDocument();
-  });
 });
 
