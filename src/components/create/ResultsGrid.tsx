@@ -562,11 +562,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
               </div>
             </div>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 p-3 gallery-prompt-gradient">
-            <p className="text-theme-text text-xs font-raleway line-clamp-2 opacity-75">
-              {job.prompt}
-            </p>
-          </div>
         </div>
       );
     }
@@ -589,11 +584,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
             {statusLabel}
           </span>
           <p className="mt-2 text-theme-white/70 text-xs font-raleway leading-relaxed line-clamp-3">
-            {job.prompt}
-          </p>
-        </div>
-        <div className="absolute bottom-0 left-0 right-0 p-3 gallery-prompt-gradient">
-          <p className="text-theme-text text-xs font-raleway line-clamp-2 opacity-75">
             {job.prompt}
           </p>
         </div>
