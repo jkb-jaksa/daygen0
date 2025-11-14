@@ -28,6 +28,7 @@ import type { Folder, GalleryImageLike, GalleryVideoLike } from './types';
 import { CreateBridgeProvider, type GalleryBridgeActions } from './contexts/CreateBridgeContext';
 import { createInitialBridgeActions } from './contexts/hooks';
 import { useBadgeNavigation } from './hooks/useBadgeNavigation';
+import { VIDEO_MODEL_IDS } from './constants';
 
 const COMING_SOON_CATEGORIES = ['text', 'audio'] as const;
 type ComingSoonCategoryKey = (typeof COMING_SOON_CATEGORIES)[number];
@@ -40,16 +41,6 @@ const GENERATION_CATEGORY_SET: ReadonlySet<SupportedCategory> = new Set<Supporte
 const GALLERY_CATEGORY_SET: ReadonlySet<SupportedCategory> = new Set<SupportedCategory>(['gallery', 'my-folders', 'inspirations']);
 const FOLDERS_CATEGORY_SET: ReadonlySet<SupportedCategory> = new Set<SupportedCategory>(['my-folders', 'folder-view']);
 const COMING_SOON_CATEGORY_SET: ReadonlySet<ComingSoonCategoryKey> = new Set<ComingSoonCategoryKey>(COMING_SOON_CATEGORIES);
-const VIDEO_MODEL_SET: ReadonlySet<string> = new Set<string>([
-  'veo-3',
-  'runway-video-gen4',
-  'wan-video-2.2',
-  'hailuo-02',
-  'kling-video',
-  'seedance-1.0-pro',
-  'luma-ray-2',
-]);
-
 const normalizeCategory = (candidate?: string | null): SupportedCategory | null => {
   if (!candidate) {
     return null;
@@ -364,12 +355,12 @@ function CreateRefactoredView() {
   }, [activeCategory, location.pathname, setFooterVisible]);
 
   useEffect(() => {
-    if (activeCategory === 'video' && !VIDEO_MODEL_SET.has(selectedModel)) {
+    if (activeCategory === 'video' && !VIDEO_MODEL_IDS.has(selectedModel)) {
       setSelectedModel('veo-3');
       return;
     }
 
-    if (activeCategory === 'image' && VIDEO_MODEL_SET.has(selectedModel)) {
+    if (activeCategory === 'image' && VIDEO_MODEL_IDS.has(selectedModel)) {
       setSelectedModel('gemini-2.5-flash-image');
     }
   }, [activeCategory, selectedModel, setSelectedModel]);

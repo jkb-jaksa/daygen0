@@ -38,6 +38,7 @@ import { MAX_PARALLEL_GENERATIONS } from '../../utils/config';
 import { STYLE_MODAL_OPEN_EVENT, STYLE_MODAL_CLOSE_EVENT } from '../../contexts/styleModalEvents';
 import { useAuth } from '../../auth/useAuth';
 import { useCreateBridge, createInitialBridgeActions } from './contexts/hooks';
+import { VIDEO_MODEL_IDS } from './constants';
 
 const ModelSelector = lazy(() => import('./ModelSelector'));
 const SettingsMenu = lazy(() => import('./SettingsMenu'));
@@ -803,15 +804,19 @@ const PromptForm = memo<PromptFormProps>(
 
     const finalPrompt = useMemo(() => getFinalPrompt(), [getFinalPrompt]);
 
+    const effectiveBatchSize = useMemo(() => {
+      const normalized = Math.max(1, Math.min(4, batchSize));
+      return VIDEO_MODEL_IDS.has(selectedModel) ? 1 : normalized;
+    }, [batchSize, selectedModel]);
+
     const canGenerate = useMemo(
       () => finalPrompt.trim().length > 0 && !effectiveIsGenerating,
       [finalPrompt, effectiveIsGenerating],
     );
 
-    const hasGenerationCapacity = useMemo(
-      () => activeJobs.length < MAX_PARALLEL_GENERATIONS,
-      [activeJobs.length],
-    );
+    const hasGenerationCapacity = useMemo(() => {
+      return activeJobs.length + effectiveBatchSize <= MAX_PARALLEL_GENERATIONS;
+    }, [activeJobs.length, effectiveBatchSize]);
 
     const generateButtonTooltip = useMemo(() => {
       if (!finalPrompt.trim()) {
@@ -821,10 +826,13 @@ const PromptForm = memo<PromptFormProps>(
         return 'You have 0 credits. Buy more credits to generate';
       }
       if (!hasGenerationCapacity) {
-        return `You can run up to ${MAX_PARALLEL_GENERATIONS} generations at once`;
+        const remaining = Math.max(0, MAX_PARALLEL_GENERATIONS - activeJobs.length);
+        return remaining <= 0
+          ? `You can run up to ${MAX_PARALLEL_GENERATIONS} generations at once`
+          : `You can only add ${remaining} more generation${remaining === 1 ? '' : 's'} right now`;
       }
       return '';
-    }, [finalPrompt, hasGenerationCapacity, user?.credits]);
+    }, [activeJobs.length, finalPrompt, hasGenerationCapacity, user?.credits]);
 
     const { onKeyDown } = useGenerateShortcuts({
       enabled: hasGenerationCapacity && (user?.credits ?? 0) > 0,
@@ -1378,7 +1386,7 @@ const PromptForm = memo<PromptFormProps>(
                 onClick={triggerGenerate}
                 disabled={!canGenerate || !hasGenerationCapacity || (user?.credits ?? 0) <= 0}
                 className={`btn btn-white font-raleway text-base font-medium gap-0 sm:gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60 items-center px-0 sm:px-6 min-w-0 sm:min-w-[120px]`}
-                aria-label={`Generate (uses ${batchSize} credit${batchSize > 1 ? 's' : ''})`}
+                aria-label={`Generate (uses ${effectiveBatchSize} credit${effectiveBatchSize > 1 ? 's' : ''})`}
               >
                 <span className="hidden sm:inline text-n-black text-sm sm:text-base font-raleway font-medium">
                   Generate
@@ -1389,7 +1397,7 @@ const PromptForm = memo<PromptFormProps>(
                   ) : (
                     <Sparkles className="w-4 h-4 text-n-black" />
                   )}
-                  <span className="min-w-[0.75rem] inline-block text-center text-sm font-raleway font-medium text-n-black">{batchSize}</span>
+                  <span className="min-w-[0.75rem] inline-block text-center text-sm font-raleway font-medium text-n-black">{effectiveBatchSize}</span>
                 </div>
               </button>
             </Tooltip>
