@@ -6,7 +6,6 @@ import {
   WAN_ASPECT_RATIO_OPTIONS,
   QWEN_ASPECT_RATIO_OPTIONS,
 } from '../data/aspectRatios';
-import { isVideoModelId } from '../components/create/constants';
 
 /**
  * Normalizes aspect ratio values from various formats to a standard format.

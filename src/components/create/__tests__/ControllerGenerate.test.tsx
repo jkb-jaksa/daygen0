@@ -6,6 +6,8 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { GalleryProvider, useGallery } from '../contexts/GalleryContext';
 import { GenerationProvider, useGeneration } from '../contexts/GenerationContext';
 import { useCreateGenerationController } from '../hooks/useCreateGenerationController';
+import type { StoredAvatar } from '../../avatars/types';
+import type { StoredProduct } from '../../products/types';
 
 const mockGeminiGenerate = vi.fn().mockResolvedValue({
   url: 'https://example.com/gemini.jpg',
@@ -13,7 +15,7 @@ const mockGeminiGenerate = vi.fn().mockResolvedValue({
 });
 
 const mockAvatarHandlers = {
-  selectedAvatar: null as any,
+  selectedAvatar: null as StoredAvatar | null,
   activeAvatarImageId: null,
   avatarButtonRef: { current: null },
   handleAvatarPickerOpen: vi.fn(),
@@ -22,7 +24,7 @@ const mockAvatarHandlers = {
 };
 
 const mockProductHandlers = {
-  selectedProduct: null as any,
+  selectedProduct: null as StoredProduct | null,
   productButtonRef: { current: null },
   handleProductPickerOpen: vi.fn(),
   handleProductSelect: vi.fn(),
