@@ -40,7 +40,7 @@ import { MAX_PARALLEL_GENERATIONS } from '../../utils/config';
 import { STYLE_MODAL_OPEN_EVENT, STYLE_MODAL_CLOSE_EVENT } from '../../contexts/styleModalEvents';
 import { useAuth } from '../../auth/useAuth';
 import { useCreateBridge, createInitialBridgeActions } from './contexts/hooks';
-import { VIDEO_MODEL_IDS } from './constants';
+import { isVideoModelId } from './constants';
 
 const ModelSelector = lazy(() => import('./ModelSelector'));
 const SettingsMenu = lazy(() => import('./SettingsMenu'));
@@ -872,7 +872,7 @@ const PromptForm = memo<PromptFormProps>(
 
     const effectiveBatchSize = useMemo(() => {
       const normalized = Math.max(1, Math.min(4, batchSize));
-      return VIDEO_MODEL_IDS.has(selectedModel) ? 1 : normalized;
+      return isVideoModelId(selectedModel) ? 1 : normalized;
     }, [batchSize, selectedModel]);
 
     const canGenerate = useMemo(

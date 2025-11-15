@@ -28,7 +28,7 @@ import type { Folder, GalleryImageLike, GalleryVideoLike } from './types';
 import { CreateBridgeProvider, type GalleryBridgeActions } from './contexts/CreateBridgeContext';
 import { createInitialBridgeActions } from './contexts/hooks';
 import { useBadgeNavigation } from './hooks/useBadgeNavigation';
-import { VIDEO_MODEL_IDS } from './constants';
+import { DEFAULT_IMAGE_MODEL_ID, DEFAULT_VIDEO_MODEL_ID, isVideoModelId } from './constants';
 
 const COMING_SOON_CATEGORIES = ['text', 'audio'] as const;
 type ComingSoonCategoryKey = (typeof COMING_SOON_CATEGORIES)[number];
@@ -355,13 +355,13 @@ function CreateRefactoredView() {
   }, [activeCategory, location.pathname, setFooterVisible]);
 
   useEffect(() => {
-    if (activeCategory === 'video' && !VIDEO_MODEL_IDS.has(selectedModel)) {
-      setSelectedModel('veo-3');
+    if (activeCategory === 'video' && !isVideoModelId(selectedModel)) {
+      setSelectedModel(DEFAULT_VIDEO_MODEL_ID);
       return;
     }
 
-    if (activeCategory === 'image' && VIDEO_MODEL_IDS.has(selectedModel)) {
-      setSelectedModel('gemini-2.5-flash-image');
+    if (activeCategory === 'image' && isVideoModelId(selectedModel)) {
+      setSelectedModel(DEFAULT_IMAGE_MODEL_ID);
     }
   }, [activeCategory, selectedModel, setSelectedModel]);
 

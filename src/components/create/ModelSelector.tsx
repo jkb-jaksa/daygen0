@@ -8,6 +8,7 @@ import { useDropdownScrollLock } from '../../hooks/useDropdownScrollLock';
 import { glass } from '../../styles/designSystem';
 import { debugLog } from '../../utils/debug';
 import { ToolInfoHover } from '../ToolInfoHover';
+import { isVideoModelId } from './constants';
 
 // AI Model data with icons and descriptions (matching V1 exactly)
 // Exported as single source of truth for all model lists in the app
@@ -62,8 +63,7 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
   // Infer activeCategory from selectedModel if not provided
   const inferredCategory = useMemo(() => {
     if (activeCategory) return activeCategory;
-    const videoModels = ["veo-3", "runway-video-gen4", "wan-video-2.2", "hailuo-02", "kling-video", "seedance-1.0-pro", "luma-ray-2", "luma-photon-1", "luma-photon-flash-1"];
-    return videoModels.includes(selectedModel) ? "video" : "image";
+    return isVideoModelId(selectedModel) ? "video" : "image";
   }, [activeCategory, selectedModel]);
   
   // Get current model info
@@ -536,14 +536,16 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
               </button>
             </>
           ) : (
-            AI_MODELS.filter(model => 
-              // Filter models based on category
-              inferredCategory === "image" ? 
-              !["veo-3", "runway-video-gen4", "wan-video-2.2", "hailuo-02", "kling-video", "seedance-1.0-pro", "luma-ray-2", "luma-photon-flash-1"].includes(model.id) : 
-              inferredCategory === "video" ?
-                ["veo-3", "runway-video-gen4", "wan-video-2.2", "hailuo-02", "kling-video", "seedance-1.0-pro", "luma-ray-2"].includes(model.id) :
-                true
-            ).map((model) => {
+            AI_MODELS.filter(model => {
+              const isVideoModel = isVideoModelId(model.id);
+              if (inferredCategory === "image") {
+                return !isVideoModel;
+              }
+              if (inferredCategory === "video") {
+                return isVideoModel;
+              }
+              return true;
+            }).map((model) => {
               const isSelected = selectedModel === model.id;
               const isComingSoon = model.id !== "flux-1.1" && model.id !== "gemini-2.5-flash-image" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "reve-image" && model.id !== "recraft" && model.id !== "luma-photon-1" && model.id !== "luma-photon-flash-1" && model.id !== "luma-ray-2" && model.id !== "wan-video-2.2" && model.id !== "hailuo-02" && model.id !== "kling-video";
               

@@ -11,6 +11,7 @@ import { normalizeStoredProducts } from '../../utils/products';
 import type { StoredAvatar } from '../avatars/types';
 import type { StoredProduct } from '../products/types';
 import { AI_MODELS } from './ModelSelector';
+import { isVideoModelId } from './constants';
 
 const GalleryFilters = memo(() => {
   const { state, setFilters, clearFilters } = useGallery();
@@ -44,20 +45,16 @@ const GalleryFilters = memo(() => {
 
   // Get available models - use static AI_MODELS list, filter by modality
   const availableModels = useMemo(() => {
-    const videoModels = ['veo-3', 'runway-video-gen4', 'wan-video-2.2', 'hailuo-02', 'kling-video', 'seedance-1.0-pro', 'luma-ray-2'];
-    
     let modelList = AI_MODELS;
-    
+
     if (filters.types.length === 1) {
       if (filters.types.includes('video')) {
-        // Only video models
-        modelList = AI_MODELS.filter(model => videoModels.includes(model.id));
+        modelList = AI_MODELS.filter(model => isVideoModelId(model.id));
       } else if (filters.types.includes('image')) {
-        // Only image models (exclude video models)
-        modelList = AI_MODELS.filter(model => !videoModels.includes(model.id));
+        modelList = AI_MODELS.filter(model => !isVideoModelId(model.id));
       }
     }
-    
+
     return modelList
       .map(model => ({ value: model.id, label: model.name }))
       .sort((a, b) => a.label.localeCompare(b.label));

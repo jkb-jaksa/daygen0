@@ -33,6 +33,8 @@ import {
 } from '../../../data/aspectRatios';
 import type { AspectRatioOption, GeminiAspectRatio } from '../../../types/aspectRatio';
 import type { SettingsMenuProps } from '../SettingsMenu';
+import { isVideoModelId } from '../constants';
+import { MAX_PARALLEL_GENERATIONS } from '../../../utils/config';
 
 type AspectRatioControl = {
   options: ReadonlyArray<AspectRatioOption>;
@@ -483,7 +485,7 @@ export function useCreateGenerationController(): CreateGenerationController {
     }
 
     const normalizedBatchSize = Math.max(1, Math.min(4, batchSize));
-    const isVideoModel = VIDEO_MODEL_IDS.has(selectedModel);
+    const isVideoModel = isVideoModelId(selectedModel);
     const jobsPlanned = isVideoModel ? 1 : normalizedBatchSize;
     const activeJobCount = activeJobs.length;
     const availableSlots = MAX_PARALLEL_GENERATIONS - activeJobCount;
