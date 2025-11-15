@@ -2792,7 +2792,7 @@ const Explore: React.FC = () => {
                           <ModelBadge model={selectedFullImage.modelId ?? 'unknown'} size="md" />
                         </Suspense>
                         <Suspense fallback={null}>
-                          <AspectRatioBadge aspectRatio={(selectedFullImage as any).aspectRatio} size="md" />
+                          <AspectRatioBadge aspectRatio={undefined} size="md" />
                         </Suspense>
                       </div>
                     </div>
