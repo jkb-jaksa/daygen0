@@ -119,6 +119,7 @@ export type GalleryFilters = {
   public: boolean;
   models: string[];
   types: string[]; // Changed from 'type' to 'types' to support multiselect (values: 'image', 'video')
+  aspectRatios: string[];
   folder: string;
   avatar: string;
   product: string;

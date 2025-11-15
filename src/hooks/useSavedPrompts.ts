@@ -9,6 +9,7 @@ import {
   clearSavedPrompts as clearRaw,
   isPromptSaved as isPromptSavedRaw,
 } from "../lib/savedPrompts";
+import { STORAGE_CHANGE_EVENT, dispatchStorageChange } from "../utils/storageEvents";
 
 export function useSavedPrompts(userKey: string) {
   const [savedPrompts, setSavedPrompts] = useState<SavedPrompt[]>(() => loadSavedPrompts(userKey));
@@ -18,21 +19,35 @@ export function useSavedPrompts(userKey: string) {
     setSavedPrompts(loadSavedPrompts(userKey));
   }, [userKey]);
 
-  // Cross-tab sync
+  // Cross-tab sync and same-tab sync via custom events
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key?.startsWith("dg:savedPrompts:")) {
         setSavedPrompts(loadSavedPrompts(userKey));
       }
     };
+    
+    const onCustomStorageChange = (event: Event) => {
+      const customEvent = event as CustomEvent<{ key: 'avatars' | 'products' | 'savedPrompts' }>;
+      if (customEvent.detail?.key === 'savedPrompts') {
+        setSavedPrompts(loadSavedPrompts(userKey));
+      }
+    };
+    
     window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    window.addEventListener(STORAGE_CHANGE_EVENT, onCustomStorageChange);
+    
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener(STORAGE_CHANGE_EVENT, onCustomStorageChange);
+    };
   }, [userKey]);
 
   const savePrompt = useCallback((text: string): SavedPrompt | null => {
     try {
       const saved = savePromptRaw(userKey, text);
       setSavedPrompts(loadSavedPrompts(userKey));
+      dispatchStorageChange('savedPrompts');
       return saved;
     } catch {
       return null;
@@ -42,12 +57,14 @@ export function useSavedPrompts(userKey: string) {
   const removePrompt = useCallback((id: string) => {
     removePromptRaw(userKey, id);
     setSavedPrompts(loadSavedPrompts(userKey));
+    dispatchStorageChange('savedPrompts');
   }, [userKey]);
 
   const updatePrompt = useCallback((id: string, newText: string) => {
     try {
       updatePromptRaw(userKey, id, newText);
       setSavedPrompts(loadSavedPrompts(userKey));
+      dispatchStorageChange('savedPrompts');
     } catch (error) {
       debugError("Failed to update prompt:", error);
     }

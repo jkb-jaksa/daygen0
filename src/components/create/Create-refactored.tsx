@@ -15,6 +15,7 @@ import CreateSidebar from './CreateSidebar';
 import { useGallery } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
+import { useCreateGenerationController } from './hooks/useCreateGenerationController';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { layout } from '../../styles/designSystem';
 import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from './sidebarData';
@@ -26,6 +27,8 @@ import { useSavedPrompts } from '../../hooks/useSavedPrompts';
 import type { Folder, GalleryImageLike, GalleryVideoLike } from './types';
 import { CreateBridgeProvider, type GalleryBridgeActions } from './contexts/CreateBridgeContext';
 import { createInitialBridgeActions } from './contexts/hooks';
+import { useBadgeNavigation } from './hooks/useBadgeNavigation';
+import { DEFAULT_IMAGE_MODEL_ID, DEFAULT_VIDEO_MODEL_ID, isVideoModelId } from './constants';
 
 const COMING_SOON_CATEGORIES = ['text', 'audio'] as const;
 type ComingSoonCategoryKey = (typeof COMING_SOON_CATEGORIES)[number];
@@ -38,16 +41,6 @@ const GENERATION_CATEGORY_SET: ReadonlySet<SupportedCategory> = new Set<Supporte
 const GALLERY_CATEGORY_SET: ReadonlySet<SupportedCategory> = new Set<SupportedCategory>(['gallery', 'my-folders', 'inspirations']);
 const FOLDERS_CATEGORY_SET: ReadonlySet<SupportedCategory> = new Set<SupportedCategory>(['my-folders', 'folder-view']);
 const COMING_SOON_CATEGORY_SET: ReadonlySet<ComingSoonCategoryKey> = new Set<ComingSoonCategoryKey>(COMING_SOON_CATEGORIES);
-const VIDEO_MODEL_SET: ReadonlySet<string> = new Set<string>([
-  'veo-3',
-  'runway-video-gen4',
-  'wan-video-2.2',
-  'hailuo-02',
-  'kling-video',
-  'seedance-1.0-pro',
-  'luma-ray-2',
-]);
-
 const normalizeCategory = (candidate?: string | null): SupportedCategory | null => {
   if (!candidate) {
     return null;
@@ -109,6 +102,14 @@ function CreateRefactoredView() {
   const galleryActions = useGalleryActions();
   const promptsUserKey = user?.id || user?.email || 'anon';
   const { isPromptSaved } = useSavedPrompts(promptsUserKey);
+  const controller = useCreateGenerationController();
+  const { avatarHandlers, productHandlers } = controller;
+  const {
+    goToAvatarProfile,
+    goToProductProfile,
+    goToPublicGallery,
+    goToModelGallery,
+  } = useBadgeNavigation();
 
   // Folder-specific local state
   const [newFolderName, setNewFolderName] = useState('');
@@ -155,6 +156,152 @@ function CreateRefactoredView() {
     const randomImage = dummyImages[Math.floor(Math.random() * dummyImages.length)];
     await addImage(randomImage);
   }, [addImage]);
+
+  const addDummyImageWithAvatar = useCallback(async () => {
+    // Create or reuse test avatar
+    let testAvatar = avatarHandlers.storedAvatars.find(a => a.id === 'test-avatar-badge');
+    if (!testAvatar && user?.id) {
+      testAvatar = {
+        id: 'test-avatar-badge',
+        slug: 'test-avatar',
+        name: 'Test Avatar',
+        imageUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400',
+        createdAt: new Date().toISOString(),
+        source: 'upload' as const,
+        published: false,
+        ownerId: user.id,
+        primaryImageId: 'test-avatar-img-1',
+        images: [{
+          id: 'test-avatar-img-1',
+          url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400',
+          createdAt: new Date().toISOString(),
+          source: 'upload' as const,
+        }],
+      };
+      if (testAvatar) {
+        await avatarHandlers.saveAvatar(testAvatar);
+      }
+    }
+    
+    const dummyImageWithAvatar = {
+      url: `https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1024&t=${Date.now()}`,
+      prompt: 'Test image with avatar badge - Mountain landscape',
+      model: 'flux-pro-1.1',
+      jobId: `dummy-avatar-${Date.now()}`,
+      r2FileId: `r2-avatar-${Date.now()}`,
+      avatarId: 'test-avatar-badge',
+      isLiked: false,
+      isPublic: false,
+      timestamp: new Date().toISOString(),
+    };
+    await addImage(dummyImageWithAvatar);
+  }, [addImage, avatarHandlers, user?.id]);
+
+  const addDummyImageWithProduct = useCallback(async () => {
+    // Create or reuse test product
+    let testProduct = productHandlers.storedProducts.find(p => p.id === 'test-product-badge');
+    if (!testProduct && user?.id) {
+      testProduct = {
+        id: 'test-product-badge',
+        slug: 'test-product',
+        name: 'Test Product',
+        imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400',
+        createdAt: new Date().toISOString(),
+        source: 'upload' as const,
+        published: false,
+        ownerId: user.id,
+        primaryImageId: 'test-product-img-1',
+        images: [{
+          id: 'test-product-img-1',
+          url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400',
+          createdAt: new Date().toISOString(),
+          source: 'upload' as const,
+        }],
+      };
+      if (testProduct) {
+        await productHandlers.saveProduct(testProduct);
+      }
+    }
+    
+    const dummyImageWithProduct = {
+      url: `https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1024&t=${Date.now()}`,
+      prompt: 'Test image with product badge - Starry night sky',
+      model: 'gemini-2.5-flash-image',
+      jobId: `dummy-product-${Date.now()}`,
+      r2FileId: `r2-product-${Date.now()}`,
+      productId: 'test-product-badge',
+      isLiked: false,
+      isPublic: false,
+      timestamp: new Date().toISOString(),
+    };
+    await addImage(dummyImageWithProduct);
+  }, [addImage, productHandlers, user?.id]);
+
+  const addDummyImageWithBoth = useCallback(async () => {
+    // Create or reuse test avatar
+    let testAvatar = avatarHandlers.storedAvatars.find(a => a.id === 'test-avatar-badge');
+    if (!testAvatar && user?.id) {
+      testAvatar = {
+        id: 'test-avatar-badge',
+        slug: 'test-avatar',
+        name: 'Test Avatar',
+        imageUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400',
+        createdAt: new Date().toISOString(),
+        source: 'upload' as const,
+        published: false,
+        ownerId: user.id,
+        primaryImageId: 'test-avatar-img-1',
+        images: [{
+          id: 'test-avatar-img-1',
+          url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400',
+          createdAt: new Date().toISOString(),
+          source: 'upload' as const,
+        }],
+      };
+      if (testAvatar) {
+        await avatarHandlers.saveAvatar(testAvatar);
+      }
+    }
+    
+    // Create or reuse test product
+    let testProduct = productHandlers.storedProducts.find(p => p.id === 'test-product-badge');
+    if (!testProduct && user?.id) {
+      testProduct = {
+        id: 'test-product-badge',
+        slug: 'test-product',
+        name: 'Test Product',
+        imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400',
+        createdAt: new Date().toISOString(),
+        source: 'upload' as const,
+        published: false,
+        ownerId: user.id,
+        primaryImageId: 'test-product-img-1',
+        images: [{
+          id: 'test-product-img-1',
+          url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400',
+          createdAt: new Date().toISOString(),
+          source: 'upload' as const,
+        }],
+      };
+      if (testProduct) {
+        await productHandlers.saveProduct(testProduct);
+      }
+    }
+    
+    const dummyImageWithBoth = {
+      url: `https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1024&t=${Date.now()}`,
+      prompt: 'Test image with both avatar and product badges - Forest path',
+      model: 'luma-photon-1',
+      jobId: `dummy-both-${Date.now()}`,
+      r2FileId: `r2-both-${Date.now()}`,
+      avatarId: 'test-avatar-badge',
+      productId: 'test-product-badge',
+      isLiked: false,
+      isPublic: false,
+      timestamp: new Date().toISOString(),
+    };
+    await addImage(dummyImageWithBoth);
+  }, [addImage, avatarHandlers, productHandlers, user?.id]);
 
   const resolvedCategory = useMemo<SupportedCategory>(() => {
     const fromParam = normalizeCategory(params.category);
@@ -208,13 +355,13 @@ function CreateRefactoredView() {
   }, [activeCategory, location.pathname, setFooterVisible]);
 
   useEffect(() => {
-    if (activeCategory === 'video' && !VIDEO_MODEL_SET.has(selectedModel)) {
-      setSelectedModel('veo-3');
+    if (activeCategory === 'video' && !isVideoModelId(selectedModel)) {
+      setSelectedModel(DEFAULT_VIDEO_MODEL_ID);
       return;
     }
 
-    if (activeCategory === 'image' && VIDEO_MODEL_SET.has(selectedModel)) {
-      setSelectedModel('gemini-2.5-flash-image');
+    if (activeCategory === 'image' && isVideoModelId(selectedModel)) {
+      setSelectedModel(DEFAULT_IMAGE_MODEL_ID);
     }
   }, [activeCategory, selectedModel, setSelectedModel]);
 
@@ -253,6 +400,13 @@ function CreateRefactoredView() {
   const handlePromptBarResize = useCallback((reservedSpace: number) => {
     setPromptBarReservedSpace(reservedSpace);
   }, []);
+
+  const handleModeChange = useCallback(
+    (mode: 'image' | 'video') => {
+      handleSelectCategory(mode);
+    },
+    [handleSelectCategory],
+  );
 
   const handleImageMenuClose = () => {
     setImageActionMenu(null);
@@ -542,14 +696,36 @@ function CreateRefactoredView() {
             <div className="w-full mb-4">
               {isGenerationCategory && (
                 <>
-                  <PromptForm onPromptBarHeightChange={handlePromptBarResize} />
+                  <PromptForm
+                    onPromptBarHeightChange={handlePromptBarResize}
+                    activeCategory={activeCategory as 'image' | 'video'}
+                    onModeChange={handleModeChange}
+                  />
                   {isDevelopment && (
-                    <div className="mb-4 px-4">
+                    <div className="mb-4 px-4 flex gap-2 flex-wrap">
                       <button
                         onClick={addDummyImage}
                         className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
                       >
-                        🧪 Add Test Image (Dev Only)
+                        🧪 Add Test Image
+                      </button>
+                      <button
+                        onClick={addDummyImageWithAvatar}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                      >
+                        👤 Test Avatar Badge
+                      </button>
+                      <button
+                        onClick={addDummyImageWithProduct}
+                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                      >
+                        📦 Test Product Badge
+                      </button>
+                      <button
+                        onClick={addDummyImageWithBoth}
+                        className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                      >
+                        🏷️ Test Both Badges
                       </button>
                     </div>
                   )}
@@ -567,12 +743,30 @@ function CreateRefactoredView() {
               {!isGenerationCategory && shouldShowResultsGrid && !FOLDERS_CATEGORY_SET.has(activeCategory) && activeCategory !== 'inspirations' && (
                 <>
                   {isDevelopment && (
-                    <div className="mb-4 px-4">
+                    <div className="mb-4 px-4 flex gap-2 flex-wrap">
                       <button
                         onClick={addDummyImage}
                         className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
                       >
-                        🧪 Add Test Image (Dev Only)
+                        🧪 Add Test Image
+                      </button>
+                      <button
+                        onClick={addDummyImageWithAvatar}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                      >
+                        👤 Test Avatar Badge
+                      </button>
+                      <button
+                        onClick={addDummyImageWithProduct}
+                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                      >
+                        📦 Test Product Badge
+                      </button>
+                      <button
+                        onClick={addDummyImageWithBoth}
+                        className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                      >
+                        🏷️ Test Both Badges
                       </button>
                     </div>
                   )}
@@ -625,6 +819,10 @@ function CreateRefactoredView() {
                     moreActionMenu={null}
                     onEditMenuSelect={handleFolderEditMenuSelect}
                     onMoreButtonClick={undefined}
+                    onAvatarClick={avatar => goToAvatarProfile(avatar)}
+                    onProductClick={product => goToProductProfile(product)}
+                    onModelClick={(modelId, type) => goToModelGallery(modelId, type)}
+                    onPublicClick={goToPublicGallery}
                   />
                 </Suspense>
               )}
@@ -642,12 +840,30 @@ function CreateRefactoredView() {
                     return (
                       <>
                         {isDevelopment && (
-                          <div className="mb-4 px-4">
+                          <div className="mb-4 px-4 flex gap-2 flex-wrap">
                             <button
                               onClick={addDummyImage}
                               className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
                             >
-                              🧪 Add Test Image (Dev Only)
+                              🧪 Add Test Image
+                            </button>
+                            <button
+                              onClick={addDummyImageWithAvatar}
+                              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                            >
+                              👤 Test Avatar Badge
+                            </button>
+                            <button
+                              onClick={addDummyImageWithProduct}
+                              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                            >
+                              📦 Test Product Badge
+                            </button>
+                            <button
+                              onClick={addDummyImageWithBoth}
+                              className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                            >
+                              🏷️ Test Both Badges
                             </button>
                           </div>
                         )}

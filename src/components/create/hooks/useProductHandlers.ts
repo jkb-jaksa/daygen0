@@ -1,8 +1,9 @@
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useAuth } from '../../../auth/useAuth';
 import { createProductRecord, normalizeStoredProducts } from '../../../utils/products';
 import { getPersistedValue, setPersistedValue } from '../../../lib/clientStorage';
 import { debugLog, debugError } from '../../../utils/debug';
+import { STORAGE_CHANGE_EVENT, dispatchStorageChange, type StorageChangeDetail } from '../../../utils/storageEvents';
 import type { StoredProduct, ProductSelection } from '../../products/types';
 
 export function useProductHandlers() {
@@ -42,7 +43,7 @@ export function useProductHandlers() {
     if (!storagePrefix) return;
     
     try {
-      const stored = await getPersistedValue<StoredProduct[]>(`${storagePrefix}:products`, []);
+      const stored = await getPersistedValue<StoredProduct[]>(storagePrefix, 'products') ?? [];
       const normalized = normalizeStoredProducts(stored);
       setStoredProducts(normalized);
       debugLog('[useProductHandlers] Loaded stored products:', normalized.length);
@@ -50,6 +51,24 @@ export function useProductHandlers() {
       debugError('[useProductHandlers] Error loading stored products:', error);
     }
   }, [storagePrefix]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const handleStorageChange = (event: Event) => {
+      const custom = event as CustomEvent<StorageChangeDetail>;
+      if (custom.detail?.key === 'products') {
+        void loadStoredProducts();
+      }
+    };
+
+    window.addEventListener(STORAGE_CHANGE_EVENT, handleStorageChange);
+    return () => {
+      window.removeEventListener(STORAGE_CHANGE_EVENT, handleStorageChange);
+    };
+  }, [loadStoredProducts]);
   
   // Save product
   const saveProduct = useCallback(async (product: StoredProduct) => {
@@ -57,8 +76,9 @@ export function useProductHandlers() {
     
     try {
       const updated = [...storedProducts, product];
-      await setPersistedValue(`${storagePrefix}:products`, updated);
+      await setPersistedValue(storagePrefix, 'products', updated);
       setStoredProducts(updated);
+      dispatchStorageChange('products');
       debugLog('[useProductHandlers] Saved product:', product.name);
     } catch (error) {
       debugError('[useProductHandlers] Error saving product:', error);
@@ -71,8 +91,9 @@ export function useProductHandlers() {
     
     try {
       const updated = storedProducts.filter(product => product.id !== productId);
-      await setPersistedValue(`${storagePrefix}:products`, updated);
+      await setPersistedValue(storagePrefix, 'products', updated);
       setStoredProducts(updated);
+      dispatchStorageChange('products');
       
       // Clear selection if deleted product was selected
       if (selectedProduct?.id === productId) {
@@ -93,8 +114,9 @@ export function useProductHandlers() {
       const updated = storedProducts.map(product =>
         product.id === productId ? { ...product, ...updates } : product
       );
-      await setPersistedValue(`${storagePrefix}:products`, updated);
+      await setPersistedValue(storagePrefix, 'products', updated);
       setStoredProducts(updated);
+      dispatchStorageChange('products');
       debugLog('[useProductHandlers] Updated product:', productId);
     } catch (error) {
       debugError('[useProductHandlers] Error updating product:', error);

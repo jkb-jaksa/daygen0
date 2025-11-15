@@ -24,7 +24,7 @@ import type { LucideIcon } from "lucide-react";
 
 import { useAuth } from "../../auth/useAuth";
 import { useFooter } from "../../contexts/useFooter";
-import { buttons, glass, inputs, layout } from "../../styles/designSystem";
+import { buttons, glass, inputs, layout, tooltips } from "../../styles/designSystem";
 import { useChatSessions } from "../../hooks/useChatSessions";
 import type { ChatMessage, ChatSession } from "../../hooks/useChatSessions";
 import { usePromptHistory } from "../../hooks/usePromptHistory";
@@ -1120,7 +1120,7 @@ const ChatMode: React.FC = () => {
                         </button>
                         <div
                           data-tooltip-for="platform-mode-tooltip"
-                          className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
+                          className={`${tooltips.base} absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full z-[70] hidden lg:block`}
                           style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
                         >
                           Platform Mode
@@ -1144,7 +1144,7 @@ const ChatMode: React.FC = () => {
                         </button>
                       <div
                         data-tooltip-for="reference-tooltip-chat"
-                        className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                        className={`${tooltips.base} absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full z-[70]`}
                         style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
                       >
                         Reference Image
@@ -1232,7 +1232,7 @@ const ChatMode: React.FC = () => {
                         </button>
                         <div
                           data-tooltip-for="prompts-tooltip-chat"
-                          className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                          className={`${tooltips.base} absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full z-[70]`}
                           style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
                         >
                           Your Prompts
@@ -1688,7 +1688,7 @@ const ChatMode: React.FC = () => {
                           </button>
                           <div
                             data-tooltip-for="aspect-ratio-tooltip-chat"
-                            className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                            className={`${tooltips.base} absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full z-[70]`}
                             style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
                           >
                             Aspect Ratio
@@ -1737,7 +1737,7 @@ const ChatMode: React.FC = () => {
                         </div>
                         <div
                           data-tooltip-for="batch-size-tooltip-chat"
-                          className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                          className={`${tooltips.base} absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full z-[70]`}
                           style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
                         >
                           Batch size

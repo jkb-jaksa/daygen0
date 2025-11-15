@@ -267,11 +267,24 @@ export function useGenerationJobTracker(): GenerationJobTracker {
           prompt,
           model,
           status: 'queued',
+          progress: 1,
+          backendProgress: 0,
+          backendProgressUpdatedAt: Date.now(),
           startedAt: Date.now(),
+          jobId,
         });
       },
       update(jobId, snapshot) {
-        updateJobStatus(jobId, snapshot.status, snapshot.progress);
+        const progressValue =
+          typeof snapshot.progress === 'number' && Number.isFinite(snapshot.progress)
+            ? Math.max(0, Math.min(100, snapshot.progress))
+            : undefined;
+
+        updateJobStatus(jobId, snapshot.status, {
+          progress: progressValue,
+          backendProgress: progressValue,
+          backendProgressUpdatedAt: Date.now(),
+        });
       },
       finalize(jobId) {
         removeActiveJob(jobId);

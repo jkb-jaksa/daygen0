@@ -15,6 +15,7 @@ import {
   glass,
   buttons,
   headings,
+  tooltips,
 } from "../styles/designSystem";
 import {
   ArrowUpRight,
@@ -57,6 +58,7 @@ import type {
 import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage";
 import { normalizeModelId } from '../utils/modelUtils';
 import ModelBadge from './ModelBadge';
+import AspectRatioBadge from './shared/AspectRatioBadge';
 
 
 const styleFilters = [
@@ -2217,16 +2219,16 @@ const Explore: React.FC = () => {
                     </div>
                     
                   {/* Tooltips rendered via portal to avoid clipping */}
-                  {createPortal(
-                    <div
-                      data-tooltip-for={`copy-${item.id}`}
-                      className="fixed whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg pointer-events-none"
-                      style={{ zIndex: 9999 }}
-                    >
-                      Copy prompt
-                    </div>,
-                    document.body
-                  )}
+                    {createPortal(
+                      <div
+                        data-tooltip-for={`copy-${item.id}`}
+                        className={`${tooltips.base} fixed`}
+                        style={{ zIndex: 9999 }}
+                      >
+                        Copy prompt
+                      </div>,
+                      document.body
+                    )}
                   </div>
                   </article>
                 );
@@ -2785,25 +2787,30 @@ const Explore: React.FC = () => {
                       </button>
                     </div>
                     <div className="mt-2 flex justify-center items-center gap-2">
-                      <Suspense fallback={null}>
-                        <ModelBadge model={selectedFullImage.modelId ?? 'unknown'} size="md" />
-                      </Suspense>
+                      <div className="flex items-center gap-2">
+                        <Suspense fallback={null}>
+                          <ModelBadge model={selectedFullImage.modelId ?? 'unknown'} size="md" />
+                        </Suspense>
+                        <Suspense fallback={null}>
+                          <AspectRatioBadge aspectRatio={undefined} size="md" />
+                        </Suspense>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
               
               {/* Tooltips rendered via portal to avoid clipping */}
-              {createPortal(
-                <div
-                  data-tooltip-for={`copy-fullsize-${selectedFullImage.id}`}
-                  className="fixed whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg pointer-events-none transition-opacity duration-100"
-                  style={{ zIndex: 9999 }}
-                >
-                  Copy prompt
-                </div>,
-                document.body
-              )}
+                  {createPortal(
+                    <div
+                      data-tooltip-for={`copy-fullsize-${selectedFullImage.id}`}
+                      className={`${tooltips.base} fixed`}
+                      style={{ zIndex: 9999 }}
+                    >
+                      Copy prompt
+                    </div>,
+                    document.body
+                  )}
             </div>
             
             {/* Vertical Gallery Navigation */}

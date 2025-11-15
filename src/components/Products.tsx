@@ -38,6 +38,7 @@ import {
 import { layout, text, buttons, glass, headings, iconButtons } from "../styles/designSystem";
 import { useAuth } from "../auth/useAuth";
 const ModelBadge = lazy(() => import("./ModelBadge"));
+const AspectRatioBadge = lazy(() => import("./shared/AspectRatioBadge"));
 const ProductCreationModal = lazy(() => import("./products/ProductCreationModal"));
 const ProductCreationOptions = lazy(() => import("./products/ProductCreationOptions"));
 import CreateSidebar from "./create/CreateSidebar";
@@ -2761,6 +2762,12 @@ export default function Products() {
                         </div>
                       </div>
                     )}
+                    <Suspense fallback={null}>
+                      <AspectRatioBadge 
+                        aspectRatio={selectedFullImage.aspectRatio} 
+                        size="md" 
+                      />
+                    </Suspense>
                   </div>
                 </div>
               </div>

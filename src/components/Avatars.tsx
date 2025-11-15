@@ -40,6 +40,7 @@ import {
 import { layout, text, buttons, glass, headings, iconButtons } from "../styles/designSystem";
 import { useAuth } from "../auth/useAuth";
 const ModelBadge = lazy(() => import("./ModelBadge"));
+const AspectRatioBadge = lazy(() => import("./shared/AspectRatioBadge"));
 const AvatarCreationModal = lazy(() => import("./avatars/AvatarCreationModal"));
 const AvatarCreationOptions = lazy(() => import("./avatars/AvatarCreationOptions"));
 import CreateSidebar from "./create/CreateSidebar";
@@ -2892,6 +2893,12 @@ export default function Avatars() {
                         </div>
                       </div>
                     )}
+                    <Suspense fallback={null}>
+                      <AspectRatioBadge 
+                        aspectRatio={selectedFullImage.aspectRatio} 
+                        size="md" 
+                      />
+                    </Suspense>
                   </div>
                 </div>
               </div>
