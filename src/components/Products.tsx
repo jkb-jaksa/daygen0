@@ -2753,12 +2753,6 @@ export default function Products() {
                           size="md" 
                         />
                       </Suspense>
-                      <Suspense fallback={null}>
-                        <AspectRatioBadge 
-                          aspectRatio={selectedFullImage.aspectRatio} 
-                          size="md" 
-                        />
-                      </Suspense>
                     </div>
                     {selectedFullImage.isPublic && (
                       <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
@@ -2768,6 +2762,12 @@ export default function Products() {
                         </div>
                       </div>
                     )}
+                    <Suspense fallback={null}>
+                      <AspectRatioBadge 
+                        aspectRatio={selectedFullImage.aspectRatio} 
+                        size="md" 
+                      />
+                    </Suspense>
                   </div>
                 </div>
               </div>
