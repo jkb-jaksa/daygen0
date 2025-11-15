@@ -14,6 +14,7 @@ import { useAuth } from '../../../auth/useAuth';
 import { getPersistedValue, setPersistedValue } from '../../../lib/clientStorage';
 import { debugError } from '../../../utils/debug';
 import { consumePendingBadgeFilters } from '../hooks/badgeNavigationStorage';
+import { normalizeAspectRatio } from '../../../utils/aspectRatioUtils';
 import type {
   GalleryImageLike,
   GalleryVideoLike,
@@ -87,6 +88,7 @@ const initialFilters: GalleryFilters = {
   public: false,
   models: [],
   types: [],
+  aspectRatios: [],
   folder: '',
   avatar: '',
   product: '',
@@ -826,6 +828,26 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
       if (state.filters.types.length > 0) {
         const itemType = 'type' in item ? 'video' : 'image';
         if (!state.filters.types.includes(itemType)) return false;
+      }
+      
+      // Filter by aspect ratios
+      if (state.filters.aspectRatios.length > 0) {
+        const itemAspectRatio = normalizeAspectRatio(item.aspectRatio);
+        if (!itemAspectRatio) {
+          // If item has no aspect ratio and filters are set, exclude it
+          return false;
+        }
+        // Check if normalized aspect ratio matches any selected filter
+        // Also check original value in case normalization didn't change it
+        const matchesFilter = state.filters.aspectRatios.some(filterAr => {
+          const normalizedFilterAr = normalizeAspectRatio(filterAr);
+          return (
+            itemAspectRatio === normalizedFilterAr ||
+            itemAspectRatio === filterAr ||
+            (item.aspectRatio && item.aspectRatio === filterAr)
+          );
+        });
+        if (!matchesFilter) return false;
       }
       
       // Filter by folder
