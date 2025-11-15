@@ -32,11 +32,13 @@ export const AI_MODELS = [
   { name: "Luma Ray 2", desc: "High-quality video generation with Ray 2.", Icon: VideoIcon, id: "luma-ray-2" },
 ];
 
+type GenerationMode = 'image' | 'video';
+
 interface ModelSelectorProps {
   selectedModel: string;
   onModelChange: (model: string) => void;
   isGenerating: boolean;
-  activeCategory?: string; // 'image' | 'video' - defaults to inferring from selectedModel
+  activeCategory?: GenerationMode; // defaults to inferring from selectedModel
 }
 
 const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, isGenerating, activeCategory }) => {

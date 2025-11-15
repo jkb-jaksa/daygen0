@@ -401,6 +401,13 @@ function CreateRefactoredView() {
     setPromptBarReservedSpace(reservedSpace);
   }, []);
 
+  const handleModeChange = useCallback(
+    (mode: 'image' | 'video') => {
+      handleSelectCategory(mode);
+    },
+    [handleSelectCategory],
+  );
+
   const handleImageMenuClose = () => {
     setImageActionMenu(null);
   };
@@ -689,7 +696,11 @@ function CreateRefactoredView() {
             <div className="w-full mb-4">
               {isGenerationCategory && (
                 <>
-                  <PromptForm onPromptBarHeightChange={handlePromptBarResize} />
+                  <PromptForm
+                    onPromptBarHeightChange={handlePromptBarResize}
+                    activeCategory={activeCategory as 'image' | 'video'}
+                    onModeChange={handleModeChange}
+                  />
                   {isDevelopment && (
                     <div className="mb-4 px-4 flex gap-2 flex-wrap">
                       <button
