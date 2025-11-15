@@ -22,6 +22,8 @@ import {
   LayoutGrid,
   Loader2,
   Sparkles,
+  Image as ImageIcon,
+  Video as VideoIcon,
 } from 'lucide-react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useCreateGenerationController } from './hooks/useCreateGenerationController';
@@ -52,11 +54,38 @@ const PromptsDropdown = lazy(() =>
 const AvatarCreationModal = lazy(() => import('../avatars/AvatarCreationModal'));
 const ProductCreationModal = lazy(() => import('../products/ProductCreationModal'));
 
+type GenerationMode = 'image' | 'video';
+
+const MODE_STYLE_MAP: Record<
+  GenerationMode,
+  {
+    border: string;
+    gradient: string;
+    shadow: string;
+    iconColor: string;
+  }
+> = {
+  image: {
+    border: 'border-red-500/20',
+    gradient: 'from-red-400 via-red-500 to-red-600',
+    shadow: 'rgba(239, 68, 68, 0.15)',
+    iconColor: 'text-red-500',
+  },
+  video: {
+    border: 'border-blue-500/20',
+    gradient: 'from-blue-400 via-blue-500 to-blue-600',
+    shadow: 'rgba(59, 130, 246, 0.15)',
+    iconColor: 'text-blue-500',
+  },
+};
+
 interface PromptFormProps {
   onGenerate?: () => void;
   isGenerating?: boolean;
   isButtonSpinning?: boolean;
   onPromptBarHeightChange?: (reservedSpace: number) => void;
+  activeCategory: GenerationMode;
+  onModeChange: (mode: GenerationMode) => void;
 }
 
 const MAX_REFERENCE_SLOTS = 3;
@@ -105,6 +134,8 @@ const PromptForm = memo<PromptFormProps>(
     isGenerating: isGeneratingProp,
     isButtonSpinning: isButtonSpinningProp,
     onPromptBarHeightChange,
+    activeCategory,
+    onModeChange,
   }) => {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -177,6 +208,8 @@ const PromptForm = memo<PromptFormProps>(
     const settingsButtonRef = useRef<HTMLButtonElement | null>(null);
     const [isAspectRatioOpen, setIsAspectRatioOpen] = useState(false);
     const aspectRatioButtonRef = useRef<HTMLButtonElement | null>(null);
+    const [modeSwitcherNode, setModeSwitcherNode] = useState<HTMLDivElement | null>(null);
+    const [modeSwitcherWidth, setModeSwitcherWidth] = useState<number | null>(null);
 
     const promptBarRef = useRef<HTMLDivElement | null>(null);
     const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -410,6 +443,35 @@ const PromptForm = memo<PromptFormProps>(
       }
     }, [aspectRatioControl]);
 
+    useEffect(() => {
+      if (typeof window === 'undefined' || !modeSwitcherNode) {
+        return;
+      }
+
+      const updateWidth = () => {
+        const rect = modeSwitcherNode.getBoundingClientRect();
+        setModeSwitcherWidth(prev => {
+          const nextWidth = Math.round(rect.width);
+          return prev === nextWidth ? prev : nextWidth;
+        });
+      };
+
+      updateWidth();
+      window.addEventListener('resize', updateWidth);
+
+      let resizeObserver: ResizeObserver | null = null;
+
+      if (typeof ResizeObserver !== 'undefined') {
+        resizeObserver = new ResizeObserver(updateWidth);
+        resizeObserver.observe(modeSwitcherNode);
+      }
+
+      return () => {
+        window.removeEventListener('resize', updateWidth);
+        resizeObserver?.disconnect();
+      };
+    }, [modeSwitcherNode]);
+
     const adjustPromptTextareaHeight = useCallback(() => {
       const textarea = textareaRef.current;
       if (!textarea) return;
@@ -630,6 +692,10 @@ const PromptForm = memo<PromptFormProps>(
       setIsAspectRatioOpen(prev => !prev);
     }, [aspectRatioControl]);
 
+    const handleModeSwitcherRef = useCallback((node: HTMLDivElement | null) => {
+      setModeSwitcherNode(node);
+    }, []);
+
     const isGeminiModel = selectedModel === 'gemini-2.5-flash-image';
 
     const handleDragAreaEnter = useCallback(
@@ -817,6 +883,18 @@ const PromptForm = memo<PromptFormProps>(
     const hasGenerationCapacity = useMemo(() => {
       return activeJobs.length + effectiveBatchSize <= MAX_PARALLEL_GENERATIONS;
     }, [activeJobs.length, effectiveBatchSize]);
+
+    const isModeToggleDisabled = effectiveIsGenerating;
+
+    const handleToggleMode = useCallback(
+      (mode: GenerationMode) => {
+        if (isModeToggleDisabled || activeCategory === mode) {
+          return;
+        }
+        onModeChange(mode);
+      },
+      [activeCategory, isModeToggleDisabled, onModeChange],
+    );
 
     const generateButtonTooltip = useMemo(() => {
       if (!finalPrompt.trim()) {
@@ -1021,6 +1099,7 @@ const PromptForm = memo<PromptFormProps>(
                   selectedModel={selectedModel}
                   onModelChange={handleModelChange}
                   isGenerating={effectiveIsGenerating}
+                  activeCategory={activeCategory}
                 />
               </Suspense>
 
@@ -1172,6 +1251,7 @@ const PromptForm = memo<PromptFormProps>(
                   Your Prompts
                 </div>
               </div>
+
             </div>
             </div>
           </div>
@@ -1380,27 +1460,75 @@ const PromptForm = memo<PromptFormProps>(
               )}
             </div>
 
-            {/* Generate button */}
-            <Tooltip text={generateButtonTooltip}>
-              <button
-                onClick={triggerGenerate}
-                disabled={!canGenerate || !hasGenerationCapacity || (user?.credits ?? 0) <= 0}
-                className={`btn btn-white font-raleway text-base font-medium gap-0 sm:gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60 items-center px-0 sm:px-6 min-w-0 sm:min-w-[120px]`}
-                aria-label={`Generate (uses ${effectiveBatchSize} credit${effectiveBatchSize > 1 ? 's' : ''})`}
-              >
-                <span className="hidden sm:inline text-n-black text-sm sm:text-base font-raleway font-medium">
-                  Generate
-                </span>
-                <div className="flex items-center gap-0 sm:gap-1">
-                  {effectiveIsButtonSpinning ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-n-black" />
-                  ) : (
-                    <Sparkles className="w-4 h-4 text-n-black" />
-                  )}
-                  <span className="min-w-[0.75rem] inline-block text-center text-sm font-raleway font-medium text-n-black">{effectiveBatchSize}</span>
-                </div>
-              </button>
-            </Tooltip>
+            <div className="flex flex-col gap-2 items-end mr-2">
+              {/* Mode switcher */}
+              <div className="flex items-center gap-1" ref={handleModeSwitcherRef}>
+                {(['image', 'video'] as GenerationMode[]).map(mode => {
+                  const isActive = activeCategory === mode;
+                  const IconComponent = mode === 'image' ? ImageIcon : VideoIcon;
+                  const label = mode === 'image' ? 'Image' : 'Video';
+                  const modeStyles = MODE_STYLE_MAP[mode];
+                  const baseClasses =
+                    'relative overflow-hidden flex items-center gap-2 rounded-full h-8 px-2 lg:px-3 text-sm font-raleway transition-all duration-150';
+                  const activeClasses = `border ${modeStyles.border} text-theme-text`;
+                  const inactiveClasses =
+                    'border border-transparent text-n-white hover:text-theme-text hover:bg-n-text/20';
+                  const boxShadow = isActive
+                    ? {
+                        boxShadow: `inset 0 -0.5em 1.2em -0.125em ${modeStyles.shadow}`,
+                      }
+                    : undefined;
+                  return (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => handleToggleMode(mode)}
+                      disabled={isModeToggleDisabled || isActive}
+                      aria-pressed={isActive}
+                      className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses} ${
+                        isModeToggleDisabled ? 'cursor-not-allowed opacity-60' : ''
+                      }`}
+                      style={boxShadow}
+                    >
+                      {isActive && (
+                        <div
+                          className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full blur-3xl bg-gradient-to-br ${modeStyles.gradient}`}
+                        />
+                      )}
+                      <IconComponent
+                        className={`w-3.5 h-3.5 relative z-10 ${isActive ? modeStyles.iconColor : 'text-current'}`}
+                        aria-hidden="true"
+                      />
+                      <span className="relative z-10">{label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <Tooltip text={generateButtonTooltip}>
+                <button
+                  onClick={triggerGenerate}
+                  disabled={!canGenerate || !hasGenerationCapacity || (user?.credits ?? 0) <= 0}
+                  className={`btn btn-white font-raleway text-base font-medium gap-0 sm:gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60 items-center px-0 sm:px-6 min-w-0 sm:min-w-[120px]`}
+                  style={{
+                    width: modeSwitcherWidth ? `${modeSwitcherWidth}px` : undefined,
+                  }}
+                  aria-label={`Generate (uses ${effectiveBatchSize} credit${effectiveBatchSize > 1 ? 's' : ''})`}
+                >
+                  <span className="hidden sm:inline text-n-black text-sm sm:text-base font-raleway font-medium">
+                    Generate
+                  </span>
+                  <div className="flex items-center gap-0 sm:gap-1">
+                    {effectiveIsButtonSpinning ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-n-black" />
+                    ) : (
+                      <Sparkles className="w-4 h-4 text-n-black" />
+                    )}
+                    <span className="min-w-[0.75rem] inline-block text-center text-sm font-raleway font-medium text-n-black">{effectiveBatchSize}</span>
+                  </div>
+                </button>
+              </Tooltip>
+            </div>
           </div>
         </div>
       </div>
