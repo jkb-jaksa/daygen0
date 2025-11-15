@@ -1,13 +1,25 @@
 /* @vitest-environment jsdom */
+import React from 'react';
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { usePresetGenerationFlow } from './usePresetGenerationFlow';
 import { generatePresetImage } from '../../../api/presetGeneration';
+import { pollJobStatus } from '../../../hooks/generationJobHelpers';
 import type { StyleOption } from './useStyleHandlers';
+import { GenerationProvider } from '../contexts/GenerationContext';
+import type { JobStatusSnapshot } from '../../../hooks/generationJobHelpers';
 
 vi.mock('../../../api/presetGeneration', () => ({
   generatePresetImage: vi.fn(),
 }));
+
+vi.mock('../../../hooks/generationJobHelpers', async () => {
+  const actual = await vi.importActual('../../../hooks/generationJobHelpers');
+  return {
+    ...actual,
+    pollJobStatus: vi.fn(),
+  };
+});
 
 const addImageMock = vi.fn().mockResolvedValue(undefined);
 
@@ -18,6 +30,7 @@ vi.mock('../contexts/GalleryContext', () => ({
 }));
 
 const mockedGeneratePreset = vi.mocked(generatePresetImage);
+const mockedPollJobStatus = vi.mocked(pollJobStatus);
 
 const mockStyles: StyleOption[] = [
   {
@@ -54,7 +67,9 @@ describe('usePresetGenerationFlow', () => {
   });
 
   it('opens the modal with selected styles', () => {
-    const { result } = renderHook(() => usePresetGenerationFlow());
+    const { result } = renderHook(() => usePresetGenerationFlow(), {
+      wrapper: ({ children }) => <GenerationProvider>{children}</GenerationProvider>,
+    });
 
     act(() => {
       result.current.openForStyles(mockStyles);
@@ -67,22 +82,46 @@ describe('usePresetGenerationFlow', () => {
 
   it('generates an image for each style and records gallery entries', async () => {
     mockedGeneratePreset
-      .mockResolvedValueOnce({
-        success: true,
-        template: { id: 't-one', title: 'Style One' },
-        prompt: 'Prompt 1',
-        imageUrl: 'https://cdn.example.com/result-one.png',
-        r2FileId: 'r2-1',
-      })
-      .mockResolvedValueOnce({
-        success: true,
-        template: { id: 't-two', title: 'Style Two' },
-        prompt: 'Prompt 2',
-        imageUrl: 'https://cdn.example.com/result-two.png',
-        r2FileId: 'r2-2',
-      });
+      .mockResolvedValueOnce({ jobId: 'job-1' })
+      .mockResolvedValueOnce({ jobId: 'job-2' });
 
-    const { result } = renderHook(() => usePresetGenerationFlow());
+    const mockSnapshot1: JobStatusSnapshot = {
+      job: {
+        id: 'job-1',
+        status: 'completed',
+        resultUrl: 'https://cdn.example.com/result-one.png',
+        metadata: {
+          template: { id: 't-one', title: 'Style One', styleOptionId: 'style-one' },
+          prompt: 'Prompt 1',
+          r2FileId: 'r2-1',
+        },
+      },
+      status: 'completed',
+      progress: 100,
+    };
+
+    const mockSnapshot2: JobStatusSnapshot = {
+      job: {
+        id: 'job-2',
+        status: 'completed',
+        resultUrl: 'https://cdn.example.com/result-two.png',
+        metadata: {
+          template: { id: 't-two', title: 'Style Two', styleOptionId: 'style-two' },
+          prompt: 'Prompt 2',
+          r2FileId: 'r2-2',
+        },
+      },
+      status: 'completed',
+      progress: 100,
+    };
+
+    mockedPollJobStatus
+      .mockResolvedValueOnce(mockSnapshot1)
+      .mockResolvedValueOnce(mockSnapshot2);
+
+    const { result } = renderHook(() => usePresetGenerationFlow(), {
+      wrapper: ({ children }) => <GenerationProvider>{children}</GenerationProvider>,
+    });
 
     act(() => {
       result.current.openForStyles(mockStyles);
