@@ -120,7 +120,7 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
     <>
       {/* Delete confirmation dialog */}
       {deleteConfirmation.show && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/80 py-12">
           <div className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
@@ -165,7 +165,7 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
 
       {/* New folder dialog */}
       {newFolderDialog && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/80 py-12">
           <div className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
@@ -227,7 +227,7 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
 
       {/* Publish confirmation dialog */}
       {publishConfirmation.show && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/80 py-12">
           <div className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
@@ -264,7 +264,7 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
 
       {/* Unpublish confirmation dialog */}
       {unpublishConfirmation.show && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/80 py-12">
           <div className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
@@ -301,7 +301,7 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
 
       {/* Download confirmation dialog */}
       {downloadConfirmation.show && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/80 py-12">
           <div className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
@@ -336,7 +336,7 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
 
       {/* Add to folder dialog */}
       {addToFolderDialog && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/80 py-12">
           <div className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
@@ -399,7 +399,7 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
 
       {/* Folder thumbnail dialog */}
       {folderThumbnailDialog.show && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/80 py-12">
           <div className={`${glass.promptDark} rounded-2xl w-full max-w-md py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">

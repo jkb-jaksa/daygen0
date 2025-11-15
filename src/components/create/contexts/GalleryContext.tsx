@@ -12,7 +12,7 @@ import { useGalleryImages } from '../../../hooks/useGalleryImages';
 import { useGeneration } from './GenerationContext';
 import { useAuth } from '../../../auth/useAuth';
 import { getPersistedValue, setPersistedValue } from '../../../lib/clientStorage';
-import { debugError } from '../../../utils/debug';
+import { debugError, debugWarn } from '../../../utils/debug';
 import { consumePendingBadgeFilters } from '../hooks/badgeNavigationStorage';
 import { normalizeAspectRatio } from '../../../utils/aspectRatioUtils';
 import type {
@@ -743,22 +743,118 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     for (let index = 0; index < items.length; index += 1) {
       const item = items[index];
       try {
-        const response = await fetch(item.url);
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
+        // Try to fetch the image first
+        let blob: Blob;
+        try {
+          const response = await fetch(item.url);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch image: ${response.status}`);
+          }
+          blob = await response.blob();
+          
+          // Successfully fetched, create blob URL and download
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
 
-        const timestamp = new Date(item.timestamp).toISOString().split('T')[0];
-        const modelSlug = item.model ? `_${item.model.replace(/[^a-zA-Z0-9]/g, '_')}` : '';
-        const extension = item.url.split('.').pop()?.split('?')[0] || 'jpg';
-        const baseName = 'type' in item && item.type === 'video' ? 'video' : 'image';
+          const timestamp = new Date(item.timestamp).toISOString().split('T')[0];
+          const modelSlug = item.model ? `_${item.model.replace(/[^a-zA-Z0-9]/g, '_')}` : '';
+          const extension = item.url.split('.').pop()?.split('?')[0] || 'jpg';
+          const baseName = 'type' in item && item.type === 'video' ? 'video' : 'image';
 
-        link.download = `daygen_${timestamp}${modelSlug}_${index + 1}.${extension || baseName}`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
+          link.download = `daygen_${timestamp}${modelSlug}_${index + 1}.${extension || baseName}`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+        } catch (fetchError) {
+          // Fetch failed (likely CORS), try canvas-based download
+          debugWarn('Fetch failed, trying canvas-based download:', fetchError);
+          
+          // For images, use canvas-based approach
+          if (!('type' in item && item.type === 'video')) {
+            try {
+              await new Promise<void>((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                
+                img.onload = () => {
+                  try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.naturalWidth;
+                    canvas.height = img.naturalHeight;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) {
+                      reject(new Error('Failed to get canvas context'));
+                      return;
+                    }
+                    ctx.drawImage(img, 0, 0);
+                    
+                    canvas.toBlob((blob) => {
+                      if (!blob) {
+                        reject(new Error('Failed to create blob from canvas'));
+                        return;
+                      }
+                      
+                      const url = window.URL.createObjectURL(blob);
+                      const link = document.createElement('a');
+                      link.href = url;
+                      
+                      const timestamp = new Date(item.timestamp).toISOString().split('T')[0];
+                      const modelSlug = item.model ? `_${item.model.replace(/[^a-zA-Z0-9]/g, '_')}` : '';
+                      const extension = item.url.split('.').pop()?.split('?')[0] || 'jpg';
+                      
+                      link.download = `daygen_${timestamp}${modelSlug}_${index + 1}.${extension}`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      window.URL.revokeObjectURL(url);
+                      
+                      resolve();
+                    }, 'image/jpeg', 0.95);
+                  } catch (canvasError) {
+                    reject(canvasError);
+                  }
+                };
+                
+                img.onerror = () => {
+                  reject(new Error('Failed to load image for canvas download'));
+                };
+                
+                img.src = item.url;
+                
+                // Timeout after 10 seconds
+                setTimeout(() => {
+                  reject(new Error('Canvas download timeout'));
+                }, 10000);
+              });
+            } catch (canvasError) {
+              // Canvas download failed (CORS not configured), fallback to opening URL
+              debugWarn('Canvas download failed, opening URL:', canvasError);
+              const link = document.createElement('a');
+              link.href = item.url;
+              link.target = '_blank';
+              link.rel = 'noopener noreferrer';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }
+          } else {
+            // For videos, fallback to opening URL
+            const link = document.createElement('a');
+            link.href = item.url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }
+        }
+        
+        // Add small delay between downloads to avoid browser throttling
+        if (index < items.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
       } catch (error) {
         debugError('Error downloading gallery item:', error);
       }

@@ -59,6 +59,8 @@ const FullImageModal = memo(() => {
     handleReusePrompt,
     handleMakeVideo,
     handleImageActionMenu,
+    handleDownloadImage,
+    handleAddToFolder,
     syncJobUrlForImage,
     clearJobUrl 
   } = useGalleryActions();
@@ -72,6 +74,7 @@ const FullImageModal = memo(() => {
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
+  const sidebarRef = useRef<HTMLElement | null>(null);
   const [storedAvatars, setStoredAvatars] = useState<StoredAvatar[]>([]);
   const [storedProducts, setStoredProducts] = useState<StoredProduct[]>([]);
   
@@ -189,6 +192,7 @@ const FullImageModal = memo(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const overlayEl = overlayRef.current;
       const modalEl = modalRef.current;
+      const sidebarEl = sidebarRef.current;
       if (!overlayEl || !modalEl) {
         return;
       }
@@ -199,8 +203,23 @@ const FullImageModal = memo(() => {
         return;
       }
 
-      if (!modalEl.contains(target)) {
+      // Check if clicking inside the modal or sidebar
+      const isInsideModal = modalEl.contains(target);
+      const isInsideSidebar = sidebarEl?.contains(target);
+      
+      console.log('[FullImageModal] handleClickOutside', {
+        target: (target as HTMLElement)?.tagName,
+        isInsideModal,
+        isInsideSidebar,
+        hasSidebarRef: !!sidebarEl,
+      });
+
+      // Don't close if clicking inside the modal or sidebar
+      if (!isInsideModal && !isInsideSidebar) {
+        console.log('[FullImageModal] Closing modal - click outside modal and sidebar');
         clearJobUrl();
+      } else {
+        console.log('[FullImageModal] Keeping modal open - click inside modal or sidebar');
       }
     };
     
@@ -245,6 +264,25 @@ const FullImageModal = memo(() => {
     }
     syncJobUrlForImage(fullSizeImage);
   }, [open, fullSizeImage, syncJobUrlForImage]);
+
+  // Close modal after successful deletion (item removed from gallery)
+  useEffect(() => {
+    if (!fullSizeImage || !open) return;
+    
+    const itemId = fullSizeImage.jobId || fullSizeImage.r2FileId || fullSizeImage.url;
+    if (!itemId) return;
+    
+    // Check if current image still exists in filtered items
+    const stillExists = filteredItems.some(item => {
+      const candidateId = item.jobId || item.r2FileId || item.url;
+      return candidateId === itemId;
+    });
+    
+    // If item no longer exists in gallery, close the modal
+    if (!stillExists) {
+      clearJobUrl();
+    }
+  }, [filteredItems, fullSizeImage, open, clearJobUrl]);
   
   // Load avatars and products from storage
   useEffect(() => {
@@ -305,36 +343,94 @@ const FullImageModal = memo(() => {
   // Handle toggle like
   const handleToggleLikeClick = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
+    console.log('[FullImageModal] handleToggleLikeClick called', { hasFullSizeImage: !!fullSizeImage });
     if (fullSizeImage) {
-      await handleToggleLike(fullSizeImage);
+      try {
+        console.log('[FullImageModal] Calling handleToggleLike', { item: fullSizeImage });
+        await handleToggleLike(fullSizeImage);
+        console.log('[FullImageModal] handleToggleLike completed');
+      } catch (error) {
+        debugError('[FullImageModal] Error toggling like:', error);
+      }
     }
   }, [fullSizeImage, handleToggleLike]);
   
   // Handle toggle public
-  const handleTogglePublicClick = useCallback(async (e: React.MouseEvent) => {
+  const handleTogglePublicClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    if (fullSizeImage) {
-      await handleTogglePublic(fullSizeImage);
+    e.preventDefault();
+    console.log('[FullImageModal] handleTogglePublicClick called', { hasFullSizeImage: !!fullSizeImage });
+    if (!fullSizeImage) return;
+    try {
+      console.log('[FullImageModal] Calling handleTogglePublic', { item: fullSizeImage, isPublic: fullSizeImage.isPublic });
+      handleTogglePublic(fullSizeImage);
+      console.log('[FullImageModal] handleTogglePublic completed');
+    } catch (error) {
+      debugError('[FullImageModal] Error toggling public:', error);
     }
   }, [fullSizeImage, handleTogglePublic]);
   
   // Handle delete
-  const handleDeleteClick = useCallback(async (e: React.MouseEvent) => {
+  const handleDeleteClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
+    console.log('[FullImageModal] handleDeleteClick called', { hasFullSizeImage: !!fullSizeImage });
     if (fullSizeImage) {
-      const itemId = fullSizeImage.jobId || fullSizeImage.r2FileId || fullSizeImage.url;
-      if (itemId) {
-        await handleDeleteImage(itemId);
-        clearJobUrl();
+      try {
+        // Use consistent identifier extraction
+        const itemId = fullSizeImage.jobId?.trim() || fullSizeImage.r2FileId?.trim() || fullSizeImage.url?.trim();
+        console.log('[FullImageModal] Delete itemId:', itemId);
+        if (itemId) {
+          console.log('[FullImageModal] Calling handleDeleteImage');
+          handleDeleteImage(itemId);
+          console.log('[FullImageModal] handleDeleteImage completed');
+        } else {
+          debugError('[FullImageModal] Cannot delete: item has no identifier');
+        }
+      } catch (error) {
+        debugError('[FullImageModal] Error deleting:', error);
       }
     }
-  }, [fullSizeImage, handleDeleteImage, clearJobUrl]);
+  }, [fullSizeImage, handleDeleteImage]);
+  
+  // Handle download
+  const handleDownloadClick = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    console.log('[FullImageModal] handleDownloadClick called', { hasFullSizeImage: !!fullSizeImage });
+    if (fullSizeImage) {
+      try {
+        console.log('[FullImageModal] Calling handleDownloadImage', { item: fullSizeImage });
+        await handleDownloadImage(fullSizeImage);
+        console.log('[FullImageModal] handleDownloadImage completed');
+      } catch (error) {
+        debugError('[FullImageModal] Error downloading:', error);
+      }
+    }
+  }, [fullSizeImage, handleDownloadImage]);
   
   // Handle add to folder
   const handleAddToFolderClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    // TODO: Implement folder functionality
-  }, []);
+    e.preventDefault();
+    console.log('[FullImageModal] handleAddToFolderClick called', { hasFullSizeImage: !!fullSizeImage });
+    if (!fullSizeImage) return;
+    try {
+      // Use consistent identifier extraction
+      const itemId = fullSizeImage.jobId?.trim() || fullSizeImage.r2FileId?.trim() || fullSizeImage.url?.trim();
+      console.log('[FullImageModal] Add to folder itemId:', itemId);
+      if (itemId) {
+        console.log('[FullImageModal] Calling handleAddToFolder');
+        handleAddToFolder(itemId);
+        console.log('[FullImageModal] handleAddToFolder completed');
+      } else {
+        debugError('[FullImageModal] Cannot add to folder: item has no identifier');
+      }
+    } catch (error) {
+      debugError('[FullImageModal] Error adding to folder:', error);
+    }
+  }, [fullSizeImage, handleAddToFolder]);
   
   // Edit menu actions
   const handleEditImageClick = useCallback((e: React.MouseEvent) => {
@@ -642,7 +738,15 @@ const FullImageModal = memo(() => {
       <div
         ref={overlayRef}
         className="fixed inset-0 z-[110] bg-theme-black/80 backdrop-blur-[16px] flex items-center justify-center p-4"
-        onClick={clearJobUrl}
+        onClick={(e) => {
+          // Don't close if clicking inside the modal or sidebar
+          const modalEl = modalRef.current;
+          const sidebarEl = sidebarRef.current;
+          const target = e.target as Node;
+          if (!modalEl?.contains(target) && !sidebarEl?.contains(target)) {
+            clearJobUrl();
+          }
+        }}
       >
         <div
           ref={modalRef}
@@ -1025,6 +1129,11 @@ const FullImageModal = memo(() => {
               const deleteId = `delete-${fullSizeActionTooltipId}`;
               const likeId = `like-${fullSizeActionTooltipId}`;
               const moreId = `more-${fullSizeActionTooltipId}`;
+              const sidebarDownloadId = `download-sidebar-${fullSizeActionTooltipId}`;
+              const sidebarFoldersId = `folders-sidebar-${fullSizeActionTooltipId}`;
+              const sidebarPublishId = `publish-sidebar-${fullSizeActionTooltipId}`;
+              const sidebarLikeId = `like-sidebar-${fullSizeActionTooltipId}`;
+              const sidebarDeleteId = `delete-sidebar-${fullSizeActionTooltipId}`;
               return (
                 <>
                   {createPortal(
@@ -1057,6 +1166,56 @@ const FullImageModal = memo(() => {
                     </div>,
                     document.body,
                   )}
+                  {createPortal(
+                    <div
+                      data-tooltip-for={sidebarDownloadId}
+                      className={`${tooltips.base} fixed`}
+                      style={{ zIndex: 9999 }}
+                    >
+                      Download
+                    </div>,
+                    document.body,
+                  )}
+                  {createPortal(
+                    <div
+                      data-tooltip-for={sidebarFoldersId}
+                      className={`${tooltips.base} fixed`}
+                      style={{ zIndex: 9999 }}
+                    >
+                      Manage folders
+                    </div>,
+                    document.body,
+                  )}
+                  {createPortal(
+                    <div
+                      data-tooltip-for={sidebarPublishId}
+                      className={`${tooltips.base} fixed`}
+                      style={{ zIndex: 9999 }}
+                    >
+                      {fullSizeImage.isPublic ? 'Unpublish' : 'Publish'}
+                    </div>,
+                    document.body,
+                  )}
+                  {createPortal(
+                    <div
+                      data-tooltip-for={sidebarLikeId}
+                      className={`${tooltips.base} fixed`}
+                      style={{ zIndex: 9999 }}
+                    >
+                      {fullSizeImage.isLiked ? 'Unlike' : 'Like'}
+                    </div>,
+                    document.body,
+                  )}
+                  {createPortal(
+                    <div
+                      data-tooltip-for={sidebarDeleteId}
+                      className={`${tooltips.base} fixed`}
+                      style={{ zIndex: 9999 }}
+                    >
+                      Delete
+                    </div>,
+                    document.body,
+                  )}
                 </>
               );
             })()}
@@ -1066,32 +1225,65 @@ const FullImageModal = memo(() => {
       {/* Right sidebar with actions */}
       {fullSizeImage && (
         <aside 
+          ref={sidebarRef}
           className={`${glass.promptDark} w-[200px] rounded-2xl p-4 flex flex-col gap-0 overflow-y-auto fixed z-[120]`} 
           style={{ 
             right: 'calc(var(--container-inline-padding, clamp(1rem,5vw,6rem)) + 80px)', 
             top: 'calc(var(--nav-h) + 16px)', 
             height: 'calc(100vh - var(--nav-h) - 32px)' 
           }} 
-          onClick={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+          }}
         >
           {/* Icon-only action bar at top */}
           <div className="flex flex-row gap-0 justify-start pb-2 border-b border-theme-dark">
-            <a
-              href={fullSizeImage.url}
-              download
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                console.log('[FullImageModal] Download button clicked directly');
+                handleDownloadClick(e);
+              }}
+              onMouseDown={(e) => {
+                e.stopPropagation();
+              }}
               className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
-              onClick={(e) => e.stopPropagation()}
               title="Download"
               aria-label="Download"
+              onMouseEnter={(e) => {
+                showHoverTooltip(
+                  e.currentTarget,
+                  `download-sidebar-${fullSizeActionTooltipId}`,
+                  { placement: 'below', offset: 2 },
+                );
+              }}
+              onMouseLeave={() => {
+                hideHoverTooltip(`download-sidebar-${fullSizeActionTooltipId}`);
+              }}
             >
               <Download className="w-4 h-4" />
-            </a>
+            </button>
             <button
               type="button"
               onClick={handleAddToFolderClick}
               className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
               title="Manage folders"
               aria-label="Manage folders"
+              onMouseEnter={(e) => {
+                showHoverTooltip(
+                  e.currentTarget,
+                  `folders-sidebar-${fullSizeActionTooltipId}`,
+                  { placement: 'below', offset: 2 },
+                );
+              }}
+              onMouseLeave={() => {
+                hideHoverTooltip(`folders-sidebar-${fullSizeActionTooltipId}`);
+              }}
             >
               <FolderPlus className="w-4 h-4" />
             </button>
@@ -1101,6 +1293,16 @@ const FullImageModal = memo(() => {
               className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
               title={fullSizeImage.isPublic ? "Unpublish" : "Publish"}
               aria-label={fullSizeImage.isPublic ? "Unpublish" : "Publish"}
+              onMouseEnter={(e) => {
+                showHoverTooltip(
+                  e.currentTarget,
+                  `publish-sidebar-${fullSizeActionTooltipId}`,
+                  { placement: 'below', offset: 2 },
+                );
+              }}
+              onMouseLeave={() => {
+                hideHoverTooltip(`publish-sidebar-${fullSizeActionTooltipId}`);
+              }}
             >
               {fullSizeImage.isPublic ? (
                 <Lock className="w-4 h-4" />
@@ -1114,6 +1316,16 @@ const FullImageModal = memo(() => {
               className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
               title={fullSizeImage.isLiked ? "Unlike" : "Like"}
               aria-label={fullSizeImage.isLiked ? "Unlike" : "Like"}
+              onMouseEnter={(e) => {
+                showHoverTooltip(
+                  e.currentTarget,
+                  `like-sidebar-${fullSizeActionTooltipId}`,
+                  { placement: 'below', offset: 2 },
+                );
+              }}
+              onMouseLeave={() => {
+                hideHoverTooltip(`like-sidebar-${fullSizeActionTooltipId}`);
+              }}
             >
               <Heart 
                 className={`w-4 h-4 transition-colors duration-200 ${
@@ -1129,6 +1341,16 @@ const FullImageModal = memo(() => {
               className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
               title="Delete"
               aria-label="Delete"
+              onMouseEnter={(e) => {
+                showHoverTooltip(
+                  e.currentTarget,
+                  `delete-sidebar-${fullSizeActionTooltipId}`,
+                  { placement: 'below', offset: 2 },
+                );
+              }}
+              onMouseLeave={() => {
+                hideHoverTooltip(`delete-sidebar-${fullSizeActionTooltipId}`);
+              }}
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -1205,3 +1427,4 @@ const FullImageModal = memo(() => {
 FullImageModal.displayName = 'FullImageModal';
 
 export default FullImageModal;
+
