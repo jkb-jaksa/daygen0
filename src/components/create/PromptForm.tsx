@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useCreateGenerationController } from './hooks/useCreateGenerationController';
+import type { StyleOption } from './hooks/useStyleHandlers';
 import { useParallaxHover } from '../../hooks/useParallaxHover';
 import { useGenerateShortcuts } from '../../hooks/useGenerateShortcuts';
 import { usePrefillFromShare } from '../../hooks/usePrefillFromShare';
@@ -38,6 +39,7 @@ import { MAX_PARALLEL_GENERATIONS } from '../../utils/config';
 import { STYLE_MODAL_OPEN_EVENT, STYLE_MODAL_CLOSE_EVENT } from '../../contexts/styleModalEvents';
 import { useAuth } from '../../auth/useAuth';
 import { useCreateBridge, createInitialBridgeActions } from './contexts/hooks';
+import { usePresetGenerationFlow } from './hooks/usePresetGenerationFlow';
 
 const ModelSelector = lazy(() => import('./ModelSelector'));
 const SettingsMenu = lazy(() => import('./SettingsMenu'));
@@ -50,6 +52,7 @@ const PromptsDropdown = lazy(() =>
 );
 const AvatarCreationModal = lazy(() => import('../avatars/AvatarCreationModal'));
 const ProductCreationModal = lazy(() => import('../products/ProductCreationModal'));
+const PresetGenerationModal = lazy(() => import('./modals/PresetGenerationModal'));
 
 interface PromptFormProps {
   onGenerate?: () => void;
@@ -127,6 +130,13 @@ const PromptForm = memo<PromptFormProps>(
       error,
       clearError,
     } = useCreateGenerationController();
+    const presetGenerationFlow = usePresetGenerationFlow();
+    const handlePresetStylesApply = useCallback(
+      (appliedStyles: StyleOption[]) => {
+        presetGenerationFlow.openForStyles(appliedStyles);
+      },
+      [presetGenerationFlow],
+    );
 
     const {
       prompt,
@@ -1297,6 +1307,7 @@ const PromptForm = memo<PromptFormProps>(
               )}
             </div>
 
+
             <div className="relative">
               <button
                 type="button"
@@ -1339,12 +1350,7 @@ const PromptForm = memo<PromptFormProps>(
                       />
                     ) : (
                       <div
-                        className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl"
-                        style={{
-                          backgroundImage: styleHandlers.firstSelectedStyle.previewGradient,
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center',
-                        }}
+                        className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl bg-theme-mid/30"
                       />
                     )}
                     <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
@@ -1667,7 +1673,13 @@ const PromptForm = memo<PromptFormProps>(
             open={styleHandlers.isStyleModalOpen}
             onClose={styleHandlers.handleStyleModalClose}
             styleHandlers={styleHandlers}
+            onApplySelectedStyles={handlePresetStylesApply}
           />
+        </Suspense>
+      )}
+      {presetGenerationFlow.isOpen && (
+        <Suspense fallback={null}>
+          <PresetGenerationModal flow={presetGenerationFlow} />
         </Suspense>
       )}
       </>

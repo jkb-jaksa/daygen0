@@ -7,7 +7,6 @@ type StyleOption = {
   id: string;
   name: string;
   prompt: string;
-  previewGradient?: string;
   image?: string;
 };
 

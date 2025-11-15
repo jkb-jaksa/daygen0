@@ -256,7 +256,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       name: styleName.charAt(0).toUpperCase() + styleName.slice(1),
       prompt: '', // Not needed for badge display
       section: styleSection as 'lifestyle' | 'formal' | 'artistic',
-      gender: parts[0] as 'male' | 'female' | 'unisex',
+      gender: parts[0] as 'male' | 'female' | 'all',
     } as StoredStyle;
   }, []);
   let statusBanner: React.ReactNode = null;
