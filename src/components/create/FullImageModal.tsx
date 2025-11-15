@@ -5,7 +5,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { X, Download, Heart, ChevronLeft, ChevronRight, Copy, Globe, Lock, FolderPlus, Trash2, Edit as EditIcon, User, RefreshCw, Camera, Bookmark, BookmarkPlus, MoreHorizontal } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
-import { glass, buttons } from '../../styles/designSystem';
+import { glass, buttons, tooltips } from '../../styles/designSystem';
 import ModelBadge from '../ModelBadge';
 import AspectRatioBadge from '../shared/AspectRatioBadge';
 import { debugError } from '../../utils/debug';
@@ -530,14 +530,22 @@ const FullImageModal = memo(() => {
   }, [savePromptModalState]);
 
   // Tooltip helper functions (viewport-based positioning for portaled tooltips)
-  const showHoverTooltip = useCallback((target: HTMLElement, tooltipId: string) => {
+  const showHoverTooltip = useCallback((
+    target: HTMLElement,
+    tooltipId: string,
+    options?: { placement?: 'above' | 'below'; offset?: number },
+  ) => {
     if (typeof document === 'undefined') return;
     const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
     if (!tooltip) return;
     
     // Get button position in viewport
     const rect = target.getBoundingClientRect();
-    tooltip.style.top = `${rect.top - 28}px`;
+    const placement = options?.placement ?? 'above';
+    const defaultOffset = placement === 'above' ? 28 : 8;
+    const offset = options?.offset ?? defaultOffset;
+    const top = placement === 'above' ? rect.top - offset : rect.bottom + offset;
+    tooltip.style.top = `${top}px`;
     tooltip.style.left = `${rect.left + rect.width / 2}px`;
     tooltip.style.transform = 'translateX(-50%)';
     
@@ -560,6 +568,7 @@ const FullImageModal = memo(() => {
   
   const isVideo = 'type' in fullSizeImage && fullSizeImage.type === 'video';
   const hasMultipleItems = filteredItems.length > 1;
+  const fullSizeActionTooltipId = fullSizeImage.jobId || fullSizeImage.r2FileId || fullSizeImage.url || 'fullsize';
   
   return (
     <>
@@ -735,6 +744,16 @@ const FullImageModal = memo(() => {
                       : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                   }`}
                   title="Delete"
+                  onMouseEnter={(e) => {
+                    showHoverTooltip(
+                      e.currentTarget,
+                      `delete-${fullSizeActionTooltipId}`,
+                      { placement: 'below', offset: 2 },
+                    );
+                  }}
+                  onMouseLeave={() => {
+                    hideHoverTooltip(`delete-${fullSizeActionTooltipId}`);
+                  }}
                   aria-label="Delete"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -748,6 +767,16 @@ const FullImageModal = memo(() => {
                       : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                   }`}
                   title={fullSizeImage.isLiked ? "Unlike" : "Like"}
+                  onMouseEnter={(e) => {
+                    showHoverTooltip(
+                      e.currentTarget,
+                      `like-${fullSizeActionTooltipId}`,
+                      { placement: 'below', offset: 2 },
+                    );
+                  }}
+                  onMouseLeave={() => {
+                    hideHoverTooltip(`like-${fullSizeActionTooltipId}`);
+                  }}
                   aria-label={fullSizeImage.isLiked ? "Unlike" : "Like"}
                 >
                   <Heart
@@ -765,6 +794,16 @@ const FullImageModal = memo(() => {
                       : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                   }`}
                   title="More actions"
+                  onMouseEnter={(e) => {
+                    showHoverTooltip(
+                      e.currentTarget,
+                      `more-${fullSizeActionTooltipId}`,
+                      { placement: 'below', offset: 2 },
+                    );
+                  }}
+                  onMouseLeave={() => {
+                    hideHoverTooltip(`more-${fullSizeActionTooltipId}`);
+                  }}
                   aria-label="More actions"
                 >
                   <MoreHorizontal className="w-4 h-4" />
@@ -959,7 +998,7 @@ const FullImageModal = memo(() => {
                   {createPortal(
                     <div
                       data-tooltip-for={tooltipId}
-                      className="fixed whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg pointer-events-none"
+                      className={`${tooltips.base} fixed`}
                       style={{ zIndex: 9999 }}
                     >
                       Copy prompt
@@ -969,12 +1008,52 @@ const FullImageModal = memo(() => {
                   {createPortal(
                     <div
                       data-tooltip-for={`save-${tooltipId}`}
-                      className="fixed whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg pointer-events-none"
+                      className={`${tooltips.base} fixed`}
                       style={{ zIndex: 9999 }}
                     >
                       {isPromptSaved(fullSizeImage.prompt) ? 'Prompt saved' : 'Save prompt'}
                     </div>,
                     document.body
+                  )}
+                </>
+              );
+            })()}
+
+            {(() => {
+              const deleteId = `delete-${fullSizeActionTooltipId}`;
+              const likeId = `like-${fullSizeActionTooltipId}`;
+              const moreId = `more-${fullSizeActionTooltipId}`;
+              return (
+                <>
+                  {createPortal(
+                    <div
+                      data-tooltip-for={deleteId}
+                      className={`${tooltips.base} fixed`}
+                      style={{ zIndex: 9999 }}
+                      >
+                      Delete
+                    </div>,
+                    document.body,
+                  )}
+                  {createPortal(
+                    <div
+                      data-tooltip-for={likeId}
+                      className={`${tooltips.base} fixed`}
+                      style={{ zIndex: 9999 }}
+                    >
+                      {fullSizeImage.isLiked ? 'Unlike' : 'Like'}
+                    </div>,
+                    document.body,
+                  )}
+                  {createPortal(
+                    <div
+                      data-tooltip-for={moreId}
+                      className={`${tooltips.base} fixed`}
+                      style={{ zIndex: 9999 }}
+                    >
+                      More
+                    </div>,
+                    document.body,
                   )}
                 </>
               );

@@ -15,6 +15,7 @@ import {
   glass,
   buttons,
   headings,
+  tooltips,
 } from "../styles/designSystem";
 import {
   ArrowUpRight,
@@ -2217,16 +2218,16 @@ const Explore: React.FC = () => {
                     </div>
                     
                   {/* Tooltips rendered via portal to avoid clipping */}
-                  {createPortal(
-                    <div
-                      data-tooltip-for={`copy-${item.id}`}
-                      className="fixed whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg pointer-events-none"
-                      style={{ zIndex: 9999 }}
-                    >
-                      Copy prompt
-                    </div>,
-                    document.body
-                  )}
+                    {createPortal(
+                      <div
+                        data-tooltip-for={`copy-${item.id}`}
+                        className={`${tooltips.base} fixed`}
+                        style={{ zIndex: 9999 }}
+                      >
+                        Copy prompt
+                      </div>,
+                      document.body
+                    )}
                   </div>
                   </article>
                 );
@@ -2794,16 +2795,16 @@ const Explore: React.FC = () => {
               </div>
               
               {/* Tooltips rendered via portal to avoid clipping */}
-              {createPortal(
-                <div
-                  data-tooltip-for={`copy-fullsize-${selectedFullImage.id}`}
-                  className="fixed whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg pointer-events-none transition-opacity duration-100"
-                  style={{ zIndex: 9999 }}
-                >
-                  Copy prompt
-                </div>,
-                document.body
-              )}
+                  {createPortal(
+                    <div
+                      data-tooltip-for={`copy-fullsize-${selectedFullImage.id}`}
+                      className={`${tooltips.base} fixed`}
+                      style={{ zIndex: 9999 }}
+                    >
+                      Copy prompt
+                    </div>,
+                    document.body
+                  )}
             </div>
             
             {/* Vertical Gallery Navigation */}

@@ -119,6 +119,10 @@ export const glass = {
   sidebarIcon: `glass-liquid willchange-backdrop isolate backdrop-blur-[20px] border border-[color:var(--glass-border)] bg-[color:var(--glass-base-bg)] text-[color:var(--theme-text)]`,
 };
 
+export const tooltips = {
+  base: `${glass.promptDark} pointer-events-none whitespace-nowrap rounded-lg px-2 py-1 text-xs font-raleway text-theme-white shadow-lg opacity-0 transition-opacity duration-100`,
+};
+
 const iconButtonFocus =
   "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-theme-black";
 const iconButtonBase =

@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { ArrowLeft, Folder as FolderIcon, Copy, BookmarkPlus, Bookmark, Check, Square, Trash2, Heart } from 'lucide-react';
-import { glass } from '../../styles/designSystem';
+import { glass, tooltips } from '../../styles/designSystem';
 import type { Folder, GalleryImageLike, GalleryVideoLike } from './types';
 import type { StoredAvatar } from '../avatars/types';
 import type { StoredProduct } from '../products/types';
@@ -327,14 +327,14 @@ export default function FolderContentsView({
                 {/* Tooltips */}
                 <div
                   data-tooltip-for={`folder-select-${folder.id}-${img.url}-${idx}`}
-                  className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                  className={`${tooltips.base} absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full z-[70]`}
                   style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '-8px' }}
                 >
                   Copy prompt
                 </div>
                 <div
                   data-tooltip-for={`save-folder-select-${folder.id}-${img.url}-${idx}`}
-                  className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                  className={`${tooltips.base} absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full z-[70]`}
                   style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '-8px' }}
                 >
                   {isPromptSaved(img.prompt) ? 'Prompt saved' : 'Save prompt'}

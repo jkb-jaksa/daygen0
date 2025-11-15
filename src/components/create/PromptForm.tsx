@@ -31,7 +31,7 @@ import { usePrefillFromShare } from '../../hooks/usePrefillFromShare';
 import { useGallery } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
 import { AvatarPickerPortal } from './AvatarPickerPortal';
-import { buttons, glass } from '../../styles/designSystem';
+import { buttons, glass, tooltips } from '../../styles/designSystem';
 import { debugLog, debugError } from '../../utils/debug';
 import { SIDEBAR_PROMPT_GAP } from './layoutConstants';
 import { MAX_PARALLEL_GENERATIONS } from '../../utils/config';
@@ -92,7 +92,7 @@ const Tooltip: React.FC<{ text: string; children: React.ReactNode }> = ({ text, 
   <div className="relative inline-flex items-center group">
     {children}
     {text && (
-      <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 group-hover:opacity-100 shadow-lg z-50">
+      <div className={`${tooltips.base} absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full group-hover:opacity-100 z-50`}>
         {text}
       </div>
     )}
@@ -915,8 +915,8 @@ const PromptForm = memo<PromptFormProps>(
                   </button>
                   <div
                     data-tooltip-for="chat-mode-tooltip"
-                    className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
-                    style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                    className={`${tooltips.base} absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full z-[70] hidden lg:block`}
+                    style={{ left: '50%', transform: 'translateX(-50%) translateY(calc(-100% - 2px))', top: '0px' }}
                   >
                     Chat Mode
                   </div>
@@ -968,8 +968,8 @@ const PromptForm = memo<PromptFormProps>(
                   </button>
                   <div
                     data-tooltip-for="reference-tooltip"
-                    className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
-                    style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                    className={`${tooltips.base} absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full z-[70] hidden lg:block`}
+                    style={{ left: '50%', transform: 'translateX(-50%) translateY(calc(-100% - 2px))', top: '0px' }}
                   >
                     Reference Image
                   </div>
@@ -1063,8 +1063,8 @@ const PromptForm = memo<PromptFormProps>(
                   </button>
                   <div
                     data-tooltip-for="aspect-ratio-tooltip"
-                    className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
-                    style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                    className={`${tooltips.base} absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full z-[70] hidden lg:block`}
+                    style={{ left: '50%', transform: 'translateX(-50%) translateY(calc(-100% - 2px))', top: '0px' }}
                   >
                     Aspect Ratio
                   </div>
@@ -1122,8 +1122,8 @@ const PromptForm = memo<PromptFormProps>(
                 </div>
                 <div
                   data-tooltip-for="batch-size-tooltip"
-                  className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
-                  style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                  className={`${tooltips.base} absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full z-[70] hidden lg:block`}
+                  style={{ left: '50%', transform: 'translateX(-50%) translateY(calc(-100% - 2px))', top: '0px' }}
                 >
                   Batch size
                 </div>
@@ -1166,8 +1166,8 @@ const PromptForm = memo<PromptFormProps>(
                 </button>
                 <div
                   data-tooltip-for="prompts-tooltip"
-                  className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
-                  style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
+                  className={`${tooltips.base} absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full z-[70] hidden lg:block`}
+                  style={{ left: '50%', transform: 'translateX(-50%) translateY(calc(-100% - 2px))', top: '0px' }}
                 >
                   Your Prompts
                 </div>

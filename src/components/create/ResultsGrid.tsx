@@ -6,7 +6,7 @@ import { useGallery } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
 import { useBadgeNavigation } from './hooks/useBadgeNavigation';
-import { glass, buttons } from '../../styles/designSystem';
+import { glass, buttons, tooltips } from '../../styles/designSystem';
 import { debugError } from '../../utils/debug';
 import { createCardImageStyle } from '../../utils/cardImageStyle';
 import { useSavedPrompts } from '../../hooks/useSavedPrompts';
@@ -307,14 +307,22 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   }, [savePromptModalState]);
   
   // Tooltip helper functions (viewport-based positioning for portaled tooltips)
-  const showHoverTooltip = useCallback((target: HTMLElement, tooltipId: string) => {
+  const showHoverTooltip = useCallback((
+    target: HTMLElement,
+    tooltipId: string,
+    options?: { placement?: 'above' | 'below'; offset?: number },
+  ) => {
     if (typeof document === 'undefined') return;
     const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
     if (!tooltip) return;
     
     // Get button position in viewport
     const rect = target.getBoundingClientRect();
-    tooltip.style.top = `${rect.top - 28}px`;
+    const placement = options?.placement ?? 'above';
+    const defaultOffset = placement === 'above' ? 28 : 8;
+    const offset = options?.offset ?? defaultOffset;
+    const top = placement === 'above' ? rect.top - offset : rect.bottom + offset;
+    tooltip.style.top = `${top}px`;
     tooltip.style.left = `${rect.left + rect.width / 2}px`;
     tooltip.style.transform = 'translateX(-50%)';
     
@@ -654,6 +662,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           const displayModelName = item.model ?? 'unknown';
           const modelIdForFilter = item.model;
           const filterType: 'image' | 'video' = isVideoItem ? 'video' : 'image';
+          const baseActionTooltipId = item.jobId || item.r2FileId || item.url || `index-${index}`;
           
           return (
           <div
@@ -786,6 +795,16 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                             : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                         }`}
                         title="Delete image"
+                        onMouseEnter={(e) => {
+                          showHoverTooltip(
+                            e.currentTarget,
+                            `delete-${baseActionTooltipId}`,
+                            { placement: 'below', offset: 2 },
+                          );
+                        }}
+                        onMouseLeave={() => {
+                          hideHoverTooltip(`delete-${baseActionTooltipId}`);
+                        }}
                         aria-label="Delete image"
                       >
                         <Trash2 className="w-3 h-3" />
@@ -799,6 +818,16 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                             : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                         }`}
                         title={item.isLiked ? "Remove from liked" : "Add to liked"}
+                        onMouseEnter={(e) => {
+                          showHoverTooltip(
+                            e.currentTarget,
+                            `like-${baseActionTooltipId}`,
+                            { placement: 'below', offset: 2 },
+                          );
+                        }}
+                        onMouseLeave={() => {
+                          hideHoverTooltip(`like-${baseActionTooltipId}`);
+                        }}
                         aria-label={item.isLiked ? "Remove from liked" : "Add to liked"}
                       >
                         <Heart
@@ -816,6 +845,16 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                             : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                         }`}
                         title="More actions"
+                        onMouseEnter={(e) => {
+                          showHoverTooltip(
+                            e.currentTarget,
+                            `more-${baseActionTooltipId}`,
+                            { placement: 'below', offset: 2 },
+                          );
+                        }}
+                        onMouseLeave={() => {
+                          hideHoverTooltip(`more-${baseActionTooltipId}`);
+                        }}
                         aria-label="More actions"
                       >
                         <MoreHorizontal className="w-3 h-3" />
@@ -1061,8 +1100,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                     {createPortal(
                       <div
                         data-tooltip-for={tooltipId}
-                        className="fixed whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg pointer-events-none"
-                        style={{ zIndex: 9999 }}
+                      className={`${tooltips.base} fixed`}
+                      style={{ zIndex: 9999 }}
                       >
                         Copy prompt
                       </div>,
@@ -1071,12 +1110,52 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                     {createPortal(
                       <div
                         data-tooltip-for={`save-${tooltipId}`}
-                        className="fixed whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg pointer-events-none"
-                        style={{ zIndex: 9999 }}
+                      className={`${tooltips.base} fixed`}
+                      style={{ zIndex: 9999 }}
                       >
                         {isPromptSaved(item.prompt) ? 'Prompt saved' : 'Save prompt'}
                       </div>,
                       document.body
+                    )}
+                  </>
+                );
+              })()}
+
+              {(() => {
+                const deleteId = `delete-${baseActionTooltipId}`;
+                const likeId = `like-${baseActionTooltipId}`;
+                const moreId = `more-${baseActionTooltipId}`;
+                return (
+                  <>
+                    {createPortal(
+                      <div
+                        data-tooltip-for={deleteId}
+                        className={`${tooltips.base} fixed`}
+                        style={{ zIndex: 9999 }}
+                      >
+                        Delete
+                      </div>,
+                      document.body,
+                    )}
+                    {createPortal(
+                      <div
+                        data-tooltip-for={likeId}
+                        className={`${tooltips.base} fixed`}
+                        style={{ zIndex: 9999 }}
+                      >
+                        {item.isLiked ? 'Unlike' : 'Like'}
+                      </div>,
+                      document.body,
+                    )}
+                    {createPortal(
+                      <div
+                        data-tooltip-for={moreId}
+                        className={`${tooltips.base} fixed`}
+                        style={{ zIndex: 9999 }}
+                      >
+                        More
+                      </div>,
+                      document.body,
                     )}
                   </>
                 );
@@ -1138,7 +1217,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                   e.stopPropagation();
                                 }}
                                 onMouseEnter={(e) => {
-                                  showHoverTooltip(e.currentTarget, tooltipId);
+                                  showHoverTooltip(e.currentTarget, tooltipId, { placement: 'above', offset: 2 });
                                 }}
                                 onMouseLeave={() => {
                                   hideHoverTooltip(tooltipId);
@@ -1154,7 +1233,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                   e.stopPropagation();
                                 }}
                                 onMouseEnter={(e) => {
-                                  showHoverTooltip(e.currentTarget, `save-${tooltipId}`);
+                                  showHoverTooltip(e.currentTarget, `save-${tooltipId}`, { placement: 'above', offset: 2 });
                                 }}
                                 onMouseLeave={() => {
                                   hideHoverTooltip(`save-${tooltipId}`);
@@ -1185,8 +1264,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                   {createPortal(
                     <div
                       data-tooltip-for={tooltipId}
-                      className="fixed whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg pointer-events-none transition-opacity duration-100"
-                      style={{ zIndex: 9999 }}
+                        className={`${tooltips.base} fixed`}
+                        style={{ zIndex: 9999 }}
                     >
                       Copy prompt
                     </div>,
@@ -1195,8 +1274,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                   {createPortal(
                     <div
                       data-tooltip-for={`save-${tooltipId}`}
-                      className="fixed whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg pointer-events-none transition-opacity duration-100"
-                      style={{ zIndex: 9999 }}
+                        className={`${tooltips.base} fixed`}
+                        style={{ zIndex: 9999 }}
                     >
                       {isPromptSaved(item.prompt) ? 'Prompt saved' : 'Save prompt'}
                     </div>,
