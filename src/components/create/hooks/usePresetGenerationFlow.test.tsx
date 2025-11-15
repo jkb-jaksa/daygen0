@@ -1,6 +1,21 @@
 /* @vitest-environment jsdom */
-import React from 'react';
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
+
+// Mock Supabase before any other imports to prevent env var errors
+vi.mock('../../../lib/supabase', () => {
+  const mockSupabase = {
+    auth: {
+      getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+      onAuthStateChange: vi.fn(() => ({ data: { subscription: null }, unsubscribe: vi.fn() })),
+      signOut: vi.fn().mockResolvedValue({ error: null }),
+    },
+  };
+  return {
+    supabase: mockSupabase,
+  };
+});
+
+import React from 'react';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { usePresetGenerationFlow } from './usePresetGenerationFlow';
 import { generatePresetImage } from '../../../api/presetGeneration';
