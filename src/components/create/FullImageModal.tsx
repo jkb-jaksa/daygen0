@@ -951,10 +951,12 @@ const FullImageModal = memo(() => {
                           onClick={() => goToModelGallery(fullSizeImage.model, fullSizeItemType)}
                         />
                       </Suspense>
-                      <AspectRatioBadge 
-                        aspectRatio={fullSizeImage.aspectRatio} 
-                        size="md" 
-                      />
+                      <Suspense fallback={null}>
+                        <AspectRatioBadge 
+                          aspectRatio={fullSizeImage.aspectRatio} 
+                          size="md" 
+                        />
+                      </Suspense>
                       {fullSizeImage.avatarId && (() => {
                         const avatarForImage = avatarMap.get(fullSizeImage.avatarId);
                         if (!avatarForImage) return null;

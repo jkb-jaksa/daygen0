@@ -1469,7 +1469,7 @@ const PromptForm = memo<PromptFormProps>(
                   const label = mode === 'image' ? 'Image' : 'Video';
                   const modeStyles = MODE_STYLE_MAP[mode];
                   const baseClasses =
-                    'relative overflow-hidden flex items-center gap-2 rounded-full h-8 px-2 lg:px-3 text-sm font-raleway transition-all duration-150';
+                    'relative overflow-hidden flex items-center gap-2 rounded-full h-8 px-2 lg:px-3 text-base font-raleway transition-all duration-150';
                   const activeClasses = `border ${modeStyles.border} text-theme-text`;
                   const inactiveClasses =
                     'border border-transparent text-n-white hover:text-theme-text hover:bg-n-text/20';

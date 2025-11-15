@@ -58,6 +58,7 @@ import type {
 import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage";
 import { normalizeModelId } from '../utils/modelUtils';
 import ModelBadge from './ModelBadge';
+import AspectRatioBadge from './shared/AspectRatioBadge';
 
 
 const styleFilters = [
@@ -2786,9 +2787,14 @@ const Explore: React.FC = () => {
                       </button>
                     </div>
                     <div className="mt-2 flex justify-center items-center gap-2">
-                      <Suspense fallback={null}>
-                        <ModelBadge model={selectedFullImage.modelId ?? 'unknown'} size="md" />
-                      </Suspense>
+                      <div className="flex items-center gap-2">
+                        <Suspense fallback={null}>
+                          <ModelBadge model={selectedFullImage.modelId ?? 'unknown'} size="md" />
+                        </Suspense>
+                        <Suspense fallback={null}>
+                          <AspectRatioBadge aspectRatio={(selectedFullImage as any).aspectRatio} size="md" />
+                        </Suspense>
+                      </div>
                     </div>
                   </div>
                 </div>

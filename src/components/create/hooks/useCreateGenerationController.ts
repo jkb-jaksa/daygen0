@@ -747,7 +747,9 @@ export function useCreateGenerationController(): CreateGenerationController {
             productId: selectedProductId,
           });
 
-          persistImageResults(fluxImage);
+          persistImageResults(fluxImage, {
+            aspectRatio: geminiAspectRatio,
+          });
           return;
         }
         case 'chatgpt-image': {
@@ -768,7 +770,7 @@ export function useCreateGenerationController(): CreateGenerationController {
         case 'ideogram': {
           const ideogramResult = await generateIdeogramImage({
             prompt: finalPrompt,
-            aspect_ratio: '1:1',
+            aspect_ratio: geminiAspectRatio,
             rendering_speed: 'DEFAULT',
             num_images: 1,
             avatarId: selectedAvatarId,
@@ -781,7 +783,8 @@ export function useCreateGenerationController(): CreateGenerationController {
             throw new Error('Ideogram did not return any images.');
           }
 
-          persistImageResults(ideogramResult, { aspectRatio: '1:1' });
+          // Ideogram result already includes aspectRatio from options.aspect_ratio
+          persistImageResults(ideogramResult);
           return;
         }
         case 'qwen-image': {
@@ -804,20 +807,22 @@ export function useCreateGenerationController(): CreateGenerationController {
           return;
         }
         case 'runway-gen4': {
+          const runwayRatio = '1920:1080'; // Runway's current ratio
           const runwayImage = await generateRunwayImage({
             prompt: finalPrompt,
             model: 'gen4_image',
             uiModel: 'runway-gen4',
             references,
-            ratio: '1920:1080',
+            ratio: runwayRatio,
             avatarId: selectedAvatarId,
             avatarImageId: activeAvatarImageId,
             productId: selectedProductId,
             styleId: selectedStyleId,
           });
 
+          // Use the actual ratio passed to generation
           persistImageResults(runwayImage, {
-            aspectRatio: '1920:1080',
+            aspectRatio: runwayRatio,
           });
           return;
         }
