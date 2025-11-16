@@ -316,6 +316,9 @@ export default function Products() {
   const [unpublishConfirmation, setUnpublishConfirmation] = useState<{show: boolean, count: number, imageUrl?: string}>({show: false, count: 0});
   const [addToFolderDialog, setAddToFolderDialog] = useState<boolean>(false);
   const [selectedImageForFolder, setSelectedImageForFolder] = useState<string | null>(null);
+  const [pendingFolderSelections, setPendingFolderSelections] = useState<Set<string>>(new Set());
+  const [deleteFolderConfirmation, setDeleteFolderConfirmation] = useState<{ show: boolean; folderId: string | null }>({ show: false, folderId: null });
+  const [returnToFolderManagementAfterDelete, setReturnToFolderManagementAfterDelete] = useState(false);
   const [creationsModalProduct, setCreationsModalProduct] = useState<StoredProduct | null>(null);
   const [missingProductSlug, setMissingProductSlug] = useState<string | null>(null);
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -1059,8 +1062,13 @@ export default function Products() {
 
   const handleManageFolders = useCallback((imageUrl: string) => {
     setSelectedImageForFolder(imageUrl);
+    // Initialize pending selections with current folder state
+    const currentFolderIds = folders
+      .filter(folder => folder.imageIds.includes(imageUrl))
+      .map(folder => folder.id);
+    setPendingFolderSelections(new Set(currentFolderIds));
     setAddToFolderDialog(true);
-  }, []);
+  }, [folders]);
 
   const persistFolders = useCallback(
     async (nextFolders: Folder[]) => {
@@ -1105,16 +1113,87 @@ export default function Products() {
   }, [folders, persistFolders]);
 
   const handleToggleImageInFolder = useCallback((imageUrl: string, folderId: string) => {
-    const folder = folders.find(f => f.id === folderId);
-    if (!folder) return;
+    // Only update if this is the selected image for folder management
+    if (selectedImageForFolder !== imageUrl) return;
+    
+    // Update pending selections (temporary state)
+    setPendingFolderSelections(prev => {
+      const next = new Set(prev);
+      if (next.has(folderId)) {
+        next.delete(folderId);
+      } else {
+        next.add(folderId);
+      }
+      return next;
+    });
+  }, [selectedImageForFolder]);
 
-    const isInFolder = folder.imageIds.includes(imageUrl);
-    if (isInFolder) {
-      removeImageFromFolder(imageUrl, folderId);
-    } else {
-      addImageToFolder(imageUrl, folderId);
+  const handleAddToFolderConfirm = useCallback(() => {
+    if (!selectedImageForFolder) return;
+
+    // Apply pending changes to actual folders
+    const updatedFolders = folders.map(folder => {
+      const shouldBeInFolder = pendingFolderSelections.has(folder.id);
+      const isCurrentlyInFolder = folder.imageIds.includes(selectedImageForFolder);
+
+      if (shouldBeInFolder && !isCurrentlyInFolder) {
+        // Add to folder
+        return { ...folder, imageIds: [...folder.imageIds, selectedImageForFolder] };
+      } else if (!shouldBeInFolder && isCurrentlyInFolder) {
+        // Remove from folder
+        return { ...folder, imageIds: folder.imageIds.filter((id: string) => id !== selectedImageForFolder) };
+      }
+      return folder;
+    });
+
+    setFolders(updatedFolders);
+    void persistFolders(updatedFolders);
+    
+    // Close dialog and reset state
+    setAddToFolderDialog(false);
+    setSelectedImageForFolder(null);
+    setPendingFolderSelections(new Set());
+  }, [selectedImageForFolder, folders, pendingFolderSelections, persistFolders]);
+
+  const handleAddToFolderCancel = useCallback(() => {
+    // Discard pending changes and close dialog
+    setAddToFolderDialog(false);
+    setSelectedImageForFolder(null);
+    setPendingFolderSelections(new Set());
+  }, []);
+
+  const handleDeleteFolderClick = useCallback((folderId: string) => {
+    // Close folder management modal first, then open delete confirmation
+    // Track that we should return to folder management after delete
+    if (addToFolderDialog) {
+      setReturnToFolderManagementAfterDelete(true);
+      setAddToFolderDialog(false);
     }
-  }, [folders, addImageToFolder, removeImageFromFolder]);
+    setDeleteFolderConfirmation({ show: true, folderId });
+  }, [addToFolderDialog, setReturnToFolderManagementAfterDelete, setAddToFolderDialog, setDeleteFolderConfirmation]);
+
+  const handleConfirmDeleteFolder = useCallback(() => {
+    if (deleteFolderConfirmation.folderId) {
+      const updatedFolders = folders.filter(folder => folder.id !== deleteFolderConfirmation.folderId);
+      setFolders(updatedFolders);
+      void persistFolders(updatedFolders);
+    }
+    setDeleteFolderConfirmation({ show: false, folderId: null });
+    // Return to folder management modal if we came from there
+    if (returnToFolderManagementAfterDelete) {
+      setReturnToFolderManagementAfterDelete(false);
+      setAddToFolderDialog(true);
+    }
+  }, [deleteFolderConfirmation.folderId, folders, persistFolders, returnToFolderManagementAfterDelete, setDeleteFolderConfirmation, setReturnToFolderManagementAfterDelete, setAddToFolderDialog]);
+
+  const handleCancelDeleteFolder = useCallback(() => {
+    setDeleteFolderConfirmation({ show: false, folderId: null });
+    // Return to folder management modal if we came from there
+    if (returnToFolderManagementAfterDelete) {
+      setReturnToFolderManagementAfterDelete(false);
+      setAddToFolderDialog(true);
+    }
+  }, [returnToFolderManagementAfterDelete, setDeleteFolderConfirmation, setReturnToFolderManagementAfterDelete, setAddToFolderDialog]);
 
   const navigateFullSizeImage = useCallback((direction: 'prev' | 'next') => {
     if (!creationsModalProduct) return;
@@ -3006,8 +3085,8 @@ export default function Products() {
 
       {/* Add to folder dialog */}
       {addToFolderDialog && selectedImageForFolder && (
-        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 py-12">
-          <div className={`${glass.promptDark} rounded-[28px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/80 py-12">
+          <div className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
             <div className="text-center space-y-4">
               <div className="space-y-3">
                 <FolderPlus className="default-orange-icon mx-auto" />
@@ -3016,103 +3095,167 @@ export default function Products() {
                   Check folders to add or remove this item from.
                 </p>
               </div>
-              
+
               <div className="max-h-64 overflow-y-auto space-y-4 custom-scrollbar">
                 {folders.length === 0 ? (
                   <div className="text-center py-4">
                     <FolderIcon className="w-8 h-8 text-theme-white/30 mx-auto mb-2" />
                     <p className="text-base text-theme-white/50 mb-4">No folders available</p>
-                    <p className="text-sm text-theme-white/40">
-                      Create folders in the gallery to organize your images.
-                    </p>
+                    <div className="flex justify-start">
+                      <button
+                        onClick={() => {
+                          navigate("/create/image");
+                        }}
+                        className="inline-flex items-center gap-1 text-sm text-theme-white hover:text-theme-text transition-colors duration-200"
+                        title="Create new folder"
+                        aria-label="Create new folder"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add folder
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-2">
                     {folders.map((folder) => {
-                      const isInFolder = folder.imageIds.includes(selectedImageForFolder);
+                      const isInFolder = pendingFolderSelections.has(folder.id);
                       return (
-                        <label
+                        <div
                           key={folder.id}
-                          className={`w-full p-3 rounded-lg border transition-all duration-200 text-left flex items-center gap-3 cursor-pointer ${
+                          className={`w-full p-2 rounded-lg border transition-all duration-200 text-left flex items-center gap-3 ${
                             isInFolder
                               ? "bg-theme-white/10 border-theme-white shadow-lg shadow-theme-white/20"
                               : "bg-transparent border-theme-dark hover:bg-theme-dark/40 hover:border-theme-mid"
                           }`}
                         >
-                          <input
-                            type="checkbox"
-                            checked={isInFolder}
-                            onChange={() => handleToggleImageInFolder(selectedImageForFolder, folder.id)}
-                            className="sr-only"
-                          />
-                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${
-                            isInFolder
-                              ? "border-theme-white bg-theme-white"
-                              : "border-theme-mid hover:border-theme-text/50"
-                          }`}>
-                            {isInFolder ? (
-                              <svg className="w-3 h-3 text-theme-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                              </svg>
-                            ) : (
-                              <div className="w-2 h-2 bg-transparent rounded"></div>
-                            )}
-                          </div>
-                          <div className="flex-shrink-0">
-                            {folder.customThumbnail ? (
-                              <div className="w-5 h-5 rounded-lg overflow-hidden">
-                                <img 
-                                  src={folder.customThumbnail} 
-                                  alt={`${folder.name} thumbnail`}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                            ) : isInFolder ? (
-                              <div className="w-5 h-5 bg-theme-white/20 rounded-lg flex items-center justify-center">
-                                <FolderIcon className="w-3 h-3 text-theme-text" />
-                              </div>
-                            ) : (
-                              <FolderIcon className="w-5 h-5 text-theme-white/60" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className={`text-sm font-raleway truncate ${
-                              isInFolder ? 'text-theme-text' : 'text-theme-text/80'
+                          <label className="flex items-center gap-3 cursor-pointer flex-1 min-w-0">
+                            <input
+                              type="checkbox"
+                              checked={isInFolder}
+                              onChange={() => handleToggleImageInFolder(selectedImageForFolder, folder.id)}
+                              className="sr-only"
+                            />
+                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${
+                              isInFolder
+                                ? "border-theme-white bg-theme-white"
+                                : "border-theme-mid hover:border-theme-text/50"
                             }`}>
-                              {folder.name}
+                              {isInFolder ? (
+                                <svg className="w-3 h-3 text-theme-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              ) : (
+                                <div className="w-2 h-2 bg-transparent rounded"></div>
+                              )}
                             </div>
-                            <div className={`text-xs ${
-                              isInFolder ? 'text-theme-text/70' : 'text-theme-white/50'
-                            }`}>
-                              {folder.imageIds.length} images
-                              {isInFolder && " (added)"}
+                            <div className="flex-shrink-0">
+                              {folder.customThumbnail ? (
+                                <div className="w-5 h-5 rounded-lg overflow-hidden">
+                                  <img 
+                                    src={folder.customThumbnail} 
+                                    alt={`${folder.name} thumbnail`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              ) : isInFolder ? (
+                                <div className="w-5 h-5 bg-theme-white/20 rounded-lg flex items-center justify-center">
+                                  <FolderIcon className="w-3 h-3 text-theme-text" />
+                                </div>
+                              ) : (
+                                <FolderIcon className="w-5 h-5 text-theme-white/60" />
+                              )}
                             </div>
-                          </div>
-                        </label>
+                            <div className="flex-1 min-w-0">
+                              <div className={`text-sm font-raleway truncate ${
+                                isInFolder ? 'text-theme-text' : 'text-theme-text/80'
+                              }`}>
+                                {folder.name}
+                              </div>
+                              <div className={`text-xs ${
+                                isInFolder ? 'text-theme-text/70' : 'text-theme-white/50'
+                              }`}>
+                                {folder.imageIds.length} images
+                                {isInFolder && " (added)"}
+                              </div>
+                            </div>
+                          </label>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteFolderClick(folder.id);
+                            }}
+                            className="flex-shrink-0 p-1 rounded-lg hover:bg-theme-white/10 text-theme-white/60 hover:text-theme-text transition-colors duration-200"
+                            aria-label={`Delete folder ${folder.name}`}
+                            title="Delete folder"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
                       );
                     })}
                   </div>
                 )}
               </div>
-              
+
+              {folders.length > 0 && (
+                <div className="flex justify-start">
+                  <button
+                    onClick={() => {
+                      navigate("/create/image");
+                    }}
+                    className="inline-flex items-center gap-1 text-sm text-theme-white hover:text-theme-text transition-colors duration-200"
+                    aria-label="Create new folder"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add folder
+                  </button>
+                </div>
+              )}
+
               <div className="flex justify-center gap-3">
                 <button
-                  onClick={() => {
-                    setAddToFolderDialog(false);
-                    setSelectedImageForFolder(null);
-                  }}
+                  onClick={handleAddToFolderCancel}
                   className={buttons.ghost}
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={() => {
-                    setAddToFolderDialog(false);
-                    setSelectedImageForFolder(null);
-                  }}
+                  onClick={handleAddToFolderConfirm}
                   className={buttons.primary}
                 >
                   Done
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete folder confirmation dialog */}
+      {deleteFolderConfirmation.show && deleteFolderConfirmation.folderId && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/80 py-12">
+          <div className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+            <div className="text-center space-y-4">
+              <div className="space-y-3">
+                <Trash2 className="default-orange-icon mx-auto" />
+                <h3 className="text-xl font-raleway font-normal text-theme-text">Delete Folder</h3>
+                <p className="text-base font-raleway font-normal text-theme-white">
+                  Are you sure you want to delete this folder? This action cannot be undone. The images will remain in your gallery.
+                </p>
+              </div>
+              <div className="flex justify-center gap-3">
+                <button
+                  onClick={handleCancelDeleteFolder}
+                  className={buttons.ghost}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmDeleteFolder}
+                  className={buttons.primary}
+                >
+                  Delete Folder
                 </button>
               </div>
             </div>
