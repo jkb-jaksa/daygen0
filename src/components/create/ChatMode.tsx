@@ -105,7 +105,7 @@ const IMAGE_MODEL_OPTIONS: ReadonlyArray<ImageModelOption> = [
   },
   {
     id: "grok-2-image",
-    name: "Grok Image",
+    name: "Grok",
     desc: "Great aesthetics. Fast generations.",
     Icon: Sparkles,
   },
@@ -217,7 +217,7 @@ const ChatMode: React.FC = () => {
 
   const userKey = user?.id || user?.email || "anon";
   const { history, addPrompt, removePrompt: removeRecentPrompt } = usePromptHistory(userKey, 10);
-  const { savedPrompts, savePrompt, removePrompt, updatePrompt } = useSavedPrompts(userKey);
+  const { savedPrompts, savePrompt, removePrompt, updatePrompt, isPromptSaved } = useSavedPrompts(userKey);
 
   const [input, setInput] = useState("");
   const [isAssistantTyping, setIsAssistantTyping] = useState(false);
@@ -249,6 +249,7 @@ const ChatMode: React.FC = () => {
   );
   const [recraftModel, setRecraftModel] = useState<"recraft-v3" | "recraft-v2">("recraft-v3");
   const [runwayModel, setRunwayModel] = useState<"runway-gen4" | "runway-gen4-turbo">("runway-gen4");
+  const [grokModel, setGrokModel] = useState<"grok-2-image" | "grok-2-image-1212" | "grok-2-image-latest">("grok-2-image");
   const [temperature, setTemperature] = useState<number>(1);
   const [outputLength, setOutputLength] = useState<number>(8192);
   const [topP, setTopP] = useState<number>(1);
@@ -275,6 +276,7 @@ const ChatMode: React.FC = () => {
   const isFluxModel = selectedModel === "flux-1.1";
   const isRunwayImageModel = selectedModel === "runway-gen4";
   const isRecraftModel = selectedModel === "recraft";
+  const isGrokModel = selectedModel === "grok-2-image";
   const isQwenModel = selectedModel === "qwen-image";
   const isLumaPhotonImageModel =
     selectedModel === "luma-photon-1" || selectedModel === "luma-photon-flash-1";
@@ -706,9 +708,21 @@ const ChatMode: React.FC = () => {
 
   const handleSaveRecentPrompt = useCallback(
     (text: string) => {
-      savePrompt(text);
+      const trimmed = text.trim();
+      if (!trimmed) return;
+      
+      if (isPromptSaved(trimmed)) {
+        // Find and remove the saved prompt
+        const promptToRemove = savedPrompts.find(p => p.text.toLowerCase() === trimmed.toLowerCase());
+        if (promptToRemove) {
+          removePrompt(promptToRemove.id);
+        }
+      } else {
+        // Save the prompt
+        savePrompt(trimmed);
+      }
     },
-    [savePrompt],
+    [savePrompt, isPromptSaved, savedPrompts, removePrompt],
   );
 
   const focusTextarea = () => {
@@ -1614,6 +1628,11 @@ const ChatMode: React.FC = () => {
                               enabled: isRunwayImageModel,
                               model: runwayModel,
                               onModelChange: setRunwayModel,
+                            }}
+                            grok={{
+                              enabled: isGrokModel,
+                              model: grokModel,
+                              onModelChange: setGrokModel,
                             }}
                             gemini={{
                               enabled: isGeminiModel,

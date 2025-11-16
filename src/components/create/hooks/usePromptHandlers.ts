@@ -30,22 +30,18 @@ export function usePromptHandlers(
   const { history, addPrompt, removePrompt: removeRecentPrompt } = usePromptHistory(userKey, 10);
   const { savedPrompts, savePrompt, removePrompt, updatePrompt, isPromptSaved } = useSavedPrompts(userKey);
   
-  // Track saved prompts refresh timestamp for forcing dropdown updates
+  // Track saved prompts refresh timestamp for forcing dropdown updates (only for cross-tab sync)
   const [savedPromptsRefreshKey, setSavedPromptsRefreshKey] = useState(0);
   const savedPromptsRef = useRef(savedPrompts);
-  const savedPromptsLength = savedPrompts.length;
-  const firstSavedPromptId = savedPrompts[0]?.id ?? null;
   
   // Keep ref in sync
   useEffect(() => {
     savedPromptsRef.current = savedPrompts;
   }, [savedPrompts]);
   
-  // Listen for saved prompts changes to update refresh key
-  useEffect(() => {
-    setSavedPromptsRefreshKey(prev => prev + 1);
-  }, [savedPromptsLength, firstSavedPromptId]);
-  
+  // Listen for saved prompts changes from cross-tab sync (not local updates)
+  // Note: Local updates via savePrompt/removePrompt already update savedPrompts state reactively,
+  // so we don't need to increment the refresh key for those. Only increment for cross-tab sync.
   // Also listen directly to storage change events to ensure we catch all updates
   useEffect(() => {
     const handleStorageChange = (event: Event) => {
@@ -100,14 +96,26 @@ export function usePromptHandlers(
     }
   }, [addPrompt]);
   
-  // Handle save prompt
+  // Handle save prompt (toggle: save if not saved, unsave if already saved)
   const handleSavePrompt = useCallback((promptText: string) => {
-    if (promptText.trim() && !isPromptSaved(promptText.trim())) {
-      savePrompt(promptText.trim());
+    const trimmed = promptText.trim();
+    if (!trimmed) return;
+    
+    if (isPromptSaved(trimmed)) {
+      // Find and remove the saved prompt
+      const promptToRemove = savedPrompts.find(p => p.text.toLowerCase() === trimmed.toLowerCase());
+      if (promptToRemove) {
+        removePrompt(promptToRemove.id);
+        setCopyNotification('Prompt removed!');
+        setTimeout(() => setCopyNotification(null), 2000);
+      }
+    } else {
+      // Save the prompt
+      savePrompt(trimmed);
       setCopyNotification('Prompt saved!');
       setTimeout(() => setCopyNotification(null), 2000);
     }
-  }, [savePrompt, isPromptSaved]);
+  }, [savePrompt, isPromptSaved, savedPrompts, removePrompt]);
   
   // Handle unsave prompt
   const handleUnsavePrompt = useCallback((promptText: string) => {
