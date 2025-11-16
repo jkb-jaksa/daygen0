@@ -112,6 +112,14 @@ const FullImageModal = memo(() => {
   const { fullSizeImage, fullSizeIndex, isFullSizeOpen } = state;
   const open = isFullSizeOpen;
   const fullSizeItemType: 'image' | 'video' = getGalleryItemType(fullSizeImage);
+  // Identify current item and whether the image action (More) menu is open for it
+  const currentItemId =
+    fullSizeImage?.jobId?.trim() ||
+    fullSizeImage?.r2FileId?.trim() ||
+    fullSizeImage?.url?.trim() ||
+    '';
+  const isImageActionMenuOpen =
+    !!currentItemId && state.imageActionMenu?.id === currentItemId;
   
   console.log('[FullImageModal] Render', { 
     open, 
@@ -434,16 +442,9 @@ const FullImageModal = memo(() => {
     console.log('[FullImageModal] handleAddToFolderClick called', { hasFullSizeImage: !!fullSizeImage });
     if (!fullSizeImage) return;
     try {
-      // Use consistent identifier extraction
-      const itemId = fullSizeImage.jobId?.trim() || fullSizeImage.r2FileId?.trim() || fullSizeImage.url?.trim();
-      console.log('[FullImageModal] Add to folder itemId:', itemId);
-      if (itemId) {
-        console.log('[FullImageModal] Calling handleAddToFolder');
-        handleAddToFolder(itemId);
-        console.log('[FullImageModal] handleAddToFolder completed');
-      } else {
-        debugError('[FullImageModal] Cannot add to folder: item has no identifier');
-      }
+      console.log('[FullImageModal] Calling handleAddToFolder');
+      handleAddToFolder(fullSizeImage);
+      console.log('[FullImageModal] handleAddToFolder completed');
     } catch (error) {
       debugError('[FullImageModal] Error adding to folder:', error);
     }
@@ -833,7 +834,7 @@ const FullImageModal = memo(() => {
             <div className="image-gallery-actions absolute top-4 right-4 flex items-start gap-1 z-[40]">
               <div
                 className={`flex items-center gap-1 ${
-                  editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}`
+                  editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || isImageActionMenuOpen
                     ? 'opacity-100'
                     : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
                 } transition-opacity duration-100`}
@@ -864,7 +865,7 @@ const FullImageModal = memo(() => {
                   type="button"
                   onClick={handleDeleteClick}
                   className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${
-                    editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}`
+                    editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || isImageActionMenuOpen
                       ? 'opacity-100 pointer-events-auto'
                       : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                   }`}
@@ -886,7 +887,7 @@ const FullImageModal = memo(() => {
                   type="button"
                   onClick={handleToggleLikeClick}
                   className={`image-action-btn image-action-btn--fullsize parallax-large favorite-toggle transition-opacity duration-100 ${
-                    editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}`
+                    editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || isImageActionMenuOpen
                       ? 'opacity-100 pointer-events-auto'
                       : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                   }`}
@@ -912,7 +913,7 @@ const FullImageModal = memo(() => {
                   type="button"
                   onClick={handleMoreActionsClick}
                   className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${
-                    editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}`
+                    editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || isImageActionMenuOpen
                       ? 'opacity-100 pointer-events-auto'
                       : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                   }`}

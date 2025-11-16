@@ -86,7 +86,7 @@ function CreateRefactoredView() {
     removeFolder,
     setFolders,
     addFolder,
-    addImagesToFolder,
+    toggleImagesInFolder,
     setSelectedImagesForFolder,
   } = useGallery();
   const generation = useGeneration();
@@ -113,7 +113,7 @@ function CreateRefactoredView() {
 
   // Folder-specific local state
   const [newFolderName, setNewFolderName] = useState('');
-  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [folderThumbnailFile, setFolderThumbnailFile] = useState<File | null>(null);
   const [returnToFolderDialog, setReturnToFolderDialog] = useState(false);
   const [deleteFolderConfirmation, setDeleteFolderConfirmation] = useState<{ show: boolean; folderId: string | null }>({ show: false, folderId: null });
@@ -555,28 +555,19 @@ function CreateRefactoredView() {
     }
   }, [returnToFolderDialog, setNewFolderDialog, setAddToFolderDialog]);
 
-  const handleAddToFolderSelect = useCallback((folderId: string | null) => {
-    setSelectedFolder(folderId);
-  }, []);
-
-  const handleAddToFolderConfirm = useCallback(() => {
-    const targetFolder = selectedFolder;
-    const images = state.selectedImagesForFolder;
-
-    if (targetFolder && images.length > 0) {
-      addImagesToFolder(images, targetFolder);
+  const handleAddToFolderToggle = useCallback((folderId: string) => {
+    if (!folderId || state.selectedImagesForFolder.length === 0) {
+      return;
     }
 
-    setAddToFolderDialog(false);
-    setSelectedFolder(null);
-    setSelectedImagesForFolder([]);
-  }, [addImagesToFolder, selectedFolder, setAddToFolderDialog, setSelectedImagesForFolder, state.selectedImagesForFolder]);
+    toggleImagesInFolder(state.selectedImagesForFolder, folderId);
+  }, [state.selectedImagesForFolder, toggleImagesInFolder]);
 
-  const handleAddToFolderCancel = useCallback(() => {
+  const handleAddToFolderClose = useCallback(() => {
     setAddToFolderDialog(false);
-    setSelectedFolder(null);
+    setReturnToFolderDialog(false);
     setSelectedImagesForFolder([]);
-  }, [setAddToFolderDialog, setSelectedImagesForFolder]);
+  }, [setAddToFolderDialog, setReturnToFolderDialog, setSelectedImagesForFolder]);
 
   const handleOpenNewFolderDialog = useCallback(() => {
     setAddToFolderDialog(false);
@@ -664,14 +655,14 @@ function CreateRefactoredView() {
 
   // Folder navigation handlers
   const handleSelectFolder = useCallback((folderId: string) => {
-    setSelectedFolder(folderId);
+    setActiveFolderId(folderId);
     setActiveCategory('folder-view');
-  }, []);
+  }, [setActiveCategory, setActiveFolderId]);
 
   const handleBackToFolders = useCallback(() => {
-    setSelectedFolder(null);
+    setActiveFolderId(null);
     setActiveCategory('my-folders');
-  }, []);
+  }, [setActiveCategory, setActiveFolderId]);
 
   const confirmDeleteFolder = useCallback((folderId: string) => {
     setDeleteFolderConfirmation({ show: true, folderId });
@@ -680,13 +671,13 @@ function CreateRefactoredView() {
   const handleConfirmDeleteFolder = useCallback(() => {
     if (deleteFolderConfirmation.folderId) {
       removeFolder(deleteFolderConfirmation.folderId);
-      if (selectedFolder === deleteFolderConfirmation.folderId) {
-        setSelectedFolder(null);
+      if (activeFolderId === deleteFolderConfirmation.folderId) {
+        setActiveFolderId(null);
         setActiveCategory('my-folders');
       }
     }
     setDeleteFolderConfirmation({ show: false, folderId: null });
-  }, [deleteFolderConfirmation.folderId, removeFolder, selectedFolder]);
+  }, [activeFolderId, deleteFolderConfirmation.folderId, removeFolder]);
 
   const handleCancelDeleteFolder = useCallback(() => {
     setDeleteFolderConfirmation({ show: false, folderId: null });
@@ -902,12 +893,12 @@ function CreateRefactoredView() {
                   />
                 </Suspense>
               )}
-              {activeCategory === 'folder-view' && selectedFolder && (
+              {activeCategory === 'folder-view' && activeFolderId && (
                 <Suspense fallback={null}>
                   <FolderContentsView
-                    folder={state.folders.find(f => f.id === selectedFolder)!}
+                    folder={state.folders.find(f => f.id === activeFolderId)!}
                     folderImages={[...state.images, ...state.videos].filter(img => 
-                      state.folders.find(f => f.id === selectedFolder)?.imageIds.includes(img.url)
+                      state.folders.find(f => f.id === activeFolderId)?.imageIds.includes(img.url)
                     )}
                     onBack={handleBackToFolders}
                     onImageClick={handleFolderImageClick}
@@ -1031,10 +1022,9 @@ function CreateRefactoredView() {
           onNewFolderCreate={handleNewFolderCreate}
           onNewFolderCancel={handleNewFolderCancel}
           addToFolderDialog={state.addToFolderDialog}
-          selectedFolder={selectedFolder}
-          onAddToFolderSelect={handleAddToFolderSelect}
-          onAddToFolderConfirm={handleAddToFolderConfirm}
-          onAddToFolderCancel={handleAddToFolderCancel}
+          selectedImagesForFolder={state.selectedImagesForFolder}
+          onToggleFolderSelection={handleAddToFolderToggle}
+          onAddToFolderClose={handleAddToFolderClose}
           onOpenNewFolderDialog={handleOpenNewFolderDialog}
           folderThumbnailDialog={state.folderThumbnailDialog}
           folderThumbnailFile={folderThumbnailFile}

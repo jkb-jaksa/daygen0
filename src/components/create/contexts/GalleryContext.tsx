@@ -596,14 +596,25 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
   }, [persistFolders]);
 
   const normalizeImageIds = useCallback((imageUrls: string[]) => {
-    return Array.from(
-      new Set(
-        imageUrls
-          .map(url => url?.trim())
-          .filter((url): url is string => Boolean(url)),
-      ),
-    );
-  }, []);
+    const normalized = new Set<string>();
+
+    imageUrls.forEach(candidate => {
+      const trimmed = candidate?.trim();
+      if (!trimmed) {
+        return;
+      }
+
+      const matchedImage = findImageById(trimmed);
+      if (matchedImage?.url?.trim()) {
+        normalized.add(matchedImage.url.trim());
+        return;
+      }
+
+      normalized.add(trimmed);
+    });
+
+    return Array.from(normalized);
+  }, [findImageById]);
 
   const addImagesToFolder = useCallback((imageUrls: string[], folderId: string) => {
     const normalized = normalizeImageIds(imageUrls);

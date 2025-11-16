@@ -3,6 +3,7 @@ import { Download, Share2, FolderPlus, Globe, Lock } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
 import { MenuPortal } from './shared/MenuPortal';
+import { useToast } from '../../hooks/useToast';
 import { debugLog, debugError } from '../../utils/debug';
 import type { GalleryImageLike, GalleryVideoLike } from './types';
 import { makeRemixUrl, withUtm, copyLink } from '../../lib/shareUtils';
@@ -30,10 +31,12 @@ interface ImageActionMenuProps {
 
 const ImageActionMenu = memo<ImageActionMenuProps>(({ open, onClose }) => {
   const { state } = useGallery();
-  const { 
-    handleDownloadImage, 
+  const {
+    handleDownloadImage,
     handleTogglePublic,
+    handleAddToFolder,
   } = useGalleryActions();
+  const { showToast } = useToast();
   
   const { imageActionMenu } = state;
   
@@ -64,11 +67,12 @@ const ImageActionMenu = memo<ImageActionMenuProps>(({ open, onClose }) => {
 
       await copyLink(urlToShare);
       debugLog('Link copied!');
+      showToast('Link copied!');
       onClose();
     } catch (error) {
       debugError('Failed to copy link:', error);
     }
-  }, [currentImage, onClose]);
+  }, [currentImage, onClose, showToast]);
   
   // Handle download
   const handleDownload = useCallback(async (event: React.MouseEvent) => {
@@ -92,15 +96,10 @@ const ImageActionMenu = memo<ImageActionMenuProps>(({ open, onClose }) => {
   const handleAddToFolderClick = useCallback((event: React.MouseEvent) => {
     event.stopPropagation();
     if (currentImage) {
-      const itemId = currentImage.jobId || currentImage.r2FileId || currentImage.url;
-      if (itemId) {
-        // This will need folder selection UI, for now just log
-        debugLog('Add to folder clicked for:', itemId);
-        // TODO: Open folder selection dialog
-      }
+      handleAddToFolder(currentImage);
       onClose();
     }
-  }, [currentImage, onClose]);
+  }, [currentImage, handleAddToFolder, onClose]);
   
   if (!open || !imageActionMenu || !currentImage) return null;
   
