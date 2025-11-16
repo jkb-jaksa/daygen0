@@ -68,12 +68,12 @@ const formatProgress = (snapshot: JobStatusSnapshot, previous?: string): string 
 
 const buildProviderOptions = (options: GrokImageGenerationOptions): Record<string, unknown> => {
   const providerOptions: Record<string, unknown> = {};
+  const responseFormat = options.responseFormat ?? 'b64_json';
+  providerOptions.response_format = responseFormat;
+
   const count = options.n ?? options.count;
   if (typeof count === 'number' && Number.isFinite(count)) {
     providerOptions.n = Math.max(1, Math.min(10, Math.round(count)));
-  }
-  if (options.responseFormat) {
-    providerOptions.response_format = options.responseFormat;
   }
   if (options.imageFormat) {
     providerOptions.image_format = options.imageFormat;
