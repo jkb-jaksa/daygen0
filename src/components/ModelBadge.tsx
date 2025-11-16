@@ -198,6 +198,24 @@ const MODEL_CONFIG = {
     shortName: 'SD1.0V',
     icon: '🎥',
     description: 'Seedance 1.0 Pro Video - Video generation'
+  },
+  'grok-2-image': {
+    name: 'Grok Image',
+    shortName: 'Grok',
+    icon: '🤖',
+    description: 'Grok Image - High-quality image generation'
+  },
+  'grok-2-image-1212': {
+    name: 'Grok Image',
+    shortName: 'Grok',
+    icon: '🤖',
+    description: 'Grok Image - High-quality image generation'
+  },
+  'grok-2-image-latest': {
+    name: 'Grok Image',
+    shortName: 'Grok',
+    icon: '🤖',
+    description: 'Grok Image - High-quality image generation'
   }
 } as const;
 
@@ -230,6 +248,11 @@ export const ModelBadge: React.FC<ModelBadgeProps> = ({
   // Special fallback for Ideogram models if exact match fails
   if (!config && cleanModel.toLowerCase().includes('ideogram')) {
     config = MODEL_CONFIG['ideogram'];
+  }
+  
+  // Special fallback for Grok models if exact match fails
+  if (!config && cleanModel.toLowerCase().includes('grok')) {
+    config = MODEL_CONFIG['grok-2-image-latest'] || MODEL_CONFIG['grok-2-image-1212'] || MODEL_CONFIG['grok-2-image'];
   }
   
   // Final fallback

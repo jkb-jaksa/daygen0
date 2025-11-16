@@ -292,11 +292,14 @@ export function useCreateGenerationController(): CreateGenerationController {
     wanSize,
   ]);
 
+  const [grokModel, setGrokModel] = useState<'grok-2-image' | 'grok-2-image-1212' | 'grok-2-image-latest'>('grok-2-image');
+
   const settingsSections = useMemo<SettingsSections>(() => {
     const isGeminiModel = selectedModel === 'gemini-2.5-flash-image';
     const isQwenModel = selectedModel === 'qwen-image';
     const isWanVideo = selectedModel === 'wan-video-2.2';
     const isKlingVideo = selectedModel === 'kling-video';
+    const isGrokModel = selectedModel === 'grok-2-image';
 
     return {
       common: {
@@ -382,6 +385,11 @@ export function useCreateGenerationController(): CreateGenerationController {
         model: 'runway-gen4',
         onModelChange: () => {},
       },
+      grok: {
+        enabled: isGrokModel,
+        model: grokModel,
+        onModelChange: value => setGrokModel(value),
+      },
       gemini: {
         enabled: isGeminiModel,
         temperature,
@@ -443,6 +451,7 @@ export function useCreateGenerationController(): CreateGenerationController {
   }, [
     batchSize,
     geminiAspectRatio,
+    grokModel,
     klingAspectRatio,
     outputLength,
     qwenPromptExtend,
@@ -815,7 +824,7 @@ export function useCreateGenerationController(): CreateGenerationController {
         case 'grok-2-image-latest': {
           const grokResult = await generateGrokImage({
             prompt: finalPrompt,
-            model: selectedModel as 'grok-2-image' | 'grok-2-image-1212' | 'grok-2-image-latest',
+            model: grokModel,
             avatarId: selectedAvatarId,
             avatarImageId: activeAvatarImageId,
             productId: selectedProductId,
