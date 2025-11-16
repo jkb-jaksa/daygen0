@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useReducer, useCallback, useMemo } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useReducer,
+  useCallback,
+  useMemo,
+  useRef,
+  useEffect,
+} from 'react';
 import type { ImageGenerationStatus } from '../../hooks/useGeminiImageGeneration';
 
 type ActiveGenerationJob = {
@@ -6,8 +14,17 @@ type ActiveGenerationJob = {
   prompt: string;
   model: string;
   status: Exclude<ImageGenerationStatus, 'idle'>;
-  progress?: number;
+  progress: number;
+  backendProgress?: number;
+  backendProgressUpdatedAt?: number;
   startedAt: number;
+  jobId?: string | null;
+};
+
+type ProgressAnimationOptions = {
+  max?: number;
+  step?: number;
+  interval?: number;
 };
 
 type GenerationState = {
@@ -52,10 +69,25 @@ type GenerationAction =
   | { type: 'SET_WAN_WATERMARK'; payload: boolean }
   | { type: 'SET_BUTTON_SPINNING'; payload: boolean }
   | { type: 'ADD_ACTIVE_JOB'; payload: ActiveGenerationJob }
-  | { type: 'UPDATE_JOB_PROGRESS'; payload: { id: string; progress: number } }
+  | {
+      type: 'UPDATE_JOB_PROGRESS';
+      payload: {
+        id: string;
+        progress: number;
+        backendProgress?: number;
+        backendProgressUpdatedAt?: number;
+      };
+    }
   | {
       type: 'UPDATE_JOB_STATUS';
-      payload: { id: string; status: ActiveGenerationJob['status']; progress?: number };
+      payload: {
+        id: string;
+        status: ActiveGenerationJob['status'];
+        progress?: number;
+        backendProgress?: number;
+        backendProgressUpdatedAt?: number;
+        jobId?: string | null;
+      };
     }
   | { type: 'REMOVE_ACTIVE_JOB'; payload: string }
   | { type: 'CLEAR_ALL_JOBS' };
@@ -121,38 +153,81 @@ function generationReducer(state: GenerationState, action: GenerationAction): Ge
     case 'SET_BUTTON_SPINNING':
       return { ...state, isButtonSpinning: action.payload };
     case 'ADD_ACTIVE_JOB': {
-      const exists = state.activeJobs.some(job => job.id === action.payload.id);
+      const normalizedJob: ActiveGenerationJob = {
+        ...action.payload,
+        progress: Number.isFinite(action.payload.progress)
+          ? Math.max(0, Math.min(100, action.payload.progress))
+          : 0,
+      };
+      const exists = state.activeJobs.some(job => job.id === normalizedJob.id);
       return exists
         ? {
             ...state,
             activeJobs: state.activeJobs.map(job =>
-              job.id === action.payload.id ? action.payload : job,
+              job.id === normalizedJob.id ? normalizedJob : job,
             ),
           }
-        : { ...state, activeJobs: [...state.activeJobs, action.payload] };
+        : { ...state, activeJobs: [...state.activeJobs, normalizedJob] };
     }
     case 'UPDATE_JOB_PROGRESS':
       return {
         ...state,
-        activeJobs: state.activeJobs.map(job =>
-          job.id === action.payload.id ? { ...job, progress: action.payload.progress } : job
-        ),
+        activeJobs: state.activeJobs.map(job => {
+          if (job.id !== action.payload.id) {
+            return job;
+          }
+
+          const nextProgress = Math.max(job.progress, Math.min(100, action.payload.progress));
+          const hasBackendUpdate =
+            typeof action.payload.backendProgress === 'number' &&
+            Number.isFinite(action.payload.backendProgress);
+
+          return {
+            ...job,
+            progress: nextProgress,
+            backendProgress: hasBackendUpdate
+              ? Math.max(job.backendProgress ?? 0, Math.min(100, action.payload.backendProgress!))
+              : job.backendProgress,
+            backendProgressUpdatedAt: hasBackendUpdate
+              ? action.payload.backendProgressUpdatedAt ?? Date.now()
+              : job.backendProgressUpdatedAt,
+          };
+        }),
       };
     case 'UPDATE_JOB_STATUS':
       return {
         ...state,
-        activeJobs: state.activeJobs.map(job =>
-          job.id === action.payload.id
-            ? {
-                ...job,
-                status: action.payload.status,
-                progress:
-                  action.payload.progress !== undefined
-                    ? action.payload.progress
-                    : job.progress,
-              }
-            : job,
-        ),
+        activeJobs: state.activeJobs.map(job => {
+          if (job.id !== action.payload.id) {
+            return job;
+          }
+
+          const hasProgressUpdate =
+            action.payload.progress !== undefined && Number.isFinite(action.payload.progress);
+          const hasBackendUpdate =
+            action.payload.backendProgress !== undefined &&
+            Number.isFinite(action.payload.backendProgress);
+
+          const nextJobId =
+            typeof action.payload.jobId === 'string' && action.payload.jobId.trim().length > 0
+              ? action.payload.jobId
+              : job.jobId;
+
+          return {
+            ...job,
+            status: action.payload.status,
+            jobId: nextJobId,
+            progress: hasProgressUpdate
+              ? Math.max(job.progress, Math.min(100, action.payload.progress!))
+              : job.progress,
+            backendProgress: hasBackendUpdate
+              ? Math.max(job.backendProgress ?? 0, Math.min(100, action.payload.backendProgress!))
+              : job.backendProgress,
+            backendProgressUpdatedAt: hasBackendUpdate
+              ? action.payload.backendProgressUpdatedAt ?? Date.now()
+              : job.backendProgressUpdatedAt,
+          };
+        }),
       };
     case 'REMOVE_ACTIVE_JOB':
       return { ...state, activeJobs: state.activeJobs.filter(job => job.id !== action.payload) };
@@ -184,11 +259,20 @@ type GenerationContextType = {
   setWanWatermark: (watermark: boolean) => void;
   setButtonSpinning: (spinning: boolean) => void;
   addActiveJob: (job: ActiveGenerationJob) => void;
-  updateJobProgress: (id: string, progress: number) => void;
+  updateJobProgress: (
+    id: string,
+    progress: number,
+    metadata?: { backendProgress?: number; backendProgressUpdatedAt?: number },
+  ) => void;
   updateJobStatus: (
     id: string,
     status: ActiveGenerationJob['status'],
-    progress?: number,
+    metadata?: {
+      progress?: number;
+      backendProgress?: number;
+      backendProgressUpdatedAt?: number;
+      jobId?: string | null;
+    },
   ) => void;
   removeActiveJob: (id: string) => void;
   clearAllJobs: () => void;
@@ -200,6 +284,114 @@ const GenerationContext = createContext<GenerationContextType | null>(null);
 
 export function GenerationProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(generationReducer, initialState);
+  const stateRef = useRef(state);
+  const progressTimersRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
+
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  const clearAllProgressAnimations = useCallback(() => {
+    progressTimersRef.current.forEach(clearInterval);
+    progressTimersRef.current.clear();
+  }, []);
+
+  useEffect(
+    () => () => {
+      clearAllProgressAnimations();
+    },
+    [clearAllProgressAnimations],
+  );
+
+  const stopProgressAnimation = useCallback((jobId: string) => {
+    const timer = progressTimersRef.current.get(jobId);
+    if (timer) {
+      clearInterval(timer);
+      progressTimersRef.current.delete(jobId);
+    }
+  }, []);
+
+  const startProgressAnimation = useCallback(
+    (jobId: string, options?: ProgressAnimationOptions) => {
+      const maxCap = options?.max ?? 96;
+      const baseStep = options?.step ?? 0.8;
+      const interval = options?.interval ?? 400;
+
+      stopProgressAnimation(jobId);
+
+      const tick = () => {
+        const job = stateRef.current.activeJobs.find(entry => entry.id === jobId);
+        if (!job) {
+          return;
+        }
+
+        if (job.status === 'completed' || job.status === 'failed') {
+          stopProgressAnimation(jobId);
+          return;
+        }
+
+        const backendCap =
+          typeof job.backendProgress === 'number' && Number.isFinite(job.backendProgress)
+            ? Math.max(0, Math.min(100, job.backendProgress))
+            : undefined;
+
+        const now = Date.now();
+        const elapsedSeconds = Math.max(0, (now - job.startedAt) / 1000);
+        const backendUpdatedAt = job.backendProgressUpdatedAt ?? job.startedAt;
+        const backendStaleSeconds = Math.max(0, (now - backendUpdatedAt) / 1000);
+        const targetLimit = backendCap && backendCap >= 100 ? 100 : maxCap;
+
+        let backendDrivenCap = targetLimit;
+        if (typeof backendCap === 'number') {
+          if (backendCap >= 100) {
+            backendDrivenCap = 100;
+          } else {
+            const elapsedAllowance = Math.min(45, elapsedSeconds * 2.4);
+            const staleAllowance = Math.min(40, Math.max(0, backendStaleSeconds - 1) * 3.2);
+            const minimumAllowance = backendCap < 25 ? 18 : 12;
+            const allowance = Math.max(minimumAllowance, elapsedAllowance, staleAllowance);
+            backendDrivenCap = Math.min(targetLimit, backendCap + allowance);
+          }
+        }
+
+        const driftAllowance = Math.max(
+          baseStep * 0.5,
+          0.3 + elapsedSeconds * 0.1 + backendStaleSeconds * 0.15,
+        );
+        const timeDriftCap = Math.min(targetLimit, job.progress + driftAllowance);
+
+        const effectiveCap = Math.min(
+          targetLimit,
+          Math.max(job.progress, backendDrivenCap, timeDriftCap),
+        );
+
+        const gap = effectiveCap - job.progress;
+        if (gap <= 0.15) {
+          return;
+        }
+
+        const dynamicStep =
+          gap > 20
+            ? baseStep
+            : gap > 12
+              ? baseStep * 0.6
+              : gap > 6
+                ? baseStep * 0.35
+                : baseStep * 0.2;
+
+        const nextProgress = Math.min(effectiveCap, job.progress + dynamicStep);
+        dispatch({
+          type: 'UPDATE_JOB_PROGRESS',
+          payload: { id: jobId, progress: nextProgress },
+        });
+      };
+
+      tick();
+      const timer = setInterval(tick, interval);
+      progressTimersRef.current.set(jobId, timer);
+    },
+    [dispatch, stopProgressAnimation],
+  );
 
   const setSelectedModel = useCallback((model: string) => {
     dispatch({ type: 'SET_SELECTED_MODEL', payload: model });
@@ -273,28 +465,77 @@ export function GenerationProvider({ children }: { children: React.ReactNode }) 
     dispatch({ type: 'SET_BUTTON_SPINNING', payload: spinning });
   }, []);
 
-  const addActiveJob = useCallback((job: ActiveGenerationJob) => {
-    dispatch({ type: 'ADD_ACTIVE_JOB', payload: job });
-  }, []);
+  const addActiveJob = useCallback(
+    (job: ActiveGenerationJob) => {
+      dispatch({ type: 'ADD_ACTIVE_JOB', payload: job });
+      startProgressAnimation(job.id);
+    },
+    [startProgressAnimation],
+  );
 
-  const updateJobProgress = useCallback((id: string, progress: number) => {
-    dispatch({ type: 'UPDATE_JOB_PROGRESS', payload: { id, progress } });
-  }, []);
-
-  const updateJobStatus = useCallback(
-    (id: string, status: ActiveGenerationJob['status'], progress?: number) => {
-      dispatch({ type: 'UPDATE_JOB_STATUS', payload: { id, status, progress } });
+  const updateJobProgress = useCallback(
+    (
+      id: string,
+      progress: number,
+      metadata?: { backendProgress?: number; backendProgressUpdatedAt?: number },
+    ) => {
+      dispatch({
+        type: 'UPDATE_JOB_PROGRESS',
+        payload: {
+          id,
+          progress,
+          backendProgress: metadata?.backendProgress,
+          backendProgressUpdatedAt: metadata?.backendProgressUpdatedAt,
+        },
+      });
     },
     [],
   );
 
-  const removeActiveJob = useCallback((id: string) => {
-    dispatch({ type: 'REMOVE_ACTIVE_JOB', payload: id });
-  }, []);
+  const updateJobStatus = useCallback(
+    (
+      id: string,
+      status: ActiveGenerationJob['status'],
+      metadata?: {
+        progress?: number;
+        backendProgress?: number;
+        backendProgressUpdatedAt?: number;
+        jobId?: string | null;
+      },
+    ) => {
+      dispatch({
+        type: 'UPDATE_JOB_STATUS',
+        payload: {
+          id,
+          status,
+          progress: metadata?.progress,
+          backendProgress: metadata?.backendProgress,
+          backendProgressUpdatedAt: metadata?.backendProgressUpdatedAt,
+          jobId: metadata?.jobId,
+        },
+      });
+
+      if (status === 'completed' || status === 'failed') {
+        stopProgressAnimation(id);
+      } else {
+        startProgressAnimation(id);
+      }
+    },
+    [startProgressAnimation, stopProgressAnimation],
+  );
+
+  const removeActiveJob = useCallback(
+    (id: string) => {
+      stopProgressAnimation(id);
+      dispatch({ type: 'REMOVE_ACTIVE_JOB', payload: id });
+    },
+    [stopProgressAnimation],
+  );
 
   const clearAllJobs = useCallback(() => {
+    clearAllProgressAnimations();
     dispatch({ type: 'CLEAR_ALL_JOBS' });
-  }, []);
+  }, [clearAllProgressAnimations]);
 
   const isGenerating = useMemo(() => state.activeJobs.length > 0, [state.activeJobs.length]);
   const hasActiveJobs = useMemo(() => state.activeJobs.length > 0, [state.activeJobs.length]);
