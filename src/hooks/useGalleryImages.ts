@@ -454,7 +454,7 @@ export const useGalleryImages = () => {
         }
       }
     },
-    [getApiUrl, storagePrefix, token],
+    [storagePrefix, token],
   );
 
   // Remove images from state immediately (optimistic update)

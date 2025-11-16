@@ -244,7 +244,6 @@ export function useCreateGenerationController(): CreateGenerationController {
     switch (selectedModel) {
       case 'gemini-2.5-flash-image':
       case 'luma-photon-1':
-      case 'luma-photon-flash-1':
         return makeControl(
           GEMINI_ASPECT_RATIO_OPTIONS,
           geminiAspectRatio,
@@ -293,6 +292,7 @@ export function useCreateGenerationController(): CreateGenerationController {
   ]);
 
   const [grokModel, setGrokModel] = useState<'grok-2-image' | 'grok-2-image-1212' | 'grok-2-image-latest'>('grok-2-image');
+  const [lumaPhotonModel, setLumaPhotonModel] = useState<'luma-photon-1' | 'luma-photon-flash-1'>('luma-photon-1');
 
   const settingsSections = useMemo<SettingsSections>(() => {
     const isGeminiModel = selectedModel === 'gemini-2.5-flash-image';
@@ -300,6 +300,7 @@ export function useCreateGenerationController(): CreateGenerationController {
     const isWanVideo = selectedModel === 'wan-video-2.2';
     const isKlingVideo = selectedModel === 'kling-video';
     const isGrokModel = selectedModel === 'grok-2-image';
+    const isLumaPhotonModel = selectedModel === 'luma-photon-1';
 
     return {
       common: {
@@ -438,9 +439,9 @@ export function useCreateGenerationController(): CreateGenerationController {
         statusMessage: null,
       },
       lumaPhoton: {
-        enabled: false,
-        model: 'luma-photon-1',
-        onModelChange: () => {},
+        enabled: isLumaPhotonModel,
+        model: lumaPhotonModel,
+        onModelChange: value => setLumaPhotonModel(value),
       },
       lumaRay: {
         enabled: false,
@@ -453,6 +454,7 @@ export function useCreateGenerationController(): CreateGenerationController {
     geminiAspectRatio,
     grokModel,
     klingAspectRatio,
+    lumaPhotonModel,
     outputLength,
     qwenPromptExtend,
     qwenSize,
@@ -874,11 +876,10 @@ export function useCreateGenerationController(): CreateGenerationController {
           persistImageResults(reveImage, { aspectRatio: '1:1' });
           return;
         }
-        case 'luma-photon-1':
-        case 'luma-photon-flash-1': {
+        case 'luma-photon-1': {
           const lumaImage = await generateLumaImage({
             prompt: finalPrompt,
-            model: selectedModel,
+            model: lumaPhotonModel,
             aspectRatio: geminiAspectRatio,
             avatarId: selectedAvatarId,
           });
@@ -1031,11 +1032,14 @@ export function useCreateGenerationController(): CreateGenerationController {
     activeAvatarImageId,
     selectedProductId,
     selectedStyleId,
+    grokModel,
+    lumaPhotonModel,
     generateGeminiImage,
     generateFluxImage,
     generateChatGPTImage,
     generateIdeogramImage,
     generateQwenImage,
+    generateGrokImage,
     generateRunwayImage,
     generateReveImage,
     generateLumaImage,

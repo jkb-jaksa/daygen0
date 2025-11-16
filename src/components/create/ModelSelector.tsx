@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useRef, useState, useEffect, useMemo } from 'react';
+import { memo, useCallback, useRef, useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Sparkles, Wand2, Package, Film, VideoIcon, Shapes } from 'lucide-react';
 import { getToolLogo, hasToolLogo } from '../../utils/toolLogos';
@@ -19,7 +19,7 @@ export const AI_MODELS = [
   { name: "Reve", desc: "Great text-to-image and image editing.", Icon: Sparkles, id: "reve-image" },
   { name: "Ideogram 3.0", desc: "Advanced image generation, editing, and enhancement.", Icon: Package, id: "ideogram" },
   { name: "Recraft", desc: "Great for text, icons and mockups.", Icon: Shapes, id: "recraft" },
-  { name: "Grok Image", desc: "Great aesthetics. Fast generations.", Icon: Sparkles, id: "grok-2-image" },
+  { name: "Grok", desc: "Great aesthetics. Fast generations.", Icon: Sparkles, id: "grok-2-image" },
   { name: "Qwen", desc: "Great image editing.", Icon: Wand2, id: "qwen-image" },
   { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, id: "runway-gen4" },
   { name: "Runway Gen-4 (Video)", desc: "Text → Video using Gen-4 Turbo", Icon: VideoIcon, id: "runway-video-gen4" },
@@ -29,8 +29,7 @@ export const AI_MODELS = [
   { name: "ChatGPT", desc: "Popular image model.", Icon: Sparkles, id: "chatgpt-image" },
   { name: "Veo 3", desc: "Google's advanced video generation model.", Icon: Film, id: "veo-3" },
   { name: "Seedance 1.0 Pro (Video)", desc: "Great quality text-to-image.", Icon: Film, id: "seedance-1.0-pro" },
-  { name: "Luma Photon 1", desc: "High-quality image generation with Photon.", Icon: Sparkles, id: "luma-photon-1" },
-  { name: "Luma Photon Flash 1", desc: "Fast image generation with Photon Flash.", Icon: Sparkles, id: "luma-photon-flash-1" },
+  { name: "Luma Photon", desc: "High-quality image generation with Photon.", Icon: Sparkles, id: "luma-photon-1" },
   { name: "Luma Ray 2", desc: "High-quality video generation with Ray 2.", Icon: VideoIcon, id: "luma-ray-2" },
 ];
 
@@ -548,7 +547,7 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
               return true;
             }).map((model) => {
               const isSelected = selectedModel === model.id;
-              const isComingSoon = model.id !== "flux-1.1" && model.id !== "gemini-2.5-flash-image" && model.id !== "grok-2-image" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "reve-image" && model.id !== "recraft" && model.id !== "luma-photon-1" && model.id !== "luma-photon-flash-1" && model.id !== "luma-ray-2" && model.id !== "wan-video-2.2" && model.id !== "hailuo-02" && model.id !== "kling-video";
+              const isComingSoon = model.id !== "flux-1.1" && model.id !== "gemini-2.5-flash-image" && model.id !== "grok-2-image" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "reve-image" && model.id !== "recraft" && model.id !== "luma-photon-1" && model.id !== "luma-ray-2" && model.id !== "wan-video-2.2" && model.id !== "hailuo-02" && model.id !== "kling-video";
               
               return (
                 <button

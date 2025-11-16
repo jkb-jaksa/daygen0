@@ -1090,28 +1090,6 @@ export default function Products() {
     [storagePrefix],
   );
 
-  const addImageToFolder = useCallback((imageUrl: string, folderId: string) => {
-    const updatedFolders = folders.map(folder => {
-      if (folder.id === folderId && !folder.imageIds.includes(imageUrl)) {
-        return { ...folder, imageIds: [...folder.imageIds, imageUrl] };
-      }
-      return folder;
-    });
-    setFolders(updatedFolders);
-    void persistFolders(updatedFolders);
-  }, [folders, persistFolders]);
-
-  const removeImageFromFolder = useCallback((imageUrl: string, folderId: string) => {
-    const updatedFolders = folders.map(folder => {
-      if (folder.id === folderId) {
-        return { ...folder, imageIds: folder.imageIds.filter((id: string) => id !== imageUrl) };
-      }
-      return folder;
-    });
-    setFolders(updatedFolders);
-    void persistFolders(updatedFolders);
-  }, [folders, persistFolders]);
-
   const handleToggleImageInFolder = useCallback((imageUrl: string, folderId: string) => {
     // Only update if this is the selected image for folder management
     if (selectedImageForFolder !== imageUrl) return;

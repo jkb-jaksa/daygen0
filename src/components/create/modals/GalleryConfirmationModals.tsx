@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Trash2, Globe, Lock, Download, FolderPlus, Upload, Image as ImageIcon, Folder as FolderIcon, Minus } from 'lucide-react';
+import { Trash2, Globe, Lock, Download, Plus, FolderPlus, Upload, Image as ImageIcon, Folder as FolderIcon, Minus, X } from 'lucide-react';
 import { glass, buttons, inputs } from '../../../styles/designSystem';
 import type {
   DeleteConfirmationState,
@@ -48,7 +48,9 @@ interface GalleryConfirmationModalsProps {
   selectedImagesForFolder: string[];
   onToggleFolderSelection: (folderId: string) => void;
   onAddToFolderClose: () => void;
+  onAddToFolderConfirm?: () => void;
   onOpenNewFolderDialog: () => void;
+  onDeleteFolderClick?: (folderId: string) => void;
 
   // Folder thumbnail dialog
   folderThumbnailDialog: FolderThumbnailDialogState;
@@ -95,7 +97,9 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
   selectedImagesForFolder,
   onToggleFolderSelection,
   onAddToFolderClose,
+  onAddToFolderConfirm,
   onOpenNewFolderDialog,
+  onDeleteFolderClick,
   folderThumbnailDialog,
   folderThumbnailFile,
   combinedLibraryImages,
@@ -350,19 +354,19 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
                   <div className="text-center py-4">
                     <FolderIcon className="w-8 h-8 text-theme-white/30 mx-auto mb-2" />
                     <p className="text-base text-theme-white/50 mb-4">No folders available</p>
-                    <button
-                      onClick={() => {
-                        onOpenNewFolderDialog();
-                      }}
-                      className={`${buttons.pillWarm} mx-auto`}
-                      title="Create new folder"
-                      aria-label="Create new folder"
-                    >
-                      <svg className="h-3.5 w-3.5 text-b-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
-                      <span>New Folder</span>
-                    </button>
+                    <div className="flex justify-start">
+                      <button
+                        onClick={() => {
+                          onOpenNewFolderDialog();
+                        }}
+                        className="inline-flex items-center gap-1 text-sm text-theme-white hover:text-theme-text transition-colors duration-200"
+                        title="Create new folder"
+                        aria-label="Create new folder"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add folder
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -373,9 +377,9 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
                       const isPartiallyInFolder = totalSelected > 0 && inFolderCount > 0 && inFolderCount < totalSelected;
 
                       return (
-                        <label
+                        <div
                           key={folder.id}
-                          className={`w-full p-3 rounded-lg border transition-all duration-200 text-left flex items-center gap-3 cursor-pointer ${
+                          className={`w-full p-2 rounded-lg border transition-all duration-200 text-left flex items-center gap-3 ${
                             isFullyInFolder
                               ? 'bg-theme-white/10 border-theme-white shadow-lg shadow-theme-white/20'
                               : isPartiallyInFolder
@@ -383,70 +387,86 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
                                 : 'bg-transparent border-theme-dark hover:bg-theme-dark/40 hover:border-theme-mid'
                           }`}
                         >
-                          <input
-                            type="checkbox"
-                            checked={isFullyInFolder}
-                            aria-checked={isPartiallyInFolder ? 'mixed' : isFullyInFolder}
-                            onChange={() => onToggleFolderSelection(folder.id)}
-                            className="sr-only"
-                          />
-                          <div
-                            className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${
-                              isFullyInFolder
-                                ? 'border-theme-white bg-theme-white'
-                                : isPartiallyInFolder
-                                  ? 'border-theme-white bg-theme-white/30'
-                                  : 'border-theme-mid hover:border-theme-text/50'
-                            }`}
-                          >
-                            {isFullyInFolder ? (
-                              <svg className="w-3 h-3 text-theme-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                              </svg>
-                            ) : isPartiallyInFolder ? (
-                              <Minus className="w-3 h-3 text-theme-text" strokeWidth={3} />
-                            ) : (
-                              <div className="w-2 h-2 bg-transparent rounded" />
-                            )}
-                          </div>
-                          <div className="flex-shrink-0">
-                            {folder.customThumbnail ? (
-                              <div className="w-5 h-5 rounded-lg overflow-hidden">
-                                <img
-                                  src={folder.customThumbnail}
-                                  alt={`${folder.name} thumbnail`}
-                                  loading="lazy"
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                            ) : isFullyInFolder ? (
-                              <div className="w-5 h-5 bg-theme-white/20 rounded-lg flex items-center justify-center">
-                                <FolderIcon className="w-3 h-3 text-theme-text" />
-                              </div>
-                            ) : (
-                              <FolderIcon className="w-5 h-5 text-theme-white/60" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className={`text-sm font-raleway truncate ${isFullyInFolder ? 'text-theme-text' : 'text-theme-text/80'}`}>
-                              {folder.name}
-                            </div>
-                            <div className={`text-xs ${isFullyInFolder || isPartiallyInFolder ? 'text-theme-text/70' : 'text-theme-white/50'}`}>
-                              {folder.imageIds.length} images
-                              {totalSelected > 1 && (
-                                <>
-                                  {' • '}
-                                  {isFullyInFolder
-                                    ? 'All selected added'
-                                    : isPartiallyInFolder
-                                      ? `${inFolderCount} of ${totalSelected} selected`
-                                      : 'None of selected added'}
-                                </>
+                          <label className="flex items-center gap-3 cursor-pointer flex-1 min-w-0">
+                            <input
+                              type="checkbox"
+                              checked={isFullyInFolder}
+                              aria-checked={isPartiallyInFolder ? 'mixed' : isFullyInFolder}
+                              onChange={() => onToggleFolderSelection(folder.id)}
+                              className="sr-only"
+                            />
+                            <div
+                              className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${
+                                isFullyInFolder
+                                  ? 'border-theme-white bg-theme-white'
+                                  : isPartiallyInFolder
+                                    ? 'border-theme-white bg-theme-white/30'
+                                    : 'border-theme-mid hover:border-theme-text/50'
+                              }`}
+                            >
+                              {isFullyInFolder ? (
+                                <svg className="w-3 h-3 text-theme-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              ) : isPartiallyInFolder ? (
+                                <Minus className="w-3 h-3 text-theme-text" strokeWidth={3} />
+                              ) : (
+                                <div className="w-2 h-2 bg-transparent rounded" />
                               )}
-                              {totalSelected === 1 && isFullyInFolder && ' (added)'}
                             </div>
-                          </div>
-                        </label>
+                            <div className="flex-shrink-0">
+                              {folder.customThumbnail ? (
+                                <div className="w-5 h-5 rounded-lg overflow-hidden">
+                                  <img
+                                    src={folder.customThumbnail}
+                                    alt={`${folder.name} thumbnail`}
+                                    loading="lazy"
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              ) : isFullyInFolder ? (
+                                <div className="w-5 h-5 bg-theme-white/20 rounded-lg flex items-center justify-center">
+                                  <FolderIcon className="w-3 h-3 text-theme-text" />
+                                </div>
+                              ) : (
+                                <FolderIcon className="w-5 h-5 text-theme-white/60" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className={`text-sm font-raleway truncate ${isFullyInFolder ? 'text-theme-text' : 'text-theme-text/80'}`}>
+                                {folder.name}
+                              </div>
+                              <div className={`text-xs ${isFullyInFolder || isPartiallyInFolder ? 'text-theme-text/70' : 'text-theme-white/50'}`}>
+                                {folder.imageIds.length} images
+                                {totalSelected > 1 && (
+                                  <>
+                                    {' • '}
+                                    {isFullyInFolder
+                                      ? 'All selected added'
+                                      : isPartiallyInFolder
+                                        ? `${inFolderCount} of ${totalSelected} selected`
+                                        : 'None of selected added'}
+                                  </>
+                                )}
+                                {totalSelected === 1 && isFullyInFolder && ' (added)'}
+                              </div>
+                            </div>
+                          </label>
+                          {onDeleteFolderClick && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDeleteFolderClick(folder.id);
+                              }}
+                              className="flex-shrink-0 p-1 rounded-lg hover:bg-theme-white/10 text-theme-white/60 hover:text-theme-text transition-colors duration-200"
+                              aria-label={`Delete folder ${folder.name}`}
+                              title="Delete folder"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
                       );
                     })}
                   </div>
@@ -454,13 +474,16 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
               </div>
 
               {folders.length > 0 && (
-                <button
-                  onClick={onOpenNewFolderDialog}
-                  className={`${buttons.ghostCompact} w-full text-sm`}
-                >
-                  <FolderPlus className="w-4 h-4" />
-                  Create New Folder
-                </button>
+                <div className="flex justify-start">
+                  <button
+                    onClick={onOpenNewFolderDialog}
+                    className="inline-flex items-center gap-1 text-sm text-theme-white hover:text-theme-text transition-colors duration-200"
+                    aria-label="Create new folder"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add folder
+                  </button>
+                </div>
               )}
 
               <div className="flex justify-center gap-3">
@@ -471,7 +494,7 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
                   Cancel
                 </button>
                 <button
-                  onClick={onAddToFolderClose}
+                  onClick={onAddToFolderConfirm || onAddToFolderClose}
                   className={buttons.primary}
                 >
                   Done

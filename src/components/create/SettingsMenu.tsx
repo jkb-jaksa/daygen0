@@ -923,7 +923,7 @@ export function SettingsMenu({
   if (grok.enabled) {
     sections.push(
       <div key="grok" className="space-y-4">
-        <div className="text-base font-raleway text-theme-text mb-3">Grok Image Settings</div>
+        <div className="text-base font-raleway text-theme-text mb-3">Grok Settings</div>
         <div className="space-y-3">
           <div>
             <label className="block text-xs font-raleway text-theme-white/80 mb-1">Model Version</label>
