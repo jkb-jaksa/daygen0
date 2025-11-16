@@ -974,7 +974,7 @@ function CreateRefactoredView() {
                   )}
                   <Suspense fallback={null}>
                     <ResultsGrid
-                      activeCategory={activeCategory}
+                      activeCategory={activeCategory as 'image' | 'video'}
                       onFocusPrompt={focusPromptBar}
                     />
                   </Suspense>

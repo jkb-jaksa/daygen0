@@ -80,6 +80,16 @@ const LIFESTYLE_STYLES_FEMALE: StyleOption[] = [
   },
 ];
 
+// Lifestyle presets for male - placeholder for future presets
+const LIFESTYLE_STYLES_MALE: StyleOption[] = [
+  {
+    id: "male-lifestyle-example",
+    name: "Example-1",
+    prompt: "Example 1",
+    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/slavek-psycholog.png",
+  },
+];
+
 // Formal presets for female - placeholder for future presets
 // Change id and name to change UI text
 const FORMAL_STYLES_FEMALE: StyleOption[] = [
@@ -105,14 +115,18 @@ const FORMAL_STYLES_FEMALE: StyleOption[] = [
 
 // Formal presets for male - placeholder for future presets
 const FORMAL_STYLES_MALE: StyleOption[] = [
-  // TODO: Add formal preset images here
-  // Example:
-  // {
-  //   id: "male-formal-example",
-  //   name: "Example Formal",
-  //   prompt: "formal style description",
-  //   image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/example.png",
-  // },
+  {
+    id: "male-formal-example-1",
+    name: "Example 1",
+    prompt: "Example 1",
+    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/slavek.png",
+  },
+  {
+    id: "male-formal-example-2",
+    name: "Example 2",
+    prompt: "Cat with hat",
+    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/slavek2.png",
+  },
 ];
 
 // Artistic presets for female - placeholder for future presets
@@ -158,10 +172,10 @@ const createLifestyleStyles = (gender: StyleGender): StyleOption[] => {
     return LIFESTYLE_STYLES_FEMALE;
   }
   if (gender === "male") {
-    return createPlaceholderStyles(gender, "lifestyle", "Lifestyle");
+    return LIFESTYLE_STYLES_MALE;
   }
   // "all" - combine both male and female
-  return [...LIFESTYLE_STYLES_FEMALE, ...createPlaceholderStyles("male", "lifestyle", "Lifestyle")];
+  return [...LIFESTYLE_STYLES_FEMALE, ...LIFESTYLE_STYLES_MALE];
 };
 
 const createFormalStyles = (gender: StyleGender): StyleOption[] => {

@@ -44,6 +44,7 @@ export function usePresetGenerationFlow(): PresetGenerationFlowState {
   const tracker = useGenerationJobTracker();
   const pollControllersRef = useRef(new Map<string, AbortController>());
   const generationAbortRef = useRef(false);
+  const autoStartTriggeredRef = useRef(false);
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<PresetFlowStep>('upload');
   const [jobs, setJobs] = useState<PresetGenerationJob[]>([]);
@@ -63,6 +64,7 @@ export function usePresetGenerationFlow(): PresetGenerationFlowState {
 
   const resetState = useCallback(() => {
     generationAbortRef.current = true;
+    autoStartTriggeredRef.current = false;
     abortAllPolls();
     setJobs([]);
     setUploadFile(null);
@@ -86,6 +88,7 @@ export function usePresetGenerationFlow(): PresetGenerationFlowState {
     setError(null);
     setUploadFile(null);
     setUploadPreview(null);
+    autoStartTriggeredRef.current = false;
   }, []);
 
   const closeModal = useCallback(() => {
@@ -320,6 +323,19 @@ export function usePresetGenerationFlow(): PresetGenerationFlowState {
       setStep('results');
     }
   }, [addImage, hasStyles, jobs, parsePresetJobResult, tracker, uploadFile]);
+
+  // Auto-start generation when file is uploaded
+  useEffect(() => {
+    if (uploadFile && hasStyles && !isGenerating && step === 'upload' && !autoStartTriggeredRef.current) {
+      autoStartTriggeredRef.current = true;
+      // Close modal immediately after starting generation
+      setIsOpen(false);
+      // Start generation in background
+      startGeneration().catch(() => {
+        // Error handling is done in startGeneration
+      });
+    }
+  }, [uploadFile, hasStyles, isGenerating, step, startGeneration]);
 
   return {
     isOpen,
