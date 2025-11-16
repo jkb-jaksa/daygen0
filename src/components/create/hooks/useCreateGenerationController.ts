@@ -14,6 +14,7 @@ import { useFluxImageGeneration } from '../../../hooks/useFluxImageGeneration';
 import { useChatGPTImageGeneration } from '../../../hooks/useChatGPTImageGeneration';
 import { useIdeogramImageGeneration } from '../../../hooks/useIdeogramImageGeneration';
 import { useQwenImageGeneration } from '../../../hooks/useQwenImageGeneration';
+import { useGrokImageGeneration } from '../../../hooks/useGrokImageGeneration';
 import { useRunwayImageGeneration } from '../../../hooks/useRunwayImageGeneration';
 import { useReveImageGeneration } from '../../../hooks/useReveImageGeneration';
 import { useLumaImageGeneration } from '../../../hooks/useLumaImageGeneration';
@@ -195,6 +196,7 @@ export function useCreateGenerationController(): CreateGenerationController {
   const { generateImage: generateChatGPTImage } = useChatGPTImageGeneration();
   const { generateImage: generateIdeogramImage } = useIdeogramImageGeneration();
   const { generateImage: generateQwenImage } = useQwenImageGeneration();
+  const { generateImage: generateGrokImage } = useGrokImageGeneration();
   const { generateImage: generateRunwayImage } = useRunwayImageGeneration();
   const { generateImage: generateReveImage } = useReveImageGeneration();
   const { generateImage: generateLumaImage } = useLumaImageGeneration();
@@ -806,6 +808,25 @@ export function useCreateGenerationController(): CreateGenerationController {
           }
 
           persistImageResults(qwenResult, { aspectRatio: qwenSize });
+          return;
+        }
+        case 'grok-2-image':
+        case 'grok-2-image-1212':
+        case 'grok-2-image-latest': {
+          const grokResult = await generateGrokImage({
+            prompt: finalPrompt,
+            model: selectedModel as 'grok-2-image' | 'grok-2-image-1212' | 'grok-2-image-latest',
+            avatarId: selectedAvatarId,
+            avatarImageId: activeAvatarImageId,
+            productId: selectedProductId,
+            styleId: selectedStyleId,
+          });
+
+          if (!grokResult || grokResult.length === 0) {
+            throw new Error('Grok did not return any images.');
+          }
+
+          persistImageResults(grokResult);
           return;
         }
         case 'runway-gen4': {

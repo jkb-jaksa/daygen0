@@ -50,6 +50,7 @@ const IMAGE_TOOLS: readonly ToolResource[] = [
   createToolResource("Reve Image", "Great text-to-image and image editing"),
   createToolResource("Recraft v3", "Advanced image generation with text layout and brand controls"),
   createToolResource("Recraft v2", "High-quality image generation and editing"),
+  createToolResource("Grok Image", "Great aesthetics. Fast generations."),
   createToolResource("Luma Photon 1", "High-quality image generation with Photon"),
   createToolResource("Luma Photon Flash 1", "Fast image generation with Photon Flash"),
 ];

@@ -104,6 +104,12 @@ const IMAGE_MODEL_OPTIONS: ReadonlyArray<ImageModelOption> = [
     Icon: Wand2,
   },
   {
+    id: "grok-2-image",
+    name: "Grok Image",
+    desc: "Great aesthetics. Fast generations.",
+    Icon: Sparkles,
+  },
+  {
     id: "reve-image",
     name: "Reve",
     desc: "Great text-to-image and image editing.",
