@@ -17,6 +17,7 @@ import type { GalleryImageLike, GalleryVideoLike } from './types';
 import type { StoredAvatar } from '../avatars/types';
 import type { StoredProduct } from '../products/types';
 import type { StoredStyle } from '../styles/types';
+import { getStyleThumbnailUrl } from './hooks/useStyleHandlers';
 import { normalizeStoredAvatars } from '../../utils/avatars';
 import { normalizeStoredProducts } from '../../utils/products';
 import { getPersistedValue } from '../../lib/clientStorage';
@@ -338,22 +339,24 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     tooltip.classList.add('opacity-0');
   }, []);
   
-  // Helper to convert styleId to StoredStyle
+  // Helper to convert styleId to StoredStyle, including thumbnail where available
   const styleIdToStoredStyle = useCallback((styleId: string): StoredStyle | null => {
-    // Extract style components from styleId (format: "gender-section-styleId")
+    // Extract style components from styleId (format: "gender-section-styleSlug")
     const parts = styleId.split('-');
     if (parts.length < 3) return null;
-    
+
     const styleSection = parts[1]; // e.g., "lifestyle", "formal", "artistic"
     const styleName = parts.slice(2).join(' '); // reconstruct name
-    
+    const imageUrl = getStyleThumbnailUrl(styleId);
+
     return {
       id: styleId,
       name: styleName.charAt(0).toUpperCase() + styleName.slice(1),
       prompt: '', // Not needed for badge display
       section: styleSection as 'lifestyle' | 'formal' | 'artistic',
-      gender: parts[0] as 'male' | 'female' | 'unisex',
-    } as StoredStyle;
+      gender: parts[0] as 'male' | 'female' | 'all',
+      imageUrl,
+    };
   }, []);
   let statusBanner: React.ReactNode = null;
   if (isLoading) {
@@ -785,7 +788,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                         </Suspense>
                       )}
                       
-                      {/* Delete, Like, More - Always shown */}
+                      {/* Delete, Like, More - Always shown (glass tooltip only, no native title) */}
                       <button
                         type="button"
                         onClick={(e) => onDelete(e, item)}
@@ -794,7 +797,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                             ? 'opacity-100 pointer-events-auto'
                             : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                         }`}
-                        title="Delete image"
                         onMouseEnter={(e) => {
                           showHoverTooltip(
                             e.currentTarget,
@@ -817,7 +819,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                             ? 'opacity-100 pointer-events-auto'
                             : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                         }`}
-                        title={item.isLiked ? "Remove from liked" : "Add to liked"}
                         onMouseEnter={(e) => {
                           showHoverTooltip(
                             e.currentTarget,
@@ -844,7 +845,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                             ? 'opacity-100 pointer-events-auto'
                             : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                         }`}
-                        title="More actions"
                         onMouseEnter={(e) => {
                           showHoverTooltip(
                             e.currentTarget,

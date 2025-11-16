@@ -183,19 +183,32 @@ export function useAvatarHandlers() {
   }, []);
   
   // Handle avatar save
-  const handleAvatarSave = useCallback(async (name: string, selection: AvatarSelection) => {
-    if (!user?.id) return;
-    
-    try {
-      const avatar = createAvatarRecord(name, selection, user.id);
-      await saveAvatar(avatar);
-      setSelectedAvatar(avatar);
-      handleAvatarCreationModalClose();
-      debugLog('[useAvatarHandlers] Created new avatar:', name);
-    } catch (error) {
-      debugError('[useAvatarHandlers] Error creating avatar:', error);
-    }
-  }, [user?.id, saveAvatar, handleAvatarCreationModalClose]);
+  const handleAvatarSave = useCallback(
+    async (name: string, selection: AvatarSelection) => {
+      if (!user?.id) return;
+
+      const trimmed = name.trim();
+      if (!trimmed || !selection?.imageUrl) return;
+
+      try {
+        const avatar = createAvatarRecord({
+          name: trimmed,
+          imageUrl: selection.imageUrl,
+          source: selection.source,
+          sourceId: selection.sourceId,
+          ownerId: user.id,
+          existingAvatars: storedAvatars,
+        });
+        await saveAvatar(avatar);
+        setSelectedAvatar(avatar);
+        handleAvatarCreationModalClose();
+        debugLog('[useAvatarHandlers] Created new avatar:', trimmed);
+      } catch (error) {
+        debugError('[useAvatarHandlers] Error creating avatar:', error);
+      }
+    },
+    [user?.id, storedAvatars, saveAvatar, handleAvatarCreationModalClose],
+  );
   
   // Handle avatar delete
   const handleAvatarDelete = useCallback(async (avatar: StoredAvatar) => {
@@ -225,12 +238,16 @@ export function useAvatarHandlers() {
       // Process the first image file
       const imageFile = files.find(file => file.type.startsWith('image/'));
       if (imageFile) {
-        setAvatarSelection({
-          imageUrl: URL.createObjectURL(imageFile),
-          source: 'upload',
-          sourceId: imageFile.name,
-        });
-        setIsAvatarCreationModalOpen(true);
+        const reader = new FileReader();
+        reader.onload = () => {
+          setAvatarSelection({
+            imageUrl: String(reader.result),
+            source: 'upload',
+            sourceId: imageFile.name,
+          });
+          setIsAvatarCreationModalOpen(true);
+        };
+        reader.readAsDataURL(imageFile);
       }
     }
   }, []);
@@ -243,11 +260,15 @@ export function useAvatarHandlers() {
     }
     
     setAvatarUploadError(null);
-    setAvatarSelection({
-      imageUrl: URL.createObjectURL(file),
-      source: 'upload',
-      sourceId: file.name,
-    });
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAvatarSelection({
+        imageUrl: String(reader.result),
+        source: 'upload',
+        sourceId: file.name,
+      });
+    };
+    reader.readAsDataURL(file);
   }, []);
   
   // Reset avatar creation panel

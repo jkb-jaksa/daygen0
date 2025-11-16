@@ -190,6 +190,7 @@ function CreateRefactoredView() {
       jobId: `dummy-avatar-${Date.now()}`,
       r2FileId: `r2-avatar-${Date.now()}`,
       avatarId: 'test-avatar-badge',
+      aspectRatio: '16:9',
       isLiked: false,
       isPublic: false,
       timestamp: new Date().toISOString(),
@@ -230,6 +231,7 @@ function CreateRefactoredView() {
       jobId: `dummy-product-${Date.now()}`,
       r2FileId: `r2-product-${Date.now()}`,
       productId: 'test-product-badge',
+      aspectRatio: '4:5',
       isLiked: false,
       isPublic: false,
       timestamp: new Date().toISOString(),
@@ -296,11 +298,97 @@ function CreateRefactoredView() {
       r2FileId: `r2-both-${Date.now()}`,
       avatarId: 'test-avatar-badge',
       productId: 'test-product-badge',
+      aspectRatio: '1:1',
       isLiked: false,
       isPublic: false,
       timestamp: new Date().toISOString(),
     };
     await addImage(dummyImageWithBoth);
+  }, [addImage, avatarHandlers, productHandlers, user?.id]);
+
+  const addDummyImageWithStyle = useCallback(async () => {
+    const dummyImageWithStyle = {
+      url: `https://images.unsplash.com/photo-1517816743773-6e0fd518b4a6?w=1024&t=${Date.now()}`,
+      prompt: 'Test image with style badge - City skyline at dusk',
+      model: 'flux-pro-1.1',
+      jobId: `dummy-style-${Date.now()}`,
+      r2FileId: `r2-style-${Date.now()}`,
+      styleId: 'female-lifestyle-black-suit-studio',
+      aspectRatio: '21:9',
+      isLiked: false,
+      isPublic: false,
+      timestamp: new Date().toISOString(),
+    };
+    await addImage(dummyImageWithStyle);
+  }, [addImage]);
+
+  const addDummyImageWithAllBadges = useCallback(async () => {
+    // Ensure avatar exists
+    let testAvatar = avatarHandlers.storedAvatars.find(a => a.id === 'test-avatar-badge');
+    if (!testAvatar && user?.id) {
+      testAvatar = {
+        id: 'test-avatar-badge',
+        slug: 'test-avatar',
+        name: 'Test Avatar',
+        imageUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400',
+        createdAt: new Date().toISOString(),
+        source: 'upload' as const,
+        published: false,
+        ownerId: user.id,
+        primaryImageId: 'test-avatar-img-1',
+        images: [{
+          id: 'test-avatar-img-1',
+          url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400',
+          createdAt: new Date().toISOString(),
+          source: 'upload' as const,
+        }],
+      };
+      if (testAvatar) {
+        await avatarHandlers.saveAvatar(testAvatar);
+      }
+    }
+
+    // Ensure product exists
+    let testProduct = productHandlers.storedProducts.find(p => p.id === 'test-product-badge');
+    if (!testProduct && user?.id) {
+      testProduct = {
+        id: 'test-product-badge',
+        slug: 'test-product',
+        name: 'Test Product',
+        imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400',
+        createdAt: new Date().toISOString(),
+        source: 'upload' as const,
+        published: false,
+        ownerId: user.id,
+        primaryImageId: 'test-product-img-1',
+        images: [{
+          id: 'test-product-img-1',
+          url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400',
+          createdAt: new Date().toISOString(),
+          source: 'upload' as const,
+        }],
+      };
+      if (testProduct) {
+        await productHandlers.saveProduct(testProduct);
+      }
+    }
+
+    const dummyImageWithAll = {
+      url: `https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1024&t=${Date.now()}`,
+      prompt: 'Test image with all badges - Beach cliffs at golden hour',
+      model: 'flux-pro-1.1',
+      jobId: `dummy-all-${Date.now()}`,
+      r2FileId: `r2-all-${Date.now()}`,
+      avatarId: 'test-avatar-badge',
+      productId: 'test-product-badge',
+      styleId: 'female-lifestyle-black-suit-studio',
+      aspectRatio: '3:2',
+      isLiked: false,
+      isPublic: false,
+      timestamp: new Date().toISOString(),
+    };
+
+    await addImage(dummyImageWithAll);
   }, [addImage, avatarHandlers, productHandlers, user?.id]);
 
   const resolvedCategory = useMemo<SupportedCategory>(() => {
@@ -727,6 +815,18 @@ function CreateRefactoredView() {
                       >
                         🏷️ Test Both Badges
                       </button>
+                      <button
+                        onClick={addDummyImageWithStyle}
+                        className="px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                      >
+                        🎨 Test Style Badge
+                      </button>
+                      <button
+                        onClick={addDummyImageWithAllBadges}
+                        className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                      >
+                        🧩 Test All Badges
+                      </button>
                     </div>
                   )}
                   <Suspense fallback={null}>
@@ -767,6 +867,18 @@ function CreateRefactoredView() {
                         className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
                       >
                         🏷️ Test Both Badges
+                      </button>
+                      <button
+                        onClick={addDummyImageWithStyle}
+                        className="px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                      >
+                        🎨 Test Style Badge
+                      </button>
+                      <button
+                        onClick={addDummyImageWithAllBadges}
+                        className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                      >
+                        🧩 Test All Badges
                       </button>
                     </div>
                   )}
@@ -864,6 +976,18 @@ function CreateRefactoredView() {
                               className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
                             >
                               🏷️ Test Both Badges
+                            </button>
+                            <button
+                              onClick={addDummyImageWithStyle}
+                              className="px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                            >
+                              🎨 Test Style Badge
+                            </button>
+                            <button
+                              onClick={addDummyImageWithAllBadges}
+                              className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                            >
+                              🧩 Test All Badges
                             </button>
                           </div>
                         )}

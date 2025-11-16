@@ -6,8 +6,7 @@ import { X, Download, Heart, ChevronLeft, ChevronRight, Copy, Globe, Lock, Folde
 import { useGallery } from './contexts/GalleryContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
 import { glass, buttons, tooltips } from '../../styles/designSystem';
-import ModelBadge from '../ModelBadge';
-import AspectRatioBadge from '../shared/AspectRatioBadge';
+import ImageBadgeRow from '../shared/ImageBadgeRow';
 import { debugError } from '../../utils/debug';
 import { useSavedPrompts } from '../../hooks/useSavedPrompts';
 import { useAuth } from '../../auth/useAuth';
@@ -16,6 +15,8 @@ import { loadSavedPrompts } from '../../lib/savedPrompts';
 import CreateSidebar from './CreateSidebar';
 import type { StoredAvatar } from '../avatars/types';
 import type { StoredProduct } from '../products/types';
+import type { StoredStyle } from '../styles/types';
+import { getStyleThumbnailUrl } from './hooks/useStyleHandlers';
 import type { GalleryImageLike, GalleryVideoLike } from './types';
 import { normalizeStoredAvatars } from '../../utils/avatars';
 import { normalizeStoredProducts } from '../../utils/products';
@@ -26,9 +27,7 @@ import { useBadgeNavigation } from './hooks/useBadgeNavigation';
 // Lazy load VerticalGalleryNav
 const VerticalGalleryNav = lazy(() => import('../shared/VerticalGalleryNav'));
 const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
-const AvatarBadge = lazy(() => import('../avatars/AvatarBadge'));
-const ProductBadge = lazy(() => import('../products/ProductBadge'));
-const PublicBadge = lazy(() => import('./PublicBadge'));
+// Individual badges are rendered via ImageBadgeRow
 
 // Helper function to get initials from name
 const getInitials = (name: string) =>
@@ -45,6 +44,24 @@ const getGalleryItemType = (item: GalleryImageLike | GalleryVideoLike | null): '
     return 'video';
   }
   return 'image';
+};
+
+const styleIdToStoredStyle = (styleId: string): StoredStyle | null => {
+  const parts = styleId.split('-');
+  if (parts.length < 3) return null;
+
+  const styleSection = parts[1];
+  const styleName = parts.slice(2).join(' ');
+  const imageUrl = getStyleThumbnailUrl(styleId);
+
+  return {
+    id: styleId,
+    name: styleName.charAt(0).toUpperCase() + styleName.slice(1),
+    prompt: '',
+    section: styleSection as 'lifestyle' | 'formal' | 'artistic',
+    gender: parts[0] as 'male' | 'female' | 'all',
+    imageUrl,
+  };
 };
 
 const FullImageModal = memo(() => {
@@ -781,14 +798,16 @@ const FullImageModal = memo(() => {
               </>
             )}
 
-            {/* Left side - Edit button for non-gallery */}
+            {/* Left side - Edit button for non-gallery (only show on hover or when menu is open) */}
             {activeCategory !== 'gallery' && (
               <div className="image-gallery-actions absolute top-4 left-4 flex items-start gap-1 z-[40]">
-                <div className={`${
-                  editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId
-                    ? 'opacity-100'
-                    : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
-                } transition-opacity duration-100`}>
+                <div
+                  className={`${
+                    editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}`
+                      ? 'opacity-100'
+                      : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
+                  } transition-opacity duration-100`}
+                >
                   <Suspense fallback={null}>
                     <EditButtonMenu
                       menuId={`fullsize-edit-${fullSizeImage.jobId}`}
@@ -810,13 +829,15 @@ const FullImageModal = memo(() => {
               </div>
             )}
 
-            {/* Action buttons overlay - right side */}
+            {/* Action buttons overlay - right side (only show on hover or when edit menu is open) */}
             <div className="image-gallery-actions absolute top-4 right-4 flex items-start gap-1 z-[40]">
-              <div className={`flex items-center gap-1 ${
-                editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId
-                  ? 'opacity-100'
-                  : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
-              } transition-opacity duration-100`}>
+              <div
+                className={`flex items-center gap-1 ${
+                  editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}`
+                    ? 'opacity-100'
+                    : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
+                } transition-opacity duration-100`}
+              >
                 {/* Edit button - Gallery only */}
                 {activeCategory === 'gallery' && (
                   <Suspense fallback={null}>
@@ -838,16 +859,15 @@ const FullImageModal = memo(() => {
                   </Suspense>
                 )}
                 
-                {/* Delete, Like, More - Always shown */}
+              {/* Delete, Like, More - hover-revealed (glass tooltip only, no native title) */}
                 <button
                   type="button"
                   onClick={handleDeleteClick}
                   className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${
-                    editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId
+                    editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}`
                       ? 'opacity-100 pointer-events-auto'
                       : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                   }`}
-                  title="Delete"
                   onMouseEnter={(e) => {
                     showHoverTooltip(
                       e.currentTarget,
@@ -866,11 +886,10 @@ const FullImageModal = memo(() => {
                   type="button"
                   onClick={handleToggleLikeClick}
                   className={`image-action-btn image-action-btn--fullsize parallax-large favorite-toggle transition-opacity duration-100 ${
-                    editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId
+                    editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}`
                       ? 'opacity-100 pointer-events-auto'
                       : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                   }`}
-                  title={fullSizeImage.isLiked ? "Unlike" : "Like"}
                   onMouseEnter={(e) => {
                     showHoverTooltip(
                       e.currentTarget,
@@ -893,11 +912,10 @@ const FullImageModal = memo(() => {
                   type="button"
                   onClick={handleMoreActionsClick}
                   className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${
-                    editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId
+                    editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}`
                       ? 'opacity-100 pointer-events-auto'
                       : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                   }`}
-                  title="More actions"
                   onMouseEnter={(e) => {
                     showHoverTooltip(
                       e.currentTarget,
@@ -1046,51 +1064,43 @@ const FullImageModal = memo(() => {
                       );
                     })()}
                   </div>
-                  <div className="mt-2 flex justify-center items-center gap-1 md:gap-2">
-                    <div className="flex items-center gap-1 md:gap-2 flex-wrap">
-                      <Suspense fallback={null}>
-                        <ModelBadge 
-                          model={fullSizeImage.model || 'unknown'} 
-                          size="md"
-                          onClick={() => goToModelGallery(fullSizeImage.model, fullSizeItemType)}
-                        />
-                      </Suspense>
-                      {fullSizeImage.avatarId && (() => {
-                        const avatarForImage = avatarMap.get(fullSizeImage.avatarId);
-                        if (!avatarForImage) return null;
-                        return (
-                          <Suspense fallback={null}>
-                          <AvatarBadge
-                            avatar={avatarForImage}
-                            onClick={() => goToAvatarProfile(avatarForImage)}
-                          />
-                        </Suspense>
-                      );
-                      })()}
-                      {fullSizeImage.productId && (() => {
-                        const productForImage = productMap.get(fullSizeImage.productId);
-                        if (!productForImage) return null;
-                        return (
-                          <Suspense fallback={null}>
-                          <ProductBadge
-                            product={productForImage}
-                            onClick={() => goToProductProfile(productForImage)}
-                          />
-                        </Suspense>
-                      );
-                      })()}
-                    </div>
-                    {fullSizeImage.isPublic && !fullSizeImage.savedFrom && (
-                      <Suspense fallback={null}>
-                        <PublicBadge onClick={goToPublicGallery} />
-                      </Suspense>
-                    )}
-                    <Suspense fallback={null}>
-                      <AspectRatioBadge 
-                        aspectRatio={fullSizeImage.aspectRatio} 
-                        size="md" 
-                      />
-                    </Suspense>
+                  <div className="mt-2 flex justify-center items-center">
+                    <ImageBadgeRow
+                      align="center"
+                      model={{
+                        name: fullSizeImage.model || 'unknown',
+                        size: 'md',
+                        onClick: () => goToModelGallery(fullSizeImage.model, fullSizeItemType)
+                      }}
+                      avatars={
+                        fullSizeImage.avatarId
+                          ? (() => {
+                              const avatarForImage = avatarMap.get(fullSizeImage.avatarId!);
+                              return avatarForImage ? [{ data: avatarForImage, onClick: () => goToAvatarProfile(avatarForImage) }] : [];
+                            })()
+                          : []
+                      }
+                      products={
+                        fullSizeImage.productId
+                          ? (() => {
+                              const productForImage = productMap.get(fullSizeImage.productId!);
+                              return productForImage ? [{ data: productForImage, onClick: () => goToProductProfile(productForImage) }] : [];
+                            })()
+                          : []
+                      }
+                      styles={
+                        fullSizeImage.styleId
+                          ? (() => {
+                              const styleForImage = styleIdToStoredStyle(fullSizeImage.styleId!);
+                              return styleForImage ? [{ data: styleForImage }] : [];
+                            })()
+                          : []
+                      }
+                      isPublic={!!fullSizeImage.isPublic && !('savedFrom' in fullSizeImage && fullSizeImage.savedFrom)}
+                      onPublicClick={goToPublicGallery}
+                      aspectRatio={fullSizeImage.aspectRatio}
+                      compact={false}
+                    />
                   </div>
                 </div>
               </div>
@@ -1253,7 +1263,6 @@ const FullImageModal = memo(() => {
                 e.stopPropagation();
               }}
               className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
-              title="Download"
               aria-label="Download"
               onMouseEnter={(e) => {
                 showHoverTooltip(
@@ -1272,7 +1281,6 @@ const FullImageModal = memo(() => {
               type="button"
               onClick={handleAddToFolderClick}
               className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
-              title="Manage folders"
               aria-label="Manage folders"
               onMouseEnter={(e) => {
                 showHoverTooltip(
@@ -1291,7 +1299,6 @@ const FullImageModal = memo(() => {
               type="button"
               onClick={handleTogglePublicClick}
               className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
-              title={fullSizeImage.isPublic ? "Unpublish" : "Publish"}
               aria-label={fullSizeImage.isPublic ? "Unpublish" : "Publish"}
               onMouseEnter={(e) => {
                 showHoverTooltip(
@@ -1314,7 +1321,6 @@ const FullImageModal = memo(() => {
               type="button"
               onClick={handleToggleLikeClick}
               className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
-              title={fullSizeImage.isLiked ? "Unlike" : "Like"}
               aria-label={fullSizeImage.isLiked ? "Unlike" : "Like"}
               onMouseEnter={(e) => {
                 showHoverTooltip(
@@ -1339,7 +1345,6 @@ const FullImageModal = memo(() => {
               type="button"
               onClick={handleDeleteClick}
               className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
-              title="Delete"
               aria-label="Delete"
               onMouseEnter={(e) => {
                 showHoverTooltip(

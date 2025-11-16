@@ -153,19 +153,32 @@ export function useProductHandlers() {
   }, []);
   
   // Handle product save
-  const handleProductSave = useCallback(async (name: string, selection: ProductSelection) => {
-    if (!user?.id) return;
-    
-    try {
-      const product = createProductRecord(name, selection, user.id);
-      await saveProduct(product);
-      setSelectedProduct(product);
-      handleProductCreationModalClose();
-      debugLog('[useProductHandlers] Created new product:', name);
-    } catch (error) {
-      debugError('[useProductHandlers] Error creating product:', error);
-    }
-  }, [user?.id, saveProduct, handleProductCreationModalClose]);
+  const handleProductSave = useCallback(
+    async (name: string, selection: ProductSelection) => {
+      if (!user?.id) return;
+
+      const trimmed = name.trim();
+      if (!trimmed || !selection?.imageUrl) return;
+
+      try {
+        const product = createProductRecord({
+          name: trimmed,
+          imageUrl: selection.imageUrl,
+          source: selection.source,
+          sourceId: selection.sourceId,
+          ownerId: user.id,
+          existingProducts: storedProducts,
+        });
+        await saveProduct(product);
+        setSelectedProduct(product);
+        handleProductCreationModalClose();
+        debugLog('[useProductHandlers] Created new product:', trimmed);
+      } catch (error) {
+        debugError('[useProductHandlers] Error creating product:', error);
+      }
+    },
+    [user?.id, storedProducts, saveProduct, handleProductCreationModalClose],
+  );
   
   // Handle product delete
   const handleProductDelete = useCallback(async (product: StoredProduct) => {
@@ -195,12 +208,16 @@ export function useProductHandlers() {
       // Process the first image file
       const imageFile = files.find(file => file.type.startsWith('image/'));
       if (imageFile) {
-        setProductSelection({
-          imageUrl: URL.createObjectURL(imageFile),
-          source: 'upload',
-          sourceId: imageFile.name,
-        });
-        setIsProductCreationModalOpen(true);
+        const reader = new FileReader();
+        reader.onload = () => {
+          setProductSelection({
+            imageUrl: String(reader.result),
+            source: 'upload',
+            sourceId: imageFile.name,
+          });
+          setIsProductCreationModalOpen(true);
+        };
+        reader.readAsDataURL(imageFile);
       }
     }
   }, []);
@@ -213,11 +230,15 @@ export function useProductHandlers() {
     }
     
     setProductUploadError(null);
-    setProductSelection({
-      imageUrl: URL.createObjectURL(file),
-      source: 'upload',
-      sourceId: file.name,
-    });
+    const reader = new FileReader();
+    reader.onload = () => {
+      setProductSelection({
+        imageUrl: String(reader.result),
+        source: 'upload',
+        sourceId: file.name,
+      });
+    };
+    reader.readAsDataURL(file);
   }, []);
   
   // Reset product creation panel

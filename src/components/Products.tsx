@@ -35,7 +35,7 @@ import {
   ChevronRight,
   Plus,
 } from "lucide-react";
-import { layout, text, buttons, glass, headings, iconButtons } from "../styles/designSystem";
+import { layout, text, buttons, glass, headings, iconButtons, tooltips } from "../styles/designSystem";
 import { useAuth } from "../auth/useAuth";
 const ModelBadge = lazy(() => import("./ModelBadge"));
 const AspectRatioBadge = lazy(() => import("./shared/AspectRatioBadge"));
@@ -332,6 +332,38 @@ export default function Products() {
   const pendingUploadsRef = useRef<Map<string, File[]>>(new Map());
   const hasProducts = products.length > 0;
   const { images: galleryImages } = useGalleryImages();
+
+  // Tooltip helper functions (viewport-based positioning for portaled tooltips)
+  const showHoverTooltip = useCallback((
+    target: HTMLElement,
+    tooltipId: string,
+    options?: { placement?: 'above' | 'below'; offset?: number },
+  ) => {
+    if (typeof document === 'undefined') return;
+    const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
+    if (!tooltip) return;
+
+    const rect = target.getBoundingClientRect();
+    const placement = options?.placement ?? 'above';
+    const defaultOffset = placement === 'above' ? 28 : 8;
+    const offset = options?.offset ?? defaultOffset;
+    const top = placement === 'above' ? rect.top - offset : rect.bottom + offset;
+
+    tooltip.style.top = `${top}px`;
+    tooltip.style.left = `${rect.left + rect.width / 2}px`;
+    tooltip.style.transform = 'translateX(-50%)';
+
+    tooltip.classList.remove('opacity-0');
+    tooltip.classList.add('opacity-100');
+  }, []);
+
+  const hideHoverTooltip = useCallback((tooltipId: string) => {
+    if (typeof document === 'undefined') return;
+    const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
+    if (!tooltip) return;
+    tooltip.classList.remove('opacity-100');
+    tooltip.classList.add('opacity-0');
+  }, []);
 
   useEffect(() => {
     productsRef.current = products;
@@ -2346,64 +2378,109 @@ export default function Products() {
 
         {/* Right Sidebar - Sibling of modal */}
         {isProductFullSizeOpen && creationsModalProduct && activeProductImage && (
-          <aside
-            className={`${glass.promptDark} w-[200px] rounded-2xl p-4 flex flex-col gap-0 overflow-y-auto fixed z-[115]`}
-            style={{ right: 'calc(var(--container-inline-padding, clamp(1rem,5vw,6rem)) + 80px)', top: 'calc(var(--nav-h) + 16px)', height: 'calc(100vh - var(--nav-h) - 32px)' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Icon-only action bar at top */}
-            <div className="flex flex-row gap-0 justify-start pb-2 border-b border-theme-dark">
-              <a
-                href={activeProductImage.url}
-                download
-                className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
-                onClick={(e) => e.stopPropagation()}
-                title="Download"
-                aria-label="Download"
-              >
-                <Download className="w-4 h-4" />
-              </a>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleManageFolders(activeProductImage.url);
-                }}
-                className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
-                title="Manage folders"
-                aria-label="Manage folders"
-              >
-                <FolderPlus className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setProductToPublish(creationsModalProduct);
-                }}
-                className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
-                title={creationsModalProduct.published ? "Unpublish product" : "Publish product"}
-                aria-label={creationsModalProduct.published ? "Unpublish product" : "Publish product"}
-              >
-                {creationsModalProduct.published ? (
-                  <Lock className="w-4 h-4" />
-                ) : (
-                  <Globe className="w-4 h-4" />
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setProductToDelete(creationsModalProduct);
-                }}
-                className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
-                title="Delete"
-                aria-label="Delete"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
+          <>
+            <aside
+              className={`${glass.promptDark} w-[200px] rounded-2xl p-4 flex flex-col gap-0 overflow-y-auto fixed z-[115]`}
+              style={{ right: 'calc(var(--container-inline-padding, clamp(1rem,5vw,6rem)) + 80px)', top: 'calc(var(--nav-h) + 16px)', height: 'calc(100vh - var(--nav-h) - 32px)' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Icon-only action bar at top */}
+              <div className="flex flex-row gap-0 justify-start pb-2 border-b border-theme-dark">
+                <a
+                  href={activeProductImage.url}
+                  download
+                  className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
+                  onClick={(e) => e.stopPropagation()}
+                  aria-label="Download"
+                  onMouseEnter={(e) => {
+                    const baseId = activeProductImage.id || activeProductImage.url;
+                    showHoverTooltip(
+                      e.currentTarget,
+                      `product-download-sidebar-${baseId}`,
+                      { placement: 'below', offset: 2 },
+                    );
+                  }}
+                  onMouseLeave={() => {
+                    const baseId = activeProductImage.id || activeProductImage.url;
+                    hideHoverTooltip(`product-download-sidebar-${baseId}`);
+                  }}
+                >
+                  <Download className="w-4 h-4" />
+                </a>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleManageFolders(activeProductImage.url);
+                  }}
+                  className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
+                  aria-label="Manage folders"
+                  onMouseEnter={(e) => {
+                    const baseId = activeProductImage.id || activeProductImage.url;
+                    showHoverTooltip(
+                      e.currentTarget,
+                      `product-folders-sidebar-${baseId}`,
+                      { placement: 'below', offset: 2 },
+                    );
+                  }}
+                  onMouseLeave={() => {
+                    const baseId = activeProductImage.id || activeProductImage.url;
+                    hideHoverTooltip(`product-folders-sidebar-${baseId}`);
+                  }}
+                >
+                  <FolderPlus className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setProductToPublish(creationsModalProduct);
+                  }}
+                  className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
+                  aria-label={creationsModalProduct.published ? "Unpublish product" : "Publish product"}
+                  onMouseEnter={(e) => {
+                    const baseId = activeProductImage.id || activeProductImage.url;
+                    showHoverTooltip(
+                      e.currentTarget,
+                      `product-publish-sidebar-${baseId}`,
+                      { placement: 'below', offset: 2 },
+                    );
+                  }}
+                  onMouseLeave={() => {
+                    const baseId = activeProductImage.id || activeProductImage.url;
+                    hideHoverTooltip(`product-publish-sidebar-${baseId}`);
+                  }}
+                >
+                  {creationsModalProduct.published ? (
+                    <Lock className="w-4 h-4" />
+                  ) : (
+                    <Globe className="w-4 h-4" />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setProductToDelete(creationsModalProduct);
+                  }}
+                  className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
+                  aria-label="Delete"
+                  onMouseEnter={(e) => {
+                    const baseId = activeProductImage.id || activeProductImage.url;
+                    showHoverTooltip(
+                      e.currentTarget,
+                      `product-delete-sidebar-${baseId}`,
+                      { placement: 'below', offset: 2 },
+                    );
+                  }}
+                  onMouseLeave={() => {
+                    const baseId = activeProductImage.id || activeProductImage.url;
+                    hideHoverTooltip(`product-delete-sidebar-${baseId}`);
+                  }}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
 
             {/* Edit actions */}
             <div className="flex flex-col gap-0 mt-2">
@@ -2484,7 +2561,61 @@ export default function Products() {
                 Make video
               </button>
             </div>
-          </aside>
+            </aside>
+
+            {/* Portaled tooltips for product full-size sidebar actions */}
+            {(() => {
+              const baseId = activeProductImage.id || activeProductImage.url;
+              const downloadId = `product-download-sidebar-${baseId}`;
+              const foldersId = `product-folders-sidebar-${baseId}`;
+              const publishId = `product-publish-sidebar-${baseId}`;
+              const deleteId = `product-delete-sidebar-${baseId}`;
+              return (
+                <>
+                  {createPortal(
+                    <div
+                      data-tooltip-for={downloadId}
+                      className={`${tooltips.base} fixed`}
+                      style={{ zIndex: 9999 }}
+                    >
+                      Download
+                    </div>,
+                    document.body,
+                  )}
+                  {createPortal(
+                    <div
+                      data-tooltip-for={foldersId}
+                      className={`${tooltips.base} fixed`}
+                      style={{ zIndex: 9999 }}
+                    >
+                      Manage folders
+                    </div>,
+                    document.body,
+                  )}
+                  {createPortal(
+                    <div
+                      data-tooltip-for={publishId}
+                      className={`${tooltips.base} fixed`}
+                      style={{ zIndex: 9999 }}
+                    >
+                      {creationsModalProduct.published ? 'Unpublish product' : 'Publish product'}
+                    </div>,
+                    document.body,
+                  )}
+                  {createPortal(
+                    <div
+                      data-tooltip-for={deleteId}
+                      className={`${tooltips.base} fixed`}
+                      style={{ zIndex: 9999 }}
+                    >
+                      Delete
+                    </div>,
+                    document.body,
+                  )}
+                </>
+              );
+            })()}
+          </>
         )}
 
         {/* Thumbnail Navigation - Right Sidebar (far edge) */}

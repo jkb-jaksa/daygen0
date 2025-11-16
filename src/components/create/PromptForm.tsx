@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useCreateGenerationController } from './hooks/useCreateGenerationController';
+import type { StyleOption } from './hooks/useStyleHandlers';
 import { useParallaxHover } from '../../hooks/useParallaxHover';
 import { useGenerateShortcuts } from '../../hooks/useGenerateShortcuts';
 import { usePrefillFromShare } from '../../hooks/usePrefillFromShare';
@@ -44,6 +45,7 @@ import { MAX_PARALLEL_GENERATIONS } from '../../utils/config';
 import { STYLE_MODAL_OPEN_EVENT, STYLE_MODAL_CLOSE_EVENT } from '../../contexts/styleModalEvents';
 import { useAuth } from '../../auth/useAuth';
 import { useCreateBridge, createInitialBridgeActions } from './contexts/hooks';
+import { usePresetGenerationFlow } from './hooks/usePresetGenerationFlow';
 import { isVideoModelId } from './constants';
 
 const ModelSelector = lazy(() => import('./ModelSelector'));
@@ -57,6 +59,7 @@ const PromptsDropdown = lazy(() =>
 );
 const AvatarCreationModal = lazy(() => import('../avatars/AvatarCreationModal'));
 const ProductCreationModal = lazy(() => import('../products/ProductCreationModal'));
+const PresetGenerationModal = lazy(() => import('./modals/PresetGenerationModal'));
 
 type GenerationMode = 'image' | 'video';
 
@@ -164,6 +167,13 @@ const PromptForm = memo<PromptFormProps>(
       error,
       clearError,
     } = useCreateGenerationController();
+    const presetGenerationFlow = usePresetGenerationFlow();
+    const handlePresetStylesApply = useCallback(
+      (appliedStyles: StyleOption[]) => {
+        presetGenerationFlow.openForStyles(appliedStyles);
+      },
+      [presetGenerationFlow],
+    );
 
     const {
       prompt,
@@ -1418,6 +1428,7 @@ const PromptForm = memo<PromptFormProps>(
               )}
             </div>
 
+
             <div className="relative">
               <button
                 type="button"
@@ -1460,12 +1471,7 @@ const PromptForm = memo<PromptFormProps>(
                       />
                     ) : (
                       <div
-                        className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl"
-                        style={{
-                          backgroundImage: styleHandlers.firstSelectedStyle.previewGradient,
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center',
-                        }}
+                        className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl bg-theme-mid/30"
                       />
                     )}
                     <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
@@ -1578,7 +1584,7 @@ const PromptForm = memo<PromptFormProps>(
                 handleAvatarPickerClose();
                 navigate('/create/avatars');
               }}
-              className="text-base font-raleway text-theme-text transition-colors duration-200 hover:text-theme-white"
+              className="text-base font-raleway text-theme-text"
             >
               Your Avatars
             </button>
@@ -1623,7 +1629,9 @@ const PromptForm = memo<PromptFormProps>(
                           className="h-10 w-10 rounded-lg object-cover"
                         />
                         <div className="min-w-0 flex-1 text-left">
-                          <p className="truncate text-sm font-raleway text-theme-white">{avatar.name}</p>
+                          <p className="truncate text-sm font-raleway text-theme-white group-hover:text-n-text">
+                            {avatar.name}
+                          </p>
                         </div>
                       </button>
                       <div className="flex items-center gap-1">
@@ -1772,7 +1780,7 @@ const PromptForm = memo<PromptFormProps>(
                 handleProductPickerClose();
                 navigate('/create/products');
               }}
-              className="text-base font-raleway text-theme-text transition-colors duration-200 hover:text-theme-white"
+              className="text-base font-raleway text-theme-text"
             >
               Your Products
             </button>
@@ -1817,7 +1825,9 @@ const PromptForm = memo<PromptFormProps>(
                           className="h-10 w-10 rounded-lg object-cover"
                         />
                         <div className="min-w-0 flex-1 text-left">
-                          <p className="truncate text-sm font-raleway text-theme-white">{product.name}</p>
+                          <p className="truncate text-sm font-raleway text-theme-white group-hover:text-n-text">
+                            {product.name}
+                          </p>
                         </div>
                       </button>
                       <div className="flex items-center gap-1">
@@ -2362,7 +2372,13 @@ const PromptForm = memo<PromptFormProps>(
             open={styleHandlers.isStyleModalOpen}
             onClose={styleHandlers.handleStyleModalClose}
             styleHandlers={styleHandlers}
+            onApplySelectedStyles={handlePresetStylesApply}
           />
+        </Suspense>
+      )}
+      {presetGenerationFlow.isOpen && (
+        <Suspense fallback={null}>
+          <PresetGenerationModal flow={presetGenerationFlow} />
         </Suspense>
       )}
       </>

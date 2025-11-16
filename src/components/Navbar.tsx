@@ -314,7 +314,7 @@ export default function Navbar() {
         className={`relative ${glass.promptDark} border-t-0`}
       >
         <div
-          className={`${layout.container} flex items-center justify-between text-base min-h-[3.5rem] py-1`}
+          className={`${layout.container} flex items-center justify-between text-base min-h-[var(--nav-h)] py-1`}
         >
           <div className="flex h-full items-center gap-6 md:gap-8">
             <img

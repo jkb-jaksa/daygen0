@@ -37,7 +37,7 @@ import {
   Heart,
   RefreshCw,
 } from "lucide-react";
-import { layout, text, buttons, glass, headings, iconButtons } from "../styles/designSystem";
+import { layout, text, buttons, glass, headings, iconButtons, tooltips } from "../styles/designSystem";
 import { useAuth } from "../auth/useAuth";
 const ModelBadge = lazy(() => import("./ModelBadge"));
 const AspectRatioBadge = lazy(() => import("./shared/AspectRatioBadge"));
@@ -336,6 +336,38 @@ export default function Avatars() {
   const [draggedImageId, setDraggedImageId] = useState<string | null>(null);
   const [dragOverSlotIndex, setDragOverSlotIndex] = useState<number | null>(null);
   const { images: galleryImages } = useGalleryImages();
+
+  // Tooltip helper functions (viewport-based positioning for portaled tooltips)
+  const showHoverTooltip = useCallback((
+    target: HTMLElement,
+    tooltipId: string,
+    options?: { placement?: 'above' | 'below'; offset?: number },
+  ) => {
+    if (typeof document === 'undefined') return;
+    const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
+    if (!tooltip) return;
+
+    const rect = target.getBoundingClientRect();
+    const placement = options?.placement ?? 'above';
+    const defaultOffset = placement === 'above' ? 28 : 8;
+    const offset = options?.offset ?? defaultOffset;
+    const top = placement === 'above' ? rect.top - offset : rect.bottom + offset;
+
+    tooltip.style.top = `${top}px`;
+    tooltip.style.left = `${rect.left + rect.width / 2}px`;
+    tooltip.style.transform = 'translateX(-50%)';
+
+    tooltip.classList.remove('opacity-0');
+    tooltip.classList.add('opacity-100');
+  }, []);
+
+  const hideHoverTooltip = useCallback((tooltipId: string) => {
+    if (typeof document === 'undefined') return;
+    const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
+    if (!tooltip) return;
+    tooltip.classList.remove('opacity-100');
+    tooltip.classList.add('opacity-0');
+  }, []);
 
   useEffect(() => {
     avatarsRef.current = avatars;
@@ -2460,76 +2492,132 @@ export default function Avatars() {
 
         {/* Right Sidebar - Sibling of modal */}
         {isAvatarFullSizeOpen && creationsModalAvatar && activeAvatarImage && (
-          <aside
-            className={`${glass.promptDark} w-[200px] rounded-2xl p-4 flex flex-col gap-0 overflow-y-auto fixed z-[115]`}
-            style={{ right: 'calc(var(--container-inline-padding, clamp(1rem,5vw,6rem)) + 80px)', top: 'calc(var(--nav-h) + 16px)', height: 'calc(100vh - var(--nav-h) - 32px)' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Icon-only action bar at top */}
-            <div className="flex flex-row gap-0 justify-start pb-2 border-b border-theme-dark">
-              <a
-                href={activeAvatarImage.url}
-                download
-                className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
-                onClick={(e) => e.stopPropagation()}
-                title="Download"
-                aria-label="Download"
-              >
-                <Download className="w-4 h-4" />
-              </a>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleManageFolders(activeAvatarImage.url);
-                }}
-                className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
-                title="Manage folders"
-                aria-label="Manage folders"
-              >
-                <FolderPlus className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setAvatarToPublish(creationsModalAvatar);
-                }}
-                className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
-                title={creationsModalAvatar.published ? "Unpublish avatar" : "Publish avatar"}
-                aria-label={creationsModalAvatar.published ? "Unpublish avatar" : "Publish avatar"}
-              >
-                {creationsModalAvatar.published ? (
-                  <Lock className="w-4 h-4" />
-                ) : (
-                  <Globe className="w-4 h-4" />
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // TODO: Add favorite/like functionality for avatar images
-                }}
-                className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
-                title="Like"
-                aria-label="Like"
-              >
-                <Heart className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setAvatarToDelete(creationsModalAvatar);
-                }}
-                className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
-                title="Delete"
-                aria-label="Delete"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
+          <>
+            <aside
+              className={`${glass.promptDark} w-[200px] rounded-2xl p-4 flex flex-col gap-0 overflow-y-auto fixed z-[115]`}
+              style={{ right: 'calc(var(--container-inline-padding, clamp(1rem,5vw,6rem)) + 80px)', top: 'calc(var(--nav-h) + 16px)', height: 'calc(100vh - var(--nav-h) - 32px)' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Icon-only action bar at top */}
+              <div className="flex flex-row gap-0 justify-start pb-2 border-b border-theme-dark">
+                <a
+                  href={activeAvatarImage.url}
+                  download
+                  className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
+                  onClick={(e) => e.stopPropagation()}
+                  aria-label="Download"
+                  onMouseEnter={(e) => {
+                    const baseId = activeAvatarImage.id || activeAvatarImage.url;
+                    showHoverTooltip(
+                      e.currentTarget,
+                      `avatar-download-sidebar-${baseId}`,
+                      { placement: 'below', offset: 2 },
+                    );
+                  }}
+                  onMouseLeave={() => {
+                    const baseId = activeAvatarImage.id || activeAvatarImage.url;
+                    hideHoverTooltip(`avatar-download-sidebar-${baseId}`);
+                  }}
+                >
+                  <Download className="w-4 h-4" />
+                </a>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleManageFolders(activeAvatarImage.url);
+                  }}
+                  className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
+                  aria-label="Manage folders"
+                  onMouseEnter={(e) => {
+                    const baseId = activeAvatarImage.id || activeAvatarImage.url;
+                    showHoverTooltip(
+                      e.currentTarget,
+                      `avatar-folders-sidebar-${baseId}`,
+                      { placement: 'below', offset: 2 },
+                    );
+                  }}
+                  onMouseLeave={() => {
+                    const baseId = activeAvatarImage.id || activeAvatarImage.url;
+                    hideHoverTooltip(`avatar-folders-sidebar-${baseId}`);
+                  }}
+                >
+                  <FolderPlus className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setAvatarToPublish(creationsModalAvatar);
+                  }}
+                  className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
+                  aria-label={creationsModalAvatar.published ? "Unpublish avatar" : "Publish avatar"}
+                  onMouseEnter={(e) => {
+                    const baseId = activeAvatarImage.id || activeAvatarImage.url;
+                    showHoverTooltip(
+                      e.currentTarget,
+                      `avatar-publish-sidebar-${baseId}`,
+                      { placement: 'below', offset: 2 },
+                    );
+                  }}
+                  onMouseLeave={() => {
+                    const baseId = activeAvatarImage.id || activeAvatarImage.url;
+                    hideHoverTooltip(`avatar-publish-sidebar-${baseId}`);
+                  }}
+                >
+                  {creationsModalAvatar.published ? (
+                    <Lock className="w-4 h-4" />
+                  ) : (
+                    <Globe className="w-4 h-4" />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // TODO: Add favorite/like functionality for avatar images
+                  }}
+                  className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
+                  aria-label="Like"
+                  onMouseEnter={(e) => {
+                    const baseId = activeAvatarImage.id || activeAvatarImage.url;
+                    showHoverTooltip(
+                      e.currentTarget,
+                      `avatar-like-sidebar-${baseId}`,
+                      { placement: 'below', offset: 2 },
+                    );
+                  }}
+                  onMouseLeave={() => {
+                    const baseId = activeAvatarImage.id || activeAvatarImage.url;
+                    hideHoverTooltip(`avatar-like-sidebar-${baseId}`);
+                  }}
+                >
+                  <Heart className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setAvatarToDelete(creationsModalAvatar);
+                  }}
+                  className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
+                  aria-label="Delete"
+                  onMouseEnter={(e) => {
+                    const baseId = activeAvatarImage.id || activeAvatarImage.url;
+                    showHoverTooltip(
+                      e.currentTarget,
+                      `avatar-delete-sidebar-${baseId}`,
+                      { placement: 'below', offset: 2 },
+                    );
+                  }}
+                  onMouseLeave={() => {
+                    const baseId = activeAvatarImage.id || activeAvatarImage.url;
+                    hideHoverTooltip(`avatar-delete-sidebar-${baseId}`);
+                  }}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
 
             {/* Edit actions */}
             <div className="flex flex-col gap-0 mt-2">
@@ -2614,7 +2702,72 @@ export default function Avatars() {
                 Make video
               </button>
             </div>
-          </aside>
+            </aside>
+
+            {/* Portaled tooltips for avatar full-size sidebar actions */}
+            {(() => {
+              const baseId = activeAvatarImage.id || activeAvatarImage.url;
+              const downloadId = `avatar-download-sidebar-${baseId}`;
+              const foldersId = `avatar-folders-sidebar-${baseId}`;
+              const publishId = `avatar-publish-sidebar-${baseId}`;
+              const likeId = `avatar-like-sidebar-${baseId}`;
+              const deleteId = `avatar-delete-sidebar-${baseId}`;
+              return (
+                <>
+                  {createPortal(
+                    <div
+                      data-tooltip-for={downloadId}
+                      className={`${tooltips.base} fixed`}
+                      style={{ zIndex: 9999 }}
+                    >
+                      Download
+                    </div>,
+                    document.body,
+                  )}
+                  {createPortal(
+                    <div
+                      data-tooltip-for={foldersId}
+                      className={`${tooltips.base} fixed`}
+                      style={{ zIndex: 9999 }}
+                    >
+                      Manage folders
+                    </div>,
+                    document.body,
+                  )}
+                  {createPortal(
+                    <div
+                      data-tooltip-for={publishId}
+                      className={`${tooltips.base} fixed`}
+                      style={{ zIndex: 9999 }}
+                    >
+                      {creationsModalAvatar.published ? 'Unpublish avatar' : 'Publish avatar'}
+                    </div>,
+                    document.body,
+                  )}
+                  {createPortal(
+                    <div
+                      data-tooltip-for={likeId}
+                      className={`${tooltips.base} fixed`}
+                      style={{ zIndex: 9999 }}
+                    >
+                      Like
+                    </div>,
+                    document.body,
+                  )}
+                  {createPortal(
+                    <div
+                      data-tooltip-for={deleteId}
+                      className={`${tooltips.base} fixed`}
+                      style={{ zIndex: 9999 }}
+                    >
+                      Delete
+                    </div>,
+                    document.body,
+                  )}
+                </>
+              );
+            })()}
+          </>
         )}
 
         {/* Thumbnail Navigation - Right Sidebar (far edge) */}

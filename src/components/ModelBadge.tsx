@@ -269,7 +269,7 @@ const sizeClasses = {
               alt={`${config.name} logo`}
               loading="lazy"
               decoding="async"
-              className="w-3.5 h-3.5 object-contain rounded flex-shrink-0"
+              className="w-3 h-3 object-contain rounded flex-shrink-0"
             />
           ) : (
             <span className="text-xs leading-none">

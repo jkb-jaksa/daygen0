@@ -21,13 +21,13 @@ export const AspectRatioBadge: React.FC<AspectRatioBadgeProps> = ({
   const sizeClasses = {
     sm: 'px-2 py-1 text-xs',
     md: 'px-2 py-1 text-xs',
-    lg: 'px-3 py-1 text-xs'
+    lg: 'px-2 py-1 text-xs'
   };
 
   const iconSizes = {
-    sm: 'w-3 h-3',
-    md: 'w-3.5 h-3.5',
-    lg: 'w-4 h-4'
+  sm: 'w-3 h-3',
+  md: 'w-3 h-3',
+  lg: 'w-3 h-3'
   };
 
   return (

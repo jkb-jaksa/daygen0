@@ -2,16 +2,15 @@ import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { Users, Briefcase, Palette } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-type StyleOption = {
+export type StyleOption = {
   id: string;
   name: string;
   prompt: string;
-  previewGradient?: string;
   image?: string;
 };
 
 type StyleSectionId = "lifestyle" | "formal" | "artistic";
-type StyleGender = "male" | "female" | "unisex";
+type StyleGender = "male" | "female" | "all";
 
 type StyleSection = {
   id: StyleSectionId;
@@ -23,19 +22,6 @@ type StyleSection = {
 
 type SelectedStylesMap = Record<StyleGender, Record<StyleSectionId, StyleOption[]>>;
 
-const STYLE_GRADIENTS: readonly string[] = [
-  "linear-gradient(135deg, rgba(244,114,182,0.35) 0%, rgba(59,130,246,0.55) 100%)",
-  "linear-gradient(135deg, rgba(251,191,36,0.35) 0%, rgba(79,70,229,0.55) 100%)",
-  "linear-gradient(135deg, rgba(56,189,248,0.4) 0%, rgba(99,102,241,0.6) 50%, rgba(236,72,153,0.45) 100%)",
-  "linear-gradient(135deg, rgba(148,163,184,0.35) 0%, rgba(226,232,240,0.6) 100%)",
-  "linear-gradient(135deg, rgba(110,231,183,0.35) 0%, rgba(103,232,249,0.5) 100%)",
-  "linear-gradient(135deg, rgba(251,191,36,0.4) 0%, rgba(248,113,113,0.5) 60%, rgba(96,165,250,0.45) 100%)",
-  "linear-gradient(135deg, rgba(217,119,6,0.4) 0%, rgba(180,83,9,0.5) 100%)",
-  "linear-gradient(135deg, rgba(236,72,153,0.45) 0%, rgba(168,85,247,0.5) 50%, rgba(14,165,233,0.4) 100%)",
-  "linear-gradient(135deg, rgba(251,207,232,0.45) 0%, rgba(196,181,253,0.5) 50%, rgba(165,243,252,0.4) 100%)",
-  "linear-gradient(135deg, rgba(30,64,175,0.5) 0%, rgba(59,130,246,0.45) 50%, rgba(248,113,113,0.4) 100%)",
-];
-
 const STYLE_SECTION_DEFINITIONS: readonly StyleSection[] = [
   { id: "lifestyle", name: "Lifestyle", Icon: Users, options: [] },
   { id: "formal", name: "Formal", Icon: Briefcase, options: [] },
@@ -45,52 +31,112 @@ const STYLE_SECTION_DEFINITIONS: readonly StyleSection[] = [
 const STYLE_GENDER_OPTIONS: ReadonlyArray<{ id: StyleGender; label: string }> = [
   { id: "female", label: "Female" },
   { id: "male", label: "Male" },
-  { id: "unisex", label: "All" },
+  { id: "all", label: "All" },
 ];
 
-const LIFESTYLE_STYLES_UNISEX: StyleOption[] = [
+// Lifestyle presets for female
+const LIFESTYLE_STYLES_FEMALE: StyleOption[] = [
   {
-    id: "unisex-lifestyle-black-suit-studio",
+    id: "female-lifestyle-black-suit-studio",
     name: "Black Suit Studio",
     prompt:
       "professional studio photography setup, black suit attire, clean minimalist background, professional lighting, high-end fashion photography style",
-    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/black_suit_studio setup.png",
+    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/black_suit_studio setup.png",
   },
   {
-    id: "unisex-lifestyle-french-balcony",
+    id: "female-lifestyle-french-balcony",
     name: "French Balcony",
     prompt:
       "elegant French balcony setting, charming Parisian architecture, wrought iron railings, romantic European atmosphere, natural daylight",
-    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/french_balcony.png",
+    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/french_balcony.png",
   },
   {
-    id: "unisex-lifestyle-boat-coastal-town",
+    id: "female-lifestyle-boat-coastal-town",
     name: "Boat in Coastal Town",
     prompt:
       "charming coastal town setting, traditional fishing boat, waterfront architecture, maritime atmosphere, golden hour lighting, seaside lifestyle photography",
-    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/boat_in_coastal_town.png",
+    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/boat_in_coastal_town.png",
   },
   {
-    id: "unisex-lifestyle-brick-wall",
+    id: "female-lifestyle-brick-wall",
     name: "Brick in the Wall",
     prompt:
       "urban street photography, exposed brick wall background, industrial aesthetic, gritty urban atmosphere, natural lighting, contemporary lifestyle photography",
-    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/brick_in_the_wall.png",
+    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/brick_in_the_wall.png",
   },
   {
-    id: "unisex-lifestyle-smoking-hot",
+    id: "female-lifestyle-smoking-hot",
     name: "Smoking Hot",
     prompt:
       "dramatic lifestyle photography, warm lighting, sultry atmosphere, high contrast, fashion-forward styling, bold and confident mood",
-    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/smoking_hot.png",
+    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/smoking_hot.png",
   },
   {
-    id: "unisex-lifestyle-sun-and-sea",
+    id: "female-lifestyle-sun-and-sea",
     name: "Sun and Sea",
     prompt:
       "beach lifestyle photography, sunny coastal setting, ocean waves, bright natural lighting, summer vibes, relaxed seaside atmosphere",
-    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/sun_and_sea.png",
+    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/sun_and_sea.png",
   },
+];
+
+// Formal presets for female - placeholder for future presets
+// Change id and name to change UI text
+const FORMAL_STYLES_FEMALE: StyleOption[] = [
+  {
+    id: "female-formal-sitting-in-the-solone-chair",
+    name: "Sitting in the solone chair",
+    prompt: "replace woman with a person on the referenced image",
+    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/image.png",
+  },
+  {
+    id: "female-formal-test2",
+    name: "Test 2",
+    prompt: "replace woman with a person on the referenced image",
+    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/f7687b88-f125-43b2-98fd-6440687476d1.png",
+  },
+  {
+    id: "female-formal-test3",
+    name: "Test 3",
+    prompt: "replace woman with a person on the referenced image",
+    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/efe68d30-26c7-4803-a5f7-0c29b4d758ae.png",
+  },
+];
+
+// Formal presets for male - placeholder for future presets
+const FORMAL_STYLES_MALE: StyleOption[] = [
+  // TODO: Add formal preset images here
+  // Example:
+  // {
+  //   id: "male-formal-example",
+  //   name: "Example Formal",
+  //   prompt: "formal style description",
+  //   image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/example.png",
+  // },
+];
+
+// Artistic presets for female - placeholder for future presets
+const ARTISTIC_STYLES_FEMALE: StyleOption[] = [
+  // TODO: Add artistic preset images here
+  // Example:
+  // {
+  //   id: "female-artistic-example",
+  //   name: "Example Artistic",
+  //   prompt: "artistic style description",
+  //   image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/example.png",
+  // },
+];
+
+// Artistic presets for male - placeholder for future presets
+const ARTISTIC_STYLES_MALE: StyleOption[] = [
+  // TODO: Add artistic preset images here
+  // Example:
+  // {
+  //   id: "male-artistic-example",
+  //   name: "Example Artistic",
+  //   prompt: "artistic style description",
+  //   image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/example.png",
+  // },
 ];
 
 const createPlaceholderStyles = (
@@ -99,35 +145,72 @@ const createPlaceholderStyles = (
   sectionName: string,
 ): StyleOption[] =>
   Array.from({ length: 20 }, (_, index) => {
-    const gradient = STYLE_GRADIENTS[index % STYLE_GRADIENTS.length];
     const label = `${sectionName} Style ${index + 1}`;
     return {
       id: `${gender}-${sectionId}-${index + 1}`,
       name: label,
       prompt: `${gender} ${sectionName.toLowerCase()} inspired placeholder prompt ${index + 1}`,
-      previewGradient: gradient,
     };
   });
 
 const createLifestyleStyles = (gender: StyleGender): StyleOption[] => {
-  if (gender === "unisex") {
-    return LIFESTYLE_STYLES_UNISEX;
+  if (gender === "female") {
+    return LIFESTYLE_STYLES_FEMALE;
   }
-  return createPlaceholderStyles(gender, "lifestyle", "Lifestyle");
+  if (gender === "male") {
+    return createPlaceholderStyles(gender, "lifestyle", "Lifestyle");
+  }
+  // "all" - combine both male and female
+  return [...LIFESTYLE_STYLES_FEMALE, ...createPlaceholderStyles("male", "lifestyle", "Lifestyle")];
+};
+
+const createFormalStyles = (gender: StyleGender): StyleOption[] => {
+  if (gender === "female") {
+    return FORMAL_STYLES_FEMALE;
+  }
+  if (gender === "male") {
+    return FORMAL_STYLES_MALE;
+  }
+  // "all" - combine both male and female
+  return [...FORMAL_STYLES_FEMALE, ...FORMAL_STYLES_MALE];
+};
+
+const createArtisticStyles = (gender: StyleGender): StyleOption[] => {
+  if (gender === "female") {
+    return ARTISTIC_STYLES_FEMALE;
+  }
+  if (gender === "male") {
+    return ARTISTIC_STYLES_MALE;
+  }
+  // "all" - combine both male and female
+  return [...ARTISTIC_STYLES_FEMALE, ...ARTISTIC_STYLES_MALE];
 };
 
 const createStyleSectionsForGender = (gender: StyleGender): StyleSection[] =>
-  STYLE_SECTION_DEFINITIONS.map(({ id, name, Icon }) => ({
-    id,
-    name,
-    Icon,
-    options: id === "lifestyle" ? createLifestyleStyles(gender) : createPlaceholderStyles(gender, id, name),
-  }));
+  STYLE_SECTION_DEFINITIONS.map(({ id, name, Icon }) => {
+    let options: StyleOption[] = [];
+    if (id === "lifestyle") {
+      options = createLifestyleStyles(gender);
+    } else if (id === "formal") {
+      options = createFormalStyles(gender);
+    } else if (id === "artistic") {
+      options = createArtisticStyles(gender);
+    } else {
+      options = createPlaceholderStyles(gender, id, name);
+    }
+    
+    return {
+      id,
+      name,
+      Icon,
+      options,
+    };
+  });
 
 const STYLE_SECTIONS_BY_GENDER: Record<StyleGender, StyleSection[]> = {
   male: createStyleSectionsForGender("male"),
   female: createStyleSectionsForGender("female"),
-  unisex: createStyleSectionsForGender("unisex"),
+  all: createStyleSectionsForGender("all"),
 };
 
 const createEmptyStyleSectionSelection = (): Record<StyleSectionId, StyleOption[]> => ({
@@ -139,7 +222,7 @@ const createEmptyStyleSectionSelection = (): Record<StyleSectionId, StyleOption[
 const createEmptySelectedStyles = (): SelectedStylesMap => ({
   female: createEmptyStyleSectionSelection(),
   male: createEmptyStyleSectionSelection(),
-  unisex: createEmptyStyleSectionSelection(),
+  all: createEmptyStyleSectionSelection(),
 });
 
 const cloneSelectedStyles = (styles: SelectedStylesMap): SelectedStylesMap => ({
@@ -153,10 +236,10 @@ const cloneSelectedStyles = (styles: SelectedStylesMap): SelectedStylesMap => ({
     formal: [...styles.male.formal],
     artistic: [...styles.male.artistic],
   },
-  unisex: {
-    lifestyle: [...styles.unisex.lifestyle],
-    formal: [...styles.unisex.formal],
-    artistic: [...styles.unisex.artistic],
+  all: {
+    lifestyle: [...styles.all.lifestyle],
+    formal: [...styles.all.formal],
+    artistic: [...styles.all.artistic],
   },
 });
 
@@ -179,6 +262,20 @@ const getStyleSectionOptions = (gender: StyleGender, sectionId: StyleSectionId):
   return section?.options ?? [];
 };
 
+export const getStyleThumbnailUrl = (styleId: string): string | undefined => {
+  const parts = styleId.split("-");
+  if (parts.length < 3) return undefined;
+
+  const gender = parts[0] as StyleGender;
+  const sectionId = parts[1] as StyleSectionId;
+  const sections = STYLE_SECTIONS_BY_GENDER[gender];
+  if (!sections) return undefined;
+
+  const section = sections.find((s) => s.id === sectionId);
+  const option = section?.options.find((opt) => opt.id === styleId);
+  return option?.image;
+};
+
 const getOrderedSelectedStyles = (styles: SelectedStylesMap): StyleOption[] => {
   const ordered: StyleOption[] = [];
   for (const { id: gender } of STYLE_GENDER_OPTIONS) {
@@ -195,7 +292,7 @@ export function useStyleHandlers() {
   const [selectedStyles, setSelectedStyles] = useState<SelectedStylesMap>(() => createEmptySelectedStyles());
   const [isStyleModalOpen, setIsStyleModalOpen] = useState(false);
   const [tempSelectedStyles, setTempSelectedStyles] = useState<SelectedStylesMap>(() => createEmptySelectedStyles());
-  const [activeStyleGender, setActiveStyleGender] = useState<StyleGender>("unisex");
+  const [activeStyleGender, setActiveStyleGender] = useState<StyleGender>("all");
   const [activeStyleSection, setActiveStyleSection] = useState<StyleSectionId>("lifestyle");
   const [isStyleButtonHovered, setIsStyleButtonHovered] = useState(false);
   
@@ -216,7 +313,7 @@ export function useStyleHandlers() {
       setActiveStyleGender(firstSelection.gender);
       setActiveStyleSection(firstSelection.sectionId);
     } else {
-      setActiveStyleGender("unisex");
+      setActiveStyleGender("all");
       setActiveStyleSection(STYLE_SECTION_DEFINITIONS[0]?.id ?? "lifestyle");
     }
 
@@ -341,16 +438,18 @@ export function useStyleHandlers() {
   
   // Handle apply styles
   const handleApplyStyles = useCallback(() => {
-    setSelectedStyles(cloneSelectedStyles(tempSelectedStyles));
+    const nextSelectedStyles = cloneSelectedStyles(tempSelectedStyles);
+    setSelectedStyles(nextSelectedStyles);
     setIsStyleModalOpen(false);
     focusStyleButton();
+    return getOrderedSelectedStyles(nextSelectedStyles);
   }, [tempSelectedStyles, focusStyleButton]);
   
   // Handle clear styles
   const handleClearStyles = useCallback(() => {
     setSelectedStyles(createEmptySelectedStyles());
     setTempSelectedStyles(createEmptySelectedStyles());
-    setActiveStyleGender("unisex");
+    setActiveStyleGender("all");
     setActiveStyleSection("lifestyle");
     setIsStyleModalOpen(false);
     focusStyleButton();
