@@ -233,6 +233,11 @@ function galleryReducer(state: GalleryState, action: GalleryAction): GalleryStat
             ? { ...img, ...action.payload.updates }
             : img
         ),
+        // If the currently opened full-size item matches, merge updates into it too
+        fullSizeImage:
+          state.fullSizeImage && !('type' in state.fullSizeImage) && matchGalleryItemId(state.fullSizeImage, action.payload.id)
+            ? { ...state.fullSizeImage, ...action.payload.updates }
+            : state.fullSizeImage,
       };
     case 'UPDATE_VIDEO':
       return {
@@ -242,6 +247,11 @@ function galleryReducer(state: GalleryState, action: GalleryAction): GalleryStat
             ? { ...vid, ...action.payload.updates }
             : vid
         ),
+        // If the currently opened full-size item is this video, merge updates into it too
+        fullSizeImage:
+          state.fullSizeImage && 'type' in state.fullSizeImage && matchGalleryItemId(state.fullSizeImage, action.payload.id)
+            ? { ...state.fullSizeImage, ...action.payload.updates }
+            : state.fullSizeImage,
       };
     case 'REMOVE_IMAGE':
       return {
