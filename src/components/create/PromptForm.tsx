@@ -70,13 +70,13 @@ const MODE_STYLE_MAP: Record<
   }
 > = {
   image: {
-    border: 'border-red-500/20',
+    border: 'border-red-500/25',
     gradient: 'from-red-400 via-red-500 to-red-600',
     shadow: 'rgba(239, 68, 68, 0.15)',
     iconColor: 'text-red-500',
   },
   video: {
-    border: 'border-blue-500/20',
+    border: 'border-blue-500/25',
     gradient: 'from-blue-400 via-blue-500 to-blue-600',
     shadow: 'rgba(59, 130, 246, 0.15)',
     iconColor: 'text-blue-500',

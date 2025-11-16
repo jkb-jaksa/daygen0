@@ -102,10 +102,10 @@ export default function Prompts() {
                   
                   // Color-specific border class mappings for each category
                   const borderColorMap: Record<string, string> = {
-                    text: "border-amber-400/20",
-                    image: "border-red-500/20",
-                    video: "border-blue-500/20",
-                    audio: "border-cyan-400/20",
+                    text: "border-amber-400/25",
+                    image: "border-red-500/25",
+                    video: "border-blue-500/25",
+                    audio: "border-cyan-400/25",
                   };
                   
                   const isPressed = pressedCategory === category.id;
