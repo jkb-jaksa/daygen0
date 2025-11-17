@@ -200,7 +200,7 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
       const cardRect = ownerCard.getBoundingClientRect();
       const relativeTop = triggerRect.top - cardRect.top;
       const relativeLeft = triggerRect.left - cardRect.left + triggerRect.width / 2;
-      tooltip.style.top = `${relativeTop - 4}px`;
+      tooltip.style.top = `${relativeTop - 2}px`;
       tooltip.style.left = `${relativeLeft}px`;
       tooltip.style.transform = 'translateX(-50%) translateY(-100%)';
     }
