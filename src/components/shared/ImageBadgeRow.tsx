@@ -102,7 +102,7 @@ const ImageBadgeRow: React.FC<ImageBadgeRowProps> = ({
         />
       ))}
 
-      {/* Aspect ratio badge (full-size views only) */}
+      {/* Aspect ratio badge */}
       {aspectRatio && (
         <AspectRatioBadge
           aspectRatio={aspectRatio}

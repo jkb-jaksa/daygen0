@@ -1830,6 +1830,11 @@ export default function Products() {
                       />
                     );
                   })()}
+                  {image.aspectRatio && (
+                    <Suspense fallback={null}>
+                      <AspectRatioBadge aspectRatio={image.aspectRatio} size="sm" />
+                    </Suspense>
+                  )}
                 </div>
                 {image.isPublic && (
                   <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
