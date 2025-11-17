@@ -633,6 +633,32 @@ const PromptForm = memo<PromptFormProps>(
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [styleHandlers.isStyleModalOpen, styleHandlers.handleStyleModalOpen, styleHandlers.handleStyleModalClose]);
 
+    // Blur textarea when avatar/product creation modals close to prevent browser focus restoration
+    const prevAvatarModalOpen = useRef(isAvatarCreationModalOpen);
+    const prevProductModalOpen = useRef(isProductCreationModalOpen);
+    useEffect(() => {
+      // Only blur if a modal just closed (was open, now closed)
+      const avatarJustClosed = prevAvatarModalOpen.current && !isAvatarCreationModalOpen;
+      const productJustClosed = prevProductModalOpen.current && !isProductCreationModalOpen;
+      
+      if (avatarJustClosed || productJustClosed) {
+        // Use setTimeout to ensure browser focus restoration has completed, then blur
+        const timeoutId = setTimeout(() => {
+          textareaRef.current?.blur();
+        }, 0);
+        
+        // Update refs for next render
+        prevAvatarModalOpen.current = isAvatarCreationModalOpen;
+        prevProductModalOpen.current = isProductCreationModalOpen;
+        
+        return () => clearTimeout(timeoutId);
+      }
+      
+      // Update refs even if we don't blur
+      prevAvatarModalOpen.current = isAvatarCreationModalOpen;
+      prevProductModalOpen.current = isProductCreationModalOpen;
+    }, [isAvatarCreationModalOpen, isProductCreationModalOpen]);
+
     // Listen for custom events to set prompt and reference from gallery actions
     // Use refs to avoid stale closures
     const setPromptValueRef = useRef(setPromptValue);
