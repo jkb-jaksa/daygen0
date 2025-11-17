@@ -354,6 +354,11 @@ export const useGalleryImages = () => {
 
       const urlSet = new Set(imageUrls);
 
+      // We'll compute nextImages from the previous state, then persist to storage
+      let computedNextImages: GalleryImageLike[] | null = null;
+      // Collect r2FileIds that should be updated server-side (best-effort)
+      const r2FileIdsToUpdate: string[] = [];
+
       setState(prev => {
         // First, deduplicate existing images
         const seenKeys = new Set<string>();
@@ -379,6 +384,10 @@ export const useGalleryImages = () => {
           }
           
           if (hasUpdates && image.url && urlSet.has(image.url)) {
+            // Collect r2FileIds for optional server update (only for isPublic toggle)
+            if (updates.isPublic !== undefined && image.r2FileId) {
+              r2FileIdsToUpdate.push(image.r2FileId);
+            }
             return { ...image, ...updates };
           }
           return image;
@@ -416,13 +425,36 @@ export const useGalleryImages = () => {
           }
         }
 
+        // Capture computed array for persistence outside setState
+        computedNextImages = nextImages;
         return {
           ...prev,
           images: nextImages,
         };
       });
+
+      // Persist to local storage so Publish/Unpublish survives reloads
+      if (storagePrefix && computedNextImages) {
+        void setPersistedValue(storagePrefix, 'gallery', serializeGallery(computedNextImages));
+      }
+
+      // Optional: best-effort server update for isPublic when r2FileId exists
+      if (token && updates.isPublic !== undefined && r2FileIdsToUpdate.length > 0) {
+        for (const r2Id of Array.from(new Set(r2FileIdsToUpdate))) {
+          const apiUrl = getApiUrl(`/api/r2files/${r2Id}`);
+          // Fire-and-forget; ignore errors to keep UI snappy
+          void fetch(apiUrl, {
+            method: 'PATCH',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ isPublic: updates.isPublic }),
+          }).catch(() => {});
+        }
+      }
     },
-    [],
+    [storagePrefix, token],
   );
 
   // Remove images from state immediately (optimistic update)

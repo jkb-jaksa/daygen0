@@ -116,6 +116,11 @@ function createBaseProps(anchor: HTMLElement): SettingsMenuProps {
       model: 'runway-gen4',
       onModelChange: vi.fn(),
     },
+    grok: {
+      enabled: false,
+      model: 'grok-2-image',
+      onModelChange: vi.fn(),
+    },
     gemini: {
       enabled: false,
       temperature: 0.5,

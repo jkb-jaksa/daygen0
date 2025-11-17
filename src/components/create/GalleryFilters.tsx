@@ -11,6 +11,8 @@ import { normalizeStoredProducts } from '../../utils/products';
 import type { StoredAvatar } from '../avatars/types';
 import type { StoredProduct } from '../products/types';
 import { AI_MODELS } from './ModelSelector';
+import { isVideoModelId } from './constants';
+import { getAspectRatiosForModels, getAllAvailableAspectRatios } from '../../utils/aspectRatioUtils';
 
 const GalleryFilters = memo(() => {
   const { state, setFilters, clearFilters } = useGallery();
@@ -44,24 +46,30 @@ const GalleryFilters = memo(() => {
 
   // Get available models - use static AI_MODELS list, filter by modality
   const availableModels = useMemo(() => {
-    const videoModels = ['veo-3', 'runway-video-gen4', 'wan-video-2.2', 'hailuo-02', 'kling-video', 'seedance-1.0-pro', 'luma-ray-2'];
-    
     let modelList = AI_MODELS;
-    
+
     if (filters.types.length === 1) {
       if (filters.types.includes('video')) {
-        // Only video models
-        modelList = AI_MODELS.filter(model => videoModels.includes(model.id));
+        modelList = AI_MODELS.filter(model => isVideoModelId(model.id));
       } else if (filters.types.includes('image')) {
-        // Only image models (exclude video models)
-        modelList = AI_MODELS.filter(model => !videoModels.includes(model.id));
+        modelList = AI_MODELS.filter(model => !isVideoModelId(model.id));
       }
     }
-    
+
     return modelList
       .map(model => ({ value: model.id, label: model.name }))
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [filters.types]);
+
+  // Get available aspect ratios based on selected models
+  const availableAspectRatios = useMemo(() => {
+    if (filters.models.length === 0) {
+      // If no models selected, show all available aspect ratios
+      return getAllAvailableAspectRatios();
+    }
+    // Otherwise, show only aspect ratios available for selected models
+    return getAspectRatiosForModels(filters.models);
+  }, [filters.models]);
 
   // Get available avatars from user's stored avatars
   const availableAvatars = useMemo(() => {
@@ -146,7 +154,7 @@ const GalleryFilters = memo(() => {
         </div>
 
         {/* Advanced filters grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-1">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-1">
           {/* Modality Filter */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-theme-white/70 font-raleway">Modality</label>
@@ -270,6 +278,42 @@ const GalleryFilters = memo(() => {
                     <X className="w-3 h-3" />
                   </button>
                 </div>
+              </div>
+            )}
+          </div>
+
+          {/* Aspect Ratio Filter */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs text-theme-white/70 font-raleway">Aspect Ratio</label>
+            <CustomMultiSelect
+              values={filters.aspectRatios}
+              onChange={aspectRatios => setFilters({ aspectRatios })}
+              options={availableAspectRatios.map(ar => ({ value: ar.value, label: ar.label }))}
+              placeholder="All ratios"
+              disabled={availableAspectRatios.length === 0}
+            />
+            {/* Selected Aspect Ratio Tags */}
+            {filters.aspectRatios.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {filters.aspectRatios.map(arValue => {
+                  const arOption = availableAspectRatios.find(ar => ar.value === arValue);
+                  return (
+                    <div
+                      key={arValue}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-theme-text/20 text-theme-white rounded-full text-xs font-raleway border border-theme-text/30"
+                    >
+                      <span>{arOption?.label || arValue}</span>
+                      <button
+                        type="button"
+                        onClick={() => setFilters({ aspectRatios: filters.aspectRatios.filter(ar => ar !== arValue) })}
+                        className="transition-colors duration-200 hover:text-theme-text"
+                        aria-label={`Remove ${arOption?.label || arValue}`}
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

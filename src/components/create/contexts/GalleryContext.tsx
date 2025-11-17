@@ -12,8 +12,9 @@ import { useGalleryImages } from '../../../hooks/useGalleryImages';
 import { useGeneration } from './GenerationContext';
 import { useAuth } from '../../../auth/useAuth';
 import { getPersistedValue, setPersistedValue } from '../../../lib/clientStorage';
-import { debugError } from '../../../utils/debug';
+import { debugError, debugWarn } from '../../../utils/debug';
 import { consumePendingBadgeFilters } from '../hooks/badgeNavigationStorage';
+import { normalizeAspectRatio } from '../../../utils/aspectRatioUtils';
 import type {
   GalleryImageLike,
   GalleryVideoLike,
@@ -87,6 +88,7 @@ const initialFilters: GalleryFilters = {
   public: false,
   models: [],
   types: [],
+  aspectRatios: [],
   folder: '',
   avatar: '',
   product: '',
@@ -231,6 +233,11 @@ function galleryReducer(state: GalleryState, action: GalleryAction): GalleryStat
             ? { ...img, ...action.payload.updates }
             : img
         ),
+        // If the currently opened full-size item matches, merge updates into it too
+        fullSizeImage:
+          state.fullSizeImage && !('type' in state.fullSizeImage) && matchGalleryItemId(state.fullSizeImage, action.payload.id)
+            ? { ...state.fullSizeImage, ...action.payload.updates }
+            : state.fullSizeImage,
       };
     case 'UPDATE_VIDEO':
       return {
@@ -240,6 +247,11 @@ function galleryReducer(state: GalleryState, action: GalleryAction): GalleryStat
             ? { ...vid, ...action.payload.updates }
             : vid
         ),
+        // If the currently opened full-size item is this video, merge updates into it too
+        fullSizeImage:
+          state.fullSizeImage && 'type' in state.fullSizeImage && matchGalleryItemId(state.fullSizeImage, action.payload.id)
+            ? { ...state.fullSizeImage, ...action.payload.updates }
+            : state.fullSizeImage,
       };
     case 'REMOVE_IMAGE':
       return {
@@ -594,14 +606,25 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
   }, [persistFolders]);
 
   const normalizeImageIds = useCallback((imageUrls: string[]) => {
-    return Array.from(
-      new Set(
-        imageUrls
-          .map(url => url?.trim())
-          .filter((url): url is string => Boolean(url)),
-      ),
-    );
-  }, []);
+    const normalized = new Set<string>();
+
+    imageUrls.forEach(candidate => {
+      const trimmed = candidate?.trim();
+      if (!trimmed) {
+        return;
+      }
+
+      const matchedImage = findImageById(trimmed);
+      if (matchedImage?.url?.trim()) {
+        normalized.add(matchedImage.url.trim());
+        return;
+      }
+
+      normalized.add(trimmed);
+    });
+
+    return Array.from(normalized);
+  }, [findImageById]);
 
   const addImagesToFolder = useCallback((imageUrls: string[], folderId: string) => {
     const normalized = normalizeImageIds(imageUrls);
@@ -741,22 +764,118 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     for (let index = 0; index < items.length; index += 1) {
       const item = items[index];
       try {
-        const response = await fetch(item.url);
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
+        // Try to fetch the image first
+        let blob: Blob;
+        try {
+          const response = await fetch(item.url);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch image: ${response.status}`);
+          }
+          blob = await response.blob();
+          
+          // Successfully fetched, create blob URL and download
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
 
-        const timestamp = new Date(item.timestamp).toISOString().split('T')[0];
-        const modelSlug = item.model ? `_${item.model.replace(/[^a-zA-Z0-9]/g, '_')}` : '';
-        const extension = item.url.split('.').pop()?.split('?')[0] || 'jpg';
-        const baseName = 'type' in item && item.type === 'video' ? 'video' : 'image';
+          const timestamp = new Date(item.timestamp).toISOString().split('T')[0];
+          const modelSlug = item.model ? `_${item.model.replace(/[^a-zA-Z0-9]/g, '_')}` : '';
+          const extension = item.url.split('.').pop()?.split('?')[0] || 'jpg';
+          const baseName = 'type' in item && item.type === 'video' ? 'video' : 'image';
 
-        link.download = `daygen_${timestamp}${modelSlug}_${index + 1}.${extension || baseName}`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
+          link.download = `daygen_${timestamp}${modelSlug}_${index + 1}.${extension || baseName}`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+        } catch (fetchError) {
+          // Fetch failed (likely CORS), try canvas-based download
+          debugWarn('Fetch failed, trying canvas-based download:', fetchError);
+          
+          // For images, use canvas-based approach
+          if (!('type' in item && item.type === 'video')) {
+            try {
+              await new Promise<void>((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                
+                img.onload = () => {
+                  try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.naturalWidth;
+                    canvas.height = img.naturalHeight;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) {
+                      reject(new Error('Failed to get canvas context'));
+                      return;
+                    }
+                    ctx.drawImage(img, 0, 0);
+                    
+                    canvas.toBlob((blob) => {
+                      if (!blob) {
+                        reject(new Error('Failed to create blob from canvas'));
+                        return;
+                      }
+                      
+                      const url = window.URL.createObjectURL(blob);
+                      const link = document.createElement('a');
+                      link.href = url;
+                      
+                      const timestamp = new Date(item.timestamp).toISOString().split('T')[0];
+                      const modelSlug = item.model ? `_${item.model.replace(/[^a-zA-Z0-9]/g, '_')}` : '';
+                      const extension = item.url.split('.').pop()?.split('?')[0] || 'jpg';
+                      
+                      link.download = `daygen_${timestamp}${modelSlug}_${index + 1}.${extension}`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      window.URL.revokeObjectURL(url);
+                      
+                      resolve();
+                    }, 'image/jpeg', 0.95);
+                  } catch (canvasError) {
+                    reject(canvasError);
+                  }
+                };
+                
+                img.onerror = () => {
+                  reject(new Error('Failed to load image for canvas download'));
+                };
+                
+                img.src = item.url;
+                
+                // Timeout after 10 seconds
+                setTimeout(() => {
+                  reject(new Error('Canvas download timeout'));
+                }, 10000);
+              });
+            } catch (canvasError) {
+              // Canvas download failed (CORS not configured), fallback to opening URL
+              debugWarn('Canvas download failed, opening URL:', canvasError);
+              const link = document.createElement('a');
+              link.href = item.url;
+              link.target = '_blank';
+              link.rel = 'noopener noreferrer';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }
+          } else {
+            // For videos, fallback to opening URL
+            const link = document.createElement('a');
+            link.href = item.url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }
+        }
+        
+        // Add small delay between downloads to avoid browser throttling
+        if (index < items.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
       } catch (error) {
         debugError('Error downloading gallery item:', error);
       }
@@ -826,6 +945,26 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
       if (state.filters.types.length > 0) {
         const itemType = 'type' in item ? 'video' : 'image';
         if (!state.filters.types.includes(itemType)) return false;
+      }
+      
+      // Filter by aspect ratios
+      if (state.filters.aspectRatios.length > 0) {
+        const itemAspectRatio = normalizeAspectRatio(item.aspectRatio);
+        if (!itemAspectRatio) {
+          // If item has no aspect ratio and filters are set, exclude it
+          return false;
+        }
+        // Check if normalized aspect ratio matches any selected filter
+        // Also check original value in case normalization didn't change it
+        const matchesFilter = state.filters.aspectRatios.some(filterAr => {
+          const normalizedFilterAr = normalizeAspectRatio(filterAr);
+          return (
+            itemAspectRatio === normalizedFilterAr ||
+            itemAspectRatio === filterAr ||
+            (item.aspectRatio && item.aspectRatio === filterAr)
+          );
+        });
+        if (!matchesFilter) return false;
       }
       
       // Filter by folder

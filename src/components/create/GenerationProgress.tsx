@@ -83,11 +83,6 @@ const GenerationProgress = memo(() => {
               </p>
             </div>
 
-            <div className="absolute bottom-0 left-0 right-0 p-3 gallery-prompt-gradient">
-              <p className="text-theme-text text-xs font-raleway line-clamp-2 opacity-75">
-                {job.prompt}
-              </p>
-            </div>
           </div>
         );
       })}

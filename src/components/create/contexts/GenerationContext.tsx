@@ -197,21 +197,23 @@ function generationReducer(state: GenerationState, action: GenerationAction): Ge
     case 'UPDATE_JOB_STATUS':
       return {
         ...state,
-        activeJobs: state.activeJobs.map(job => {
-          if (job.id !== action.payload.id) {
-            return job;
-          }
+        activeJobs: state.activeJobs
+          .filter((job): job is NonNullable<typeof job> => job != null)
+          .map(job => {
+            if (job.id !== action.payload.id) {
+              return job;
+            }
 
-          const hasProgressUpdate =
-            action.payload.progress !== undefined && Number.isFinite(action.payload.progress);
-          const hasBackendUpdate =
-            action.payload.backendProgress !== undefined &&
-            Number.isFinite(action.payload.backendProgress);
+            const hasProgressUpdate =
+              action.payload.progress !== undefined && Number.isFinite(action.payload.progress);
+            const hasBackendUpdate =
+              action.payload.backendProgress !== undefined &&
+              Number.isFinite(action.payload.backendProgress);
 
-          const nextJobId =
-            typeof action.payload.jobId === 'string' && action.payload.jobId.trim().length > 0
-              ? action.payload.jobId
-              : job.jobId;
+            const nextJobId =
+              typeof action.payload.jobId === 'string' && action.payload.jobId.trim().length > 0
+                ? action.payload.jobId
+                : job.jobId;
 
           return {
             ...job,

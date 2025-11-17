@@ -212,14 +212,67 @@ export function useGalleryActions() {
     setBulkActionsMenu({ anchor: event.currentTarget as HTMLElement });
   }, [setBulkActionsMenu]);
 
-  const openAddToFolderDialog = useCallback((imageIds: string[]) => {
-    const normalized = Array.from(
+  const resolveFolderIds = useCallback((inputs: (GalleryImageLike | GalleryVideoLike | string)[]) => {
+    const canonical = new Set<string>();
+    const stringCandidates: string[] = [];
+
+    inputs.forEach(value => {
+      if (typeof value === 'string') {
+        stringCandidates.push(value);
+        return;
+      }
+
+      const url = value.url?.trim();
+      if (url) {
+        canonical.add(url);
+        return;
+      }
+
+      const fallback = value.jobId?.trim() ?? value.r2FileId?.trim();
+      if (fallback) {
+        canonical.add(fallback);
+      }
+    });
+
+    const trimmedUniqueStrings = Array.from(
       new Set(
-        imageIds
+        stringCandidates
           .map(id => id?.trim())
           .filter((id): id is string => Boolean(id)),
       ),
     );
+
+    if (trimmedUniqueStrings.length > 0) {
+      const resolvedItems = getGalleryItemsByIds(trimmedUniqueStrings);
+      const resolvedKeys = new Set<string>();
+
+      resolvedItems.forEach(item => {
+        const url = item.url?.trim();
+        if (url) {
+          canonical.add(url);
+        }
+
+        [
+          item.jobId?.trim(),
+          item.r2FileId?.trim(),
+          item.url?.trim(),
+        ]
+          .filter((key): key is string => Boolean(key))
+          .forEach(key => resolvedKeys.add(key));
+      });
+
+      trimmedUniqueStrings.forEach(id => {
+        if (!resolvedKeys.has(id)) {
+          canonical.add(id);
+        }
+      });
+    }
+
+    return Array.from(canonical);
+  }, [getGalleryItemsByIds]);
+
+  const openAddToFolderDialog = useCallback((imageIds: string[]) => {
+    const normalized = resolveFolderIds(imageIds);
 
     if (!normalized.length) {
       return;
@@ -227,7 +280,7 @@ export function useGalleryActions() {
 
     setSelectedImagesForFolder(normalized);
     setAddToFolderDialog(true);
-  }, [setAddToFolderDialog, setSelectedImagesForFolder]);
+  }, [resolveFolderIds, setAddToFolderDialog, setSelectedImagesForFolder]);
   
   const ensureBridgeReady = useCallback(async () => {
     if (bridgeActionsRef.current.isInitialized) {
@@ -505,15 +558,20 @@ export function useGalleryActions() {
         return;
       }
 
+      const canonicalIds = resolveFolderIds(normalized);
+      if (!canonicalIds.length) {
+        return;
+      }
+
       if (folderId) {
-        toggleImagesInFolder(normalized, folderId);
+        toggleImagesInFolder(canonicalIds, folderId);
       } else {
-        openAddToFolderDialog(normalized);
+        openAddToFolderDialog(canonicalIds);
       }
     } catch (error) {
       debugError('Error bulk moving to folder:', error);
     }
-  }, [openAddToFolderDialog, state.selectedItems, toggleImagesInFolder]);
+  }, [openAddToFolderDialog, resolveFolderIds, state.selectedItems, toggleImagesInFolder]);
 
   const handleBulkDownload = useCallback((imageIds?: string[]) => {
     const targetIds = imageIds ?? Array.from(state.selectedItems);
@@ -652,23 +710,23 @@ export function useGalleryActions() {
   }, [bridgeActionsRef, ensureBridgeReady, navigate]);
 
   // Handle add to folder
-  const handleAddToFolder = useCallback((imageId: string, folderId?: string) => {
+  const handleAddToFolder = useCallback((item: GalleryImageLike | GalleryVideoLike | string, folderId?: string) => {
     try {
-      const normalizedId = imageId?.trim();
-      if (!normalizedId) {
+      const canonicalIds = resolveFolderIds([item]);
+      if (!canonicalIds.length) {
         return;
       }
 
       if (folderId) {
-        toggleImagesInFolder([normalizedId], folderId);
+        toggleImagesInFolder(canonicalIds, folderId);
         return;
       }
 
-      openAddToFolderDialog([normalizedId]);
+      openAddToFolderDialog(canonicalIds);
     } catch (error) {
       debugError('Error adding to folder:', error);
     }
-  }, [openAddToFolderDialog, toggleImagesInFolder]);
+  }, [openAddToFolderDialog, resolveFolderIds, toggleImagesInFolder]);
 
   // Handle copy prompt to clipboard
   const handleCopyPrompt = useCallback(async (prompt: string) => {

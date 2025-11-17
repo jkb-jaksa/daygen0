@@ -1,7 +1,7 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Clock, Bookmark, Trash2, X, Pencil, Plus, BookmarkPlus } from 'lucide-react';
-import { glass, buttons } from '../styles/designSystem';
+import { glass, buttons, tooltips } from '../styles/designSystem';
 import type { PromptEntry } from '../lib/promptHistory';
 import type { SavedPrompt } from '../lib/savedPrompts';
 
@@ -192,6 +192,38 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
     };
   }, [isOpen, anchorEl]);
 
+  // Tooltip helper functions (viewport-based positioning for portaled tooltips)
+  const showHoverTooltip = useCallback((
+    target: HTMLElement,
+    tooltipId: string,
+    options?: { placement?: 'above' | 'below'; offset?: number },
+  ) => {
+    if (typeof document === 'undefined') return;
+    const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
+    if (!tooltip) return;
+    
+    // Get button position in viewport
+    const rect = target.getBoundingClientRect();
+    const placement = options?.placement ?? 'above';
+    const defaultOffset = placement === 'above' ? 28 : 8;
+    const offset = options?.offset ?? defaultOffset;
+    const top = placement === 'above' ? rect.top - offset : rect.bottom + offset;
+    tooltip.style.top = `${top}px`;
+    tooltip.style.left = `${rect.left + rect.width / 2}px`;
+    tooltip.style.transform = 'translateX(-50%)';
+    
+    tooltip.classList.remove('opacity-0');
+    tooltip.classList.add('opacity-100');
+  }, []);
+
+  const hideHoverTooltip = useCallback((tooltipId: string) => {
+    if (typeof document === 'undefined') return;
+    const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
+    if (!tooltip) return;
+    tooltip.classList.remove('opacity-100');
+    tooltip.classList.add('opacity-0');
+  }, []);
+
   if (!isOpen) return null;
 
   // Limit recent prompts to 10
@@ -287,29 +319,65 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
                     {prompt.text}
                   </button>
                   <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingPrompt(prompt);
-                        setEditText(prompt.text);
-                      }}
-                      className="flex-shrink-0 p-1 rounded-full text-n-white hover:bg-n-text/10 hover:text-n-text transition-all duration-200"
-                      aria-label="Edit prompt"
-                      title="Edit prompt"
-                    >
-                      <Pencil className="h-3 w-3" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeletePrompt(prompt);
-                      }}
-                      className="flex-shrink-0 p-1 rounded-full text-n-white hover:bg-n-text/10 hover:text-n-text transition-all duration-200"
-                      aria-label="Remove saved prompt"
-                      title="Remove saved prompt"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
+                    {(() => {
+                      const editTooltipId = `edit-saved-${prompt.id}`;
+                      return (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingPrompt(prompt);
+                              setEditText(prompt.text);
+                            }}
+                            onMouseEnter={(e) => showHoverTooltip(e.currentTarget, editTooltipId)}
+                            onMouseLeave={() => hideHoverTooltip(editTooltipId)}
+                            className="flex-shrink-0 p-1 rounded-full text-n-white hover:bg-n-text/10 hover:text-n-text transition-all duration-200"
+                            aria-label="Edit prompt"
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </button>
+                          {createPortal(
+                            <div
+                              data-tooltip-for={editTooltipId}
+                              className={`${tooltips.base} fixed`}
+                              style={{ zIndex: 10000 }}
+                            >
+                              Edit prompt
+                            </div>,
+                            document.body
+                          )}
+                        </>
+                      );
+                    })()}
+                    {(() => {
+                      const deleteTooltipId = `delete-saved-${prompt.id}`;
+                      return (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeletePrompt(prompt);
+                            }}
+                            onMouseEnter={(e) => showHoverTooltip(e.currentTarget, deleteTooltipId)}
+                            onMouseLeave={() => hideHoverTooltip(deleteTooltipId)}
+                            className="flex-shrink-0 p-1 rounded-full text-n-white hover:bg-n-text/10 hover:text-n-text transition-all duration-200"
+                            aria-label="Delete prompt"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                          {createPortal(
+                            <div
+                              data-tooltip-for={deleteTooltipId}
+                              className={`${tooltips.base} fixed`}
+                              style={{ zIndex: 10000 }}
+                            >
+                              Delete prompt
+                            </div>,
+                            document.body
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               ))}
@@ -342,36 +410,68 @@ export const PromptsDropdown: React.FC<PromptsDropdownProps> = ({
                       {prompt.text}
                     </button>
                     <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1">
-                      {onSaveRecentPrompt && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onSaveRecentPrompt(prompt.text);
-                          }}
-                          className="flex-shrink-0 p-1 rounded-full text-n-white hover:bg-n-text/10 hover:text-n-text transition-all duration-200"
-                          aria-label={isSaved ? "Prompt saved" : "Save prompt"}
-                          title={isSaved ? "Prompt saved" : "Save prompt"}
-                        >
-                          {isSaved ? (
-                            <Bookmark className="h-3 w-3 fill-current" />
-                          ) : (
-                            <BookmarkPlus className="h-3 w-3" />
-                          )}
-                        </button>
-                      )}
-                      {onRemoveRecentPrompt && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleteRecentPrompt(prompt.text);
-                          }}
-                          className="flex-shrink-0 p-1 rounded-full text-n-white hover:bg-n-text/10 hover:text-n-text transition-all duration-200"
-                          aria-label="Remove recent prompt"
-                          title="Remove recent prompt"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
-                      )}
+                      {onSaveRecentPrompt && (() => {
+                        const saveTooltipId = `save-recent-${prompt.ts}-${idx}`;
+                        return (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onSaveRecentPrompt(prompt.text);
+                              }}
+                              onMouseEnter={(e) => showHoverTooltip(e.currentTarget, saveTooltipId)}
+                              onMouseLeave={() => hideHoverTooltip(saveTooltipId)}
+                              className="flex-shrink-0 p-1 rounded-full text-n-white hover:bg-n-text/10 hover:text-n-text transition-all duration-200"
+                              aria-label={isSaved ? "Remove from saved prompts" : "Save prompt"}
+                            >
+                              {isSaved ? (
+                                <Bookmark className="h-3 w-3 fill-current" />
+                              ) : (
+                                <BookmarkPlus className="h-3 w-3" />
+                              )}
+                            </button>
+                            {createPortal(
+                              <div
+                                data-tooltip-for={saveTooltipId}
+                                className={`${tooltips.base} fixed`}
+                                style={{ zIndex: 10000 }}
+                              >
+                                {isSaved ? "Remove from saved prompts" : "Save prompt"}
+                              </div>,
+                              document.body
+                            )}
+                          </>
+                        );
+                      })()}
+                      {onRemoveRecentPrompt && (() => {
+                        const deleteTooltipId = `delete-recent-${prompt.ts}-${idx}`;
+                        return (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteRecentPrompt(prompt.text);
+                              }}
+                              onMouseEnter={(e) => showHoverTooltip(e.currentTarget, deleteTooltipId)}
+                              onMouseLeave={() => hideHoverTooltip(deleteTooltipId)}
+                              className="flex-shrink-0 p-1 rounded-full text-n-white hover:bg-n-text/10 hover:text-n-text transition-all duration-200"
+                              aria-label="Delete prompt"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                            {createPortal(
+                              <div
+                                data-tooltip-for={deleteTooltipId}
+                                className={`${tooltips.base} fixed`}
+                                style={{ zIndex: 10000 }}
+                              >
+                                Delete prompt
+                              </div>,
+                              document.body
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 );

@@ -1,13 +1,14 @@
-import React, { memo, useCallback, useRef, useState, useEffect, useMemo } from 'react';
+import { memo, useCallback, useRef, useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Sparkles, Wand2, Package, Film, VideoIcon, Shapes } from 'lucide-react';
 import { getToolLogo, hasToolLogo } from '../../utils/toolLogos';
 import { useGeneration } from './contexts/GenerationContext';
 import { useParallaxHover } from '../../hooks/useParallaxHover';
 import { useDropdownScrollLock } from '../../hooks/useDropdownScrollLock';
-import { glass } from '../../styles/designSystem';
+import { glass, tooltips } from '../../styles/designSystem';
 import { debugLog } from '../../utils/debug';
 import { ToolInfoHover } from '../ToolInfoHover';
+import { isVideoModelId } from './constants';
 
 // AI Model data with icons and descriptions (matching V1 exactly)
 // Exported as single source of truth for all model lists in the app
@@ -18,6 +19,7 @@ export const AI_MODELS = [
   { name: "Reve", desc: "Great text-to-image and image editing.", Icon: Sparkles, id: "reve-image" },
   { name: "Ideogram 3.0", desc: "Advanced image generation, editing, and enhancement.", Icon: Package, id: "ideogram" },
   { name: "Recraft", desc: "Great for text, icons and mockups.", Icon: Shapes, id: "recraft" },
+  { name: "Grok", desc: "Great aesthetics. Fast generations.", Icon: Sparkles, id: "grok-2-image" },
   { name: "Qwen", desc: "Great image editing.", Icon: Wand2, id: "qwen-image" },
   { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, id: "runway-gen4" },
   { name: "Runway Gen-4 (Video)", desc: "Text → Video using Gen-4 Turbo", Icon: VideoIcon, id: "runway-video-gen4" },
@@ -27,16 +29,17 @@ export const AI_MODELS = [
   { name: "ChatGPT", desc: "Popular image model.", Icon: Sparkles, id: "chatgpt-image" },
   { name: "Veo 3", desc: "Google's advanced video generation model.", Icon: Film, id: "veo-3" },
   { name: "Seedance 1.0 Pro (Video)", desc: "Great quality text-to-image.", Icon: Film, id: "seedance-1.0-pro" },
-  { name: "Luma Photon 1", desc: "High-quality image generation with Photon.", Icon: Sparkles, id: "luma-photon-1" },
-  { name: "Luma Photon Flash 1", desc: "Fast image generation with Photon Flash.", Icon: Sparkles, id: "luma-photon-flash-1" },
+  { name: "Luma Photon", desc: "High-quality image generation with Photon.", Icon: Sparkles, id: "luma-photon-1" },
   { name: "Luma Ray 2", desc: "High-quality video generation with Ray 2.", Icon: VideoIcon, id: "luma-ray-2" },
 ];
+
+type GenerationMode = 'image' | 'video';
 
 interface ModelSelectorProps {
   selectedModel: string;
   onModelChange: (model: string) => void;
   isGenerating: boolean;
-  activeCategory?: string; // 'image' | 'video' - defaults to inferring from selectedModel
+  activeCategory?: GenerationMode; // defaults to inferring from selectedModel
 }
 
 const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, isGenerating, activeCategory }) => {
@@ -60,8 +63,7 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
   // Infer activeCategory from selectedModel if not provided
   const inferredCategory = useMemo(() => {
     if (activeCategory) return activeCategory;
-    const videoModels = ["veo-3", "runway-video-gen4", "wan-video-2.2", "hailuo-02", "kling-video", "seedance-1.0-pro", "luma-ray-2", "luma-photon-1", "luma-photon-flash-1"];
-    return videoModels.includes(selectedModel) ? "video" : "image";
+    return isVideoModelId(selectedModel) ? "video" : "image";
   }, [activeCategory, selectedModel]);
   
   // Get current model info
@@ -187,6 +189,33 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
     };
   }, [isOpen, handleClose]);
   
+  // Tooltip helper functions
+  const showHoverTooltip = useCallback((target: HTMLElement, tooltipId: string) => {
+    if (typeof document === 'undefined') return;
+    const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
+    if (!tooltip) return;
+    const ownerCard = target.closest('.relative') as HTMLElement | null;
+    if (ownerCard) {
+      const triggerRect = target.getBoundingClientRect();
+      const cardRect = ownerCard.getBoundingClientRect();
+      const relativeTop = triggerRect.top - cardRect.top;
+      const relativeLeft = triggerRect.left - cardRect.left + triggerRect.width / 2;
+      tooltip.style.top = `${relativeTop - 2}px`;
+      tooltip.style.left = `${relativeLeft}px`;
+      tooltip.style.transform = 'translateX(-50%) translateY(-100%)';
+    }
+    tooltip.classList.remove('opacity-0');
+    tooltip.classList.add('opacity-100');
+  }, []);
+
+  const hideHoverTooltip = useCallback((tooltipId: string) => {
+    if (typeof document === 'undefined') return;
+    const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
+    if (!tooltip) return;
+    tooltip.classList.remove('opacity-100');
+    tooltip.classList.add('opacity-0');
+  }, []);
+  
   return (
     <div className="relative model-selector flex-shrink-0">
       {/* Model selector button - matches V1 exactly */}
@@ -198,6 +227,12 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
         className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2 parallax-small ${
           isGenerating ? 'opacity-50 cursor-not-allowed' : ''
         }`}
+        onMouseEnter={(e) => {
+          showHoverTooltip(e.currentTarget, 'model-selector-tooltip');
+        }}
+        onMouseLeave={() => {
+          hideHoverTooltip('model-selector-tooltip');
+        }}
         onPointerMove={onPointerMove}
         onPointerEnter={onPointerEnter}
         onPointerLeave={onPointerLeave}
@@ -220,6 +255,13 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
         })()}
         <span className="hidden xl:inline font-raleway text-sm whitespace-nowrap text-n-text">{getCurrentModel().name}</span>
       </button>
+      <div
+        data-tooltip-for="model-selector-tooltip"
+        className={`${tooltips.base} absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full z-[70] hidden lg:block`}
+        style={{ left: '50%', transform: 'translateX(-50%) translateY(calc(-100% - 2px))', top: '0px' }}
+      >
+        Select model
+      </div>
       
       {/* Model Dropdown Portal - matches V1's ModelMenuPortal exactly */}
       {isOpen && createPortal(
@@ -534,23 +576,25 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
               </button>
             </>
           ) : (
-            AI_MODELS.filter(model => 
-              // Filter models based on category
-              inferredCategory === "image" ? 
-              !["veo-3", "runway-video-gen4", "wan-video-2.2", "hailuo-02", "kling-video", "seedance-1.0-pro", "luma-ray-2", "luma-photon-flash-1"].includes(model.id) : 
-              inferredCategory === "video" ?
-                ["veo-3", "runway-video-gen4", "wan-video-2.2", "hailuo-02", "kling-video", "seedance-1.0-pro", "luma-ray-2"].includes(model.id) :
-                true
-            ).map((model) => {
+            AI_MODELS.filter(model => {
+              const isVideoModel = isVideoModelId(model.id);
+              if (inferredCategory === "image") {
+                return !isVideoModel;
+              }
+              if (inferredCategory === "video") {
+                return isVideoModel;
+              }
+              return true;
+            }).map((model) => {
               const isSelected = selectedModel === model.id;
-              const isComingSoon = model.id !== "flux-1.1" && model.id !== "gemini-2.5-flash-image" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "reve-image" && model.id !== "recraft" && model.id !== "luma-photon-1" && model.id !== "luma-photon-flash-1" && model.id !== "luma-ray-2" && model.id !== "wan-video-2.2" && model.id !== "hailuo-02" && model.id !== "kling-video";
+              const isComingSoon = model.id !== "flux-1.1" && model.id !== "gemini-2.5-flash-image" && model.id !== "grok-2-image" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "reve-image" && model.id !== "recraft" && model.id !== "luma-photon-1" && model.id !== "luma-ray-2" && model.id !== "wan-video-2.2" && model.id !== "hailuo-02" && model.id !== "kling-video";
               
               return (
                 <button
                   key={model.name}
                   onClick={() => {
                     if (isComingSoon) {
-                      alert('This model is coming soon! Currently only Gemini 2.5 Flash, Flux 1.1, ChatGPT, Ideogram, Qwen, Runway, Wan 2.2 Video, Hailuo 02, Reve, Recraft, and Luma models are available.');
+                      alert('This model is coming soon! Currently only Gemini 2.5 Flash, Flux 1.1, Grok 2 Image, ChatGPT, Ideogram, Qwen, Runway, Wan 2.2 Video, Hailuo 02, Reve, Recraft, and Luma models are available.');
                       return;
                     }
                     handleModelSelect(model.name);

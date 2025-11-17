@@ -314,7 +314,7 @@ export default function Navbar() {
         className={`relative ${glass.promptDark} border-t-0`}
       >
         <div
-          className={`${layout.container} flex items-center justify-between text-base min-h-[3.5rem] py-1`}
+          className={`${layout.container} flex items-center justify-between text-base min-h-[var(--nav-h)] py-1`}
         >
           <div className="flex h-full items-center gap-6 md:gap-8">
             <img
@@ -567,7 +567,7 @@ export default function Navbar() {
                       <button
                         key={category.key}
                         onClick={() => handleCategoryClick(category.key)}
-                        className="relative overflow-hidden group inline-flex items-center gap-2 px-4 h-9 w-[9rem] transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text rounded-full"
+                        className="relative overflow-hidden group inline-flex items-center gap-2 pl-2 pr-4 h-9 w-[9rem] transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text rounded-full"
                       >
                         <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
                         <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-gradient-to-br ${category.gradient} transition-opacity duration-200 opacity-0 group-hover:opacity-10`} />
@@ -587,7 +587,7 @@ export default function Navbar() {
                         key={item.to}
                         to={item.to}
                         onClick={() => setActiveMenu(null)}
-                        className="relative overflow-hidden group inline-flex items-center gap-2 px-4 h-9 w-[9rem] transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text rounded-full"
+                        className="relative overflow-hidden group inline-flex items-center gap-2 pl-2 pr-4 h-9 w-[9rem] transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text rounded-full"
                       >
                         <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
                         <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 opacity-0 group-hover:opacity-10" />
@@ -605,7 +605,7 @@ export default function Navbar() {
                         key={item.to}
                         to={item.to}
                         onClick={() => setActiveMenu(null)}
-                        className="relative overflow-hidden group inline-flex items-center gap-2 px-4 h-9 w-[9rem] transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text rounded-full"
+                        className="relative overflow-hidden group inline-flex items-center gap-2 pl-2 pr-4 h-9 w-[9rem] transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text rounded-full"
                       >
                         <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
                         <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 opacity-0 group-hover:opacity-10" />
@@ -835,7 +835,7 @@ export default function Navbar() {
                   navigate("/account");
                 }
               }}
-              className="relative overflow-hidden group block w-[9rem] text-left px-4 py-1.5 text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-colors font-raleway font-normal rounded-full"
+              className="relative overflow-hidden group block w-[9rem] text-left pl-2 pr-4 py-1.5 text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-colors font-raleway font-normal rounded-full"
               role="menuitem"
             >
               <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 opacity-0 group-hover:opacity-10" />
@@ -848,7 +848,7 @@ export default function Navbar() {
                 navigate("/gallery");
                 emitNavigateToCategory("gallery");
               }}
-              className="relative overflow-hidden group block w-[9rem] text-left px-4 py-1.5 text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-colors font-raleway font-normal rounded-full"
+              className="relative overflow-hidden group block w-[9rem] text-left pl-2 pr-4 py-1.5 text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-colors font-raleway font-normal rounded-full"
               role="menuitem"
             >
               <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 opacity-0 group-hover:opacity-10" />
@@ -865,7 +865,7 @@ export default function Navbar() {
                 }
                 navigate("/");
               }}
-              className="relative overflow-hidden group block w-[9rem] text-left px-4 py-1.5 text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-colors font-raleway font-normal rounded-full"
+              className="relative overflow-hidden group block w-[9rem] text-left pl-2 pr-4 py-1.5 text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-colors font-raleway font-normal rounded-full"
               role="menuitem"
             >
               <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 opacity-0 group-hover:opacity-10" />

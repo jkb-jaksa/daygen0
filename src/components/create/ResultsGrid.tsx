@@ -6,7 +6,7 @@ import { useGallery } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
 import { useBadgeNavigation } from './hooks/useBadgeNavigation';
-import { glass, buttons } from '../../styles/designSystem';
+import { glass, buttons, tooltips } from '../../styles/designSystem';
 import { debugError } from '../../utils/debug';
 import { createCardImageStyle } from '../../utils/cardImageStyle';
 import { useSavedPrompts } from '../../hooks/useSavedPrompts';
@@ -17,6 +17,7 @@ import type { GalleryImageLike, GalleryVideoLike } from './types';
 import type { StoredAvatar } from '../avatars/types';
 import type { StoredProduct } from '../products/types';
 import type { StoredStyle } from '../styles/types';
+import { getStyleThumbnailUrl } from './hooks/useStyleHandlers';
 import { normalizeStoredAvatars } from '../../utils/avatars';
 import { normalizeStoredProducts } from '../../utils/products';
 import { getPersistedValue } from '../../lib/clientStorage';
@@ -28,6 +29,7 @@ const ModelBadge = lazy(() => import('../ModelBadge'));
 const AvatarBadge = lazy(() => import('../avatars/AvatarBadge'));
 const ProductBadge = lazy(() => import('../products/ProductBadge'));
 const StyleBadge = lazy(() => import('../styles/StyleBadge'));
+const AspectRatioBadge = lazy(() => import('../shared/AspectRatioBadge'));
 const PublicBadge = lazy(() => import('./PublicBadge'));
 const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
 const GenerationProgress = lazy(() => import('./GenerationProgress'));
@@ -307,14 +309,22 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   }, [savePromptModalState]);
   
   // Tooltip helper functions (viewport-based positioning for portaled tooltips)
-  const showHoverTooltip = useCallback((target: HTMLElement, tooltipId: string) => {
+  const showHoverTooltip = useCallback((
+    target: HTMLElement,
+    tooltipId: string,
+    options?: { placement?: 'above' | 'below'; offset?: number },
+  ) => {
     if (typeof document === 'undefined') return;
     const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
     if (!tooltip) return;
     
     // Get button position in viewport
     const rect = target.getBoundingClientRect();
-    tooltip.style.top = `${rect.top - 28}px`;
+    const placement = options?.placement ?? 'above';
+    const defaultOffset = placement === 'above' ? 28 : 8;
+    const offset = options?.offset ?? defaultOffset;
+    const top = placement === 'above' ? rect.top - offset : rect.bottom + offset;
+    tooltip.style.top = `${top}px`;
     tooltip.style.left = `${rect.left + rect.width / 2}px`;
     tooltip.style.transform = 'translateX(-50%)';
     
@@ -330,22 +340,24 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     tooltip.classList.add('opacity-0');
   }, []);
   
-  // Helper to convert styleId to StoredStyle
+  // Helper to convert styleId to StoredStyle, including thumbnail where available
   const styleIdToStoredStyle = useCallback((styleId: string): StoredStyle | null => {
-    // Extract style components from styleId (format: "gender-section-styleId")
+    // Extract style components from styleId (format: "gender-section-styleSlug")
     const parts = styleId.split('-');
     if (parts.length < 3) return null;
-    
+
     const styleSection = parts[1]; // e.g., "lifestyle", "formal", "artistic"
     const styleName = parts.slice(2).join(' '); // reconstruct name
-    
+    const imageUrl = getStyleThumbnailUrl(styleId);
+
     return {
       id: styleId,
       name: styleName.charAt(0).toUpperCase() + styleName.slice(1),
       prompt: '', // Not needed for badge display
       section: styleSection as 'lifestyle' | 'formal' | 'artistic',
-      gender: parts[0] as 'male' | 'female' | 'unisex',
-    } as StoredStyle;
+      gender: parts[0] as 'male' | 'female' | 'all',
+      imageUrl,
+    };
   }, []);
   let statusBanner: React.ReactNode = null;
   if (isLoading) {
@@ -562,11 +574,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
               </div>
             </div>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 p-3 gallery-prompt-gradient">
-            <p className="text-theme-text text-xs font-raleway line-clamp-2 opacity-75">
-              {job.prompt}
-            </p>
-          </div>
         </div>
       );
     }
@@ -589,11 +596,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
             {statusLabel}
           </span>
           <p className="mt-2 text-theme-white/70 text-xs font-raleway leading-relaxed line-clamp-3">
-            {job.prompt}
-          </p>
-        </div>
-        <div className="absolute bottom-0 left-0 right-0 p-3 gallery-prompt-gradient">
-          <p className="text-theme-text text-xs font-raleway line-clamp-2 opacity-75">
             {job.prompt}
           </p>
         </div>
@@ -664,6 +666,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           const displayModelName = item.model ?? 'unknown';
           const modelIdForFilter = item.model;
           const filterType: 'image' | 'video' = isVideoItem ? 'video' : 'image';
+          const baseActionTooltipId = item.jobId || item.r2FileId || item.url || `index-${index}`;
           
           return (
           <div
@@ -786,7 +789,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                         </Suspense>
                       )}
                       
-                      {/* Delete, Like, More - Always shown */}
+                      {/* Delete, Like, More - Always shown (glass tooltip only, no native title) */}
                       <button
                         type="button"
                         onClick={(e) => onDelete(e, item)}
@@ -795,7 +798,16 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                             ? 'opacity-100 pointer-events-auto'
                             : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                         }`}
-                        title="Delete image"
+                        onMouseEnter={(e) => {
+                          showHoverTooltip(
+                            e.currentTarget,
+                            `delete-${baseActionTooltipId}`,
+                            { placement: 'below', offset: 2 },
+                          );
+                        }}
+                        onMouseLeave={() => {
+                          hideHoverTooltip(`delete-${baseActionTooltipId}`);
+                        }}
                         aria-label="Delete image"
                       >
                         <Trash2 className="w-3 h-3" />
@@ -808,7 +820,16 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                             ? 'opacity-100 pointer-events-auto'
                             : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                         }`}
-                        title={item.isLiked ? "Remove from liked" : "Add to liked"}
+                        onMouseEnter={(e) => {
+                          showHoverTooltip(
+                            e.currentTarget,
+                            `like-${baseActionTooltipId}`,
+                            { placement: 'below', offset: 2 },
+                          );
+                        }}
+                        onMouseLeave={() => {
+                          hideHoverTooltip(`like-${baseActionTooltipId}`);
+                        }}
                         aria-label={item.isLiked ? "Remove from liked" : "Add to liked"}
                       >
                         <Heart
@@ -825,7 +846,16 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                             ? 'opacity-100 pointer-events-auto'
                             : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                         }`}
-                        title="More actions"
+                        onMouseEnter={(e) => {
+                          showHoverTooltip(
+                            e.currentTarget,
+                            `more-${baseActionTooltipId}`,
+                            { placement: 'below', offset: 2 },
+                          );
+                        }}
+                        onMouseLeave={() => {
+                          hideHoverTooltip(`more-${baseActionTooltipId}`);
+                        }}
                         aria-label="More actions"
                       >
                         <MoreHorizontal className="w-3 h-3" />
@@ -949,7 +979,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                         (item.isPublic ? 1 : 0) +
                         (avatarForImage ? 1 : 0) +
                         (productForImage ? 1 : 0) +
-                        (styleForImage ? 1 : 0);
+                        (styleForImage ? 1 : 0) +
+                        (item.aspectRatio ? 1 : 0);
 
                       const useTwoRowLayout = totalBadges >= 3;
 
@@ -974,8 +1005,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                             )}
                           </div>
                           
-                          {/* Row 2: Avatar, Product, Style Badges */}
-                          {(avatarForImage || productForImage || styleForImage) && (
+                          {/* Row 2: Avatar, Product, Style, Aspect Ratio Badges */}
+                          {(avatarForImage || productForImage || styleForImage || item.aspectRatio) && (
                             <div className="flex items-center gap-1">
                               {avatarForImage && (
                                 <Suspense fallback={null}>
@@ -1002,6 +1033,15 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                     onClick={(e) => {
                                       e.stopPropagation();
                                     }}
+                                  />
+                                </Suspense>
+                              )}
+                              
+                              {item.aspectRatio && (
+                                <Suspense fallback={null}>
+                                  <AspectRatioBadge
+                                    aspectRatio={item.aspectRatio}
+                                    size="sm"
                                   />
                                 </Suspense>
                               )}
@@ -1055,6 +1095,15 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                 />
                               </Suspense>
                             )}
+                            
+                            {item.aspectRatio && (
+                              <Suspense fallback={null}>
+                                <AspectRatioBadge
+                                  aspectRatio={item.aspectRatio}
+                                  size="sm"
+                                />
+                              </Suspense>
+                            )}
                           </div>
                         </div>
                       );
@@ -1071,8 +1120,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                     {createPortal(
                       <div
                         data-tooltip-for={tooltipId}
-                        className="fixed whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg pointer-events-none"
-                        style={{ zIndex: 9999 }}
+                      className={`${tooltips.base} fixed`}
+                      style={{ zIndex: 9999 }}
                       >
                         Copy prompt
                       </div>,
@@ -1081,12 +1130,52 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                     {createPortal(
                       <div
                         data-tooltip-for={`save-${tooltipId}`}
-                        className="fixed whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg pointer-events-none"
-                        style={{ zIndex: 9999 }}
+                      className={`${tooltips.base} fixed`}
+                      style={{ zIndex: 9999 }}
                       >
                         {isPromptSaved(item.prompt) ? 'Prompt saved' : 'Save prompt'}
                       </div>,
                       document.body
+                    )}
+                  </>
+                );
+              })()}
+
+              {(() => {
+                const deleteId = `delete-${baseActionTooltipId}`;
+                const likeId = `like-${baseActionTooltipId}`;
+                const moreId = `more-${baseActionTooltipId}`;
+                return (
+                  <>
+                    {createPortal(
+                      <div
+                        data-tooltip-for={deleteId}
+                        className={`${tooltips.base} fixed`}
+                        style={{ zIndex: 9999 }}
+                      >
+                        Delete
+                      </div>,
+                      document.body,
+                    )}
+                    {createPortal(
+                      <div
+                        data-tooltip-for={likeId}
+                        className={`${tooltips.base} fixed`}
+                        style={{ zIndex: 9999 }}
+                      >
+                        {item.isLiked ? 'Unlike' : 'Like'}
+                      </div>,
+                      document.body,
+                    )}
+                    {createPortal(
+                      <div
+                        data-tooltip-for={moreId}
+                        className={`${tooltips.base} fixed`}
+                        style={{ zIndex: 9999 }}
+                      >
+                        More
+                      </div>,
+                      document.body,
                     )}
                   </>
                 );
@@ -1148,7 +1237,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                   e.stopPropagation();
                                 }}
                                 onMouseEnter={(e) => {
-                                  showHoverTooltip(e.currentTarget, tooltipId);
+                                  showHoverTooltip(e.currentTarget, tooltipId, { placement: 'above', offset: 2 });
                                 }}
                                 onMouseLeave={() => {
                                   hideHoverTooltip(tooltipId);
@@ -1164,7 +1253,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                   e.stopPropagation();
                                 }}
                                 onMouseEnter={(e) => {
-                                  showHoverTooltip(e.currentTarget, `save-${tooltipId}`);
+                                  showHoverTooltip(e.currentTarget, `save-${tooltipId}`, { placement: 'above', offset: 2 });
                                 }}
                                 onMouseLeave={() => {
                                   hideHoverTooltip(`save-${tooltipId}`);
@@ -1195,8 +1284,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                   {createPortal(
                     <div
                       data-tooltip-for={tooltipId}
-                      className="fixed whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg pointer-events-none transition-opacity duration-100"
-                      style={{ zIndex: 9999 }}
+                        className={`${tooltips.base} fixed`}
+                        style={{ zIndex: 9999 }}
                     >
                       Copy prompt
                     </div>,
@@ -1205,8 +1294,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                   {createPortal(
                     <div
                       data-tooltip-for={`save-${tooltipId}`}
-                      className="fixed whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg pointer-events-none transition-opacity duration-100"
-                      style={{ zIndex: 9999 }}
+                        className={`${tooltips.base} fixed`}
+                        style={{ zIndex: 9999 }}
                     >
                       {isPromptSaved(item.prompt) ? 'Prompt saved' : 'Save prompt'}
                     </div>,

@@ -24,7 +24,7 @@ import type { LucideIcon } from "lucide-react";
 
 import { useAuth } from "../../auth/useAuth";
 import { useFooter } from "../../contexts/useFooter";
-import { buttons, glass, inputs, layout } from "../../styles/designSystem";
+import { buttons, glass, inputs, layout, tooltips } from "../../styles/designSystem";
 import { useChatSessions } from "../../hooks/useChatSessions";
 import type { ChatMessage, ChatSession } from "../../hooks/useChatSessions";
 import { usePromptHistory } from "../../hooks/usePromptHistory";
@@ -102,6 +102,12 @@ const IMAGE_MODEL_OPTIONS: ReadonlyArray<ImageModelOption> = [
     name: "Flux 1.1",
     desc: "High-quality text-to-image generation and editing.",
     Icon: Wand2,
+  },
+  {
+    id: "grok-2-image",
+    name: "Grok",
+    desc: "Great aesthetics. Fast generations.",
+    Icon: Sparkles,
   },
   {
     id: "reve-image",
@@ -211,7 +217,7 @@ const ChatMode: React.FC = () => {
 
   const userKey = user?.id || user?.email || "anon";
   const { history, addPrompt, removePrompt: removeRecentPrompt } = usePromptHistory(userKey, 10);
-  const { savedPrompts, savePrompt, removePrompt, updatePrompt } = useSavedPrompts(userKey);
+  const { savedPrompts, savePrompt, removePrompt, updatePrompt, isPromptSaved } = useSavedPrompts(userKey);
 
   const [input, setInput] = useState("");
   const [isAssistantTyping, setIsAssistantTyping] = useState(false);
@@ -243,6 +249,7 @@ const ChatMode: React.FC = () => {
   );
   const [recraftModel, setRecraftModel] = useState<"recraft-v3" | "recraft-v2">("recraft-v3");
   const [runwayModel, setRunwayModel] = useState<"runway-gen4" | "runway-gen4-turbo">("runway-gen4");
+  const [grokModel, setGrokModel] = useState<"grok-2-image" | "grok-2-image-1212" | "grok-2-image-latest">("grok-2-image");
   const [temperature, setTemperature] = useState<number>(1);
   const [outputLength, setOutputLength] = useState<number>(8192);
   const [topP, setTopP] = useState<number>(1);
@@ -269,6 +276,7 @@ const ChatMode: React.FC = () => {
   const isFluxModel = selectedModel === "flux-1.1";
   const isRunwayImageModel = selectedModel === "runway-gen4";
   const isRecraftModel = selectedModel === "recraft";
+  const isGrokModel = selectedModel === "grok-2-image";
   const isQwenModel = selectedModel === "qwen-image";
   const isLumaPhotonImageModel =
     selectedModel === "luma-photon-1" || selectedModel === "luma-photon-flash-1";
@@ -700,9 +708,21 @@ const ChatMode: React.FC = () => {
 
   const handleSaveRecentPrompt = useCallback(
     (text: string) => {
-      savePrompt(text);
+      const trimmed = text.trim();
+      if (!trimmed) return;
+      
+      if (isPromptSaved(trimmed)) {
+        // Find and remove the saved prompt
+        const promptToRemove = savedPrompts.find(p => p.text.toLowerCase() === trimmed.toLowerCase());
+        if (promptToRemove) {
+          removePrompt(promptToRemove.id);
+        }
+      } else {
+        // Save the prompt
+        savePrompt(trimmed);
+      }
     },
-    [savePrompt],
+    [savePrompt, isPromptSaved, savedPrompts, removePrompt],
   );
 
   const focusTextarea = () => {
@@ -1120,7 +1140,7 @@ const ChatMode: React.FC = () => {
                         </button>
                         <div
                           data-tooltip-for="platform-mode-tooltip"
-                          className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none hidden lg:block"
+                          className={`${tooltips.base} absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full z-[70] hidden lg:block`}
                           style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
                         >
                           Platform Mode
@@ -1144,7 +1164,7 @@ const ChatMode: React.FC = () => {
                         </button>
                       <div
                         data-tooltip-for="reference-tooltip-chat"
-                        className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                        className={`${tooltips.base} absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full z-[70]`}
                         style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
                       >
                         Reference Image
@@ -1232,7 +1252,7 @@ const ChatMode: React.FC = () => {
                         </button>
                         <div
                           data-tooltip-for="prompts-tooltip-chat"
-                          className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                          className={`${tooltips.base} absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full z-[70]`}
                           style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
                         >
                           Your Prompts
@@ -1609,6 +1629,11 @@ const ChatMode: React.FC = () => {
                               model: runwayModel,
                               onModelChange: setRunwayModel,
                             }}
+                            grok={{
+                              enabled: isGrokModel,
+                              model: grokModel,
+                              onModelChange: setGrokModel,
+                            }}
                             gemini={{
                               enabled: isGeminiModel,
                               temperature,
@@ -1688,7 +1713,7 @@ const ChatMode: React.FC = () => {
                           </button>
                           <div
                             data-tooltip-for="aspect-ratio-tooltip-chat"
-                            className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                            className={`${tooltips.base} absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full z-[70]`}
                             style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
                           >
                             Aspect Ratio
@@ -1737,7 +1762,7 @@ const ChatMode: React.FC = () => {
                         </div>
                         <div
                           data-tooltip-for="batch-size-tooltip-chat"
-                          className="absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap rounded-lg bg-theme-black border border-theme-mid px-2 py-1 text-xs text-theme-white opacity-0 shadow-lg z-[70] pointer-events-none"
+                          className={`${tooltips.base} absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full z-[70]`}
                           style={{ left: '50%', transform: 'translateX(-50%) translateY(-100%)', top: '0px' }}
                         >
                           Batch size

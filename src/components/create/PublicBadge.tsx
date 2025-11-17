@@ -21,7 +21,7 @@ export function PublicBadge({ className = "", onClick }: PublicBadgeProps) {
     >
       <div className={badgeInnerGlowClass} />
       <div className="flex items-center gap-1">
-        <Globe className="w-3.5 h-3.5 text-theme-text" />
+        <Globe className="w-3 h-3 text-theme-text" />
         <span className="leading-none">Public</span>
       </div>
     </button>

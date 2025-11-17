@@ -44,16 +44,16 @@ const MODEL_CONFIG = {
     description: 'FLUX Kontext Max - Highest quality image editing'
   },
   'luma-photon-1': {
-    name: 'Luma Photon 1',
+    name: 'Luma Photon',
     shortName: 'Photon',
     icon: '✨',
-    description: 'Luma Photon 1 - High-quality image generation in Photon'
+    description: 'Luma Photon - High-quality image generation in Photon'
   },
   'luma-photon-flash-1': {
-    name: 'Luma Photon Flash 1',
-    shortName: 'Photon ⚡',
-    icon: '⚡',
-    description: 'Luma Photon Flash 1 - Fast Photon image generation'
+    name: 'Luma Photon',
+    shortName: 'Photon',
+    icon: '✨',
+    description: 'Luma Photon - High-quality image generation in Photon'
   },
   'luma-ray-2': {
     name: 'Luma Ray 2',
@@ -198,6 +198,24 @@ const MODEL_CONFIG = {
     shortName: 'SD1.0V',
     icon: '🎥',
     description: 'Seedance 1.0 Pro Video - Video generation'
+  },
+  'grok-2-image': {
+    name: 'Grok',
+    shortName: 'Grok',
+    icon: '🤖',
+    description: 'Grok - High-quality image generation'
+  },
+  'grok-2-image-1212': {
+    name: 'Grok',
+    shortName: 'Grok',
+    icon: '🤖',
+    description: 'Grok - High-quality image generation'
+  },
+  'grok-2-image-latest': {
+    name: 'Grok',
+    shortName: 'Grok',
+    icon: '🤖',
+    description: 'Grok - High-quality image generation'
   }
 } as const;
 
@@ -230,6 +248,16 @@ export const ModelBadge: React.FC<ModelBadgeProps> = ({
   // Special fallback for Ideogram models if exact match fails
   if (!config && cleanModel.toLowerCase().includes('ideogram')) {
     config = MODEL_CONFIG['ideogram'];
+  }
+  
+  // Special fallback for Grok models if exact match fails
+  if (!config && cleanModel.toLowerCase().includes('grok')) {
+    config = MODEL_CONFIG['grok-2-image-latest'] || MODEL_CONFIG['grok-2-image-1212'] || MODEL_CONFIG['grok-2-image'];
+  }
+  
+  // Special fallback for Luma Photon models if exact match fails
+  if (!config && cleanModel.toLowerCase().includes('luma-photon')) {
+    config = MODEL_CONFIG['luma-photon-flash-1'] || MODEL_CONFIG['luma-photon-1'];
   }
   
   // Final fallback
@@ -269,7 +297,7 @@ const sizeClasses = {
               alt={`${config.name} logo`}
               loading="lazy"
               decoding="async"
-              className="w-3.5 h-3.5 object-contain rounded flex-shrink-0"
+              className="w-3 h-3 object-contain rounded flex-shrink-0"
             />
           ) : (
             <span className="text-xs leading-none">

@@ -1,15 +1,17 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import { X } from 'lucide-react';
 import { buttons, glass } from '../../styles/designSystem';
-import type { StyleHandlers } from './hooks/useStyleHandlers';
+import type { StyleHandlers, StyleOption } from './hooks/useStyleHandlers';
+import { scrollLockExemptAttr, useGlobalScrollLock } from '../../hooks/useGlobalScrollLock';
 
 interface StyleSelectionModalProps {
   open: boolean;
   onClose: () => void;
   styleHandlers: StyleHandlers;
+  onApplySelectedStyles?: (styles: StyleOption[]) => void;
 }
 
-const StyleSelectionModal = memo<StyleSelectionModalProps>(({ open, onClose, styleHandlers }) => {
+const StyleSelectionModal = memo<StyleSelectionModalProps>(({ open, onClose, styleHandlers, onApplySelectedStyles }) => {
   const {
     tempSelectedStyles,
     activeStyleGender,
@@ -75,9 +77,14 @@ const StyleSelectionModal = memo<StyleSelectionModalProps>(({ open, onClose, sty
   
   // Handle apply
   const handleApply = useCallback(() => {
-    handleApplyStyles();
-  }, [handleApplyStyles]);
+    const applied = handleApplyStyles();
+    if (applied?.length && onApplySelectedStyles) {
+      onApplySelectedStyles(applied);
+    }
+  }, [handleApplyStyles, onApplySelectedStyles]);
   
+  useGlobalScrollLock(open);
+
   if (!open) return null;
   
   return (
@@ -168,13 +175,16 @@ const StyleSelectionModal = memo<StyleSelectionModalProps>(({ open, onClose, sty
             })}
           </div>
 
-          <div className="flex-1 overflow-y-auto">
+          <div
+            className="flex-1 overflow-y-auto"
+            {...{ [scrollLockExemptAttr]: 'true' }}
+          >
             <div className="grid grid-cols-2 gap-1 pb-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {activeStyleSectionData.options.map(option => {
                 const isActive = activeTempStyles.some(style => style.id === option.id);
                 const backgroundImage = option.image
                   ? `url(${encodeURI(option.image)})`
-                  : option.previewGradient ?? 'linear-gradient(135deg, rgba(244,114,182,0.35) 0%, rgba(59,130,246,0.55) 100%)';
+                  : undefined;
                 return (
                   <button
                     key={option.id}
@@ -190,11 +200,13 @@ const StyleSelectionModal = memo<StyleSelectionModalProps>(({ open, onClose, sty
                       <div
                         role="img"
                         aria-label={`${option.name} style preview`}
-                        className="aspect-square w-full"
+                        className="aspect-square w-full bg-theme-mid/30"
                         style={{
-                          backgroundImage,
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center',
+                          ...(backgroundImage ? {
+                            backgroundImage,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                          } : {}),
                         }}
                       />
                       <div className="absolute bottom-0 left-0 right-0 z-10">

@@ -1,11 +1,35 @@
 /* @vitest-environment jsdom */
 import React, { useEffect } from 'react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { render, screen, waitFor } from '@testing-library/react';
 import { GalleryProvider, useGallery } from '../contexts/GalleryContext';
 import { GenerationProvider, useGeneration } from '../contexts/GenerationContext';
 import { useCreateGenerationController } from '../hooks/useCreateGenerationController';
+import type { StoredAvatar } from '../../avatars/types';
+import type { StoredProduct } from '../../products/types';
+
+const mockGeminiGenerate = vi.fn().mockResolvedValue({
+  url: 'https://example.com/gemini.jpg',
+  jobId: 'job-image-1',
+});
+
+const mockAvatarHandlers = {
+  selectedAvatar: null as StoredAvatar | null,
+  activeAvatarImageId: null,
+  avatarButtonRef: { current: null },
+  handleAvatarPickerOpen: vi.fn(),
+  handleAvatarSelect: vi.fn(),
+  loadStoredAvatars: vi.fn(),
+};
+
+const mockProductHandlers = {
+  selectedProduct: null as StoredProduct | null,
+  productButtonRef: { current: null },
+  handleProductPickerOpen: vi.fn(),
+  handleProductSelect: vi.fn(),
+  loadStoredProducts: vi.fn(),
+};
 
 // Mock auth to avoid requiring AuthProvider
 vi.mock('../../../auth/useAuth', () => ({
@@ -29,27 +53,16 @@ vi.mock('../../../hooks/useGalleryImages', () => ({
 
 // Avoid auth dependency by mocking avatar/product handlers
 vi.mock('../hooks/useAvatarHandlers', () => ({
-  useAvatarHandlers: () => ({
-    selectedAvatar: null,
-    activeAvatarImageId: null,
-    avatarButtonRef: { current: null },
-    handleAvatarPickerOpen: vi.fn(),
-    loadStoredAvatars: vi.fn(),
-  }),
+  useAvatarHandlers: () => mockAvatarHandlers,
 }));
 vi.mock('../hooks/useProductHandlers', () => ({
-  useProductHandlers: () => ({
-    selectedProduct: null,
-    productButtonRef: { current: null },
-    handleProductPickerOpen: vi.fn(),
-    loadStoredProducts: vi.fn(),
-  }),
+  useProductHandlers: () => mockProductHandlers,
 }));
 
 // Mock provider hooks used by the controller
 vi.mock('../../../hooks/useGeminiImageGeneration', () => ({
   useGeminiImageGeneration: () => ({
-    generateImage: vi.fn().mockResolvedValue({ url: 'https://example.com/gemini.jpg', jobId: 'job-image-1' }),
+    generateImage: mockGeminiGenerate,
     isLoading: false,
   }),
 }));
@@ -91,6 +104,12 @@ function TriggerVideo() {
 }
 
 describe('useCreateGenerationController', () => {
+  beforeEach(() => {
+    mockGeminiGenerate.mockClear();
+    mockAvatarHandlers.selectedAvatar = null;
+    mockProductHandlers.selectedProduct = null;
+  });
+
   it('adds an image to gallery after generation (gemini)', async () => {
     render(
       <MemoryRouter>
@@ -121,6 +140,51 @@ describe('useCreateGenerationController', () => {
     await waitFor(() => {
       expect(screen.getByTestId('vid-count').textContent).toBe('1');
     });
+  });
+
+  it('passes avatar and product identifiers to generation payloads', async () => {
+    mockAvatarHandlers.selectedAvatar = {
+      id: 'avatar-123',
+      slug: 'hero-avatar',
+      name: 'Hero Avatar',
+      imageUrl: 'https://example.com/avatar.png',
+      createdAt: new Date().toISOString(),
+      source: 'upload',
+      published: false,
+      ownerId: 'test-user',
+      primaryImageId: 'avatar-img-1',
+      images: [],
+    };
+    mockProductHandlers.selectedProduct = {
+      id: 'product-456',
+      slug: 'magic-product',
+      name: 'Magic Product',
+      imageUrl: 'https://example.com/product.png',
+      createdAt: new Date().toISOString(),
+      source: 'upload',
+      published: false,
+      ownerId: 'test-user',
+      primaryImageId: 'product-img-1',
+      images: [],
+    };
+
+    render(
+      <MemoryRouter>
+        <GenerationProvider>
+          <GalleryProvider>
+            <TriggerImage />
+          </GalleryProvider>
+        </GenerationProvider>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(mockGeminiGenerate).toHaveBeenCalled();
+    });
+
+    const payload = mockGeminiGenerate.mock.calls.at(-1)?.[0] ?? {};
+    expect(payload.avatarId).toBe('avatar-123');
+    expect(payload.productId).toBe('product-456');
   });
 });
 

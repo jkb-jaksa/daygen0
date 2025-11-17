@@ -2,6 +2,16 @@ import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
 import { afterEach, beforeAll, vi } from 'vitest';
 
+// Set default environment variables for tests
+if (typeof import.meta !== 'undefined') {
+  if (!import.meta.env.VITE_SUPABASE_URL) {
+    import.meta.env.VITE_SUPABASE_URL = 'https://test.supabase.co';
+  }
+  if (!import.meta.env.VITE_SUPABASE_ANON_KEY) {
+    import.meta.env.VITE_SUPABASE_ANON_KEY = 'test-anon-key';
+  }
+}
+
 // Verify jsdom environment is ready
 beforeAll(() => {
   if (typeof window === 'undefined') {

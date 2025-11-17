@@ -29,6 +29,8 @@ import type { Folder, GalleryImageLike, GalleryVideoLike } from './types';
 import { CreateBridgeProvider, type GalleryBridgeActions } from './contexts/CreateBridgeContext';
 import { createInitialBridgeActions } from './contexts/hooks';
 import { pathForCategory } from '../../utils/navigation';
+import { useBadgeNavigation } from './hooks/useBadgeNavigation';
+import { DEFAULT_IMAGE_MODEL_ID, DEFAULT_VIDEO_MODEL_ID, isVideoModelId } from './constants';
 
 const COMING_SOON_CATEGORIES = ['text'] as const;
 type ComingSoonCategoryKey = (typeof COMING_SOON_CATEGORIES)[number];
@@ -41,16 +43,6 @@ const GENERATION_CATEGORY_SET: ReadonlySet<SupportedCategory> = new Set<Supporte
 const GALLERY_CATEGORY_SET: ReadonlySet<SupportedCategory> = new Set<SupportedCategory>(['gallery', 'my-folders', 'inspirations']);
 const FOLDERS_CATEGORY_SET: ReadonlySet<SupportedCategory> = new Set<SupportedCategory>(['my-folders', 'folder-view']);
 const COMING_SOON_CATEGORY_SET: ReadonlySet<ComingSoonCategoryKey> = new Set<ComingSoonCategoryKey>(COMING_SOON_CATEGORIES);
-const VIDEO_MODEL_SET: ReadonlySet<string> = new Set<string>([
-  'veo-3',
-  'runway-video-gen4',
-  'wan-video-2.2',
-  'hailuo-02',
-  'kling-video',
-  'seedance-1.0-pro',
-  'luma-ray-2',
-]);
-
 const normalizeCategory = (candidate?: string | null): SupportedCategory | null => {
   if (!candidate) {
     return null;
@@ -96,7 +88,7 @@ function CreateRefactoredView() {
     removeFolder,
     setFolders,
     addFolder,
-    addImagesToFolder,
+    toggleImagesInFolder,
     setSelectedImagesForFolder,
   } = useGallery();
   const generation = useGeneration();
@@ -115,10 +107,13 @@ function CreateRefactoredView() {
 
   // Folder-specific local state
   const [newFolderName, setNewFolderName] = useState('');
-  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [folderThumbnailFile, setFolderThumbnailFile] = useState<File | null>(null);
   const [returnToFolderDialog, setReturnToFolderDialog] = useState(false);
   const [deleteFolderConfirmation, setDeleteFolderConfirmation] = useState<{ show: boolean; folderId: string | null }>({ show: false, folderId: null });
+  const [returnToFolderManagementAfterDelete, setReturnToFolderManagementAfterDelete] = useState(false);
+  // Track pending folder changes (Map<folderId, Set<imageUrl>>)
+  const [pendingFolderChanges, setPendingFolderChanges] = useState<Map<string, Set<string>>>(new Map());
 
   // Development-only: Add dummy image for testing
   const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -159,6 +154,241 @@ function CreateRefactoredView() {
     await addImage(randomImage);
   }, [addImage]);
 
+  const addDummyImageWithAvatar = useCallback(async () => {
+    // Create or reuse test avatar
+    let testAvatar = avatarHandlers.storedAvatars.find(a => a.id === 'test-avatar-badge');
+    if (!testAvatar && user?.id) {
+      testAvatar = {
+        id: 'test-avatar-badge',
+        slug: 'test-avatar',
+        name: 'Test Avatar',
+        imageUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400',
+        createdAt: new Date().toISOString(),
+        source: 'upload' as const,
+        published: false,
+        ownerId: user.id,
+        primaryImageId: 'test-avatar-img-1',
+        images: [{
+          id: 'test-avatar-img-1',
+          url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400',
+          createdAt: new Date().toISOString(),
+          source: 'upload' as const,
+        }],
+      };
+      if (testAvatar) {
+        await avatarHandlers.saveAvatar(testAvatar);
+      }
+    }
+    
+    const dummyImageWithAvatar = {
+      url: `https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1024&t=${Date.now()}`,
+      prompt: 'Test image with avatar badge - Mountain landscape',
+      model: 'flux-pro-1.1',
+      jobId: `dummy-avatar-${Date.now()}`,
+      r2FileId: `r2-avatar-${Date.now()}`,
+      avatarId: 'test-avatar-badge',
+      aspectRatio: '16:9',
+      isLiked: false,
+      isPublic: false,
+      timestamp: new Date().toISOString(),
+    };
+    await addImage(dummyImageWithAvatar);
+  }, [addImage, avatarHandlers, user?.id]);
+
+  const addDummyImageWithProduct = useCallback(async () => {
+    // Create or reuse test product
+    let testProduct = productHandlers.storedProducts.find(p => p.id === 'test-product-badge');
+    if (!testProduct && user?.id) {
+      testProduct = {
+        id: 'test-product-badge',
+        slug: 'test-product',
+        name: 'Test Product',
+        imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400',
+        createdAt: new Date().toISOString(),
+        source: 'upload' as const,
+        published: false,
+        ownerId: user.id,
+        primaryImageId: 'test-product-img-1',
+        images: [{
+          id: 'test-product-img-1',
+          url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400',
+          createdAt: new Date().toISOString(),
+          source: 'upload' as const,
+        }],
+      };
+      if (testProduct) {
+        await productHandlers.saveProduct(testProduct);
+      }
+    }
+    
+    const dummyImageWithProduct = {
+      url: `https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1024&t=${Date.now()}`,
+      prompt: 'Test image with product badge - Starry night sky',
+      model: 'gemini-2.5-flash-image',
+      jobId: `dummy-product-${Date.now()}`,
+      r2FileId: `r2-product-${Date.now()}`,
+      productId: 'test-product-badge',
+      aspectRatio: '4:5',
+      isLiked: false,
+      isPublic: false,
+      timestamp: new Date().toISOString(),
+    };
+    await addImage(dummyImageWithProduct);
+  }, [addImage, productHandlers, user?.id]);
+
+  const addDummyImageWithBoth = useCallback(async () => {
+    // Create or reuse test avatar
+    let testAvatar = avatarHandlers.storedAvatars.find(a => a.id === 'test-avatar-badge');
+    if (!testAvatar && user?.id) {
+      testAvatar = {
+        id: 'test-avatar-badge',
+        slug: 'test-avatar',
+        name: 'Test Avatar',
+        imageUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400',
+        createdAt: new Date().toISOString(),
+        source: 'upload' as const,
+        published: false,
+        ownerId: user.id,
+        primaryImageId: 'test-avatar-img-1',
+        images: [{
+          id: 'test-avatar-img-1',
+          url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400',
+          createdAt: new Date().toISOString(),
+          source: 'upload' as const,
+        }],
+      };
+      if (testAvatar) {
+        await avatarHandlers.saveAvatar(testAvatar);
+      }
+    }
+    
+    // Create or reuse test product
+    let testProduct = productHandlers.storedProducts.find(p => p.id === 'test-product-badge');
+    if (!testProduct && user?.id) {
+      testProduct = {
+        id: 'test-product-badge',
+        slug: 'test-product',
+        name: 'Test Product',
+        imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400',
+        createdAt: new Date().toISOString(),
+        source: 'upload' as const,
+        published: false,
+        ownerId: user.id,
+        primaryImageId: 'test-product-img-1',
+        images: [{
+          id: 'test-product-img-1',
+          url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400',
+          createdAt: new Date().toISOString(),
+          source: 'upload' as const,
+        }],
+      };
+      if (testProduct) {
+        await productHandlers.saveProduct(testProduct);
+      }
+    }
+    
+    const dummyImageWithBoth = {
+      url: `https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1024&t=${Date.now()}`,
+      prompt: 'Test image with both avatar and product badges - Forest path',
+      model: 'luma-photon-1',
+      jobId: `dummy-both-${Date.now()}`,
+      r2FileId: `r2-both-${Date.now()}`,
+      avatarId: 'test-avatar-badge',
+      productId: 'test-product-badge',
+      aspectRatio: '1:1',
+      isLiked: false,
+      isPublic: false,
+      timestamp: new Date().toISOString(),
+    };
+    await addImage(dummyImageWithBoth);
+  }, [addImage, avatarHandlers, productHandlers, user?.id]);
+
+  const addDummyImageWithStyle = useCallback(async () => {
+    const dummyImageWithStyle = {
+      url: `https://images.unsplash.com/photo-1517816743773-6e0fd518b4a6?w=1024&t=${Date.now()}`,
+      prompt: 'Test image with style badge - City skyline at dusk',
+      model: 'flux-pro-1.1',
+      jobId: `dummy-style-${Date.now()}`,
+      r2FileId: `r2-style-${Date.now()}`,
+      styleId: 'female-lifestyle-black-suit-studio',
+      aspectRatio: '21:9',
+      isLiked: false,
+      isPublic: false,
+      timestamp: new Date().toISOString(),
+    };
+    await addImage(dummyImageWithStyle);
+  }, [addImage]);
+
+  const addDummyImageWithAllBadges = useCallback(async () => {
+    // Ensure avatar exists
+    let testAvatar = avatarHandlers.storedAvatars.find(a => a.id === 'test-avatar-badge');
+    if (!testAvatar && user?.id) {
+      testAvatar = {
+        id: 'test-avatar-badge',
+        slug: 'test-avatar',
+        name: 'Test Avatar',
+        imageUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400',
+        createdAt: new Date().toISOString(),
+        source: 'upload' as const,
+        published: false,
+        ownerId: user.id,
+        primaryImageId: 'test-avatar-img-1',
+        images: [{
+          id: 'test-avatar-img-1',
+          url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400',
+          createdAt: new Date().toISOString(),
+          source: 'upload' as const,
+        }],
+      };
+      if (testAvatar) {
+        await avatarHandlers.saveAvatar(testAvatar);
+      }
+    }
+
+    // Ensure product exists
+    let testProduct = productHandlers.storedProducts.find(p => p.id === 'test-product-badge');
+    if (!testProduct && user?.id) {
+      testProduct = {
+        id: 'test-product-badge',
+        slug: 'test-product',
+        name: 'Test Product',
+        imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400',
+        createdAt: new Date().toISOString(),
+        source: 'upload' as const,
+        published: false,
+        ownerId: user.id,
+        primaryImageId: 'test-product-img-1',
+        images: [{
+          id: 'test-product-img-1',
+          url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400',
+          createdAt: new Date().toISOString(),
+          source: 'upload' as const,
+        }],
+      };
+      if (testProduct) {
+        await productHandlers.saveProduct(testProduct);
+      }
+    }
+
+    const dummyImageWithAll = {
+      url: `https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1024&t=${Date.now()}`,
+      prompt: 'Test image with all badges - Beach cliffs at golden hour',
+      model: 'flux-pro-1.1',
+      jobId: `dummy-all-${Date.now()}`,
+      r2FileId: `r2-all-${Date.now()}`,
+      avatarId: 'test-avatar-badge',
+      productId: 'test-product-badge',
+      styleId: 'female-lifestyle-black-suit-studio',
+      aspectRatio: '3:2',
+      isLiked: false,
+      isPublic: false,
+      timestamp: new Date().toISOString(),
+    };
+
+    await addImage(dummyImageWithAll);
+  }, [addImage, avatarHandlers, productHandlers, user?.id]);
+
+>>>>>>> origin/main
   const resolvedCategory = useMemo<SupportedCategory>(() => {
     const fromParam = normalizeCategory(params.category);
     if (fromParam) {
@@ -211,13 +441,13 @@ function CreateRefactoredView() {
   }, [activeCategory, location.pathname, setFooterVisible]);
 
   useEffect(() => {
-    if (activeCategory === 'video' && !VIDEO_MODEL_SET.has(selectedModel)) {
-      setSelectedModel('veo-3');
+    if (activeCategory === 'video' && !isVideoModelId(selectedModel)) {
+      setSelectedModel(DEFAULT_VIDEO_MODEL_ID);
       return;
     }
 
-    if (activeCategory === 'image' && VIDEO_MODEL_SET.has(selectedModel)) {
-      setSelectedModel('gemini-2.5-flash-image');
+    if (activeCategory === 'image' && isVideoModelId(selectedModel)) {
+      setSelectedModel(DEFAULT_IMAGE_MODEL_ID);
     }
   }, [activeCategory, selectedModel, setSelectedModel]);
 
@@ -260,6 +490,13 @@ function CreateRefactoredView() {
   const handlePromptBarResize = useCallback((reservedSpace: number) => {
     setPromptBarReservedSpace(reservedSpace);
   }, []);
+
+  const handleModeChange = useCallback(
+    (mode: 'image' | 'video') => {
+      handleSelectCategory(mode);
+    },
+    [handleSelectCategory],
+  );
 
   const handleImageMenuClose = () => {
     setImageActionMenu(null);
@@ -320,34 +557,154 @@ function CreateRefactoredView() {
     }
   }, [returnToFolderDialog, setNewFolderDialog, setAddToFolderDialog]);
 
-  const handleAddToFolderSelect = useCallback((folderId: string | null) => {
-    setSelectedFolder(folderId);
-  }, []);
+  // Initialize pending folder changes when dialog opens
+  useEffect(() => {
+    if (state.addToFolderDialog && state.selectedImagesForFolder.length > 0) {
+      // Initialize with current folder state
+      const initialPending = new Map<string, Set<string>>();
+      state.folders.forEach(folder => {
+        const imagesInFolder = state.selectedImagesForFolder.filter(url => folder.imageIds.includes(url));
+        if (imagesInFolder.length > 0) {
+          initialPending.set(folder.id, new Set(imagesInFolder));
+        }
+      });
+      setPendingFolderChanges(initialPending);
+    } else if (!state.addToFolderDialog) {
+      // Clear when dialog closes
+      setPendingFolderChanges(new Map());
+    }
+  }, [state.addToFolderDialog, state.selectedImagesForFolder, state.folders]);
 
-  const handleAddToFolderConfirm = useCallback(() => {
-    const targetFolder = selectedFolder;
-    const images = state.selectedImagesForFolder;
-
-    if (targetFolder && images.length > 0) {
-      addImagesToFolder(images, targetFolder);
+  const handleAddToFolderToggle = useCallback((folderId: string) => {
+    if (!folderId || state.selectedImagesForFolder.length === 0) {
+      return;
     }
 
-    setAddToFolderDialog(false);
-    setSelectedFolder(null);
-    setSelectedImagesForFolder([]);
-  }, [addImagesToFolder, selectedFolder, setAddToFolderDialog, setSelectedImagesForFolder, state.selectedImagesForFolder]);
+    // Update pending changes instead of immediately applying
+    setPendingFolderChanges(prev => {
+      const next = new Map(prev);
+      
+      // Determine the effective current state of this folder
+      // If folder is in pending changes, use that; otherwise use current folder state
+      const currentFolder = state.folders.find(f => f.id === folderId);
+      const pendingImages = next.get(folderId);
+      
+      // Get effective images in folder (considering pending changes)
+      let effectiveImages: Set<string>;
+      if (pendingImages) {
+        // Use pending state
+        effectiveImages = new Set(pendingImages);
+      } else if (currentFolder) {
+        // Use current folder state, but only for selected images
+        // Other images in the folder are not part of our selection management
+        const selectedInCurrentFolder = state.selectedImagesForFolder.filter(url => 
+          currentFolder.imageIds.includes(url)
+        );
+        effectiveImages = new Set(selectedInCurrentFolder);
+      } else {
+        // Folder doesn't exist, start with empty
+        effectiveImages = new Set<string>();
+      }
+      
+      // Check if all selected images are currently in the effective folder state
+      const allSelectedInFolder = state.selectedImagesForFolder.every(url => effectiveImages.has(url));
+      
+      if (allSelectedInFolder) {
+        // Remove all selected images from this folder
+        const updatedImages = new Set(effectiveImages);
+        state.selectedImagesForFolder.forEach(url => updatedImages.delete(url));
+        
+        if (updatedImages.size === 0) {
+          // If no selected images remain, remove folder from pending (will remove from current on confirm)
+          next.delete(folderId);
+        } else {
+          // Keep folder in pending with remaining images
+          next.set(folderId, updatedImages);
+        }
+      } else {
+        // Add all selected images to this folder
+        const updatedImages = new Set(effectiveImages);
+        state.selectedImagesForFolder.forEach(url => updatedImages.add(url));
+        next.set(folderId, updatedImages);
+      }
+      return next;
+    });
+  }, [state.selectedImagesForFolder, state.folders]);
 
-  const handleAddToFolderCancel = useCallback(() => {
+  const handleAddToFolderConfirm = useCallback(() => {
+    // Apply pending changes to actual folders
+    pendingFolderChanges.forEach((imageUrls, folderId) => {
+      const currentFolder = state.folders.find(f => f.id === folderId);
+      if (!currentFolder) return;
+
+      // Determine which images to add and which to remove
+      const imagesToAdd = Array.from(imageUrls).filter(url => !currentFolder.imageIds.includes(url));
+      const imagesToRemove = currentFolder.imageIds.filter(url => 
+        !imageUrls.has(url) && state.selectedImagesForFolder.includes(url)
+      );
+
+      if (imagesToAdd.length > 0) {
+        toggleImagesInFolder(imagesToAdd, folderId);
+      }
+      if (imagesToRemove.length > 0) {
+        toggleImagesInFolder(imagesToRemove, folderId);
+      }
+    });
+
+    // Also handle folders that should have images removed (were in pending but now empty)
+    state.folders.forEach(folder => {
+      if (!pendingFolderChanges.has(folder.id)) {
+        // Check if any selected images are in this folder and should be removed
+        const imagesToRemove = state.selectedImagesForFolder.filter(url => folder.imageIds.includes(url));
+        if (imagesToRemove.length > 0) {
+          toggleImagesInFolder(imagesToRemove, folder.id);
+        }
+      }
+    });
+
+    // Close dialog and reset state
     setAddToFolderDialog(false);
-    setSelectedFolder(null);
+    setReturnToFolderDialog(false);
     setSelectedImagesForFolder([]);
-  }, [setAddToFolderDialog, setSelectedImagesForFolder]);
+    setPendingFolderChanges(new Map());
+  }, [pendingFolderChanges, state.folders, state.selectedImagesForFolder, toggleImagesInFolder, setAddToFolderDialog, setReturnToFolderDialog, setSelectedImagesForFolder]);
+
+  const handleAddToFolderClose = useCallback(() => {
+    // Discard pending changes and close dialog
+    setAddToFolderDialog(false);
+    setReturnToFolderDialog(false);
+    setSelectedImagesForFolder([]);
+    setPendingFolderChanges(new Map());
+  }, [setAddToFolderDialog, setReturnToFolderDialog, setSelectedImagesForFolder]);
 
   const handleOpenNewFolderDialog = useCallback(() => {
     setAddToFolderDialog(false);
     setReturnToFolderDialog(true);
     setNewFolderDialog(true);
   }, [setAddToFolderDialog, setNewFolderDialog]);
+
+  // Compute effective folders that reflect pending changes for the modal
+  const effectiveFolders = useMemo(() => {
+    if (!state.addToFolderDialog || pendingFolderChanges.size === 0) {
+      return state.folders;
+    }
+    return state.folders.map(folder => {
+      const pendingImages = pendingFolderChanges.get(folder.id);
+      if (!pendingImages) {
+        // Remove selected images from this folder if not in pending
+        return {
+          ...folder,
+          imageIds: folder.imageIds.filter(url => !state.selectedImagesForFolder.includes(url))
+        };
+      }
+      // Merge pending images with existing images (excluding selected ones that aren't in pending)
+      const otherImages = folder.imageIds.filter(url => !state.selectedImagesForFolder.includes(url));
+      return {
+        ...folder,
+        imageIds: [...otherImages, ...Array.from(pendingImages)]
+      };
+    });
+  }, [state.folders, state.addToFolderDialog, pendingFolderChanges, state.selectedImagesForFolder]);
 
   const handleFolderThumbnailUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -429,33 +786,53 @@ function CreateRefactoredView() {
 
   // Folder navigation handlers
   const handleSelectFolder = useCallback((folderId: string) => {
-    setSelectedFolder(folderId);
+    setActiveFolderId(folderId);
     setActiveCategory('folder-view');
-  }, []);
+  }, [setActiveCategory, setActiveFolderId]);
 
   const handleBackToFolders = useCallback(() => {
-    setSelectedFolder(null);
+    setActiveFolderId(null);
     setActiveCategory('my-folders');
-  }, []);
+  }, [setActiveCategory, setActiveFolderId]);
 
   const confirmDeleteFolder = useCallback((folderId: string) => {
     setDeleteFolderConfirmation({ show: true, folderId });
   }, []);
 
+  const handleDeleteFolderClick = useCallback((folderId: string) => {
+    // Close folder management modal first, then open delete confirmation
+    // Track that we should return to folder management after delete
+    if (state.addToFolderDialog) {
+      setReturnToFolderManagementAfterDelete(true);
+      setAddToFolderDialog(false);
+    }
+    setDeleteFolderConfirmation({ show: true, folderId });
+  }, [setAddToFolderDialog, state.addToFolderDialog, setReturnToFolderManagementAfterDelete, setDeleteFolderConfirmation]);
+
   const handleConfirmDeleteFolder = useCallback(() => {
     if (deleteFolderConfirmation.folderId) {
       removeFolder(deleteFolderConfirmation.folderId);
-      if (selectedFolder === deleteFolderConfirmation.folderId) {
-        setSelectedFolder(null);
+      if (activeFolderId === deleteFolderConfirmation.folderId) {
+        setActiveFolderId(null);
         setActiveCategory('my-folders');
       }
     }
     setDeleteFolderConfirmation({ show: false, folderId: null });
-  }, [deleteFolderConfirmation.folderId, removeFolder, selectedFolder]);
+    // Return to folder management modal if we came from there
+    if (returnToFolderManagementAfterDelete) {
+      setReturnToFolderManagementAfterDelete(false);
+      setAddToFolderDialog(true);
+    }
+  }, [activeFolderId, deleteFolderConfirmation.folderId, removeFolder, returnToFolderManagementAfterDelete, setAddToFolderDialog, setActiveCategory, setDeleteFolderConfirmation, setReturnToFolderManagementAfterDelete]);
 
   const handleCancelDeleteFolder = useCallback(() => {
     setDeleteFolderConfirmation({ show: false, folderId: null });
-  }, []);
+    // Return to folder management modal if we came from there
+    if (returnToFolderManagementAfterDelete) {
+      setReturnToFolderManagementAfterDelete(false);
+      setAddToFolderDialog(true);
+    }
+  }, [returnToFolderManagementAfterDelete, setAddToFolderDialog, setDeleteFolderConfirmation, setReturnToFolderManagementAfterDelete]);
 
   const handleSetFolderThumbnail = useCallback((folderId: string) => {
     setFolderThumbnailDialog({ show: true, folderId });
@@ -549,7 +926,11 @@ function CreateRefactoredView() {
             <div className="w-full mb-4">
               {isGenerationCategory && (
                 <>
-                  <PromptForm onPromptBarHeightChange={handlePromptBarResize} />
+                  <PromptForm
+                    onPromptBarHeightChange={handlePromptBarResize}
+                    activeCategory={activeCategory as 'image' | 'video'}
+                    onModeChange={handleModeChange}
+                  />
                   {isDevelopment && (
                     <div className="mb-4 px-4">
                       <button
@@ -557,6 +938,18 @@ function CreateRefactoredView() {
                         className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
                       >
                         🧪 Add Test Image (Dev Only)
+                      </button>
+                      <button
+                        onClick={addDummyImageWithStyle}
+                        className="px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                      >
+                        🎨 Test Style Badge
+                      </button>
+                      <button
+                        onClick={addDummyImageWithAllBadges}
+                        className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                      >
+                        🧩 Test All Badges
                       </button>
                     </div>
                   )}
@@ -587,6 +980,18 @@ function CreateRefactoredView() {
                       >
                         🧪 Add Test Image (Dev Only)
                       </button>
+                      <button
+                        onClick={addDummyImageWithStyle}
+                        className="px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                      >
+                        🎨 Test Style Badge
+                      </button>
+                      <button
+                        onClick={addDummyImageWithAllBadges}
+                        className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                      >
+                        🧩 Test All Badges
+                      </button>
                     </div>
                   )}
                   <Suspense fallback={null}>
@@ -609,12 +1014,12 @@ function CreateRefactoredView() {
                   />
                 </Suspense>
               )}
-              {activeCategory === 'folder-view' && selectedFolder && (
+              {activeCategory === 'folder-view' && activeFolderId && (
                 <Suspense fallback={null}>
                   <FolderContentsView
-                    folder={state.folders.find(f => f.id === selectedFolder)!}
+                    folder={state.folders.find(f => f.id === activeFolderId)!}
                     folderImages={[...state.images, ...state.videos].filter(img => 
-                      state.folders.find(f => f.id === selectedFolder)?.imageIds.includes(img.url)
+                      state.folders.find(f => f.id === activeFolderId)?.imageIds.includes(img.url)
                     )}
                     onBack={handleBackToFolders}
                     onImageClick={handleFolderImageClick}
@@ -662,6 +1067,18 @@ function CreateRefactoredView() {
                             >
                               🧪 Add Test Image (Dev Only)
                             </button>
+                            <button
+                              onClick={addDummyImageWithStyle}
+                              className="px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                            >
+                              🎨 Test Style Badge
+                            </button>
+                            <button
+                              onClick={addDummyImageWithAllBadges}
+                              className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                            >
+                              🧩 Test All Badges
+                            </button>
                           </div>
                         )}
                         <ResultsGrid activeCategory={activeCategory as 'inspirations'} />
@@ -698,17 +1115,18 @@ function CreateRefactoredView() {
           onDownloadCancel={galleryActions.cancelBulkDownload}
           newFolderDialog={state.newFolderDialog}
           newFolderName={newFolderName}
-          folders={state.folders}
+          folders={effectiveFolders}
           returnToFolderDialog={returnToFolderDialog}
           onNewFolderNameChange={handleNewFolderNameChange}
           onNewFolderCreate={handleNewFolderCreate}
           onNewFolderCancel={handleNewFolderCancel}
           addToFolderDialog={state.addToFolderDialog}
-          selectedFolder={selectedFolder}
-          onAddToFolderSelect={handleAddToFolderSelect}
+          selectedImagesForFolder={state.selectedImagesForFolder}
+          onToggleFolderSelection={handleAddToFolderToggle}
+          onAddToFolderClose={handleAddToFolderClose}
           onAddToFolderConfirm={handleAddToFolderConfirm}
-          onAddToFolderCancel={handleAddToFolderCancel}
           onOpenNewFolderDialog={handleOpenNewFolderDialog}
+          onDeleteFolderClick={handleDeleteFolderClick}
           folderThumbnailDialog={state.folderThumbnailDialog}
           folderThumbnailFile={folderThumbnailFile}
           combinedLibraryImages={[...state.images, ...state.videos]}

@@ -1,7 +1,6 @@
 import type { MouseEvent } from "react";
-import { Palette } from "lucide-react";
 import type { StoredStyle } from "./types";
-import { glass } from "../../styles/designSystem";
+import { badgeBaseClasses, badgeInnerGlowClass } from "../shared/badgeStyles";
 
 type StyleBadgeProps = {
   style: StoredStyle;
@@ -17,11 +16,12 @@ export default function StyleBadge({ style, onClick, className }: StyleBadgeProp
         event.stopPropagation();
         onClick?.(event);
       }}
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-raleway text-theme-white shadow-lg transition-colors duration-200 hover:border-theme-mid hover:text-theme-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-text ${glass.promptDark} ${className ?? ""}`}
+      className={`${badgeBaseClasses} px-2 py-1 text-xs ${className ?? ""}`}
       aria-label={`View creations with ${style.name} style`}
     >
+      <div className={badgeInnerGlowClass} />
       {style.imageUrl && (
-        <span className="relative inline-flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full border border-theme-mid bg-theme-black/60">
+        <span className="relative z-10 inline-flex w-3 h-3 shrink-0 items-center justify-center overflow-hidden rounded-full border border-theme-mid bg-theme-black/60">
           <img
             src={style.imageUrl}
             alt=""
@@ -30,8 +30,7 @@ export default function StyleBadge({ style, onClick, className }: StyleBadgeProp
           />
         </span>
       )}
-      <span className="max-w-[8rem] truncate text-left">{style.name}</span>
-      <Palette className="h-3.5 w-3.5 shrink-0" />
+      <span className="relative z-10 max-w-[8rem] truncate text-left">{style.name}</span>
     </button>
   );
 }

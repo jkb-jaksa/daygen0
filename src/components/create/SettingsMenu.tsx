@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { glass } from "../../styles/designSystem";
@@ -93,6 +93,12 @@ interface RunwaySettingsProps {
   onModelChange: (value: "runway-gen4" | "runway-gen4-turbo") => void;
 }
 
+interface GrokSettingsProps {
+  enabled: boolean;
+  model: "grok-2-image" | "grok-2-image-1212" | "grok-2-image-latest";
+  onModelChange: (value: "grok-2-image" | "grok-2-image-1212" | "grok-2-image-latest") => void;
+}
+
 interface GeminiSettingsProps {
   enabled: boolean;
   temperature: number;
@@ -167,6 +173,7 @@ export interface SettingsMenuProps {
   seedance: SeedanceSettingsProps;
   recraft: RecraftSettingsProps;
   runway: RunwaySettingsProps;
+  grok: GrokSettingsProps;
   gemini: GeminiSettingsProps;
   qwen: QwenSettingsProps;
   kling: KlingSettingsProps;
@@ -285,6 +292,7 @@ export function SettingsMenu({
   seedance,
   recraft,
   runway,
+  grok,
   gemini,
   qwen,
   kling,
@@ -334,7 +342,7 @@ export function SettingsMenu({
     </div>
   );
 
-  const sections: JSX.Element[] = [renderCommon()];
+  const sections: React.ReactElement[] = [renderCommon()];
 
   if (flux.enabled) {
     sections.push(
@@ -905,6 +913,35 @@ export function SettingsMenu({
               {runway.model === "runway-gen4"
                 ? "Great image model. Great control & editing features"
                 : "Fast Runway generation with reference images"}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (grok.enabled) {
+    sections.push(
+      <div key="grok" className="space-y-4">
+        <div className="text-base font-raleway text-theme-text mb-3">Grok Settings</div>
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs font-raleway text-theme-white/80 mb-1">Model Version</label>
+            <select
+              value={grok.model}
+              onChange={event => grok.onModelChange(event.target.value as "grok-2-image" | "grok-2-image-1212" | "grok-2-image-latest")}
+              className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white focus:ring-2 focus:ring-theme-text focus:border-transparent outline-none"
+            >
+              <option value="grok-2-image">Grok 2 Image (Standard)</option>
+              <option value="grok-2-image-1212">Grok 2 Image 1212</option>
+              <option value="grok-2-image-latest">Grok 2 Image Latest</option>
+            </select>
+            <div className="text-xs text-theme-white/60 mt-1">
+              {grok.model === "grok-2-image"
+                ? "Standard Grok 2 Image generation"
+                : grok.model === "grok-2-image-1212"
+                ? "Grok 2 Image 1212 variant"
+                : "Latest Grok 2 Image variant"}
             </div>
           </div>
         </div>

@@ -2,6 +2,7 @@ import { memo, useState } from "react";
 import { glass } from "../../styles/designSystem";
 import { SIDEBAR_TOP_PADDING, SIDEBAR_WIDTH, SIDEBAR_PROMPT_GAP } from "./layoutConstants";
 import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from "./sidebarData";
+import { scrollLockExemptAttr } from "../../hooks/useGlobalScrollLock";
 
 export interface CreateSidebarProps {
   activeCategory: string;
@@ -44,7 +45,10 @@ function CreateSidebarComponent({
         className={navClasses}
         style={{ height: sidebarHeight, maxHeight: sidebarHeight, top: sidebarTop, width: SIDEBAR_WIDTH }}
       >
-        <aside className="flex flex-1 flex-col gap-0 overflow-y-auto pr-1">
+        <aside
+          className="flex flex-1 flex-col gap-0 overflow-y-auto pr-1"
+          {...(isFullSizeOpen ? { [scrollLockExemptAttr]: "true" } : {})}
+        >
           <div className="flex items-center px-2 text-[12px] text-theme-text font-raleway uppercase tracking-wider mb-1 sidebar-section-header">
             create
           </div>
@@ -71,10 +75,10 @@ function CreateSidebarComponent({
             
             // Color-specific border class mappings for each category
             const borderColorMap: Record<string, string> = {
-              text: "border-amber-400/20",
-              image: "border-red-500/20",
-              video: "border-blue-500/20",
-              audio: "border-cyan-400/20",
+              text: "border-amber-400/25",
+              image: "border-red-500/25",
+              video: "border-blue-500/25",
+              audio: "border-cyan-400/25",
             };
             
             // Enhanced shadow effect: slightly deeper when pressed (very subtle)

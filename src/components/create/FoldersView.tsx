@@ -1,5 +1,5 @@
-import { Folder as FolderIcon, FolderPlus, Trash2 } from 'lucide-react';
-import { buttons, glass } from '../../styles/designSystem';
+import { Folder as FolderIcon, Plus, Trash2 } from 'lucide-react';
+import { glass } from '../../styles/designSystem';
 import type { Folder } from './types';
 
 interface FoldersViewProps {
@@ -26,9 +26,9 @@ export default function FoldersView({
           <p className="text-base font-raleway text-theme-white max-w-md mb-4">
             Create your first folder to organize your images.
           </p>
-          <button onClick={onCreateFolder} className={buttons.primary}>
-            <FolderPlus className="w-4 h-4" />
-            Create Folder
+          <button onClick={onCreateFolder} className="inline-flex items-center gap-1 text-sm text-theme-white hover:text-theme-text transition-colors duration-200" aria-label="Create folder">
+            <Plus className="w-4 h-4" />
+            Add folder
           </button>
         </div>
       </div>
@@ -38,10 +38,10 @@ export default function FoldersView({
   return (
     <div className="w-full flex flex-col">
       {/* New Folder button */}
-      <div className="mb-6 flex justify-end">
-        <button onClick={onCreateFolder} className={buttons.primary}>
-          <FolderPlus className="w-4 h-4" />
-          New Folder
+      <div className="mb-6 flex justify-start">
+        <button onClick={onCreateFolder} className="inline-flex items-center gap-1 text-sm text-theme-white hover:text-theme-text transition-colors duration-200" aria-label="Create new folder">
+          <Plus className="w-4 h-4" />
+          Add folder
         </button>
       </div>
 
