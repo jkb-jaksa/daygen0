@@ -1,9 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
-const apiFetchMock = vi.fn();
-
 vi.mock("../api", () => ({
-  apiFetch: apiFetchMock,
+  apiFetch: vi.fn(),
   getApiUrl: (path: string) => path,
 }));
 
@@ -16,8 +14,11 @@ import {
   fetchElevenLabsVoices,
   generateElevenLabsSpeech,
 } from "../audioApi";
+import * as apiModule from "../api";
 
 describe("audioApi helpers", () => {
+  const apiFetchMock = vi.mocked(apiModule.apiFetch);
+
   beforeEach(() => {
     apiFetchMock.mockReset();
   });
