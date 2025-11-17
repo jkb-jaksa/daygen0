@@ -2,6 +2,7 @@ import React, { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import { X } from 'lucide-react';
 import { buttons, glass } from '../../styles/designSystem';
 import type { StyleHandlers, StyleOption } from './hooks/useStyleHandlers';
+import { scrollLockExemptAttr, useGlobalScrollLock } from '../../hooks/useGlobalScrollLock';
 
 interface StyleSelectionModalProps {
   open: boolean;
@@ -82,6 +83,8 @@ const StyleSelectionModal = memo<StyleSelectionModalProps>(({ open, onClose, sty
     }
   }, [handleApplyStyles, onApplySelectedStyles]);
   
+  useGlobalScrollLock(open);
+
   if (!open) return null;
   
   return (
@@ -172,7 +175,10 @@ const StyleSelectionModal = memo<StyleSelectionModalProps>(({ open, onClose, sty
             })}
           </div>
 
-          <div className="flex-1 overflow-y-auto">
+          <div
+            className="flex-1 overflow-y-auto"
+            {...{ [scrollLockExemptAttr]: 'true' }}
+          >
             <div className="grid grid-cols-2 gap-1 pb-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {activeStyleSectionData.options.map(option => {
                 const isActive = activeTempStyles.some(style => style.id === option.id);

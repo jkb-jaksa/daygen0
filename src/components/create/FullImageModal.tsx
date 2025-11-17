@@ -23,6 +23,7 @@ import { normalizeStoredProducts } from '../../utils/products';
 import { getPersistedValue } from '../../lib/clientStorage';
 import { STORAGE_CHANGE_EVENT } from '../../utils/storageEvents';
 import { useBadgeNavigation } from './hooks/useBadgeNavigation';
+import { scrollLockExemptAttr, useGlobalScrollLock } from '../../hooks/useGlobalScrollLock';
 
 // Lazy load VerticalGalleryNav
 const VerticalGalleryNav = lazy(() => import('../shared/VerticalGalleryNav'));
@@ -121,6 +122,8 @@ const FullImageModal = memo(() => {
   const isImageActionMenuOpen =
     !!currentItemId && state.imageActionMenu?.id === currentItemId;
   
+  useGlobalScrollLock(open && !!fullSizeImage);
+
   console.log('[FullImageModal] Render', { 
     open, 
     hasFullSizeImage: !!fullSizeImage, 
@@ -1243,6 +1246,7 @@ const FullImageModal = memo(() => {
             top: 'calc(var(--nav-h) + 16px)', 
             height: 'calc(100vh - var(--nav-h) - 32px)' 
           }} 
+          {...{ [scrollLockExemptAttr]: 'true' }}
           onClick={(e) => {
             e.stopPropagation();
           }}

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { glass } from "../../styles/designSystem";
+import { scrollLockExemptAttr } from "../../hooks/useGlobalScrollLock";
 
 interface VerticalGalleryNavProps {
   images: Array<{ url: string; id?: string }>;
@@ -20,6 +21,7 @@ export function VerticalGalleryNav({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const activeThumbnailRef = useRef<HTMLButtonElement>(null);
   const lastReportedWidthRef = useRef<number | null>(null);
+  const lastTouchYRef = useRef<number | null>(null);
 
   // Auto-scroll to active thumbnail when it changes
   useEffect(() => {
@@ -92,6 +94,66 @@ export function VerticalGalleryNav({
     return undefined;
   }, [onWidthChange]);
 
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) {
+      return;
+    }
+
+    const handleWheel = (event: WheelEvent) => {
+      if (event.deltaY === 0) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      container.scrollTop += event.deltaY;
+    };
+
+    const handleTouchStart = (event: TouchEvent) => {
+      lastTouchYRef.current = event.touches[0]?.clientY ?? null;
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      const currentY = event.touches[0]?.clientY;
+      if (currentY == null) {
+        return;
+      }
+
+      if (lastTouchYRef.current == null) {
+        lastTouchYRef.current = currentY;
+        return;
+      }
+
+      const deltaY = lastTouchYRef.current - currentY;
+      lastTouchYRef.current = currentY;
+
+      if (deltaY === 0) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      container.scrollTop += deltaY;
+    };
+
+    const handleTouchEnd = () => {
+      lastTouchYRef.current = null;
+    };
+
+    container.addEventListener("wheel", handleWheel, { passive: false });
+    container.addEventListener("touchstart", handleTouchStart, { passive: false });
+    container.addEventListener("touchmove", handleTouchMove, { passive: false });
+    container.addEventListener("touchend", handleTouchEnd, { passive: false });
+
+    return () => {
+      container.removeEventListener("wheel", handleWheel);
+      container.removeEventListener("touchstart", handleTouchStart);
+      container.removeEventListener("touchmove", handleTouchMove);
+      container.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [images.length]);
+
   // Don't render if there's only one image or no images
   if (images.length <= 1) {
     return null;
@@ -103,16 +165,16 @@ export function VerticalGalleryNav({
       data-vertical-gallery-nav="true"
       className={`fixed right-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] z-20 flex flex-col pointer-events-auto ${className}`}
       style={{ top: 'calc(var(--nav-h) + 16px)', height: 'calc(100vh - var(--nav-h) - 32px)' }}
+      {...{ [scrollLockExemptAttr]: "true" }}
       onClick={(e) => e.stopPropagation()}
       onMouseDown={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
-      onWheel={(e) => e.stopPropagation()}
     >
       <div
         ref={scrollContainerRef}
         className={`${glass.promptDark} rounded-xl p-2 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-theme-mid/30 scrollbar-track-transparent hover:scrollbar-thumb-theme-mid/50 h-full`}
         style={{ overscrollBehavior: "contain" }}
-        onWheel={(e) => e.stopPropagation()}
+        {...{ [scrollLockExemptAttr]: "true" }}
       >
         <div className="flex flex-col gap-2">
           {images.map((image, index) => {

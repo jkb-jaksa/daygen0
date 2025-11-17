@@ -18,16 +18,16 @@ const PresetGenerationModal = memo<PresetGenerationModalProps>(({ flow }) => {
     if (!job) return null;
 
     return (
-      <div key={job.style.id} className="rounded-2xl border border-theme-mid/40 bg-theme-black/40 overflow-hidden">
+      <div key={job.style.id} className="rounded-2xl border border-theme-mid/40 bg-theme-black/40 overflow-hidden p-3 flex items-center justify-center min-h-[200px]">
         {job.style.image ? (
           <img
             src={job.style.image}
             alt={job.style.name}
-            className="h-32 w-full object-cover"
+            className="max-w-[85%] max-h-[180px] w-auto h-auto object-contain rounded-lg"
             loading="lazy"
           />
         ) : (
-          <div className="h-32 w-full bg-theme-mid/10" />
+          <div className="h-40 w-full bg-theme-mid/10 rounded-lg" />
         )}
       </div>
     );
