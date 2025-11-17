@@ -29,7 +29,6 @@ import type { Folder, GalleryImageLike, GalleryVideoLike } from './types';
 import { CreateBridgeProvider, type GalleryBridgeActions } from './contexts/CreateBridgeContext';
 import { createInitialBridgeActions } from './contexts/hooks';
 import { pathForCategory } from '../../utils/navigation';
-import { useBadgeNavigation } from './hooks/useBadgeNavigation';
 import { DEFAULT_IMAGE_MODEL_ID, DEFAULT_VIDEO_MODEL_ID, isVideoModelId } from './constants';
 
 const COMING_SOON_CATEGORIES = ['text'] as const;
@@ -154,6 +153,7 @@ function CreateRefactoredView() {
     await addImage(randomImage);
   }, [addImage]);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const addDummyImageWithAvatar = useCallback(async () => {
     // Create or reuse test avatar
     let testAvatar = avatarHandlers.storedAvatars.find(a => a.id === 'test-avatar-badge');
@@ -195,6 +195,7 @@ function CreateRefactoredView() {
     await addImage(dummyImageWithAvatar);
   }, [addImage, avatarHandlers, user?.id]);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const addDummyImageWithProduct = useCallback(async () => {
     // Create or reuse test product
     let testProduct = productHandlers.storedProducts.find(p => p.id === 'test-product-badge');
@@ -236,6 +237,7 @@ function CreateRefactoredView() {
     await addImage(dummyImageWithProduct);
   }, [addImage, productHandlers, user?.id]);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const addDummyImageWithBoth = useCallback(async () => {
     // Create or reuse test avatar
     let testAvatar = avatarHandlers.storedAvatars.find(a => a.id === 'test-avatar-badge');
@@ -388,7 +390,6 @@ function CreateRefactoredView() {
     await addImage(dummyImageWithAll);
   }, [addImage, avatarHandlers, productHandlers, user?.id]);
 
->>>>>>> origin/main
   const resolvedCategory = useMemo<SupportedCategory>(() => {
     const fromParam = normalizeCategory(params.category);
     if (fromParam) {

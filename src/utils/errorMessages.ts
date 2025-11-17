@@ -109,8 +109,8 @@ function extractErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     let message = error.message || '';
     // Check nested error properties
-    if ((error as any).error && typeof (error as any).error === 'object') {
-      const nestedError = (error as any).error;
+    if ('error' in error && typeof (error as { error: unknown }).error === 'object') {
+      const nestedError = (error as { error: unknown }).error;
       if (nestedError instanceof Error) {
         message += ' ' + nestedError.message;
       } else if (typeof nestedError === 'string') {
@@ -118,7 +118,7 @@ function extractErrorMessage(error: unknown): string {
       } else if (nestedError && typeof nestedError.toString === 'function') {
         try {
           message += ' ' + nestedError.toString();
-        } catch (e) {
+        } catch {
           // Ignore toString errors
         }
       }
@@ -128,8 +128,8 @@ function extractErrorMessage(error: unknown): string {
       message += ' ' + error.name;
     }
     // Check for code property (common in Firebase/Supabase errors)
-    if ((error as any).code) {
-      message += ' ' + String((error as any).code);
+    if ('code' in error && (error as { code: unknown }).code) {
+      message += ' ' + String((error as { code: unknown }).code);
     }
     return message;
   }
@@ -154,7 +154,7 @@ function extractErrorMessage(error: unknown): string {
     if (typeof obj.toString === 'function') {
       try {
         return obj.toString();
-      } catch (e) {
+      } catch {
         // Ignore toString errors
       }
     }

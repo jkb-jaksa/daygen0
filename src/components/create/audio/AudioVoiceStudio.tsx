@@ -50,7 +50,6 @@ const base64ToObjectUrl = (base64: string, contentType: string) => {
 
 export function AudioVoiceStudio() {
   const [mode, setMode] = useState<VoiceFlowMode>("menu");
-  const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
   const [recordingState, setRecordingState] = useState<RecordingState>({
@@ -261,7 +260,6 @@ export function AudioVoiceStudio() {
     (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
       event.stopPropagation();
-      setIsDraggingFile(false);
       const files = Array.from(event.dataTransfer.files);
       if (!files.length) {
         return;
@@ -454,7 +452,6 @@ export function AudioVoiceStudio() {
         });
       }, 250);
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error("Failed to start recording", error);
       setRecordingState({
         isRecording: false,
@@ -469,7 +466,7 @@ export function AudioVoiceStudio() {
     } finally {
       setRecordingIntent("idle");
     }
-  }, [recordingState.audioUrl]);
+  }, [recordingState.audioUrl, stopRecording]);
 
   const stopRecording = useCallback(
     (silent = false) => {
@@ -527,12 +524,10 @@ export function AudioVoiceStudio() {
       onDragOver={(event) => {
         event.preventDefault();
         event.stopPropagation();
-        setIsDraggingFile(true);
       }}
       onDragLeave={(event) => {
         event.preventDefault();
         event.stopPropagation();
-        setIsDraggingFile(false);
       }}
       onDrop={handleDrop}
     >

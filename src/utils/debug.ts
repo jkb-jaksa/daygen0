@@ -53,8 +53,8 @@ export function handleExtensionErrors() {
         if (error instanceof Error) {
           let msg = (error.message || '').toLowerCase() + ' ' + (error.name || '').toLowerCase();
           // Check nested error properties
-          if ((error as any).error) {
-            const nested = (error as any).error;
+          if ('error' in error && (error as { error: unknown }).error) {
+            const nested = (error as { error: unknown }).error;
             if (nested instanceof Error) {
               msg += ' ' + nested.message.toLowerCase();
             } else if (typeof nested === 'string') {
@@ -62,8 +62,8 @@ export function handleExtensionErrors() {
             }
           }
           // Check error code (Firebase/Supabase)
-          if ((error as any).code) {
-            msg += ' ' + String((error as any).code).toLowerCase();
+          if ('code' in error && (error as { code: unknown }).code) {
+            msg += ' ' + String((error as { code: unknown }).code).toLowerCase();
           }
           return msg;
         }
@@ -76,14 +76,14 @@ export function handleExtensionErrors() {
           if (obj.toString && typeof obj.toString === 'function') {
             try {
               msg += obj.toString().toLowerCase();
-            } catch (e) {
+            } catch {
               // Ignore toString errors
             }
           }
           return msg;
         }
         return String(error).toLowerCase();
-      } catch (e) {
+      } catch {
         return String(error).toLowerCase();
       }
     })();
@@ -134,12 +134,12 @@ export function handleExtensionErrors() {
 
   // Also handle unhandled promise rejections as a secondary layer
   // (Primary handler is in index.html, this is a backup)
-  if (typeof window !== 'undefined' && !(window as any).__daygenErrorHandlerSet) {
+  if (typeof window !== 'undefined' && !(window as { __daygenErrorHandlerSet?: boolean }).__daygenErrorHandlerSet) {
     window.addEventListener('unhandledrejection', (event) => {
       if (shouldSuppressError(event.reason)) {
         event.preventDefault();
       }
     });
-    (window as any).__daygenErrorHandlerSet = true;
+    (window as { __daygenErrorHandlerSet?: boolean }).__daygenErrorHandlerSet = true;
   }
 }
