@@ -302,6 +302,14 @@ export default function Account() {
     navigate("/");
   }, [logOut, navigate]);
 
+  const handleBack = useCallback(() => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate(sanitizedNextPath ?? "/create");
+    }
+  }, [navigate, sanitizedNextPath]);
+
   const handleProfileSubmit = useCallback(() => {
     void handleSaveProfile();
   }, [handleSaveProfile]);
@@ -334,9 +342,7 @@ export default function Account() {
           <div className="flex items-center gap-3">
             {showReturnButton && (
               <button
-                onClick={() => {
-                  navigate(sanitizedNextPath, { replace: true });
-                }}
+                onClick={handleBack}
                 className="px-4 py-2 bg-theme-primary text-theme-black rounded-lg hover:bg-theme-primary/90 transition-colors font-raleway text-sm"
               >
                 Return to {destinationLabel}
@@ -344,7 +350,7 @@ export default function Account() {
             )}
           </div>
           <button
-            onClick={() => navigate(sanitizedNextPath ?? "/create")}
+            onClick={handleBack}
             className="p-2 hover:bg-theme-dark/50 rounded-lg transition-colors group"
             title="Close account"
           >

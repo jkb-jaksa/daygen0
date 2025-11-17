@@ -291,7 +291,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
             }}
             className={`${buttons.blockPrimary} font-raleway font-medium`}
           >
-            Back to sign in
+            Back
           </button>
         </div>
       ),

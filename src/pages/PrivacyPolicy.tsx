@@ -1,21 +1,31 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function PrivacyPolicy() {
+  const navigate = useNavigate();
+
+  const handleBack = useCallback(() => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
+  }, [navigate]);
+
   return (
     <div className="min-h-screen bg-theme-black text-theme-text">
       <div className="container mx-auto px-4 py-12 max-w-4xl">
         {/* Header */}
         <div className="mb-12">
-          <Link 
-            to="/" 
+          <button 
+            onClick={handleBack}
             className="inline-flex items-center text-theme-light hover:text-theme-text transition-colors mb-6"
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back to Home
-          </Link>
+            Back
+          </button>
           <h1 className="text-4xl font-bold text-theme-text font-raleway mb-4">
             Privacy Policy
           </h1>

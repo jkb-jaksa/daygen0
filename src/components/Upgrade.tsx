@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Pricing from "./Pricing";
@@ -7,7 +8,7 @@ import { debugLog } from "../utils/debug";
 export default function Upgrade() {
   const navigate = useNavigate();
 
-  const handleClose = (e: React.MouseEvent) => {
+  const handleClose = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     debugLog('Close button clicked'); // Debug log
@@ -17,7 +18,7 @@ export default function Upgrade() {
     } else {
       navigate('/');
     }
-  };
+  }, [navigate]);
 
   return (
     <main className={`${layout.page}`}> 

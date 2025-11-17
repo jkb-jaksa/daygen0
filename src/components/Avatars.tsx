@@ -272,6 +272,14 @@ export default function Avatars() {
     [rememberNonJobPath, navigate, location.pathname, location.search, location.state],
   );
 
+  const handleBack = useCallback(() => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/create/avatars");
+    }
+  }, [navigate]);
+
   const syncJobUrlForImage = useCallback(
     (image: GalleryImageLike | null | undefined) => {
       if (image?.jobId) {
@@ -1989,10 +1997,10 @@ export default function Avatars() {
           <button
             type="button"
             className={`mt-4 ${buttons.glassPrompt}`}
-            onClick={() => navigate("/create/avatars", { replace: true })}
+            onClick={handleBack}
           >
             <User className="h-4 w-4" />
-            Back to all avatars
+            Back
           </button>
         </div>
       )}
@@ -2058,7 +2066,7 @@ export default function Avatars() {
             className="text-sm text-theme-white text-left transition-colors duration-200 hover:text-theme-text"
             onClick={closeCreationsModal}
           >
-            ← Back to Avatars
+            ← Back
           </button>
           <div className={`${headings.tripleHeading.container} text-left`}>
             <div className={`${headings.tripleHeading.eyebrow} justify-start invisible`} aria-hidden="true" />

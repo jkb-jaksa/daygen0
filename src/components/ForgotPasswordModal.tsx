@@ -104,7 +104,7 @@ export default function ForgotPasswordModal({ open, onClose }: ForgotPasswordMod
         <p className="text-xs text-theme-light text-center font-raleway mt-4">
           Remember your password?{" "}
           <button onClick={handleClose} className="text-theme-text hover:underline">
-            Back to login
+            Back
           </button>
         </p>
       </div>

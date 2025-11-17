@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { X, ArrowLeft, RefreshCw } from 'lucide-react';
 import { layout, glass } from '../styles/designSystem';
@@ -25,6 +25,14 @@ export default function PaymentCancel() {
   const handleTryAgain = () => {
     navigate('/upgrade');
   };
+
+  const handleBack = useCallback(() => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
+  }, [navigate]);
 
   const getPackageDisplayName = (packageId: string) => {
     const packageMap: Record<string, string> = {
@@ -97,11 +105,11 @@ export default function PaymentCancel() {
             </button>
             
             <button
-              onClick={() => navigate('/')}
+              onClick={handleBack}
               className="btn btn-outline font-raleway flex items-center justify-center gap-2"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Home
+              Back
             </button>
           </div>
 

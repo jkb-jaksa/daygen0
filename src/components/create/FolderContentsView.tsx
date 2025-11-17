@@ -133,7 +133,7 @@ export default function FolderContentsView({
           className="flex items-center gap-2 text-theme-white hover:text-theme-text transition-colors duration-200 font-raleway text-base group"
         >
           <ArrowLeft className="w-4 h-4 group-hover:text-theme-text transition-colors duration-200" />
-          Back to folders
+          Back
         </button>
       </div>
 

@@ -270,6 +270,14 @@ export default function Products() {
     [rememberNonJobPath, navigate, location.pathname, location.search, location.state],
   );
 
+  const handleBack = useCallback(() => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/create/products");
+    }
+  }, [navigate]);
+
   const syncJobUrlForImage = useCallback(
     (image: GalleryImageLike | null | undefined) => {
       if (image?.jobId) {
@@ -1918,10 +1926,10 @@ export default function Products() {
           <button
             type="button"
             className={`mt-4 ${buttons.glassPrompt}`}
-            onClick={() => navigate("/create/products", { replace: true })}
+            onClick={handleBack}
           >
             <Package className="h-4 w-4" />
-            Back to all products
+            Back
           </button>
         </div>
       )}
@@ -1987,7 +1995,7 @@ export default function Products() {
             className="text-sm text-theme-white text-left transition-colors duration-200 hover:text-theme-text"
             onClick={closeCreationsModal}
           >
-            ← Back to Products
+            ← Back
           </button>
           <div className={`${headings.tripleHeading.container} text-left`}>
             <div className={`${headings.tripleHeading.eyebrow} justify-start invisible`} aria-hidden="true" />
