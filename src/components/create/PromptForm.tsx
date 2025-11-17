@@ -390,20 +390,24 @@ const PromptForm = memo<PromptFormProps>(
       [handleProductQuickUpload],
     );
 
-    const handleSaveNewAvatar = useCallback(() => {
+    const handleSaveNewAvatar = useCallback(async () => {
       if (!avatarSelection || !avatarName.trim()) {
         setAvatarUploadError(previous => previous ?? 'Name your avatar to save it.');
         return;
       }
-      void persistAvatar(avatarName.trim(), avatarSelection);
+      // Blur textarea before save to prevent browser focus restoration when modal closes
+      textareaRef.current?.blur();
+      await persistAvatar(avatarName.trim(), avatarSelection);
     }, [avatarSelection, avatarName, persistAvatar, setAvatarUploadError]);
 
-    const handleSaveNewProduct = useCallback(() => {
+    const handleSaveNewProduct = useCallback(async () => {
       if (!productSelection || !productName.trim()) {
         setProductUploadError(previous => previous ?? 'Name your product to save it.');
         return;
       }
-      void persistProduct(productName.trim(), productSelection);
+      // Blur textarea before save to prevent browser focus restoration when modal closes
+      textareaRef.current?.blur();
+      await persistProduct(productName.trim(), productSelection);
     }, [productSelection, productName, persistProduct, setProductUploadError]);
 
     const openImageByUrl = useCallback((imageUrl: string) => {
@@ -1106,7 +1110,7 @@ const PromptForm = memo<PromptFormProps>(
                 {referencePreviews.length > 0 && (
                   <div className="flex items-center gap-2">
                     <div className="hidden lg:block text-sm text-n-text font-raleway">
-                      Reference ({referencePreviews.length}/{MAX_REFERENCE_SLOTS})
+                      Reference ({totalReferenceCount}/{MAX_REFERENCE_SLOTS})
                     </div>
                     <div className="flex items-center gap-1.5">
                       {referencePreviews.map((preview, index) => (
