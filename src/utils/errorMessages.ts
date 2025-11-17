@@ -14,6 +14,9 @@ const NETWORK_ERROR_PATTERNS = [
   'refused to connect',
   'listener indicated an asynchronous response',
   'message channel closed',
+  'message channel closed before a response was received',
+  'returning true, but the message channel closed',
+  'channel closed before a response',
 ];
 
 export const OFFLINE_MESSAGE = "You're offline. Reconnect and retry.";

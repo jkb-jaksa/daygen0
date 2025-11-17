@@ -101,7 +101,10 @@
             'listener indicated an asynchronous response',
             'message channel closed',
             'asynchronous response',
-            'response was received'
+            'response was received',
+            'message channel closed before a response was received',
+            'returning true, but the message channel closed',
+            'channel closed before a response'
           ];
           
           return suppressPatterns.some(function(pattern) {
@@ -295,6 +298,7 @@
           // Check reason directly
           if (shouldSuppressError(reason)) {
             event.preventDefault();
+            event.stopPropagation();
             return;
           }
           
@@ -330,11 +334,17 @@
             reasonStr = String(reason).toLowerCase();
           }
           
-          if (shouldSuppressError(reasonStr)) {
+          // Additional check for the specific browser extension error
+          var isExtensionError = reasonStr.includes('listener indicated') && 
+                                reasonStr.includes('asynchronous response') &&
+                                reasonStr.includes('message channel closed');
+          
+          if (shouldSuppressError(reasonStr) || isExtensionError) {
             event.preventDefault();
+            event.stopPropagation();
             return;
           }
-        });
+        }, true);
         
         // Handle window errors (including network errors)
         window.addEventListener('error', function(event) {

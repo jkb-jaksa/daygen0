@@ -112,6 +112,9 @@ export function handleExtensionErrors() {
       'message channel closed',
       'asynchronous response',
       'response was received',
+      'message channel closed before a response was received',
+      'returning true, but the message channel closed',
+      'channel closed before a response',
     ];
     
     return suppressPatterns.some(pattern => errorStr.includes(pattern));
