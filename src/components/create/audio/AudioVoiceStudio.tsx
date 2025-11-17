@@ -381,6 +381,43 @@ export function AudioVoiceStudio() {
     setDesignError(null);
   }, [generatedPreviewUrl]);
 
+  const stopRecording = useCallback(
+    (silent = false) => {
+      const recorder = mediaRecorderRef.current;
+      if (!recorder) {
+        return;
+      }
+      if (recorder.state !== "inactive") {
+        recorder.stop();
+      }
+      mediaRecorderRef.current = null;
+      if (recordingIntervalRef.current) {
+        window.clearInterval(recordingIntervalRef.current);
+        recordingIntervalRef.current = null;
+      }
+      if (silent) {
+        recordingStreamRef.current
+          ?.getTracks()
+          .forEach((track) => track.stop());
+        recordingStreamRef.current = null;
+        recordingChunksRef.current = [];
+        setRecordingState((prev) => {
+          if (prev.audioUrl) {
+            URL.revokeObjectURL(prev.audioUrl);
+          }
+          return {
+            isRecording: false,
+            durationMs: 0,
+            audioUrl: null,
+            blob: null,
+            error: null,
+          };
+        });
+      }
+    },
+    [],
+  );
+
   const startRecording = useCallback(async () => {
     try {
       setRecordingIntent("requesting");
@@ -467,43 +504,6 @@ export function AudioVoiceStudio() {
       setRecordingIntent("idle");
     }
   }, [recordingState.audioUrl, stopRecording]);
-
-  const stopRecording = useCallback(
-    (silent = false) => {
-      const recorder = mediaRecorderRef.current;
-      if (!recorder) {
-        return;
-      }
-      if (recorder.state !== "inactive") {
-        recorder.stop();
-      }
-      mediaRecorderRef.current = null;
-      if (recordingIntervalRef.current) {
-        window.clearInterval(recordingIntervalRef.current);
-        recordingIntervalRef.current = null;
-      }
-      if (silent) {
-        recordingStreamRef.current
-          ?.getTracks()
-          .forEach((track) => track.stop());
-        recordingStreamRef.current = null;
-        recordingChunksRef.current = [];
-        setRecordingState((prev) => {
-          if (prev.audioUrl) {
-            URL.revokeObjectURL(prev.audioUrl);
-          }
-          return {
-            isRecording: false,
-            durationMs: 0,
-            audioUrl: null,
-            blob: null,
-            error: null,
-          };
-        });
-      }
-    },
-    [],
-  );
 
   const recordingStatusLabel = useMemo(() => {
     if (recordingState.error) {
