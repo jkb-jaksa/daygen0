@@ -732,27 +732,27 @@ html[data-theme="day"] .footer-gradient-bg {
 
 /* Ghost button extends base btn class */
 .btn-ghost {
-  background-color: var(--glass-dark-bg);
-  color: var(--theme-white);
-  border: 1px solid var(--glass-border);
-  backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
-  isolation: isolate;
+  backdrop-filter: blur(40px);
+  background-color: var(--glass-dark-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--theme-white);
   font-family: 'Raleway', sans-serif;
-  position: relative;
+  isolation: isolate;
   overflow: hidden;
+  position: relative;
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 .btn-ghost::before {
-  content: "";
-  position: absolute;
-  inset: 0;
   background-color: rgb(var(--theme-white-rgb) / 0.1);
-  opacity: 0;
   border-radius: inherit;
-  transition: opacity 0.2s ease;
+  content: "";
+  inset: 0;
+  opacity: 0;
   pointer-events: none;
+  position: absolute;
+  transition: opacity 0.2s ease;
 }
 
 .btn-ghost > * {
@@ -789,9 +789,9 @@ html[data-theme="day"] .footer-gradient-bg {
 }
 
 .auth-mode-toggle[data-active="true"] {
-  color: rgb(var(--theme-text-rgb));
-  border-color: rgb(var(--theme-mid-rgb));
   background-color: rgb(var(--theme-white-rgb) / 0.05);
+  border-color: rgb(var(--theme-mid-rgb));
+  color: rgb(var(--theme-text-rgb));
 }
 
 .auth-mode-toggle[data-active="true"]::before {

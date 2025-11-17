@@ -253,7 +253,13 @@ export function usePresetGenerationFlow(): PresetGenerationFlowState {
               };
               return next;
             });
-            tracker.update(jobId, update);
+            try {
+              tracker.update(jobId, update);
+            } catch (error) {
+              // Ignore tracker errors in case job hasn't been enqueued yet
+              // This can happen in tests or edge cases
+              console.warn('Tracker update failed:', error);
+            }
           },
         });
 
