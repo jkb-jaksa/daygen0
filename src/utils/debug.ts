@@ -41,23 +41,105 @@ export function debugTrace(...args: unknown[]) {
 export function handleExtensionErrors() {
   if (typeof window === 'undefined') return;
 
-  // Suppress common browser extension errors
+  // Helper function to check if an error should be suppressed
+  const shouldSuppressError = (error: unknown): boolean => {
+    if (!error) return false;
+    
+    const errorStr = (() => {
+      try {
+        if (typeof error === 'string') {
+          return error.toLowerCase();
+        }
+        if (error instanceof Error) {
+          let msg = (error.message || '').toLowerCase() + ' ' + (error.name || '').toLowerCase();
+          // Check nested error properties
+          if ((error as any).error) {
+            const nested = (error as any).error;
+            if (nested instanceof Error) {
+              msg += ' ' + nested.message.toLowerCase();
+            } else if (typeof nested === 'string') {
+              msg += ' ' + nested.toLowerCase();
+            }
+          }
+          // Check error code (Firebase/Supabase)
+          if ((error as any).code) {
+            msg += ' ' + String((error as any).code).toLowerCase();
+          }
+          return msg;
+        }
+        if (error && typeof error === 'object') {
+          const obj = error as Record<string, unknown>;
+          let msg = '';
+          if (obj.message) msg += String(obj.message).toLowerCase() + ' ';
+          if (obj.error) msg += shouldSuppressError(obj.error) ? 'suppress' : '';
+          if (obj.code) msg += String(obj.code).toLowerCase() + ' ';
+          if (obj.toString && typeof obj.toString === 'function') {
+            try {
+              msg += obj.toString().toLowerCase();
+            } catch (e) {
+              // Ignore toString errors
+            }
+          }
+          return msg;
+        }
+        return String(error).toLowerCase();
+      } catch (e) {
+        return String(error).toLowerCase();
+      }
+    })();
+    
+    // Patterns to suppress
+    const suppressPatterns = [
+      'runtime.lasterror',
+      'message port closed',
+      'extension context invalidated',
+      'could not establish connection',
+      'auth/network-request-failed',
+      'network-request-failed',
+      'firebase: error',
+      'firebase error',
+      'firebase',
+      'sentence-player',
+      'lifecycle init',
+      'failed to initialize',
+      'pr: firebase',
+      'network-request-failed',
+      'err_connection_refused',
+      'connection refused',
+      'refused to connect',
+      'failed to fetch',
+      'listener indicated an asynchronous response',
+      'message channel closed',
+      'asynchronous response',
+      'response was received',
+    ];
+    
+    return suppressPatterns.some(pattern => errorStr.includes(pattern));
+  };
+
+  // Suppress common browser extension errors and network errors
   const originalError = console.error;
   console.error = (...args: unknown[]) => {
-    const message = args[0]?.toString() || '';
+    // Check all arguments, not just the first one
+    const shouldSuppress = args.some(arg => shouldSuppressError(arg));
     
-    // Filter out common browser extension errors
-    if (
-      message.includes('runtime.lastError') ||
-      message.includes('message port closed') ||
-      message.includes('Extension context invalidated') ||
-      message.includes('Could not establish connection')
-    ) {
-      // Silently ignore these extension-related errors
+    if (shouldSuppress) {
+      // Silently ignore these errors
       return;
     }
     
     // Log other errors normally
     originalError.apply(console, args);
   };
+
+  // Also handle unhandled promise rejections as a secondary layer
+  // (Primary handler is in index.html, this is a backup)
+  if (typeof window !== 'undefined' && !(window as any).__daygenErrorHandlerSet) {
+    window.addEventListener('unhandledrejection', (event) => {
+      if (shouldSuppressError(event.reason)) {
+        event.preventDefault();
+      }
+    });
+    (window as any).__daygenErrorHandlerSet = true;
+  }
 }

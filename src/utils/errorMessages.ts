@@ -4,6 +4,16 @@ const NETWORK_ERROR_PATTERNS = [
   'network request failed',
   'load failed',
   'network connection was lost',
+  'auth/network-request-failed',
+  'network-request-failed',
+  'firebase',
+  'supabase',
+  'sentence-player',
+  'err_connection_refused',
+  'connection refused',
+  'refused to connect',
+  'listener indicated an asynchronous response',
+  'message channel closed',
 ];
 
 export const OFFLINE_MESSAGE = "You're offline. Reconnect and retry.";
@@ -87,29 +97,110 @@ export function isOffline(): boolean {
   return typeof navigator !== "undefined" && navigator && navigator.onLine === false;
 }
 
+/**
+ * Helper function to extract error message from various error formats
+ * Handles Error objects, strings, nested error structures, and toString() representations
+ */
+function extractErrorMessage(error: unknown): string {
+  if (typeof error === 'string') {
+    return error;
+  }
+  
+  if (error instanceof Error) {
+    let message = error.message || '';
+    // Check nested error properties
+    if ((error as any).error && typeof (error as any).error === 'object') {
+      const nestedError = (error as any).error;
+      if (nestedError instanceof Error) {
+        message += ' ' + nestedError.message;
+      } else if (typeof nestedError === 'string') {
+        message += ' ' + nestedError;
+      } else if (nestedError && typeof nestedError.toString === 'function') {
+        try {
+          message += ' ' + nestedError.toString();
+        } catch (e) {
+          // Ignore toString errors
+        }
+      }
+    }
+    // Check error code/name
+    if (error.name) {
+      message += ' ' + error.name;
+    }
+    // Check for code property (common in Firebase/Supabase errors)
+    if ((error as any).code) {
+      message += ' ' + String((error as any).code);
+    }
+    return message;
+  }
+  
+  if (error && typeof error === 'object') {
+    // Try to extract message from object
+    const obj = error as Record<string, unknown>;
+    let message = '';
+    if (obj.message && typeof obj.message === 'string') {
+      message = obj.message;
+    }
+    if (obj.error) {
+      message += ' ' + extractErrorMessage(obj.error);
+    }
+    if (obj.code) {
+      message += ' ' + String(obj.code);
+    }
+    if (message) {
+      return message;
+    }
+    // Fallback to toString
+    if (typeof obj.toString === 'function') {
+      try {
+        return obj.toString();
+      } catch (e) {
+        // Ignore toString errors
+      }
+    }
+  }
+  
+  return String(error);
+}
+
+/**
+ * Checks if an error is network-related by examining various formats
+ */
+export function isNetworkError(error: unknown): boolean {
+  if (!error) return false;
+  
+  const errorStr = extractErrorMessage(error).toLowerCase();
+  
+  // Check for network error patterns
+  return NETWORK_ERROR_PATTERNS.some((pattern) => errorStr.includes(pattern.toLowerCase()));
+}
+
 export function getOfflineOrNetworkMessage(error?: unknown): string | null {
   if (isOffline()) {
     return OFFLINE_MESSAGE;
   }
 
-  if (error instanceof Error) {
-    const normalized = error.message.toLowerCase();
-    
-    // Check for AbortError (DOMException)
-    if (error.name === 'AbortError') {
-      const isTimeout = normalized.includes('timeout') || normalized.includes('request timeout');
-      return isTimeout ? TIMEOUT_MESSAGE : ABORTED_MESSAGE;
-    }
-    
-    // Check for timeout patterns
-    if (normalized.includes('timeout') || normalized.includes('request timeout')) {
-      return TIMEOUT_MESSAGE;
-    }
-    
-    // Check for network error patterns
-    if (NETWORK_ERROR_PATTERNS.some((pattern) => normalized.includes(pattern))) {
-      return NETWORK_RETRY_MESSAGE;
-    }
+  if (!error) {
+    return null;
+  }
+
+  const errorMessage = extractErrorMessage(error);
+  const normalized = errorMessage.toLowerCase();
+
+  // Check for AbortError (DOMException)
+  if (error instanceof Error && error.name === 'AbortError') {
+    const isTimeout = normalized.includes('timeout') || normalized.includes('request timeout');
+    return isTimeout ? TIMEOUT_MESSAGE : ABORTED_MESSAGE;
+  }
+  
+  // Check for timeout patterns
+  if (normalized.includes('timeout') || normalized.includes('request timeout')) {
+    return TIMEOUT_MESSAGE;
+  }
+  
+  // Check for network error patterns (including Firebase/Supabase)
+  if (isNetworkError(error)) {
+    return NETWORK_RETRY_MESSAGE;
   }
 
   return null;
