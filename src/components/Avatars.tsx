@@ -2458,8 +2458,23 @@ export default function Avatars() {
     <div className={layout.page}>
       <div className={layout.backdrop} aria-hidden />
       <section className={`relative z-10 ${sectionLayoutClass}`}>
-        <div className={`${layout.container} flex flex-col gap-10`}>
-          {showProfileView ? renderProfileView() : renderListView()}
+        <div className={`${layout.container}`}>
+          <div className="mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 lg:gap-2 lg:grid-cols-[160px_minmax(0,1fr)]">
+            <Suspense fallback={null}>
+              <CreateSidebar
+                activeCategory="avatars"
+                onSelectCategory={(category) => {
+                  navigate(`/create/${category}`);
+                }}
+                onOpenMyFolders={() => {
+                  navigate('/gallery/folders');
+                }}
+              />
+            </Suspense>
+            <div className="flex flex-col gap-10">
+              {showProfileView ? renderProfileView() : renderListView()}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -2887,7 +2902,7 @@ export default function Avatars() {
               closeAvatarFullSizeView();
             }}
             onOpenMyFolders={() => {
-              navigate('/gallery');
+              navigate('/gallery/folders');
               closeAvatarFullSizeView();
             }}
             isFullSizeOpen={true}

@@ -63,6 +63,15 @@ const categoryFromPath = (path: string): SupportedCategory | null => {
   }
 
   if (segments[0] === 'gallery') {
+    // Check the second segment for gallery sub-paths
+    const secondSegment = segments[1];
+    if (secondSegment === 'folders') {
+      return normalizeCategory('my-folders');
+    }
+    if (secondSegment === 'inspirations') {
+      return normalizeCategory('inspirations');
+    }
+    // Default to 'gallery' if no second segment or unknown segment
     return normalizeCategory('gallery');
   }
 
