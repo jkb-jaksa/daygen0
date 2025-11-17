@@ -5,7 +5,7 @@ import { getToolLogo, hasToolLogo } from '../../utils/toolLogos';
 import { useGeneration } from './contexts/GenerationContext';
 import { useParallaxHover } from '../../hooks/useParallaxHover';
 import { useDropdownScrollLock } from '../../hooks/useDropdownScrollLock';
-import { glass } from '../../styles/designSystem';
+import { glass, tooltips } from '../../styles/designSystem';
 import { debugLog } from '../../utils/debug';
 import { ToolInfoHover } from '../ToolInfoHover';
 import { isVideoModelId } from './constants';
@@ -189,6 +189,33 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
     };
   }, [isOpen, handleClose]);
   
+  // Tooltip helper functions
+  const showHoverTooltip = useCallback((target: HTMLElement, tooltipId: string) => {
+    if (typeof document === 'undefined') return;
+    const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
+    if (!tooltip) return;
+    const ownerCard = target.closest('.relative') as HTMLElement | null;
+    if (ownerCard) {
+      const triggerRect = target.getBoundingClientRect();
+      const cardRect = ownerCard.getBoundingClientRect();
+      const relativeTop = triggerRect.top - cardRect.top;
+      const relativeLeft = triggerRect.left - cardRect.left + triggerRect.width / 2;
+      tooltip.style.top = `${relativeTop - 4}px`;
+      tooltip.style.left = `${relativeLeft}px`;
+      tooltip.style.transform = 'translateX(-50%) translateY(-100%)';
+    }
+    tooltip.classList.remove('opacity-0');
+    tooltip.classList.add('opacity-100');
+  }, []);
+
+  const hideHoverTooltip = useCallback((tooltipId: string) => {
+    if (typeof document === 'undefined') return;
+    const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
+    if (!tooltip) return;
+    tooltip.classList.remove('opacity-100');
+    tooltip.classList.add('opacity-0');
+  }, []);
+  
   return (
     <div className="relative model-selector flex-shrink-0">
       {/* Model selector button - matches V1 exactly */}
@@ -200,6 +227,12 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
         className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2 parallax-small ${
           isGenerating ? 'opacity-50 cursor-not-allowed' : ''
         }`}
+        onMouseEnter={(e) => {
+          showHoverTooltip(e.currentTarget, 'model-selector-tooltip');
+        }}
+        onMouseLeave={() => {
+          hideHoverTooltip('model-selector-tooltip');
+        }}
         onPointerMove={onPointerMove}
         onPointerEnter={onPointerEnter}
         onPointerLeave={onPointerLeave}
@@ -222,6 +255,13 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
         })()}
         <span className="hidden xl:inline font-raleway text-sm whitespace-nowrap text-n-text">{getCurrentModel().name}</span>
       </button>
+      <div
+        data-tooltip-for="model-selector-tooltip"
+        className={`${tooltips.base} absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full z-[70] hidden lg:block`}
+        style={{ left: '50%', transform: 'translateX(-50%) translateY(calc(-100% - 2px))', top: '0px' }}
+      >
+        Select model
+      </div>
       
       {/* Model Dropdown Portal - matches V1's ModelMenuPortal exactly */}
       {isOpen && createPortal(

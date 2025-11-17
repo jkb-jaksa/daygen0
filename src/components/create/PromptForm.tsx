@@ -1152,12 +1152,25 @@ const PromptForm = memo<PromptFormProps>(
                   title="Settings"
                   aria-label="Settings"
                   className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200 parallax-small`}
+                  onMouseEnter={(e) => {
+                    showHoverTooltip(e.currentTarget, 'settings-tooltip');
+                  }}
+                  onMouseLeave={() => {
+                    hideHoverTooltip('settings-tooltip');
+                  }}
                   onPointerMove={onPointerMove}
                   onPointerEnter={onPointerEnter}
                   onPointerLeave={onPointerLeave}
                 >
                   <Settings className="w-4 h-4 text-n-text" />
                 </button>
+                <div
+                  data-tooltip-for="settings-tooltip"
+                  className={`${tooltips.base} absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full z-[70] hidden lg:block`}
+                  style={{ left: '50%', transform: 'translateX(-50%) translateY(calc(-100% - 2px))', top: '0px' }}
+                >
+                  Settings
+                </div>
               </div>
 
               {showAspectRatioButton && (
