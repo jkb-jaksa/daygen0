@@ -228,10 +228,10 @@ function Home() {
                 <div className="flex items-start justify-between gap-4 w-full">
                   <div className="flex flex-col gap-2 lg:max-w-xl">
                     <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-left`}>
-                      Your Daily AI Generations.
+                      Create your Digital Copy.
                     </h1>
                     <p className={`${headings.tripleHeading.description} text-theme-text text-left mt-0 mb-1`}>
-                      Master all the best Creative AI Tools in one place.
+                      All modalities. In one place.
                     </p>
                     <div className="home-hero-actions flex flex-wrap gap-2">
                       <Link to="/learn/use-cases" className={buttons.ghost}>
