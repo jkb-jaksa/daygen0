@@ -8,10 +8,10 @@ export function useReferenceHandlers(
   selectedProduct: { id: string } | null,
   onAddReferenceFiles: (files: File[]) => void
 ) {
-  // Reference files state
-  const [referenceFiles, setReferenceFiles] = useState<File[]>([]);
+  // Reference files state (can be File objects or URL strings)
+  const [referenceFiles, setReferenceFiles] = useState<(File | string)[]>([]);
   const [referencePreviews, setReferencePreviews] = useState<string[]>([]);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   
   // Refs
@@ -25,8 +25,8 @@ export function useReferenceHandlers(
   }, [selectedAvatar, selectedProduct]);
   
   // Handle adding reference files (declare before usages to avoid TDZ issues)
-  const handleAddReferenceFiles = useCallback((files: File[]) => {
-    debugLog('[useReferenceHandlers] Adding reference files:', files.length);
+  const handleAddReferenceFiles = useCallback((items: (File | string)[]) => {
+    debugLog('[useReferenceHandlers] Adding reference items:', items.length);
     
     // Check if we have space for new files
     const currentCount = referenceFiles.length;
@@ -38,17 +38,25 @@ export function useReferenceHandlers(
     }
     
     // Take only the files we can fit
-    const filesToAdd = files.slice(0, availableSlots);
+    const itemsToAdd = items.slice(0, availableSlots);
     
     // Create preview URLs
-    const newPreviews = filesToAdd.map(file => URL.createObjectURL(file));
+    const newPreviews = itemsToAdd.map(item => {
+      if (typeof item === 'string') {
+        return item;
+      }
+      return URL.createObjectURL(item);
+    });
     
     // Update state
-    setReferenceFiles(prev => [...prev, ...filesToAdd]);
+    setReferenceFiles(prev => [...prev, ...itemsToAdd]);
     setReferencePreviews(prev => [...prev, ...newPreviews]);
     
-    // Call parent handler
-    onAddReferenceFiles(filesToAdd);
+    // Call parent handler (only with Files for now to maintain compat)
+    const filesOnly = itemsToAdd.filter((item): item is File => item instanceof File);
+    if (filesOnly.length > 0) {
+      onAddReferenceFiles(filesOnly);
+    }
   }, [referenceFiles.length, referenceLimit, onAddReferenceFiles]);
   
   // Handle file selection

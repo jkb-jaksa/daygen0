@@ -40,9 +40,22 @@ interface ModelSelectorProps {
   onModelChange: (model: string) => void;
   isGenerating: boolean;
   activeCategory?: GenerationMode; // defaults to inferring from selectedModel
+  hasReferences?: boolean;
 }
 
-const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, isGenerating, activeCategory }) => {
+const REFERENCE_SUPPORTED_MODELS = [
+  "gemini-2.5-flash-image",
+  "flux-1.1",
+  "chatgpt-image",
+  "ideogram",
+  "qwen-image",
+  "runway-gen4",
+  "reve-image",
+  "recraft",
+  "luma-photon-1"
+];
+
+const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, isGenerating, activeCategory, hasReferences }) => {
   const { setSelectedModel } = useGeneration();
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -538,6 +551,12 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
           ) : (
             AI_MODELS.filter(model => {
               const isVideoModel = isVideoModelId(model.id);
+
+              // Filter by references if enabled
+              if (hasReferences && !REFERENCE_SUPPORTED_MODELS.includes(model.id)) {
+                return false;
+              }
+
               if (inferredCategory === "image") {
                 return !isVideoModel;
               }

@@ -521,7 +521,12 @@ export function useCreateGenerationController(): CreateGenerationController {
     setButtonSpinning(true);
 
     const referencesBase64 = referenceHandlers.referenceFiles.length
-      ? await Promise.all(referenceHandlers.referenceFiles.map(fileToDataUrl))
+      ? await Promise.all(referenceHandlers.referenceFiles.map((file) => {
+          if (typeof file === 'string') {
+            return Promise.resolve(file);
+          }
+          return fileToDataUrl(file);
+        }))
       : [];
     const references = referencesBase64.length ? referencesBase64 : undefined;
     const finalPrompt = promptHandlers.getFinalPrompt();

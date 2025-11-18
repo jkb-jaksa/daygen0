@@ -347,24 +347,12 @@ export function useStyleHandlers() {
     };
   }, [isStyleModalOpen, selectedStyles]);
   
-  // Apply style to prompt
+  // Apply style to prompt (DEPRECATED: Style is now handled via reference images only)
   const applyStyleToPrompt = useCallback(
     (basePrompt: string) => {
-      const selectedPrompts = getOrderedSelectedStyles(selectedStyles)
-        .map(style => style.prompt.trim())
-        .filter(Boolean);
-
-      if (selectedPrompts.length === 0) {
-        return basePrompt;
-      }
-
-      const formattedPrompts = selectedPrompts
-        .map((prompt, index) => `${index + 1}. ${prompt}`)
-        .join("\n");
-
-      return `${basePrompt}\n\nStyle:\n${formattedPrompts}`;
+      return basePrompt;
     },
-    [selectedStyles],
+    [],
   );
   
   // Focus style button
@@ -450,7 +438,10 @@ export function useStyleHandlers() {
   // Handle apply styles
   const handleApplyStyles = useCallback(() => {
     const nextSelectedStyles = cloneSelectedStyles(tempSelectedStyles);
-    setSelectedStyles(nextSelectedStyles);
+    // Note: We no longer persist selectedStyles for the main prompt interface
+    // as styles are now either used as reference (one-off) or for preset flow (separate modal).
+    // setSelectedStyles(nextSelectedStyles); 
+    
     setIsStyleModalOpen(false);
     focusStyleButton();
     return getOrderedSelectedStyles(nextSelectedStyles);
@@ -458,11 +449,22 @@ export function useStyleHandlers() {
   
   // Handle clear styles
   const handleClearStyles = useCallback(() => {
-    setSelectedStyles(createEmptySelectedStyles());
-    setTempSelectedStyles(createEmptySelectedStyles());
+    // Reset selected styles to empty
+    const emptyStyles = createEmptySelectedStyles();
+    setSelectedStyles(emptyStyles);
+    
+    // Also reset temp styles to match
+    setTempSelectedStyles(emptyStyles);
+    
+    // Reset navigation state
     setActiveStyleGender("all");
     setActiveStyleSection("lifestyle");
-    setIsStyleModalOpen(false);
+    
+    // Close modal if open (though usually called before/after closing)
+    // We don't force close here to allow caller to manage modal state if needed,
+    // but for "Clear" action usually we want to reset everything.
+    // setIsStyleModalOpen(false); // Let caller handle closing if this is used in a flow
+    
     focusStyleButton();
   }, [focusStyleButton]);
   

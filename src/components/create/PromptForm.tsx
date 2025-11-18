@@ -689,17 +689,25 @@ const PromptForm = memo<PromptFormProps>(
       };
 
       const handleSetReferenceImage = (event: Event) => {
-        const customEvent = event as CustomEvent<{ file: File }>;
+        const customEvent = event as CustomEvent<{ file?: File; url?: string }>;
         if (customEvent.detail?.file) {
-          debugLog('[PromptForm] Received setReferenceImage event:', customEvent.detail.file.name);
+          debugLog('[PromptForm] Received setReferenceImage event (File):', customEvent.detail.file.name);
           // Clear existing references first, then add the new one
           clearAllReferencesRef.current();
           // Use setTimeout to ensure state updates are processed
           setTimeout(() => {
-            handleAddReferenceFilesRef.current([customEvent.detail.file]);
+            handleAddReferenceFilesRef.current([customEvent.detail.file!]);
           }, 50);
           // Clear from sessionStorage if present
           sessionStorage.removeItem('pendingReferenceImage');
+        } else if (customEvent.detail?.url) {
+          debugLog('[PromptForm] Received setReferenceImage event (URL):', customEvent.detail.url);
+          // Clear existing references first, then add the new one
+          clearAllReferencesRef.current();
+          // Use setTimeout to ensure state updates are processed
+          setTimeout(() => {
+            handleAddReferenceFilesRef.current([customEvent.detail.url!]);
+          }, 50);
         }
       };
 
@@ -1141,6 +1149,7 @@ const PromptForm = memo<PromptFormProps>(
                   onModelChange={handleModelChange}
                   isGenerating={effectiveIsGenerating}
                   activeCategory={activeCategory}
+                  hasReferences={referenceFiles.length > 0}
                 />
               </Suspense>
 

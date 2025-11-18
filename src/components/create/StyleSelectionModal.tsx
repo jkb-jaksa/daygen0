@@ -83,6 +83,41 @@ const StyleSelectionModal = memo<StyleSelectionModalProps>(({ open, onClose, sty
     }
   }, [handleApplyStyles, onApplySelectedStyles]);
   
+  // Handle apply reference
+  const handleApplyReference = useCallback(async () => {
+    let firstStyle: StyleOption | null = null;
+
+    // Find first selected style
+    for (const gender of STYLE_GENDER_OPTIONS) {
+      if (firstStyle) break;
+      const sections = tempSelectedStyles[gender.id];
+      for (const section of STYLE_SECTION_DEFINITIONS) {
+        if (sections[section.id]?.length > 0) {
+          firstStyle = sections[section.id][0];
+          break;
+        }
+      }
+    }
+
+    if (firstStyle?.image) {
+      // Use the URL directly instead of fetching blob to avoid CORS
+      const event = new CustomEvent('setReferenceImage', { 
+        detail: { url: firstStyle.image } 
+      });
+      window.dispatchEvent(event);
+      
+      // Clear any selected styles so they don't appear in the style button
+      // We need to ensure this happens and updates the parent state
+      if (styleHandlers.handleClearStyles) {
+        styleHandlers.handleClearStyles();
+      }
+      
+      onClose();
+    } else {
+      onClose();
+    }
+  }, [tempSelectedStyles, STYLE_GENDER_OPTIONS, STYLE_SECTION_DEFINITIONS, onClose, styleHandlers]);
+
   useGlobalScrollLock(open);
 
   if (!open) return null;
@@ -235,8 +270,13 @@ const StyleSelectionModal = memo<StyleSelectionModalProps>(({ open, onClose, sty
         </div>
 
         <div className="mt-6 flex items-center justify-end gap-3">
-          <button type="button" onClick={onClose} className={buttons.ghost}>
-            Cancel
+          <button 
+            type="button" 
+            onClick={handleApplyReference}
+            disabled={totalTempSelectedStyles === 0}
+            className={`${buttons.ghost} disabled:cursor-not-allowed disabled:opacity-60`}
+          >
+            Use as Reference
           </button>
           <button
             type="button"
@@ -244,7 +284,7 @@ const StyleSelectionModal = memo<StyleSelectionModalProps>(({ open, onClose, sty
             disabled={totalTempSelectedStyles === 0}
             className={`${buttons.primary} disabled:cursor-not-allowed disabled:opacity-60`}
           >
-            Apply
+            Generate Presets
           </button>
         </div>
       </div>
