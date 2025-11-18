@@ -91,6 +91,7 @@ export function handleExtensionErrors() {
     // Patterns to suppress
     const suppressPatterns = [
       'runtime.lasterror',
+      'unchecked runtime.lasterror',
       'message port closed',
       'extension context invalidated',
       'could not establish connection',
@@ -113,6 +114,7 @@ export function handleExtensionErrors() {
       'asynchronous response',
       'response was received',
       'message channel closed before a response was received',
+      'message port closed before a response was received',
       'returning true, but the message channel closed',
       'channel closed before a response',
     ];

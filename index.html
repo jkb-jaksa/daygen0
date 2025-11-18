@@ -79,6 +79,7 @@
           // Patterns to suppress
           var suppressPatterns = [
             'runtime.lasterror',
+            'unchecked runtime.lasterror',
             'message port closed',
             'extension context invalidated',
             'could not establish connection',
@@ -103,6 +104,7 @@
             'asynchronous response',
             'response was received',
             'message channel closed before a response was received',
+            'message port closed before a response was received',
             'returning true, but the message channel closed',
             'channel closed before a response'
           ];
@@ -239,6 +241,29 @@
             return xhr;
           };
         }
+        
+        // Override console.warn to filter extension warnings
+        var originalConsoleWarn = console.warn;
+        console.warn = function() {
+          var args = Array.prototype.slice.call(arguments);
+          var allArgsStr = args.map(function(arg) {
+            try {
+              if (typeof arg === 'string') return arg;
+              if (arg instanceof Error) return arg.message + ' ' + arg.name + ' ' + (arg.stack || '');
+              if (arg && typeof arg.toString === 'function') return arg.toString();
+              return String(arg);
+            } catch (e) {
+              return String(arg);
+            }
+          }).join(' ').toLowerCase();
+          
+          // Suppress browser extension warnings
+          if (shouldSuppressError(allArgsStr) || shouldSuppressError(args)) {
+            return;
+          }
+          
+          originalConsoleWarn.apply(console, args);
+        };
         
         // Override console.error to filter errors
         var originalConsoleError = console.error;
@@ -384,6 +409,41 @@
         // Suppress message channel errors (browser extensions)
         // Note: We don't override chrome.runtime.sendMessage as it may not be writable
         // The unhandledrejection handler above will catch these errors instead
+        
+        // Handle Chrome extension runtime.lastError
+        // The "Unchecked runtime.lastError" error is thrown when code accesses
+        // chrome.runtime.lastError without checking it first
+        if (typeof chrome !== 'undefined' && chrome.runtime) {
+          try {
+            // Intercept access to chrome.runtime.lastError
+            var originalLastError = chrome.runtime.lastError;
+            Object.defineProperty(chrome.runtime, 'lastError', {
+              get: function() {
+                try {
+                  var error = originalLastError;
+                  if (error && error.message) {
+                    var msg = error.message.toLowerCase();
+                    // Check if this is an error we want to suppress
+                    if (msg.includes('message port closed') ||
+                        msg.includes('extension context invalidated') ||
+                        msg.includes('receiving end does not exist') ||
+                        msg.includes('message port closed before a response was received')) {
+                      // Return undefined to suppress the error
+                      return undefined;
+                    }
+                  }
+                  return error;
+                } catch (e) {
+                  return undefined;
+                }
+              },
+              configurable: true,
+              enumerable: true
+            });
+          } catch (e) {
+            // Ignore if we can't intercept lastError (it may be non-configurable)
+          }
+        }
       })();
     </script>
     
