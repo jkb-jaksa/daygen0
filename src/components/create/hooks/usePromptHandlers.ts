@@ -15,12 +15,14 @@ type StyleOption = {
 type SelectedStylesMap = Record<string, Record<string, StyleOption[]>>;
 
 export function usePromptHandlers(
-  selectedStyles: SelectedStylesMap,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _selectedStyles: SelectedStylesMap,
   // Deprecated: applyStyleToPrompt is no longer used, but kept for signature compatibility if needed
   // or we can remove it entirely if we update the caller. Let's keep it optional/ignored for now 
   // to minimize diff noise, or update signature.
   // Given the instruction "remove the logic", we'll ignore it.
-  applyStyleToPrompt: (basePrompt: string) => string
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _applyStyleToPrompt: (basePrompt: string) => string
 ) {
   const { user } = useAuth();
   const userKey = user?.id || user?.email || "anon";
@@ -79,14 +81,6 @@ export function usePromptHandlers(
   
   // Copy notification state
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
-  
-  // Apply style to prompt (No-op now)
-  const applyStyleToPromptHandler = useCallback(
-    (basePrompt: string) => {
-      return basePrompt;
-    },
-    []
-  );
   
   // Handle prompt change
   const handlePromptChange = useCallback((value: string) => {
