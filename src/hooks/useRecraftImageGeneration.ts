@@ -8,6 +8,7 @@ import type { RecraftSize } from '../lib/recraft';
 export interface RecraftGeneratedImage {
   url: string;
   prompt?: string;
+  model?: string;
   style?: string;
   mimeType?: string;
   r2FileId?: string;
@@ -222,6 +223,8 @@ export function useRecraftImageGeneration() {
     size?: RecraftSize;
     image_format?: 'png' | 'webp';
     n?: number;
+    prompt?: string;
+    model?: string;
   }): Promise<RecraftGeneratedImage[]> => {
     setState(prev => ({
       ...prev,
@@ -252,6 +255,12 @@ export function useRecraftImageGeneration() {
       if (options.n) {
         formData.append('n', String(options.n));
       }
+      if (options.prompt) {
+        formData.append('prompt', options.prompt);
+      }
+      if (options.model) {
+        formData.append('model', options.model);
+      }
 
       // Call backend endpoint (which uses backend's Recraft API key)
       const response = await fetch(getApiUrl('/api/image/recraft/variate'), {
@@ -271,11 +280,16 @@ export function useRecraftImageGeneration() {
       const items = Array.isArray(result.items) ? result.items : [];
 
       let images: RecraftGeneratedImage[] = [];
+      const fallbackPrompt = options.prompt?.trim() || 'Variation';
+      const fallbackModel = options.model;
 
       if (items.length > 0) {
         images = items.map((item: any) => ({
           url: item.url,
-          prompt: 'Variation',
+          prompt: (typeof item.prompt === 'string' && item.prompt.trim().length > 0)
+            ? item.prompt.trim()
+            : fallbackPrompt,
+          model: typeof item.model === 'string' ? item.model : fallbackModel,
           style: undefined,
           mimeType: item.mimeType,
           r2FileId: item.r2FileId,
@@ -284,7 +298,8 @@ export function useRecraftImageGeneration() {
       } else if (Array.isArray(result.dataUrls) && result.dataUrls.length > 0) {
         images = result.dataUrls.map((url: string) => ({
           url,
-          prompt: 'Variation',
+          prompt: fallbackPrompt,
+          model: fallbackModel,
         }));
       } else {
         throw new Error('No variations generated');

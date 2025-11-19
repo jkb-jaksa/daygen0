@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { X, Download, Heart, ChevronLeft, ChevronRight, Copy, Globe, Lock, FolderPlus, Trash2, Edit as EditIcon, User, RefreshCw, Camera, Bookmark, BookmarkPlus, MoreHorizontal, Shuffle } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
+import { useGeneration } from './contexts/GenerationContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
 import { glass, buttons, tooltips } from '../../styles/designSystem';
 import ImageBadgeRow from '../shared/ImageBadgeRow';
@@ -66,8 +67,32 @@ const styleIdToStoredStyle = (styleId: string): StoredStyle | null => {
   };
 };
 
+const getModalItemIdentifier = (item: GalleryImageLike): string | null => {
+  if (item.jobId && item.jobId.trim().length > 0) {
+    return item.jobId.trim();
+  }
+
+  if (item.r2FileId && item.r2FileId.trim().length > 0) {
+    return item.r2FileId.trim();
+  }
+
+  if (item.url && item.url.trim().length > 0) {
+    return item.url.trim();
+  }
+
+  return null;
+};
+
+const buildModalVariateJobId = (item: GalleryImageLike): string => {
+  const identifier = getModalItemIdentifier(item) ?? 'variate';
+  const slug = identifier.replace(/[^a-zA-Z0-9]/g, '').slice(-12) || 'variate';
+  const uniqueSuffix = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  return `variate-${slug}-${uniqueSuffix}`;
+};
+
 const FullImageModal = memo(() => {
   const { state, setFullSizeImage, filteredItems, addImage } = useGallery();
+  const { addActiveJob, updateJobStatus, removeActiveJob } = useGeneration();
   const { variateImage: variateImageHook, isGenerating: isVariating } = useRecraftImageGeneration();
   const { 
     handleToggleLike, 
@@ -103,6 +128,33 @@ const FullImageModal = memo(() => {
   const userKey = user?.id || user?.email || "anon";
   const { savePrompt, isPromptSaved, removePrompt } = useSavedPrompts(userKey);
   const { showToast } = useToast();
+  const startVariateJob = useCallback((image: GalleryImageLike) => {
+    const syntheticId = buildModalVariateJobId(image);
+    const timestamp = Date.now();
+
+    addActiveJob({
+      id: syntheticId,
+      prompt: image.prompt || 'Image variation',
+      model: image.model || 'recraft-variation',
+      status: 'running',
+      progress: 5,
+      backendProgress: 5,
+      backendProgressUpdatedAt: timestamp,
+      startedAt: timestamp,
+      jobId: syntheticId,
+    });
+
+    return syntheticId;
+  }, [addActiveJob]);
+
+  const finalizeVariateJob = useCallback((jobId: string, status: 'completed' | 'failed') => {
+    updateJobStatus(jobId, status, {
+      progress: status === 'completed' ? 100 : undefined,
+      backendProgress: status === 'completed' ? 100 : undefined,
+      backendProgressUpdatedAt: Date.now(),
+    });
+    removeActiveJob(jobId);
+  }, [removeActiveJob, updateJobStatus]);
   const [savePromptModalState, setSavePromptModalState] = useState<{ prompt: string; originalPrompt: string } | null>(null);
   const savePromptModalRef = useRef<HTMLDivElement>(null);
   const {
@@ -415,9 +467,18 @@ const FullImageModal = memo(() => {
       return;
     }
 
+    let syntheticJobId: string | null = null;
+
+    const normalizedPrompt = fullSizeImage.prompt?.trim();
+    const promptForRequest = normalizedPrompt && normalizedPrompt.length > 0 ? normalizedPrompt : 'Variation';
+    const modelForRequest = fullSizeImage.model || 'recraft-v3';
+
     try {
+      syntheticJobId = startVariateJob(fullSizeImage);
       const variations = await variateImageHook({
         imageUrl: fullSizeImage.url,
+        prompt: promptForRequest,
+        model: modelForRequest,
       });
 
       if (variations.length > 0) {
@@ -425,8 +486,10 @@ const FullImageModal = memo(() => {
         for (const variation of variations) {
           await addImage({
             url: variation.url,
-            prompt: fullSizeImage.prompt || 'Variation',
-            model: fullSizeImage.model || 'recraft-v3',
+            prompt: variation.prompt?.trim() && variation.prompt.trim().length > 0
+              ? variation.prompt.trim()
+              : promptForRequest,
+            model: variation.model || modelForRequest,
             timestamp: new Date().toISOString(),
             ownerId: fullSizeImage.ownerId,
             isLiked: false,
@@ -435,14 +498,19 @@ const FullImageModal = memo(() => {
           });
         }
         showToast(`Generated ${variations.length} variation${variations.length > 1 ? 's' : ''}`, 'success');
+        finalizeVariateJob(syntheticJobId, 'completed');
       } else {
         showToast('Failed to generate variation', 'error');
+        finalizeVariateJob(syntheticJobId, 'failed');
       }
     } catch (error) {
       debugError('Failed to variate image:', error);
       showToast('Failed to generate variation', 'error');
+      if (syntheticJobId) {
+        finalizeVariateJob(syntheticJobId, 'failed');
+      }
     }
-  }, [fullSizeImage, variateImageHook, addImage, showToast]);
+  }, [fullSizeImage, variateImageHook, addImage, showToast, startVariateJob, finalizeVariateJob]);
 
   // Handle delete
   const handleDeleteClick = useCallback((e: React.MouseEvent) => {

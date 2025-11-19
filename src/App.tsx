@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, Link, Outlet } from "react-router-dom";
 import { lazy, Suspense, useEffect, useState, useRef, useCallback } from "react";
 import type { ReactNode } from "react";
 import { useFooter } from "./contexts/useFooter";
@@ -9,6 +9,7 @@ import { authMetrics } from "./utils/authMetrics";
 import useParallaxHover from "./hooks/useParallaxHover";
 import { Edit as EditIcon, Image as ImageIcon, Video as VideoIcon, Volume2 } from "lucide-react";
 import { GenerationProvider } from "./components/create/contexts/GenerationContext";
+import { GalleryProvider } from "./components/create/contexts/GalleryContext";
 import { StyleModalProvider } from "./contexts/StyleModalProvider";
 import { useStyleModal } from "./contexts/useStyleModal";
  
@@ -491,6 +492,22 @@ function RouteFallback() {
   );
 }
 
+function CreateProtectedLayout() {
+  return (
+    <RequireAuth>
+      <GenerationProvider>
+        <GalleryProvider>
+          <Suspense fallback={<RouteFallback />}>
+            <AuthErrorBoundary fallbackRoute="/create" context="creation">
+              <Outlet />
+            </AuthErrorBoundary>
+          </Suspense>
+        </GalleryProvider>
+      </GenerationProvider>
+    </RequireAuth>
+  );
+}
+
 function AppContent() {
   const { isFooterVisible } = useFooter();
   const accountRouteElement = (
@@ -530,30 +547,10 @@ function AppContent() {
             <Route path="/explore" element={<Explore />} />
             <Route path="/learn/tools/:toolSlug" element={<LearnToolPage />} />
             <Route path="/digital-copy" element={<DigitalCopy />} />
-            <Route 
-              path="/job/:jobId/*" 
-              element={
-                <RequireAuth>
-                  <Suspense fallback={<RouteFallback />}>
-                    <AuthErrorBoundary fallbackRoute="/create" context="creation">
-                      <CreateRoutes />
-                    </AuthErrorBoundary>
-                  </Suspense>
-                </RequireAuth>
-              } 
-            />
-            <Route 
-              path="/create/*" 
-              element={
-                <RequireAuth>
-                  <Suspense fallback={<RouteFallback />}>
-                    <AuthErrorBoundary fallbackRoute="/create" context="creation">
-                      <CreateRoutes />
-                    </AuthErrorBoundary>
-                  </Suspense>
-                </RequireAuth>
-              } 
-            />
+            <Route element={<CreateProtectedLayout />}>
+              <Route path="/create/*" element={<CreateRoutes />} />
+              <Route path="/job/:jobId/*" element={<CreateRoutes />} />
+            </Route>
             <Route 
               path="/gallery/*" 
               element={

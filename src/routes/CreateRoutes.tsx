@@ -1,7 +1,5 @@
 import { lazy, Suspense, useEffect } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { GenerationProvider } from "../components/create/contexts/GenerationContext";
-import { GalleryProvider } from "../components/create/contexts/GalleryContext";
 
 const CreateRefactored = lazy(() => import("../components/create/Create-refactored"));
 const Avatars = lazy(() => import("../components/Avatars"));
@@ -53,33 +51,29 @@ export default function CreateRoutes() {
   }, [location.search, location.pathname, navigate]);
 
   return (
-    <GenerationProvider>
-      <GalleryProvider>
-        <Suspense fallback={<Loading />}>
-          <Routes>
-            <Route index element={<IndexRoute />} />
-            <Route path="avatars">
-              <Route index element={<Avatars />} />
-              <Route path=":avatarSlug" element={<Avatars />} />
-            </Route>
-            <Route path="products">
-              <Route index element={<Products />} />
-              <Route path=":productSlug" element={<Products />} />
-            </Route>
-            <Route path="chat" element={<ChatMode />} />
-            <Route path=":category" element={<CategoryRoute />} />
-            <Route
-              path="*"
-              element={
-                <Navigate
-                  to={{ pathname: "/create/image", search: location.search }}
-                  replace
-                />
-              }
+    <Suspense fallback={<Loading />}>
+      <Routes>
+        <Route index element={<IndexRoute />} />
+        <Route path="avatars">
+          <Route index element={<Avatars />} />
+          <Route path=":avatarSlug" element={<Avatars />} />
+        </Route>
+        <Route path="products">
+          <Route index element={<Products />} />
+          <Route path=":productSlug" element={<Products />} />
+        </Route>
+        <Route path="chat" element={<ChatMode />} />
+        <Route path=":category" element={<CategoryRoute />} />
+        <Route
+          path="*"
+          element={
+            <Navigate
+              to={{ pathname: "/create/image", search: location.search }}
+              replace
             />
-          </Routes>
-        </Suspense>
-      </GalleryProvider>
-    </GenerationProvider>
+          }
+        />
+      </Routes>
+    </Suspense>
   );
 }

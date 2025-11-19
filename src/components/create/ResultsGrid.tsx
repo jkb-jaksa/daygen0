@@ -52,6 +52,13 @@ const getItemIdentifier = (item: GalleryImageLike | GalleryVideoLike): string | 
   return null;
 };
 
+const buildSyntheticJobId = (item: GalleryImageLike | GalleryVideoLike): string => {
+  const identifier = getItemIdentifier(item) ?? 'variate';
+  const slug = identifier.replace(/[^a-zA-Z0-9]/g, '').slice(-12) || 'variate';
+  const uniqueSuffix = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  return `variate-${slug}-${uniqueSuffix}`;
+};
+
 interface ResultsGridProps {
   className?: string;
   activeCategory?: 'image' | 'video' | 'gallery' | 'my-folders' | 'inspirations';
@@ -105,7 +112,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     handleReusePrompt,
     handleMakeVideo,
   } = useGalleryActions();
-  const { state: generationState } = useGeneration();
+  const generation = useGeneration();
+  const { state: generationState, addActiveJob, updateJobStatus, removeActiveJob } = generation;
   const { selectedItems, isBulkMode, imageActionMenu } = state;
   const [editMenu, setEditMenu] = useState<{ id: string; anchor: HTMLElement | null } | null>(null);
   const [storedAvatars, setStoredAvatars] = useState<StoredAvatar[]>([]);
@@ -490,6 +498,34 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     return 'type' in item && item.type === 'video';
   }, []);
 
+  const startVariateJob = useCallback((item: GalleryImageLike) => {
+    const syntheticId = buildSyntheticJobId(item);
+    const timestamp = Date.now();
+
+    addActiveJob({
+      id: syntheticId,
+      prompt: item.prompt || 'Image variation',
+      model: item.model || 'recraft-variation',
+      status: 'running',
+      progress: 5,
+      backendProgress: 5,
+      backendProgressUpdatedAt: timestamp,
+      startedAt: timestamp,
+      jobId: syntheticId,
+    });
+
+    return syntheticId;
+  }, [addActiveJob]);
+
+  const finalizeVariateJob = useCallback((jobId: string, status: 'completed' | 'failed') => {
+    updateJobStatus(jobId, status, {
+      progress: status === 'completed' ? 100 : undefined,
+      backendProgress: status === 'completed' ? 100 : undefined,
+      backendProgressUpdatedAt: Date.now(),
+    });
+    removeActiveJob(jobId);
+  }, [removeActiveJob, updateJobStatus]);
+
   // Handle variate image
   const handleVariateImage = useCallback(async (e: React.MouseEvent, item: GalleryImageLike | GalleryVideoLike) => {
     e.stopPropagation();
@@ -504,9 +540,18 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       return;
     }
 
+    let syntheticJobId: string | null = null;
+
+    const normalizedPrompt = item.prompt?.trim();
+    const promptForRequest = normalizedPrompt && normalizedPrompt.length > 0 ? normalizedPrompt : 'Variation';
+    const modelForRequest = item.model || 'recraft-v3';
+
     try {
+      syntheticJobId = startVariateJob(item as GalleryImageLike);
       const variations = await variateImageHook({
         imageUrl: item.url,
+        prompt: promptForRequest,
+        model: modelForRequest,
       });
 
       if (variations.length > 0) {
@@ -514,8 +559,10 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
         for (const variation of variations) {
           await addImage({
             url: variation.url,
-            prompt: item.prompt || 'Variation',
-            model: item.model || 'recraft-v3',
+            prompt: variation.prompt?.trim() && variation.prompt.trim().length > 0
+              ? variation.prompt.trim()
+              : promptForRequest,
+            model: variation.model || modelForRequest,
             timestamp: new Date().toISOString(),
             ownerId: item.ownerId,
             isLiked: false,
@@ -524,14 +571,19 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           });
         }
         showToast(`Generated ${variations.length} variation${variations.length > 1 ? 's' : ''}`, 'success');
+        finalizeVariateJob(syntheticJobId, 'completed');
       } else {
         showToast('Failed to generate variation', 'error');
+        finalizeVariateJob(syntheticJobId, 'failed');
       }
     } catch (error) {
       debugError('Failed to variate image:', error);
       showToast('Failed to generate variation', 'error');
+      if (syntheticJobId) {
+        finalizeVariateJob(syntheticJobId, 'failed');
+      }
     }
-  }, [variateImageHook, addImage, showToast, isVideo]);
+  }, [isVideo, startVariateJob, variateImageHook, addImage, showToast, finalizeVariateJob]);
   
   if (showLoadingState) {
     return (
@@ -712,6 +764,15 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           const modelIdForFilter = item.model;
           const filterType: 'image' | 'video' = isVideoItem ? 'video' : 'image';
           const baseActionTooltipId = item.jobId || item.r2FileId || item.url || `index-${index}`;
+          const rawPrompt = item.prompt?.trim() ?? '';
+          const hasPromptContent = rawPrompt.length > 0;
+          const promptForDisplay = hasPromptContent
+            ? rawPrompt
+            : item.model
+              ? 'Variation'
+              : '';
+          const promptForActions = hasPromptContent ? rawPrompt : null;
+          const shouldShowPromptDetails = Boolean(promptForDisplay);
           
           return (
           <div
@@ -957,7 +1018,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
               )}
 
               {/* Prompt Description Bar - Non-gallery views */}
-              {item.prompt && !isGalleryView && (
+              {shouldShowPromptDetails && !isGalleryView && (
                 <div className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto hidden sm:flex items-end z-10 ${
                   isMenuActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                 }`}
@@ -968,13 +1029,13 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                     <div className="mb-2">
                       <div className="relative">
                         <p className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
-                          {item.prompt}
-                          {(() => {
+                          {promptForDisplay}
+                          {promptForActions && (() => {
                             const tooltipId = `copy-${item.jobId || item.r2FileId || index}`;
                             return (
                               <>
                                 <button
-                                  onClick={(e) => void handleCopyPrompt(item.prompt, e)}
+                                  onClick={(e) => void handleCopyPrompt(promptForActions, e)}
                                   onMouseDown={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
@@ -990,7 +1051,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                   <Copy className="w-3 h-3" />
                                 </button>
                                 <button
-                                  onClick={(e) => handleToggleSavePrompt(item.prompt, e)}
+                                  onClick={(e) => handleToggleSavePrompt(promptForActions, e)}
                                   onMouseDown={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
@@ -1003,7 +1064,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                   }}
                                   className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
                                 >
-                                  {isPromptSaved(item.prompt) ? (
+                                  {isPromptSaved(promptForActions) ? (
                                     <Bookmark className="w-3 h-3 fill-current" />
                                   ) : (
                                     <BookmarkPlus className="w-3 h-3" />
@@ -1185,7 +1246,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
               )}
 
               {/* Tooltips rendered via portal to avoid clipping */}
-              {item.prompt && !isGalleryView && (() => {
+              {promptForActions && shouldShowPromptDetails && !isGalleryView && (() => {
                 const tooltipId = `copy-${item.jobId || item.r2FileId || index}`;
                 return (
                   <>
@@ -1205,7 +1266,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                       className={`${tooltips.base} fixed`}
                       style={{ zIndex: 9999 }}
                       >
-                        {isPromptSaved(item.prompt) ? 'Prompt saved' : 'Save prompt'}
+                        {isPromptSaved(promptForActions) ? 'Prompt saved' : 'Save prompt'}
                       </div>,
                       document.body
                     )}
@@ -1265,7 +1326,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
               })()}
 
               {/* Gallery Prompt Hover Button */}
-              {item.prompt && isGalleryView && (
+              {shouldShowPromptDetails && isGalleryView && (
                 <div className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-center justify-center z-10 ${
                   isMenuActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                 }`}
@@ -1294,7 +1355,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
             </div>
 
             {/* Gallery Prompt Popup - Outside card-media-frame to avoid clipping */}
-            {item.prompt && isGalleryView && (() => {
+            {shouldShowPromptDetails && isGalleryView && (() => {
               const itemId = item.jobId || item.r2FileId || item.url;
               const isPopupVisible = hoveredPromptButton === itemId;
               return (
@@ -1305,53 +1366,53 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                   onMouseEnter={() => setHoveredPromptButton(itemId)}
                   onMouseLeave={() => setHoveredPromptButton(null)}
                 >
-                  <div className="PromptDescriptionBar rounded-lg text-theme-white px-4 py-3 mb-2 text-xs font-raleway shadow-xl">
+                    <div className="PromptDescriptionBar rounded-lg text-theme-white px-4 py-3 mb-2 text-xs font-raleway shadow-xl">
                     <div className="relative">
                       <p className="leading-relaxed break-words whitespace-pre-wrap max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-theme-mid/40 scrollbar-track-transparent">
-                        {item.prompt}
-                        {(() => {
-                          const tooltipId = `copy-gallery-${item.jobId || item.r2FileId || index}`;
-                          return (
-                            <>
-                              <button
-                                onClick={(e) => void handleCopyPrompt(item.prompt, e)}
-                                onMouseDown={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                }}
-                                onMouseEnter={(e) => {
-                                  showHoverTooltip(e.currentTarget, tooltipId, { placement: 'above', offset: 2 });
-                                }}
-                                onMouseLeave={() => {
-                                  hideHoverTooltip(tooltipId);
-                                }}
-                                className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
-                              >
-                                <Copy className="w-3 h-3" />
-                              </button>
-                              <button
-                                onClick={(e) => handleToggleSavePrompt(item.prompt, e)}
-                                onMouseDown={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                }}
-                                onMouseEnter={(e) => {
-                                  showHoverTooltip(e.currentTarget, `save-${tooltipId}`, { placement: 'above', offset: 2 });
-                                }}
-                                onMouseLeave={() => {
-                                  hideHoverTooltip(`save-${tooltipId}`);
-                                }}
-                                className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
-                              >
-                                {isPromptSaved(item.prompt) ? (
-                                  <Bookmark className="w-3 h-3 fill-current" />
-                                ) : (
-                                  <BookmarkPlus className="w-3 h-3" />
-                                )}
-                              </button>
-                            </>
-                          );
-                        })()}
+                          {promptForDisplay}
+                          {promptForActions && (() => {
+                            const tooltipId = `copy-gallery-${item.jobId || item.r2FileId || index}`;
+                            return (
+                              <>
+                                <button
+                                  onClick={(e) => void handleCopyPrompt(promptForActions, e)}
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    showHoverTooltip(e.currentTarget, tooltipId, { placement: 'above', offset: 2 });
+                                  }}
+                                  onMouseLeave={() => {
+                                    hideHoverTooltip(tooltipId);
+                                  }}
+                                  className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
+                                >
+                                  <Copy className="w-3 h-3" />
+                                </button>
+                                <button
+                                  onClick={(e) => handleToggleSavePrompt(promptForActions, e)}
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    showHoverTooltip(e.currentTarget, `save-${tooltipId}`, { placement: 'above', offset: 2 });
+                                  }}
+                                  onMouseLeave={() => {
+                                    hideHoverTooltip(`save-${tooltipId}`);
+                                  }}
+                                  className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
+                                >
+                                  {isPromptSaved(promptForActions) ? (
+                                    <Bookmark className="w-3 h-3 fill-current" />
+                                  ) : (
+                                    <BookmarkPlus className="w-3 h-3" />
+                                  )}
+                                </button>
+                              </>
+                            );
+                          })()}
                       </p>
                     </div>
                   </div>
@@ -1360,7 +1421,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
             })()}
 
             {/* Tooltips rendered via portal to avoid clipping - Gallery view */}
-            {item.prompt && isGalleryView && (() => {
+            {promptForActions && shouldShowPromptDetails && isGalleryView && (() => {
               const tooltipId = `copy-gallery-${item.jobId || item.r2FileId || index}`;
               return (
                 <>
@@ -1380,7 +1441,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                         className={`${tooltips.base} fixed`}
                         style={{ zIndex: 9999 }}
                     >
-                      {isPromptSaved(item.prompt) ? 'Prompt saved' : 'Save prompt'}
+                      {isPromptSaved(promptForActions) ? 'Prompt saved' : 'Save prompt'}
                     </div>,
                     document.body
                   )}
