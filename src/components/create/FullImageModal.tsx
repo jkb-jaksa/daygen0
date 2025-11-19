@@ -2,7 +2,7 @@ import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from '
 import { lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { X, Download, Heart, ChevronLeft, ChevronRight, Copy, Globe, Lock, FolderPlus, Trash2, Edit as EditIcon, User, RefreshCw, Camera, Bookmark, BookmarkPlus, MoreHorizontal } from 'lucide-react';
+import { X, Download, Heart, ChevronLeft, ChevronRight, Copy, Globe, Lock, FolderPlus, Trash2, Edit as EditIcon, User, RefreshCw, Camera, Bookmark, BookmarkPlus, MoreHorizontal, Shuffle } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
 import { glass, buttons, tooltips } from '../../styles/designSystem';
@@ -24,6 +24,7 @@ import { getPersistedValue } from '../../lib/clientStorage';
 import { STORAGE_CHANGE_EVENT } from '../../utils/storageEvents';
 import { useBadgeNavigation } from './hooks/useBadgeNavigation';
 import { scrollLockExemptAttr, useGlobalScrollLock } from '../../hooks/useGlobalScrollLock';
+import { useRecraftImageGeneration } from '../../hooks/useRecraftImageGeneration';
 
 // Lazy load VerticalGalleryNav
 const VerticalGalleryNav = lazy(() => import('../shared/VerticalGalleryNav'));
@@ -66,7 +67,8 @@ const styleIdToStoredStyle = (styleId: string): StoredStyle | null => {
 };
 
 const FullImageModal = memo(() => {
-  const { state, setFullSizeImage, filteredItems } = useGallery();
+  const { state, setFullSizeImage, filteredItems, addImage } = useGallery();
+  const { variateImage: variateImageHook, isGenerating: isVariating } = useRecraftImageGeneration();
   const { 
     handleToggleLike, 
     handleTogglePublic,
@@ -399,6 +401,49 @@ const FullImageModal = memo(() => {
     }
   }, [fullSizeImage, handleTogglePublic]);
   
+  // Handle variate image
+  const handleVariateClick = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    if (!fullSizeImage || ('type' in fullSizeImage && fullSizeImage.type === 'video')) {
+      return;
+    }
+
+    if (!fullSizeImage.url) {
+      showToast('No image URL available', 'error');
+      return;
+    }
+
+    try {
+      const variations = await variateImageHook({
+        imageUrl: fullSizeImage.url,
+      });
+
+      if (variations.length > 0) {
+        // Add each variation to the gallery
+        for (const variation of variations) {
+          await addImage({
+            url: variation.url,
+            prompt: fullSizeImage.prompt || 'Variation',
+            model: fullSizeImage.model || 'recraft-v3',
+            timestamp: new Date().toISOString(),
+            ownerId: fullSizeImage.ownerId,
+            isLiked: false,
+            isPublic: false,
+            r2FileId: variation.r2FileId,
+          });
+        }
+        showToast(`Generated ${variations.length} variation${variations.length > 1 ? 's' : ''}`, 'success');
+      } else {
+        showToast('Failed to generate variation', 'error');
+      }
+    } catch (error) {
+      debugError('Failed to variate image:', error);
+      showToast('Failed to generate variation', 'error');
+    }
+  }, [fullSizeImage, variateImageHook, addImage, showToast]);
+
   // Handle delete
   const handleDeleteClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -863,6 +908,33 @@ const FullImageModal = memo(() => {
                   </Suspense>
                 )}
                 
+              {/* Variate button - Only for images */}
+                {!isVideo && (
+                  <button
+                    type="button"
+                    onClick={handleVariateClick}
+                    disabled={isVariating}
+                    className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${
+                      editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || isImageActionMenuOpen
+                        ? 'opacity-100 pointer-events-auto'
+                        : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                    } ${isVariating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    onMouseEnter={(e) => {
+                      showHoverTooltip(
+                        e.currentTarget,
+                        `variate-${fullSizeActionTooltipId}`,
+                        { placement: 'below', offset: 2 },
+                      );
+                    }}
+                    onMouseLeave={() => {
+                      hideHoverTooltip(`variate-${fullSizeActionTooltipId}`);
+                    }}
+                    aria-label="Variate image"
+                  >
+                    <Shuffle className="w-4 h-4" />
+                  </button>
+                )}
+                
               {/* Delete, Like, More - hover-revealed (glass tooltip only, no native title) */}
                 <button
                   type="button"
@@ -1140,6 +1212,7 @@ const FullImageModal = memo(() => {
             })()}
 
             {(() => {
+              const variateId = `variate-${fullSizeActionTooltipId}`;
               const deleteId = `delete-${fullSizeActionTooltipId}`;
               const likeId = `like-${fullSizeActionTooltipId}`;
               const moreId = `more-${fullSizeActionTooltipId}`;
@@ -1150,12 +1223,22 @@ const FullImageModal = memo(() => {
               const sidebarDeleteId = `delete-sidebar-${fullSizeActionTooltipId}`;
               return (
                 <>
+                  {!isVideo && createPortal(
+                    <div
+                      data-tooltip-for={variateId}
+                      className={`${tooltips.base} fixed`}
+                      style={{ zIndex: 9999 }}
+                    >
+                      Variate image
+                    </div>,
+                    document.body,
+                  )}
                   {createPortal(
                     <div
                       data-tooltip-for={deleteId}
                       className={`${tooltips.base} fixed`}
                       style={{ zIndex: 9999 }}
-                      >
+                    >
                       Delete
                     </div>,
                     document.body,

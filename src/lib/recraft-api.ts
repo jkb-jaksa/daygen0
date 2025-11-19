@@ -149,7 +149,7 @@ export async function variateImage(
   }
 
   const formData = createFormData({
-    image: file,
+    file: file,
     size: opts.size,
     image_format: opts.image_format,
     n: opts.n ?? 1,

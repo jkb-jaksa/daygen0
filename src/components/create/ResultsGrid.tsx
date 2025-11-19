@@ -1,7 +1,7 @@
 import React, { memo, useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
-import { Heart, MoreHorizontal, Check, Image as ImageIcon, Video as VideoIcon, Copy, BookmarkPlus, Bookmark, Square, Trash2, FileText } from 'lucide-react';
+import { Heart, MoreHorizontal, Check, Image as ImageIcon, Video as VideoIcon, Copy, BookmarkPlus, Bookmark, Square, Trash2, FileText, Shuffle } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
@@ -13,6 +13,7 @@ import { useSavedPrompts } from '../../hooks/useSavedPrompts';
 import { useAuth } from '../../auth/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { loadSavedPrompts } from '../../lib/savedPrompts';
+import { useRecraftImageGeneration } from '../../hooks/useRecraftImageGeneration';
 import type { GalleryImageLike, GalleryVideoLike } from './types';
 import type { StoredAvatar } from '../avatars/types';
 import type { StoredProduct } from '../products/types';
@@ -90,7 +91,8 @@ const renderPlaceholderGrid = (
 const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, onFocusPrompt }) => {
   const { user, storagePrefix } = useAuth();
   const { showToast } = useToast();
-  const { state, toggleItemSelection, isLoading, filteredItems: contextFilteredItems } = useGallery();
+  const { state, toggleItemSelection, isLoading, filteredItems: contextFilteredItems, addImage } = useGallery();
+  const { variateImage: variateImageHook, isGenerating: isVariating } = useRecraftImageGeneration();
   const {
     handleImageClick,
     handleImageActionMenu,
@@ -487,6 +489,49 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const isVideo = useCallback((item: GalleryImageLike | GalleryVideoLike) => {
     return 'type' in item && item.type === 'video';
   }, []);
+
+  // Handle variate image
+  const handleVariateImage = useCallback(async (e: React.MouseEvent, item: GalleryImageLike | GalleryVideoLike) => {
+    e.stopPropagation();
+    
+    // Only variate images, not videos
+    if (isVideo(item)) {
+      return;
+    }
+
+    if (!item.url) {
+      showToast('No image URL available', 'error');
+      return;
+    }
+
+    try {
+      const variations = await variateImageHook({
+        imageUrl: item.url,
+      });
+
+      if (variations.length > 0) {
+        // Add each variation to the gallery
+        for (const variation of variations) {
+          await addImage({
+            url: variation.url,
+            prompt: item.prompt || 'Variation',
+            model: item.model || 'recraft-v3',
+            timestamp: new Date().toISOString(),
+            ownerId: item.ownerId,
+            isLiked: false,
+            isPublic: false,
+            r2FileId: variation.r2FileId,
+          });
+        }
+        showToast(`Generated ${variations.length} variation${variations.length > 1 ? 's' : ''}`, 'success');
+      } else {
+        showToast('Failed to generate variation', 'error');
+      }
+    } catch (error) {
+      debugError('Failed to variate image:', error);
+      showToast('Failed to generate variation', 'error');
+    }
+  }, [variateImageHook, addImage, showToast, isVideo]);
   
   if (showLoadingState) {
     return (
@@ -787,6 +832,33 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                             onMakeVideo={handleVideo}
                           />
                         </Suspense>
+                      )}
+                      
+                      {/* Variate button - Only for images */}
+                      {!isVideo(item) && (
+                        <button
+                          type="button"
+                          onClick={(e) => handleVariateImage(e, item)}
+                          disabled={isVariating}
+                          className={`image-action-btn ${activeCategory === 'gallery' ? 'image-action-btn--gallery' : ''} parallax-large transition-opacity duration-100 ${
+                            isMenuActive
+                              ? 'opacity-100 pointer-events-auto'
+                              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                          } ${isVariating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          onMouseEnter={(e) => {
+                            showHoverTooltip(
+                              e.currentTarget,
+                              `variate-${baseActionTooltipId}`,
+                              { placement: 'below', offset: 2 },
+                            );
+                          }}
+                          onMouseLeave={() => {
+                            hideHoverTooltip(`variate-${baseActionTooltipId}`);
+                          }}
+                          aria-label="Variate image"
+                        >
+                          <Shuffle className="w-3 h-3" />
+                        </button>
                       )}
                       
                       {/* Delete, Like, More - Always shown (glass tooltip only, no native title) */}
@@ -1142,11 +1214,22 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
               })()}
 
               {(() => {
+                const variateId = `variate-${baseActionTooltipId}`;
                 const deleteId = `delete-${baseActionTooltipId}`;
                 const likeId = `like-${baseActionTooltipId}`;
                 const moreId = `more-${baseActionTooltipId}`;
                 return (
                   <>
+                    {!isVideo(item) && createPortal(
+                      <div
+                        data-tooltip-for={variateId}
+                        className={`${tooltips.base} fixed`}
+                        style={{ zIndex: 9999 }}
+                      >
+                        Variate image
+                      </div>,
+                      document.body,
+                    )}
                     {createPortal(
                       <div
                         data-tooltip-for={deleteId}
