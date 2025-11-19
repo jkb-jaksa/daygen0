@@ -29,6 +29,7 @@ const ModelBadge = lazy(() => import('../ModelBadge'));
 const AvatarBadge = lazy(() => import('../avatars/AvatarBadge'));
 const ProductBadge = lazy(() => import('../products/ProductBadge'));
 const StyleBadge = lazy(() => import('../styles/StyleBadge'));
+const AspectRatioBadge = lazy(() => import('../shared/AspectRatioBadge'));
 const PublicBadge = lazy(() => import('./PublicBadge'));
 const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
 const GenerationProgress = lazy(() => import('./GenerationProgress'));
@@ -978,7 +979,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                         (item.isPublic ? 1 : 0) +
                         (avatarForImage ? 1 : 0) +
                         (productForImage ? 1 : 0) +
-                        (styleForImage ? 1 : 0);
+                        (styleForImage ? 1 : 0) +
+                        (item.aspectRatio ? 1 : 0);
 
                       const useTwoRowLayout = totalBadges >= 3;
 
@@ -1003,8 +1005,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                             )}
                           </div>
                           
-                          {/* Row 2: Avatar, Product, Style Badges */}
-                          {(avatarForImage || productForImage || styleForImage) && (
+                          {/* Row 2: Avatar, Product, Style, Aspect Ratio Badges */}
+                          {(avatarForImage || productForImage || styleForImage || item.aspectRatio) && (
                             <div className="flex items-center gap-1">
                               {avatarForImage && (
                                 <Suspense fallback={null}>
@@ -1031,6 +1033,15 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                     onClick={(e) => {
                                       e.stopPropagation();
                                     }}
+                                  />
+                                </Suspense>
+                              )}
+                              
+                              {item.aspectRatio && (
+                                <Suspense fallback={null}>
+                                  <AspectRatioBadge
+                                    aspectRatio={item.aspectRatio}
+                                    size="sm"
                                   />
                                 </Suspense>
                               )}
@@ -1081,6 +1092,15 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                   onClick={(e) => {
                                     e.stopPropagation();
                                   }}
+                                />
+                              </Suspense>
+                            )}
+                            
+                            {item.aspectRatio && (
+                              <Suspense fallback={null}>
+                                <AspectRatioBadge
+                                  aspectRatio={item.aspectRatio}
+                                  size="sm"
                                 />
                               </Suspense>
                             )}

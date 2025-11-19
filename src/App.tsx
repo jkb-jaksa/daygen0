@@ -73,12 +73,16 @@ function UseCaseCard({
   imageAlt,
   to,
   onClick,
+  imageHeight = "h-40 sm:h-44 md:h-48",
+  subtitle,
 }: {
   title: string;
   imageUrl: string;
   imageAlt: string;
   to?: string;
   onClick?: () => void;
+  imageHeight?: string;
+  subtitle?: string;
 }) {
   const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLDivElement>();
 
@@ -103,12 +107,15 @@ function UseCaseCard({
         alt={imageAlt}
         loading="lazy"
         decoding="async"
-        className="h-40 sm:h-44 md:h-48 w-full object-cover parallax-isolate"
+        className={`${imageHeight} w-full object-cover parallax-isolate`}
       />
       <div className="absolute bottom-0 left-0 right-0 h-[70px] bg-gradient-to-t from-black/90 to-transparent pointer-events-none" />
       <div className="absolute bottom-2 left-2 right-2 flex items-end">
         <div className="UseCaseDescription relative z-10 px-4 pt-1.5 pb-0 rounded-2xl">
-          <h2 className="text-xl font-normal tracking-tight text-white font-raleway whitespace-nowrap">{title}</h2>
+          <h2 className="text-2xl font-normal tracking-tight text-white font-raleway whitespace-nowrap">{title}</h2>
+          {subtitle && (
+            <p className="text-sm font-normal text-white/90 font-raleway mt-0.5">{subtitle}</p>
+          )}
         </div>
       </div>
     </div>
@@ -228,10 +235,41 @@ function Home() {
                 <div className="flex items-start justify-between gap-4 w-full">
                   <div className="flex flex-col gap-2 lg:max-w-xl">
                     <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-left`}>
-                      Your Daily AI Generations.
+                      Create your Digital Copy.
                     </h1>
                     <p className={`${headings.tripleHeading.description} text-theme-text text-left mt-0 mb-1`}>
-                      Master all the best Creative AI Tools in one place.
+                      Your digital presence. All in one place.
+                    </p>
+                  </div>
+                  <div className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-right flex-shrink-0 hidden lg:block font-normal`}>
+                    daygen
+                  </div>
+                </div>
+              </div>
+              <div className="w-96">
+                <UseCaseCard
+                  title="Dominik, 21"
+                  subtitle="CEO/Founder."
+                  imageUrl="/dominik.jpg"
+                  imageAlt="Dominik"
+                  onClick={openStyleModal}
+                  imageHeight="h-56 sm:h-64 md:h-72"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+        <section className="relative min-h-[100dvh] pt-[calc(var(--nav-h,4rem)+16px)] pb-[calc(var(--nav-h)+0.5rem)]">
+          <div className={`${layout.container}`}>
+            <div className="flex flex-col gap-4">
+              <div className="home-hero relative z-10 w-full">
+                <div className="flex items-start justify-between gap-4 w-full">
+                  <div className="flex flex-col gap-2 lg:max-w-xl">
+                    <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-left`}>
+                      Create your Digital Copy.
+                    </h1>
+                    <p className={`${headings.tripleHeading.description} text-theme-text text-left mt-0 mb-1`}>
+                      All modalities. In one place.
                     </p>
                     <div className="home-hero-actions flex flex-wrap gap-2">
                       <Link to="/learn/use-cases" className={buttons.ghost}>

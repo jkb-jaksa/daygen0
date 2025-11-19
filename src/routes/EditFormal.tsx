@@ -19,6 +19,14 @@ import { AI_MODELS } from '../components/create/ModelSelector';
 export default function EditFormal() {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleBack = useCallback(() => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
+  }, [navigate]);
   
   // Main state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -223,10 +231,10 @@ export default function EditFormal() {
           <div className="text-center mt-8">
             <button
               type="button"
-              onClick={() => navigate('/')}
+              onClick={handleBack}
               className={`${buttons.ghost} font-raleway`}
             >
-              Back to Home
+              Back
             </button>
           </div>
         </div>
@@ -242,10 +250,10 @@ export default function EditFormal() {
           <div className="flex items-center gap-4">
             <button
               type="button"
-              onClick={() => navigate('/')}
+              onClick={handleBack}
               className={`${buttons.ghost} font-raleway`}
             >
-              ← Back to Home
+              ← Back
             </button>
             
             <h1 className="text-xl font-raleway font-semibold text-theme-text">
@@ -395,7 +403,7 @@ export default function EditFormal() {
                           onClick={() => setIsCustomMode(false)}
                           className={`${buttons.ghost} font-raleway text-sm`}
                         >
-                          ← Back to Presets
+                          ← Back
                         </button>
                       </div>
                       

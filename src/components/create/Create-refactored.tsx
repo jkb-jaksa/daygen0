@@ -1,8 +1,9 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import PromptForm from './PromptForm';
 import ComingSoonCategory from './ComingSoonCategory';
-const ResultsGrid = lazy(() => import('./ResultsGrid'));
-const FullImageModal = lazy(() => import('./FullImageModal'));
+import ResultsGrid from './ResultsGrid';
+import FullImageModal from './FullImageModal';
+const GenerationProgress = lazy(() => import('./GenerationProgress'));
 const ImageActionMenu = lazy(() => import('./ImageActionMenu'));
 const BulkActionsMenu = lazy(() => import('./BulkActionsMenu'));
 const GallerySelectionBar = lazy(() => import('./GallerySelectionBar'));
@@ -11,11 +12,13 @@ const GalleryConfirmationModals = lazy(() => import('./modals/GalleryConfirmatio
 const FoldersView = lazy(() => import('./FoldersView'));
 const FolderContentsView = lazy(() => import('./FolderContentsView'));
 const InspirationsEmptyState = lazy(() => import('./InspirationsView'));
+const AudioVoiceStudio = lazy(() => import('./audio/AudioVoiceStudio'));
 import CreateSidebar from './CreateSidebar';
-import { useGallery } from './contexts/GalleryContext';
+import { useGallery, GalleryProvider } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
-import { useCreateGenerationController } from './hooks/useCreateGenerationController';
+import { useAvatarHandlers } from './hooks/useAvatarHandlers';
+import { useProductHandlers } from './hooks/useProductHandlers';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { layout } from '../../styles/designSystem';
 import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from './sidebarData';
@@ -27,10 +30,10 @@ import { useSavedPrompts } from '../../hooks/useSavedPrompts';
 import type { Folder, GalleryImageLike, GalleryVideoLike } from './types';
 import { CreateBridgeProvider, type GalleryBridgeActions } from './contexts/CreateBridgeContext';
 import { createInitialBridgeActions } from './contexts/hooks';
-import { useBadgeNavigation } from './hooks/useBadgeNavigation';
+import { pathForCategory } from '../../utils/navigation';
 import { DEFAULT_IMAGE_MODEL_ID, DEFAULT_VIDEO_MODEL_ID, isVideoModelId } from './constants';
 
-const COMING_SOON_CATEGORIES = ['text', 'audio'] as const;
+const COMING_SOON_CATEGORIES = ['text'] as const;
 type ComingSoonCategoryKey = (typeof COMING_SOON_CATEGORIES)[number];
 
 const SUPPORTED_CATEGORIES = ['text', 'image', 'video', 'audio', 'gallery', 'my-folders', 'folder-view', 'inspirations'] as const;
@@ -60,6 +63,15 @@ const categoryFromPath = (path: string): SupportedCategory | null => {
   }
 
   if (segments[0] === 'gallery') {
+    // Check the second segment for gallery sub-paths
+    const secondSegment = segments[1];
+    if (secondSegment === 'folders') {
+      return normalizeCategory('my-folders');
+    }
+    if (secondSegment === 'inspirations') {
+      return normalizeCategory('inspirations');
+    }
+    // Default to 'gallery' if no second segment or unknown segment
     return normalizeCategory('gallery');
   }
 
@@ -102,14 +114,8 @@ function CreateRefactoredView() {
   const galleryActions = useGalleryActions();
   const promptsUserKey = user?.id || user?.email || 'anon';
   const { isPromptSaved } = useSavedPrompts(promptsUserKey);
-  const controller = useCreateGenerationController();
-  const { avatarHandlers, productHandlers } = controller;
-  const {
-    goToAvatarProfile,
-    goToProductProfile,
-    goToPublicGallery,
-    goToModelGallery,
-  } = useBadgeNavigation();
+  const avatarHandlers = useAvatarHandlers();
+  const productHandlers = useProductHandlers();
 
   // Folder-specific local state
   const [newFolderName, setNewFolderName] = useState('');
@@ -160,6 +166,7 @@ function CreateRefactoredView() {
     await addImage(randomImage);
   }, [addImage]);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const addDummyImageWithAvatar = useCallback(async () => {
     // Create or reuse test avatar
     let testAvatar = avatarHandlers.storedAvatars.find(a => a.id === 'test-avatar-badge');
@@ -201,6 +208,7 @@ function CreateRefactoredView() {
     await addImage(dummyImageWithAvatar);
   }, [addImage, avatarHandlers, user?.id]);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const addDummyImageWithProduct = useCallback(async () => {
     // Create or reuse test product
     let testProduct = productHandlers.storedProducts.find(p => p.id === 'test-product-badge');
@@ -242,6 +250,7 @@ function CreateRefactoredView() {
     await addImage(dummyImageWithProduct);
   }, [addImage, productHandlers, user?.id]);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const addDummyImageWithBoth = useCallback(async () => {
     // Create or reuse test avatar
     let testAvatar = avatarHandlers.storedAvatars.find(a => a.id === 'test-avatar-badge');
@@ -468,20 +477,24 @@ function CreateRefactoredView() {
   }, [isGenerationCategory, setPromptBarReservedSpace]);
 
   const handleSelectCategory = useCallback((category: string) => {
-    // For categories that use dedicated routes outside the modular shell
-    if (category === 'avatars' || category === 'products') {
-      navigate(`/create/${category}`);
+    const resolvedPath = pathForCategory(category);
+
+    if (resolvedPath) {
+      if (location.pathname === resolvedPath && location.search === location.search) {
+        return;
+      }
+      navigate({ pathname: resolvedPath, search: location.search });
       return;
     }
 
-    // For supported categories, navigate to create path
+    // Fallback to create/image for unknown categories
     const normalized = normalizeCategory(category) ?? 'image';
-    const nextPath = `/create/${normalized}`;
-    if (location.pathname === nextPath && location.search === location.search) {
+    const fallbackPath = `/create/${normalized}`;
+    if (location.pathname === fallbackPath && location.search === location.search) {
       return;
     }
 
-    navigate({ pathname: nextPath, search: location.search });
+    navigate({ pathname: fallbackPath, search: location.search });
   }, [location.pathname, location.search, navigate]);
 
   const handleOpenMyFolders = useCallback(() => {
@@ -933,30 +946,12 @@ function CreateRefactoredView() {
                     onModeChange={handleModeChange}
                   />
                   {isDevelopment && (
-                    <div className="mb-4 px-4 flex gap-2 flex-wrap">
+                    <div className="mb-4 px-4">
                       <button
                         onClick={addDummyImage}
                         className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
                       >
-                        🧪 Add Test Image
-                      </button>
-                      <button
-                        onClick={addDummyImageWithAvatar}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
-                      >
-                        👤 Test Avatar Badge
-                      </button>
-                      <button
-                        onClick={addDummyImageWithProduct}
-                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
-                      >
-                        📦 Test Product Badge
-                      </button>
-                      <button
-                        onClick={addDummyImageWithBoth}
-                        className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
-                      >
-                        🏷️ Test Both Badges
+                        🧪 Add Test Image (Dev Only)
                       </button>
                       <button
                         onClick={addDummyImageWithStyle}
@@ -972,44 +967,32 @@ function CreateRefactoredView() {
                       </button>
                     </div>
                   )}
+                  <ResultsGrid
+                    activeCategory={activeCategory as 'image' | 'video'}
+                    onFocusPrompt={focusPromptBar}
+                  />
                   <Suspense fallback={null}>
-                    <ResultsGrid
-                      activeCategory={activeCategory as 'image' | 'video'}
-                      onFocusPrompt={focusPromptBar}
-                    />
+                    <GenerationProgress />
                   </Suspense>
                 </>
               )}
               {!isGenerationCategory && isComingSoonCategory && (
                 <ComingSoonCategory category={activeCategory as ComingSoonCategoryKey} />
               )}
+              {activeCategory === 'audio' && (
+                <Suspense fallback={null}>
+                  <AudioVoiceStudio />
+                </Suspense>
+              )}
               {!isGenerationCategory && shouldShowResultsGrid && !FOLDERS_CATEGORY_SET.has(activeCategory) && activeCategory !== 'inspirations' && (
                 <>
                   {isDevelopment && (
-                    <div className="mb-4 px-4 flex gap-2 flex-wrap">
+                    <div className="mb-4 px-4">
                       <button
                         onClick={addDummyImage}
                         className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
                       >
-                        🧪 Add Test Image
-                      </button>
-                      <button
-                        onClick={addDummyImageWithAvatar}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
-                      >
-                        👤 Test Avatar Badge
-                      </button>
-                      <button
-                        onClick={addDummyImageWithProduct}
-                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
-                      >
-                        📦 Test Product Badge
-                      </button>
-                      <button
-                        onClick={addDummyImageWithBoth}
-                        className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
-                      >
-                        🏷️ Test Both Badges
+                        🧪 Add Test Image (Dev Only)
                       </button>
                       <button
                         onClick={addDummyImageWithStyle}
@@ -1074,10 +1057,6 @@ function CreateRefactoredView() {
                     moreActionMenu={null}
                     onEditMenuSelect={handleFolderEditMenuSelect}
                     onMoreButtonClick={undefined}
-                    onAvatarClick={avatar => goToAvatarProfile(avatar)}
-                    onProductClick={product => goToProductProfile(product)}
-                    onModelClick={(modelId, type) => goToModelGallery(modelId, type)}
-                    onPublicClick={goToPublicGallery}
                   />
                 </Suspense>
               )}
@@ -1095,30 +1074,12 @@ function CreateRefactoredView() {
                     return (
                       <>
                         {isDevelopment && (
-                          <div className="mb-4 px-4 flex gap-2 flex-wrap">
+                          <div className="mb-4 px-4">
                             <button
                               onClick={addDummyImage}
                               className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
                             >
-                              🧪 Add Test Image
-                            </button>
-                            <button
-                              onClick={addDummyImageWithAvatar}
-                              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
-                            >
-                              👤 Test Avatar Badge
-                            </button>
-                            <button
-                              onClick={addDummyImageWithProduct}
-                              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
-                            >
-                              📦 Test Product Badge
-                            </button>
-                            <button
-                              onClick={addDummyImageWithBoth}
-                              className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
-                            >
-                              🏷️ Test Both Badges
+                              🧪 Add Test Image (Dev Only)
                             </button>
                             <button
                               onClick={addDummyImageWithStyle}
@@ -1203,8 +1164,10 @@ export default function CreateRefactored() {
   const bridgeActionsRef = useRef<GalleryBridgeActions>(createInitialBridgeActions());
 
   return (
-    <CreateBridgeProvider value={bridgeActionsRef}>
-      <CreateRefactoredView />
-    </CreateBridgeProvider>
+    <GalleryProvider>
+      <CreateBridgeProvider value={bridgeActionsRef}>
+        <CreateRefactoredView />
+      </CreateBridgeProvider>
+    </GalleryProvider>
   );
 }

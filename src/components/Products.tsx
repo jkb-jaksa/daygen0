@@ -270,6 +270,14 @@ export default function Products() {
     [rememberNonJobPath, navigate, location.pathname, location.search, location.state],
   );
 
+  const handleBack = useCallback(() => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/create/products");
+    }
+  }, [navigate]);
+
   const syncJobUrlForImage = useCallback(
     (image: GalleryImageLike | null | undefined) => {
       if (image?.jobId) {
@@ -1830,6 +1838,11 @@ export default function Products() {
                       />
                     );
                   })()}
+                  {image.aspectRatio && (
+                    <Suspense fallback={null}>
+                      <AspectRatioBadge aspectRatio={image.aspectRatio} size="sm" />
+                    </Suspense>
+                  )}
                 </div>
                 {image.isPublic && (
                   <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
@@ -1913,10 +1926,10 @@ export default function Products() {
           <button
             type="button"
             className={`mt-4 ${buttons.glassPrompt}`}
-            onClick={() => navigate("/create/products", { replace: true })}
+            onClick={handleBack}
           >
             <Package className="h-4 w-4" />
-            Back to all products
+            Back
           </button>
         </div>
       )}
@@ -1982,7 +1995,7 @@ export default function Products() {
             className="text-sm text-theme-white text-left transition-colors duration-200 hover:text-theme-text"
             onClick={closeCreationsModal}
           >
-            ← Back to Products
+            ← Back
           </button>
           <div className={`${headings.tripleHeading.container} text-left`}>
             <div className={`${headings.tripleHeading.eyebrow} justify-start invisible`} aria-hidden="true" />
@@ -2315,8 +2328,23 @@ export default function Products() {
     <div className={layout.page}>
       <div className={layout.backdrop} aria-hidden />
       <section className={`relative z-10 ${sectionLayoutClass}`}>
-        <div className={`${layout.container} flex flex-col gap-10`}>
-          {showProfileView ? renderProfileView() : renderListView()}
+        <div className={`${layout.container}`}>
+          <div className="mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 lg:gap-2 lg:grid-cols-[160px_minmax(0,1fr)]">
+            <Suspense fallback={null}>
+              <CreateSidebar
+                activeCategory="products"
+                onSelectCategory={(category) => {
+                  navigate(`/create/${category}`);
+                }}
+                onOpenMyFolders={() => {
+                  navigate('/gallery/folders');
+                }}
+              />
+            </Suspense>
+            <div className="flex flex-col gap-10">
+              {showProfileView ? renderProfileView() : renderListView()}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -2359,7 +2387,7 @@ export default function Products() {
               closeProductFullSizeView();
             }}
             onOpenMyFolders={() => {
-              navigate('/gallery');
+              navigate('/gallery/folders');
               closeProductFullSizeView();
             }}
             isFullSizeOpen={true}

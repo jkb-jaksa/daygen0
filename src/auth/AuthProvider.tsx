@@ -111,12 +111,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        if (errorMessage.includes('email_change') || errorMessage.includes('converting NULL')) {
+        const errorMessage = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+        
+        // Suppress connection errors when backend is unavailable
+        const isConnectionError = errorMessage.includes('failed to fetch') || 
+                                 errorMessage.includes('connection refused') ||
+                                 errorMessage.includes('err_connection_refused') ||
+                                 errorMessage.includes('networkerror');
+        
+        if (errorMessage.includes('email_change') || errorMessage.includes('converting null')) {
           debugWarn('Backend sync failed due to database schema issue (email_change NULL). This is a known issue and does not affect authentication.');
-        } else {
+        } else if (!isConnectionError) {
           debugWarn('Failed to sync Supabase session with backend:', error);
         }
+        // Silently handle connection errors - backend may not be running
       }
 
       return null;
@@ -174,7 +182,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             );
           }
         } catch (error) {
-          debugWarn('Error fetching backend profile:', error);
+          // Suppress connection refused errors when backend is unavailable
+          const errorMessage = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+          const isConnectionError = errorMessage.includes('failed to fetch') || 
+                                   errorMessage.includes('connection refused') ||
+                                   errorMessage.includes('err_connection_refused') ||
+                                   errorMessage.includes('networkerror');
+          
+          if (!isConnectionError) {
+            debugWarn('Error fetching backend profile:', error);
+          }
+          // Silently handle connection errors - backend may not be running
         }
       }
 

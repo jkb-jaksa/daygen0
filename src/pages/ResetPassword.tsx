@@ -66,7 +66,7 @@ export default function ResetPassword() {
             onClick={() => navigate('/login')}
             className="px-6 py-2 bg-theme-dark border border-theme-mid text-theme-text rounded-lg hover:bg-theme-mid transition-colors"
           >
-            Back to Login
+            Back
           </button>
         </div>
       </div>

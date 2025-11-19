@@ -1,6 +1,6 @@
 import { memo } from "react";
 
-type ComingSoonModality = "text" | "audio";
+type ComingSoonModality = "text";
 
 type ComingSoonCategoryProps = {
   category: ComingSoonModality;

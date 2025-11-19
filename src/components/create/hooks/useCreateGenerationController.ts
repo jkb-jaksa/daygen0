@@ -7,6 +7,7 @@ import { useReferenceHandlers } from './useReferenceHandlers';
 import { useAvatarHandlers } from './useAvatarHandlers';
 import { useProductHandlers } from './useProductHandlers';
 import { useStyleHandlers } from './useStyleHandlers';
+import { useRecraftImageGeneration } from '../../../hooks/useRecraftImageGeneration';
 import { useGallery } from '../contexts/GalleryContext';
 import type { GalleryImageLike, GalleryVideoLike } from '../types';
 import { useGeminiImageGeneration } from '../../../hooks/useGeminiImageGeneration';
@@ -198,6 +199,7 @@ export function useCreateGenerationController(): CreateGenerationController {
   const { generateImage: generateQwenImage } = useQwenImageGeneration();
   const { generateImage: generateGrokImage } = useGrokImageGeneration();
   const { generateImage: generateRunwayImage } = useRunwayImageGeneration();
+  const { generateImage: generateRecraftImage } = useRecraftImageGeneration();
   const { generateImage: generateReveImage } = useReveImageGeneration();
   const { generateImage: generateLumaImage } = useLumaImageGeneration();
   const { startGeneration: startVeoGeneration } = useVeoVideoGeneration();
@@ -291,16 +293,36 @@ export function useCreateGenerationController(): CreateGenerationController {
     wanSize,
   ]);
 
+  const [fluxModel, setFluxModel] = useState<
+    'flux-pro-1.1' | 'flux-pro-1.1-ultra' | 'flux-kontext-pro' | 'flux-kontext-max'
+  >('flux-pro-1.1');
+  const [recraftModel, setRecraftModel] = useState<'recraft-v3' | 'recraft-v2'>('recraft-v3');
+  const [runwayModel, setRunwayModel] = useState<'runway-gen4' | 'runway-gen4-turbo'>('runway-gen4');
   const [grokModel, setGrokModel] = useState<'grok-2-image' | 'grok-2-image-1212' | 'grok-2-image-latest'>('grok-2-image');
   const [lumaPhotonModel, setLumaPhotonModel] = useState<'luma-photon-1' | 'luma-photon-flash-1'>('luma-photon-1');
+  const [lumaRayVariant, setLumaRayVariant] = useState<'luma-ray-2' | 'luma-ray-flash-2'>('luma-ray-2');
+  const [veoModel, setVeoModel] = useState<'veo-3.0-generate-001' | 'veo-3.0-fast-generate-001'>('veo-3.0-generate-001');
+  const [veoNegativePrompt, setVeoNegativePrompt] = useState('');
+  const [veoSeed, setVeoSeed] = useState<number | undefined>(undefined);
 
   const settingsSections = useMemo<SettingsSections>(() => {
     const isGeminiModel = selectedModel === 'gemini-2.5-flash-image';
     const isQwenModel = selectedModel === 'qwen-image';
     const isWanVideo = selectedModel === 'wan-video-2.2';
     const isKlingVideo = selectedModel === 'kling-video';
-    const isGrokModel = selectedModel === 'grok-2-image';
-    const isLumaPhotonModel = selectedModel === 'luma-photon-1';
+    const isFluxModel = selectedModel === 'flux-1.1';
+    const isRunwayImageModel =
+      selectedModel === 'runway-gen4' || selectedModel === 'runway-gen4-turbo';
+    const isGrokModel =
+      selectedModel === 'grok-2-image' ||
+      selectedModel === 'grok-2-image-1212' ||
+      selectedModel === 'grok-2-image-latest';
+    const isRecraftModel = selectedModel === 'recraft';
+    const isLumaPhotonModel =
+      selectedModel === 'luma-photon-1' || selectedModel === 'luma-photon-flash-1';
+    const isLumaRayModel =
+      selectedModel === 'luma-ray-2' || selectedModel === 'luma-ray-flash-2';
+    const isVeoModel = selectedModel === 'veo-3';
 
     return {
       common: {
@@ -310,20 +332,21 @@ export function useCreateGenerationController(): CreateGenerationController {
         max: 4,
       },
       flux: {
-        enabled: false,
-        model: 'flux-pro-1.1',
-        onModelChange: () => {},
+        enabled: isFluxModel,
+        model: fluxModel,
+        onModelChange: value =>
+          setFluxModel(value as 'flux-pro-1.1' | 'flux-pro-1.1-ultra' | 'flux-kontext-pro' | 'flux-kontext-max'),
       },
       veo: {
-        enabled: false,
-        aspectRatio: (videoAspectRatio as '16:9' | '9:16'),
-        onAspectRatioChange: () => {},
-        model: 'veo-3.0-generate-001',
-        onModelChange: () => {},
-        negativePrompt: '',
-        onNegativePromptChange: () => {},
-        seed: undefined,
-        onSeedChange: () => {},
+        enabled: isVeoModel,
+        aspectRatio: (videoAspectRatio === '9:16' ? '9:16' : '16:9'),
+        onAspectRatioChange: value => setVideoAspectRatio(value),
+        model: veoModel,
+        onModelChange: value => setVeoModel(value as 'veo-3.0-generate-001' | 'veo-3.0-fast-generate-001'),
+        negativePrompt: veoNegativePrompt,
+        onNegativePromptChange: value => setVeoNegativePrompt(value),
+        seed: veoSeed,
+        onSeedChange: value => setVeoSeed(value),
       },
       hailuo: {
         enabled: false,
@@ -377,14 +400,14 @@ export function useCreateGenerationController(): CreateGenerationController {
         onLastFrameChange: () => {},
       },
       recraft: {
-        enabled: false,
-        model: 'recraft-v3',
-        onModelChange: () => {},
+        enabled: isRecraftModel,
+        model: recraftModel,
+        onModelChange: value => setRecraftModel(value as 'recraft-v3' | 'recraft-v2'),
       },
       runway: {
-        enabled: false,
-        model: 'runway-gen4',
-        onModelChange: () => {},
+        enabled: isRunwayImageModel,
+        model: runwayModel,
+        onModelChange: value => setRunwayModel(value as 'runway-gen4' | 'runway-gen4-turbo'),
       },
       grok: {
         enabled: isGrokModel,
@@ -444,16 +467,18 @@ export function useCreateGenerationController(): CreateGenerationController {
         onModelChange: value => setLumaPhotonModel(value),
       },
       lumaRay: {
-        enabled: false,
-        variant: 'luma-ray-2',
-        onVariantChange: () => {},
+        enabled: isLumaRayModel,
+        variant: lumaRayVariant,
+        onVariantChange: value => setLumaRayVariant(value as 'luma-ray-2' | 'luma-ray-flash-2'),
       },
     };
   }, [
     batchSize,
+    fluxModel,
     geminiAspectRatio,
     grokModel,
     klingAspectRatio,
+    lumaRayVariant,
     lumaPhotonModel,
     outputLength,
     qwenPromptExtend,
@@ -462,6 +487,8 @@ export function useCreateGenerationController(): CreateGenerationController {
     selectedModel,
     setBatchSize,
     setGeminiAspectRatio,
+    setLumaRayVariant,
+    setRunwayModel,
     setOutputLength,
     setQwenPromptExtend,
     setQwenSize,
@@ -473,9 +500,18 @@ export function useCreateGenerationController(): CreateGenerationController {
     setWanSeed,
     setWanSize,
     setWanWatermark,
+    runwayModel,
+    recraftModel,
+    setFluxModel,
+    setRecraftModel,
+    setVeoModel,
+    setVideoAspectRatio,
     setKlingAspectRatio,
     temperature,
     topP,
+    veoModel,
+    veoNegativePrompt,
+    veoSeed,
     videoAspectRatio,
     wanNegativePrompt,
     wanPromptExtend,
@@ -760,7 +796,7 @@ export function useCreateGenerationController(): CreateGenerationController {
         case 'flux-1.1': {
           const fluxImage = await generateFluxImage({
             prompt: finalPrompt,
-            model: 'flux-pro-1.1',
+            model: fluxModel,
             references,
             avatarId: selectedAvatarId,
             avatarImageId: activeAvatarImageId,
@@ -845,12 +881,16 @@ export function useCreateGenerationController(): CreateGenerationController {
           persistImageResults(grokResult);
           return;
         }
-        case 'runway-gen4': {
+        case 'runway-gen4':
+        case 'runway-gen4-turbo': {
           const runwayRatio = '1920:1080'; // Runway's current ratio
+          const resolvedRunwayModel =
+            selectedModel === 'runway-gen4-turbo' ? 'runway-gen4-turbo' : runwayModel;
+          const runwayProviderModel = resolvedRunwayModel === 'runway-gen4-turbo' ? 'gen4_image_turbo' : 'gen4_image';
           const runwayImage = await generateRunwayImage({
             prompt: finalPrompt,
-            model: 'gen4_image',
-            uiModel: 'runway-gen4',
+            model: runwayProviderModel,
+            uiModel: resolvedRunwayModel,
             references,
             ratio: runwayRatio,
             avatarId: selectedAvatarId,
@@ -862,6 +902,7 @@ export function useCreateGenerationController(): CreateGenerationController {
           // Use the actual ratio passed to generation
           persistImageResults(runwayImage, {
             aspectRatio: runwayRatio,
+            model: resolvedRunwayModel,
           });
           return;
         }
@@ -881,7 +922,8 @@ export function useCreateGenerationController(): CreateGenerationController {
           persistImageResults(reveImage, { aspectRatio: '1:1' });
           return;
         }
-        case 'luma-photon-1': {
+        case 'luma-photon-1':
+        case 'luma-photon-flash-1': {
           const lumaImage = await generateLumaImage({
             prompt: finalPrompt,
             model: lumaPhotonModel,
@@ -895,8 +937,10 @@ export function useCreateGenerationController(): CreateGenerationController {
         case 'veo-3': {
           const veoVideo = await startVeoGeneration({
             prompt: finalPrompt,
-            model: 'veo-3.0-generate-001',
+            model: veoModel,
             aspectRatio: normalizedVeoAspectRatio,
+            negativePrompt: veoNegativePrompt?.trim() || undefined,
+            seed: veoSeed,
           });
 
           persistVideoResults(veoVideo, {
@@ -970,19 +1014,37 @@ export function useCreateGenerationController(): CreateGenerationController {
           persistVideoResults(seedanceVideo, { aspectRatio: seedanceRatio });
           return;
         }
-        case 'luma-ray-2': {
+        case 'luma-ray-2':
+        case 'luma-ray-flash-2': {
+          const resolvedLumaRayModel =
+            selectedModel === 'luma-ray-flash-2' ? 'luma-ray-flash-2' : lumaRayVariant;
           const lumaVideo = await generateLumaVideo({
             prompt: finalPrompt,
-            model: 'luma-ray-2',
+            model: resolvedLumaRayModel,
             resolution: '1080p',
             durationSeconds: 6,
           });
 
-          persistVideoResults(lumaVideo);
+          persistVideoResults(lumaVideo, { model: resolvedLumaRayModel });
           return;
         }
-        case 'recraft':
-          throw new Error('Recraft support is not yet available in the modular Create surface.');
+        case 'recraft': {
+          const recraftApiModel = recraftModel === 'recraft-v2' ? 'recraftv2' : 'recraftv3';
+          const recraftImages = await generateRecraftImage({
+            prompt: finalPrompt,
+            model: recraftApiModel,
+          });
+
+          if (!recraftImages || recraftImages.length === 0) {
+            throw new Error('Recraft did not return any images.');
+          }
+
+          persistImageResults(recraftImages, {
+            model: recraftModel,
+            aspectRatio: '1:1',
+          });
+          return;
+        }
         default:
           throw new Error(
             `Model "${selectedModel || 'unknown'}" is not supported in the modular Create surface yet.`,
@@ -1037,8 +1099,15 @@ export function useCreateGenerationController(): CreateGenerationController {
     activeAvatarImageId,
     selectedProductId,
     selectedStyleId,
+    fluxModel,
     grokModel,
+    recraftModel,
+    runwayModel,
     lumaPhotonModel,
+    lumaRayVariant,
+    veoModel,
+    veoNegativePrompt,
+    veoSeed,
     generateGeminiImage,
     generateFluxImage,
     generateChatGPTImage,
@@ -1046,6 +1115,7 @@ export function useCreateGenerationController(): CreateGenerationController {
     generateQwenImage,
     generateGrokImage,
     generateRunwayImage,
+    generateRecraftImage,
     generateReveImage,
     generateLumaImage,
     startVeoGeneration,

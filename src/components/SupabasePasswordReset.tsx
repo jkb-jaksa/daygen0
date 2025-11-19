@@ -92,7 +92,7 @@ export default function SupabasePasswordReset({ open, onClose }: SupabasePasswor
                 onClick={onClose}
                 className="text-xs text-theme-light hover:text-theme-text transition-colors font-raleway underline"
               >
-                Back to login
+                Back
               </button>
             </div>
           </form>

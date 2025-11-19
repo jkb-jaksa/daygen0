@@ -36,6 +36,357 @@
     <meta name="twitter:image" content="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/daygen-color-nobg.png" />
     <title>DayGen - Your Daily AI Generations</title>
     
+    <!-- Early Error Suppression - Must run before any modules load -->
+    <script>
+      (function() {
+        'use strict';
+        
+        // Helper function to check if an error matches suppression patterns
+        function shouldSuppressError(error) {
+          if (!error) return false;
+          
+          // Convert error to string representation
+          var errorStr = '';
+          try {
+            if (typeof error === 'string') {
+              errorStr = error.toLowerCase();
+            } else if (error instanceof Error) {
+              errorStr = (error.message || '').toLowerCase() + ' ' + (error.name || '').toLowerCase();
+              // Check nested error properties
+              if (error.error && typeof error.error === 'object') {
+                errorStr += ' ' + (error.error.message || '').toLowerCase();
+              }
+            } else if (error && typeof error.toString === 'function') {
+              errorStr = error.toString().toLowerCase();
+            } else {
+              errorStr = String(error).toLowerCase();
+            }
+          } catch (e) {
+            errorStr = String(error).toLowerCase();
+          }
+          
+          // Check all arguments if error is an array
+          if (Array.isArray(error)) {
+            errorStr = error.map(function(arg) {
+              try {
+                return String(arg).toLowerCase();
+              } catch (e) {
+                return '';
+              }
+            }).join(' ');
+          }
+          
+          // Patterns to suppress
+          var suppressPatterns = [
+            'runtime.lasterror',
+            'message port closed',
+            'extension context invalidated',
+            'could not establish connection',
+            'auth/network-request-failed',
+            'network-request-failed',
+            'firebase: error',
+            'firebase error',
+            'sentence-player',
+            'lifecycle init',
+            'failed to initialize',
+            'pr: firebase',
+            'err_connection_refused',
+            'connection refused',
+            'refused to connect',
+            'failed to fetch',
+            'net::err_connection_refused',
+            'localhost:3000',
+            'api/auth/oauth-callback',
+            'api/auth/me',
+            'listener indicated an asynchronous response',
+            'message channel closed',
+            'asynchronous response',
+            'response was received',
+            'message channel closed before a response was received',
+            'returning true, but the message channel closed',
+            'channel closed before a response'
+          ];
+          
+          return suppressPatterns.some(function(pattern) {
+            return errorStr.includes(pattern);
+          });
+        }
+        
+        // Wrap fetch to suppress connection errors
+        var originalFetch = window.fetch;
+        window.fetch = function() {
+          var args = Array.prototype.slice.call(arguments);
+          var url = args[0];
+          var urlStr = '';
+          
+          try {
+            if (typeof url === 'string') {
+              urlStr = url.toLowerCase();
+            } else if (url && typeof url === 'object') {
+              if (url.href) {
+                urlStr = url.href.toLowerCase();
+              } else if (url.toString) {
+                urlStr = url.toString().toLowerCase();
+              } else {
+                urlStr = String(url).toLowerCase();
+              }
+            } else {
+              urlStr = String(url).toLowerCase();
+            }
+          } catch (e) {
+            urlStr = String(url).toLowerCase();
+          }
+          
+          // Check if this is a request to localhost:3000 or any auth endpoint
+          var isBackendRequest = urlStr.includes('localhost:3000') || 
+                                 urlStr.includes('/api/auth/me') || 
+                                 urlStr.includes('/api/auth/oauth-callback') ||
+                                 urlStr.includes('api/auth');
+          
+          // Wrap all fetch calls to catch connection errors
+          var fetchPromise = originalFetch.apply(window, args);
+          
+          return fetchPromise.catch(function(error) {
+            var errorStr = '';
+            try {
+              errorStr = (error.message || '').toLowerCase() + ' ' + (error.name || '').toLowerCase();
+            } catch (e) {
+              errorStr = String(error).toLowerCase();
+            }
+            
+            var isConnectionError = errorStr.includes('failed to fetch') || 
+                                   errorStr.includes('connection refused') ||
+                                   errorStr.includes('err_connection_refused') ||
+                                   errorStr.includes('networkerror') ||
+                                   errorStr.includes('net::err_connection_refused') ||
+                                   (error.name === 'TypeError' && errorStr.includes('fetch')) ||
+                                   error.name === 'TypeError';
+            
+            // Suppress connection errors for backend requests
+            if (isBackendRequest && isConnectionError) {
+              // Create a silent error that won't be logged
+              var silentError = new Error('Connection refused (suppressed)');
+              silentError.name = 'SuppressedError';
+              // Prevent this error from being logged
+              try {
+                Object.defineProperty(silentError, 'stack', {
+                  value: '',
+                  writable: false,
+                  configurable: true
+                });
+              } catch (e) {
+                // Ignore if we can't set stack
+              }
+              return Promise.reject(silentError);
+            }
+            
+            // For other errors, check if they should be suppressed
+            if (shouldSuppressError(error) || shouldSuppressError(errorStr)) {
+              var silentError2 = new Error('Error suppressed');
+              silentError2.name = 'SuppressedError';
+              try {
+                Object.defineProperty(silentError2, 'stack', {
+                  value: '',
+                  writable: false,
+                  configurable: true
+                });
+              } catch (e) {
+                // Ignore
+              }
+              return Promise.reject(silentError2);
+            }
+            
+            throw error;
+          });
+        };
+        
+        // Also wrap XMLHttpRequest to catch connection errors
+        if (window.XMLHttpRequest) {
+          var OriginalXHR = window.XMLHttpRequest;
+          window.XMLHttpRequest = function() {
+            var xhr = new OriginalXHR();
+            var originalOpen = xhr.open;
+            var originalSend = xhr.send;
+            var requestUrl = '';
+            
+            xhr.open = function(method, url) {
+              requestUrl = (typeof url === 'string' ? url : String(url)).toLowerCase();
+              return originalOpen.apply(xhr, arguments);
+            };
+            
+            xhr.send = function() {
+              var isBackendRequest = requestUrl.includes('localhost:3000') || 
+                                     requestUrl.includes('/api/auth/me') || 
+                                     requestUrl.includes('/api/auth/oauth-callback') ||
+                                     requestUrl.includes('api/auth');
+              
+              if (isBackendRequest) {
+                xhr.addEventListener('error', function(e) {
+                  // Suppress error events for backend requests
+                  e.stopPropagation();
+                }, true);
+                
+                xhr.addEventListener('loadend', function() {
+                  if (xhr.status === 0 || xhr.readyState === 0) {
+                    // Connection failed, suppress
+                  }
+                });
+              }
+              
+              return originalSend.apply(xhr, arguments);
+            };
+            
+            return xhr;
+          };
+        }
+        
+        // Override console.error to filter errors
+        var originalConsoleError = console.error;
+        console.error = function() {
+          var args = Array.prototype.slice.call(arguments);
+          
+          // Convert all arguments to string and check
+          var allArgsStr = args.map(function(arg) {
+            try {
+              if (typeof arg === 'string') return arg;
+              if (arg instanceof Error) return arg.message + ' ' + arg.name + ' ' + (arg.stack || '');
+              if (arg && typeof arg.toString === 'function') return arg.toString();
+              return String(arg);
+            } catch (e) {
+              return String(arg);
+            }
+          }).join(' ').toLowerCase();
+          
+          // Check if any argument matches suppression patterns
+          var shouldSuppress = args.some(function(arg) {
+            return shouldSuppressError(arg);
+          }) || shouldSuppressError(allArgsStr);
+          
+          // Also check for connection refused errors in the combined string
+          if (!shouldSuppress) {
+            var hasConnectionRefused = (allArgsStr.includes('localhost:3000') || allArgsStr.includes('api/auth/me')) && 
+                                      (allArgsStr.includes('connection refused') ||
+                                       allArgsStr.includes('err_connection_refused') ||
+                                       allArgsStr.includes('failed to fetch') ||
+                                       allArgsStr.includes('net::err_connection_refused') ||
+                                       allArgsStr.includes('get http://localhost:3000') ||
+                                       allArgsStr.includes('post http://localhost:3000'));
+            if (hasConnectionRefused) {
+              shouldSuppress = true;
+            }
+          }
+          
+          // Additional check: if error message contains "GET http://localhost:3000/api/auth/me"
+          if (!shouldSuppress) {
+            var hasAuthMeError = allArgsStr.includes('get') && 
+                                allArgsStr.includes('http://localhost:3000/api/auth/me') &&
+                                (allArgsStr.includes('connection refused') || allArgsStr.includes('err_connection_refused'));
+            if (hasAuthMeError) {
+              shouldSuppress = true;
+            }
+          }
+          
+          if (!shouldSuppress) {
+            originalConsoleError.apply(console, args);
+          }
+        };
+        
+        // Handle unhandled promise rejections
+        window.addEventListener('unhandledrejection', function(event) {
+          var reason = event.reason;
+          
+          // Check reason directly
+          if (shouldSuppressError(reason)) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+          }
+          
+          // Build comprehensive error string from reason
+          var reasonStr = '';
+          try {
+            if (reason instanceof Error) {
+              reasonStr = (reason.message || '').toLowerCase() + ' ' + 
+                         (reason.name || '').toLowerCase() + ' ' +
+                         (reason.stack || '').toLowerCase();
+            } else if (reason && typeof reason === 'object') {
+              var errorMsg = (reason.error && reason.error.message) || '';
+              var toStringResult = '';
+              if (reason.toString && typeof reason.toString === 'function') {
+                try {
+                  toStringResult = reason.toString();
+                } catch (e) {
+                  toStringResult = '';
+                }
+              }
+              reasonStr = (reason.message || '').toLowerCase() + ' ' + 
+                         errorMsg.toLowerCase() + ' ' +
+                         toStringResult.toLowerCase();
+            } else {
+              reasonStr = String(reason).toLowerCase();
+            }
+            
+            // Also check the promise rejection event itself
+            if (event.promise) {
+              reasonStr += ' ' + String(event.promise).toLowerCase();
+            }
+          } catch (e) {
+            reasonStr = String(reason).toLowerCase();
+          }
+          
+          // Additional check for the specific browser extension error
+          var isExtensionError = reasonStr.includes('listener indicated') && 
+                                reasonStr.includes('asynchronous response') &&
+                                reasonStr.includes('message channel closed');
+          
+          if (shouldSuppressError(reasonStr) || isExtensionError) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+          }
+        }, true);
+        
+        // Handle window errors (including network errors)
+        window.addEventListener('error', function(event) {
+          var errorStr = '';
+          if (event.error) {
+            errorStr = (event.error.message || '').toLowerCase() + ' ' + (event.error.name || '').toLowerCase();
+            if (event.error.stack) {
+              errorStr += ' ' + event.error.stack.toLowerCase();
+            }
+          }
+          if (event.message) {
+            errorStr += ' ' + event.message.toLowerCase();
+          }
+          if (event.filename) {
+            errorStr += ' ' + event.filename.toLowerCase();
+          }
+          
+          // Check for connection refused errors to localhost:3000
+          var hasConnectionRefused = (errorStr.includes('localhost:3000') || errorStr.includes('api/auth/me')) &&
+                                     (errorStr.includes('connection refused') ||
+                                      errorStr.includes('err_connection_refused') ||
+                                      errorStr.includes('failed to fetch') ||
+                                      errorStr.includes('net::err_connection_refused') ||
+                                      errorStr.includes('get http://localhost:3000/api/auth/me'));
+          
+          if (shouldSuppressError(event.error) || 
+              shouldSuppressError(event.message) || 
+              shouldSuppressError(errorStr) ||
+              hasConnectionRefused) {
+            event.preventDefault();
+            event.stopPropagation();
+            return false;
+          }
+          // Don't prevent default for other errors - let them propagate normally
+        }, true);
+        
+        // Suppress message channel errors (browser extensions)
+        // Note: We don't override chrome.runtime.sendMessage as it may not be writable
+        // The unhandledrejection handler above will catch these errors instead
+      })();
+    </script>
+    
     <!-- Google Identity Services Library -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>

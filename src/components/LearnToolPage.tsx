@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useMemo, useCallback } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { layout, glass } from "../styles/designSystem";
 import {
@@ -20,6 +20,7 @@ const CATEGORY_LABELS: Record<LearnToolCategory, string> = {
 const sectionCardStyles = "rounded-2xl border border-theme-dark/60 bg-theme-black/35 p-6";
 
 export default function LearnToolPage() {
+  const navigate = useNavigate();
   const { toolSlug } = useParams<{ toolSlug: string }>();
   const tool = getLearnToolBySlug(toolSlug);
   const toolContent = tool ?? buildFallbackTool(toolSlug ?? "tool");
@@ -29,18 +30,26 @@ export default function LearnToolPage() {
   const hasGettingStarted = toolContent.gettingStarted.length > 0;
   const hasResources = Boolean(toolContent.resources && toolContent.resources.length > 0);
 
+  const handleBack = useCallback(() => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/learn/tools');
+    }
+  }, [navigate]);
+
   return (
     <div className={layout.page}>
       <div className={layout.backdrop} aria-hidden />
       <section className="relative z-10 pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20">
         <div className={layout.container}>
-          <Link
-            to="/learn/tools"
+          <button
+            onClick={handleBack}
             className="inline-flex items-center gap-2 text-sm font-raleway text-theme-white/80 transition-colors duration-150 hover:text-theme-text focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-theme-black"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-            Back to knowledge base
-          </Link>
+            Back
+          </button>
 
           <div className={`${glass.surface} mt-6 rounded-3xl border-theme-dark px-6 py-8 sm:px-10 sm:py-10`}>
             <header className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">

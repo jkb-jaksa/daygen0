@@ -390,20 +390,24 @@ const PromptForm = memo<PromptFormProps>(
       [handleProductQuickUpload],
     );
 
-    const handleSaveNewAvatar = useCallback(() => {
+    const handleSaveNewAvatar = useCallback(async () => {
       if (!avatarSelection || !avatarName.trim()) {
         setAvatarUploadError(previous => previous ?? 'Name your avatar to save it.');
         return;
       }
-      void persistAvatar(avatarName.trim(), avatarSelection);
+      // Blur textarea before save to prevent browser focus restoration when modal closes
+      textareaRef.current?.blur();
+      await persistAvatar(avatarName.trim(), avatarSelection);
     }, [avatarSelection, avatarName, persistAvatar, setAvatarUploadError]);
 
-    const handleSaveNewProduct = useCallback(() => {
+    const handleSaveNewProduct = useCallback(async () => {
       if (!productSelection || !productName.trim()) {
         setProductUploadError(previous => previous ?? 'Name your product to save it.');
         return;
       }
-      void persistProduct(productName.trim(), productSelection);
+      // Blur textarea before save to prevent browser focus restoration when modal closes
+      textareaRef.current?.blur();
+      await persistProduct(productName.trim(), productSelection);
     }, [productSelection, productName, persistProduct, setProductUploadError]);
 
     const openImageByUrl = useCallback((imageUrl: string) => {
@@ -628,6 +632,32 @@ const PromptForm = memo<PromptFormProps>(
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [styleHandlers.isStyleModalOpen, styleHandlers.handleStyleModalOpen, styleHandlers.handleStyleModalClose]);
+
+    // Blur textarea when avatar/product creation modals close to prevent browser focus restoration
+    const prevAvatarModalOpen = useRef(isAvatarCreationModalOpen);
+    const prevProductModalOpen = useRef(isProductCreationModalOpen);
+    useEffect(() => {
+      // Only blur if a modal just closed (was open, now closed)
+      const avatarJustClosed = prevAvatarModalOpen.current && !isAvatarCreationModalOpen;
+      const productJustClosed = prevProductModalOpen.current && !isProductCreationModalOpen;
+      
+      if (avatarJustClosed || productJustClosed) {
+        // Use setTimeout to ensure browser focus restoration has completed, then blur
+        const timeoutId = setTimeout(() => {
+          textareaRef.current?.blur();
+        }, 0);
+        
+        // Update refs for next render
+        prevAvatarModalOpen.current = isAvatarCreationModalOpen;
+        prevProductModalOpen.current = isProductCreationModalOpen;
+        
+        return () => clearTimeout(timeoutId);
+      }
+      
+      // Update refs even if we don't blur
+      prevAvatarModalOpen.current = isAvatarCreationModalOpen;
+      prevProductModalOpen.current = isProductCreationModalOpen;
+    }, [isAvatarCreationModalOpen, isProductCreationModalOpen]);
 
     // Listen for custom events to set prompt and reference from gallery actions
     // Use refs to avoid stale closures
@@ -1114,7 +1144,7 @@ const PromptForm = memo<PromptFormProps>(
                 {referencePreviews.length > 0 && (
                   <div className="flex items-center gap-2">
                     <div className="hidden lg:block text-sm text-n-text font-raleway">
-                      Reference ({referencePreviews.length}/{MAX_REFERENCE_SLOTS})
+                      Reference ({totalReferenceCount}/{MAX_REFERENCE_SLOTS})
                     </div>
                     <div className="flex items-center gap-1.5">
                       {referencePreviews.map((preview, index) => (
@@ -1161,12 +1191,25 @@ const PromptForm = memo<PromptFormProps>(
                   title="Settings"
                   aria-label="Settings"
                   className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200 parallax-small`}
+                  onMouseEnter={(e) => {
+                    showHoverTooltip(e.currentTarget, 'settings-tooltip');
+                  }}
+                  onMouseLeave={() => {
+                    hideHoverTooltip('settings-tooltip');
+                  }}
                   onPointerMove={onPointerMove}
                   onPointerEnter={onPointerEnter}
                   onPointerLeave={onPointerLeave}
                 >
                   <Settings className="w-4 h-4 text-n-text" />
                 </button>
+                <div
+                  data-tooltip-for="settings-tooltip"
+                  className={`${tooltips.base} absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full z-[70] hidden lg:block`}
+                  style={{ left: '50%', transform: 'translateX(-50%) translateY(calc(-100% - 2px))', top: '0px' }}
+                >
+                  Settings
+                </div>
               </div>
 
               {showAspectRatioButton && (
