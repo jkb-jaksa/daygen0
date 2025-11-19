@@ -45,14 +45,8 @@ interface ModelSelectorProps {
 
 const REFERENCE_SUPPORTED_MODELS = [
   "gemini-2.5-flash-image",
-  "flux-1.1",
-  "chatgpt-image",
   "ideogram",
-  "qwen-image",
-  "runway-gen4",
-  "reve-image",
-  "recraft",
-  "luma-photon-1"
+  "recraft"
 ];
 
 const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, isGenerating, activeCategory, hasReferences }) => {
