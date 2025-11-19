@@ -308,19 +308,19 @@ function Home() {
                   </div>
                 </div>
               </div>
-              <div className="w-full max-w-4xl flex flex-col gap-6">
+              <div className="w-full flex flex-col gap-6">
                 {/* Bio Card with Integrated Switcher */}
-                <div className="w-96 mx-auto relative group">
+                <div className="w-80 relative group">
                   <button
                     onClick={() => {
                       const currentIndex = PERSONAS.findIndex(p => p.id === activePersonaId);
                       const prevIndex = (currentIndex - 1 + PERSONAS.length) % PERSONAS.length;
                       setActivePersonaId(PERSONAS[prevIndex].id);
                     }}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/20 backdrop-blur-md text-white/70 hover:text-white hover:bg-black/40 transition-all opacity-0 group-hover:opacity-100"
+                    className={`${glass.promptDark} hover:border-theme-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
                     aria-label="Previous persona"
                   >
-                    <ChevronLeft className="w-6 h-6" />
+                    <ChevronLeft className="w-5 h-5 text-current transition-colors duration-100" />
                   </button>
 
                   <UseCaseCard
@@ -329,7 +329,7 @@ function Home() {
                     imageUrl={activePersona.image}
                     imageAlt={activePersona.name}
                     onClick={openStyleModal}
-                    imageHeight="h-40"
+                    imageHeight="h-52"
                   />
 
                   <button
@@ -338,21 +338,21 @@ function Home() {
                       const nextIndex = (currentIndex + 1) % PERSONAS.length;
                       setActivePersonaId(PERSONAS[nextIndex].id);
                     }}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/20 backdrop-blur-md text-white/70 hover:text-white hover:bg-black/40 transition-all opacity-0 group-hover:opacity-100"
+                    className={`${glass.promptDark} hover:border-theme-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
                     aria-label="Next persona"
                   >
-                    <ChevronRight className="w-6 h-6" />
+                    <ChevronRight className="w-5 h-5 text-current transition-colors duration-100" />
                   </button>
                 </div>
 
                 {/* Modality Grid */}
-                <div className="grid grid-cols-4 gap-4">
+                <div className="grid grid-cols-4 gap-2 w-full">
                   {HOME_CATEGORIES.map((category) => {
                     const content = activePersona.content[category.id as keyof typeof activePersona.content];
                     return (
                       <div
                         key={category.id}
-                        className={`${glass.surface} relative overflow-hidden group flex flex-col gap-3 p-4 rounded-3xl border border-theme-dark hover:border-theme-mid transition-colors duration-200 aspect-square`}
+                        className={`${glass.surface} relative overflow-hidden group flex flex-col gap-3 p-4 rounded-3xl border border-theme-dark hover:border-theme-mid transition-colors duration-200 aspect-[4/3]`}
                       >
                         <div className="flex items-center gap-2 mb-1">
                           <category.Icon className={`w-4 h-4 ${category.iconColor}`} />
