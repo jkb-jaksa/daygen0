@@ -7,11 +7,11 @@ import { layout, text, buttons, headings, glass } from "./styles/designSystem";
 import { safeResolveNext, AUTH_ENTRY_PATH, setPendingAuthRedirect } from "./utils/navigation";
 import { authMetrics } from "./utils/authMetrics";
 import useParallaxHover from "./hooks/useParallaxHover";
-import { Edit as EditIcon, Image as ImageIcon, Video as VideoIcon, Volume2 } from "lucide-react";
+import { Edit as EditIcon, Image as ImageIcon, Video as VideoIcon, Volume2, ChevronLeft, ChevronRight } from "lucide-react";
 import { GenerationProvider } from "./components/create/contexts/GenerationContext";
 import { StyleModalProvider } from "./contexts/StyleModalProvider";
 import { useStyleModal } from "./contexts/useStyleModal";
- 
+
 
 const Understand = lazy(() => import("./components/Understand"));
 const AboutUs = lazy(() => import("./components/AboutUs"));
@@ -95,7 +95,7 @@ function UseCaseCard({
   };
 
   const cardContent = (
-    <div 
+    <div
       className="relative parallax-small mouse-glow border border-theme-dark hover:border-theme-mid transition-colors duration-200 rounded-2xl overflow-hidden cursor-pointer"
       onPointerMove={onPointerMove}
       onPointerEnter={onPointerEnter}
@@ -141,6 +141,65 @@ const HOME_CATEGORIES = [
 
 type HomeCategoryId = (typeof HOME_CATEGORIES)[number]["id"];
 
+const PERSONAS = [
+  {
+    id: "dominik",
+    name: "Dominik",
+    age: 21,
+    role: "CEO/Founder",
+    image: "/dominik.jpg",
+    bio: "Building the future of digital identity.",
+    content: {
+      text: "The future of digital identity is here. Create your copy today.",
+      image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/lifestyle images.png",
+      video: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/product visualizations.png",
+      audio: "Welcome to Daygen. This is my digital voice.",
+    }
+  },
+  {
+    id: "kinga",
+    name: "Kinga",
+    age: 24,
+    role: "Influencer",
+    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1000&auto=format&fit=crop",
+    bio: "Sharing my life and style with the world.",
+    content: {
+      text: "Just posted a new look! Check it out on my feed.",
+      image: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1000&auto=format&fit=crop",
+      video: "https://images.unsplash.com/photo-1492633423870-43d1cd2775eb?q=80&w=1000&auto=format&fit=crop",
+      audio: "Hey guys! Welcome back to my channel.",
+    }
+  },
+  {
+    id: "jakub",
+    name: "Jakub",
+    age: 31,
+    role: "Educator",
+    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1000&auto=format&fit=crop",
+    bio: "Empowering the next generation of learners.",
+    content: {
+      text: "Learning is a lifelong journey. Let's explore together.",
+      image: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=1000&auto=format&fit=crop",
+      video: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=1000&auto=format&fit=crop",
+      audio: "Today's lesson is about the power of AI.",
+    }
+  },
+  {
+    id: "michal",
+    name: "Michał",
+    age: 30,
+    role: "Youtuber",
+    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1000&auto=format&fit=crop",
+    bio: "Creating content that entertains and inspires.",
+    content: {
+      text: "Don't forget to like and subscribe!",
+      image: "https://images.unsplash.com/photo-1511367461989-f85a21fda167?q=80&w=1000&auto=format&fit=crop",
+      video: "https://images.unsplash.com/photo-1536240478700-b869070f9279?q=80&w=1000&auto=format&fit=crop",
+      audio: "What's up everyone? It's Michał here.",
+    }
+  },
+];
+
 function ComingSoonPanel({ label, className }: { label: string; className?: string }) {
   const formattedLabel = label.charAt(0).toUpperCase() + label.slice(1);
   return (
@@ -156,6 +215,9 @@ function Home() {
   const { openStyleModal } = useStyleModal();
   const [activeCategory, setActiveCategory] = useState<HomeCategoryId>("image");
   const [pressedCategory, setPressedCategory] = useState<HomeCategoryId | null>(null);
+  const [activePersonaId, setActivePersonaId] = useState<string>("dominik");
+
+  const activePersona = PERSONAS.find(p => p.id === activePersonaId) || PERSONAS[0];
   const sidebarRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const prefetchedRef = useRef(false);
@@ -246,15 +308,96 @@ function Home() {
                   </div>
                 </div>
               </div>
-              <div className="w-96">
-                <UseCaseCard
-                  title="Dominik, 21"
-                  subtitle="CEO/Founder."
-                  imageUrl="/dominik.jpg"
-                  imageAlt="Dominik"
-                  onClick={openStyleModal}
-                  imageHeight="h-56 sm:h-64 md:h-72"
-                />
+              <div className="w-full max-w-4xl flex flex-col gap-6">
+                {/* Bio Card with Integrated Switcher */}
+                <div className="w-96 mx-auto relative group">
+                  <button
+                    onClick={() => {
+                      const currentIndex = PERSONAS.findIndex(p => p.id === activePersonaId);
+                      const prevIndex = (currentIndex - 1 + PERSONAS.length) % PERSONAS.length;
+                      setActivePersonaId(PERSONAS[prevIndex].id);
+                    }}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/20 backdrop-blur-md text-white/70 hover:text-white hover:bg-black/40 transition-all opacity-0 group-hover:opacity-100"
+                    aria-label="Previous persona"
+                  >
+                    <ChevronLeft className="w-6 h-6" />
+                  </button>
+
+                  <UseCaseCard
+                    title={`${activePersona.name}, ${activePersona.age}`}
+                    subtitle={activePersona.role}
+                    imageUrl={activePersona.image}
+                    imageAlt={activePersona.name}
+                    onClick={openStyleModal}
+                    imageHeight="h-40"
+                  />
+
+                  <button
+                    onClick={() => {
+                      const currentIndex = PERSONAS.findIndex(p => p.id === activePersonaId);
+                      const nextIndex = (currentIndex + 1) % PERSONAS.length;
+                      setActivePersonaId(PERSONAS[nextIndex].id);
+                    }}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/20 backdrop-blur-md text-white/70 hover:text-white hover:bg-black/40 transition-all opacity-0 group-hover:opacity-100"
+                    aria-label="Next persona"
+                  >
+                    <ChevronRight className="w-6 h-6" />
+                  </button>
+                </div>
+
+                {/* Modality Grid */}
+                <div className="grid grid-cols-4 gap-4">
+                  {HOME_CATEGORIES.map((category) => {
+                    const content = activePersona.content[category.id as keyof typeof activePersona.content];
+                    return (
+                      <div
+                        key={category.id}
+                        className={`${glass.surface} relative overflow-hidden group flex flex-col gap-3 p-4 rounded-3xl border border-theme-dark hover:border-theme-mid transition-colors duration-200 aspect-square`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <category.Icon className={`w-4 h-4 ${category.iconColor}`} />
+                          <span className="text-theme-white/60 font-raleway text-xs capitalize">{category.label}</span>
+                        </div>
+
+                        <div className="flex-1 flex items-center justify-center overflow-hidden rounded-xl bg-theme-black/20">
+                          {category.id === 'text' && (
+                            <p className="text-xs text-theme-text font-raleway p-2 text-center line-clamp-4">"{content}"</p>
+                          )}
+                          {category.id === 'image' && (
+                            <img src={content} alt="Persona content" className="w-full h-full object-cover" />
+                          )}
+                          {category.id === 'video' && (
+                            <div className="relative w-full h-full">
+                              <img src={content} alt="Video thumbnail" className="w-full h-full object-cover opacity-80" />
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
+                                  <div className="w-0 h-0 border-t-4 border-t-transparent border-l-8 border-l-white border-b-4 border-b-transparent ml-1" />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          {category.id === 'audio' && (
+                            <div className="w-full px-2 flex flex-col items-center gap-2">
+                              <div className="flex items-center gap-1 h-8">
+                                {[...Array(8)].map((_, i) => (
+                                  <div
+                                    key={i}
+                                    className="w-1 bg-cyan-400 rounded-full animate-pulse"
+                                    style={{
+                                      height: `${Math.max(20, Math.random() * 100)}%`,
+                                      animationDelay: `${i * 0.1}s`
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                              <p className="text-[10px] text-theme-white/60 truncate w-full text-center">"{content}"</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
@@ -275,8 +418,8 @@ function Home() {
                       <Link to="/learn/use-cases" className={buttons.ghost}>
                         Learn
                       </Link>
-                      <Link 
-                        to="/create/image" 
+                      <Link
+                        to="/create/image"
                         className={buttons.primary}
                         onMouseEnter={handlePrefetch}
                       >
@@ -299,7 +442,7 @@ function Home() {
                     {HOME_CATEGORIES.map((category) => {
                       const isActive = category.id === activeCategory;
                       const Icon = category.Icon;
-                      
+
                       // Color-specific shadow mappings for each category
                       const shadowColorMap: Record<string, string> = {
                         text: "rgba(251, 191, 36, 0.15)",
@@ -307,7 +450,7 @@ function Home() {
                         video: "rgba(59, 130, 246, 0.15)",
                         audio: "rgba(34, 211, 238, 0.15)",
                       };
-                      
+
                       // Pressed state shadow colors (slightly higher opacity for subtle effect)
                       const pressedShadowColorMap: Record<string, string> = {
                         text: "rgba(251, 191, 36, 0.22)",
@@ -315,7 +458,7 @@ function Home() {
                         video: "rgba(59, 130, 246, 0.22)",
                         audio: "rgba(34, 211, 238, 0.22)",
                       };
-                      
+
                       // Color-specific border class mappings for each category (subtle, barely visible)
                       const borderColorMap: Record<string, string> = {
                         text: "border-amber-400/25",
@@ -323,19 +466,19 @@ function Home() {
                         video: "border-blue-500/25",
                         audio: "border-cyan-400/25",
                       };
-                      
+
                       const isPressed = pressedCategory === category.id;
-                      
+
                       // Enhanced shadow effect: slightly deeper when pressed (very subtle)
                       // Active items get colored shadow, inactive items get neutral shadow
                       const insetShadow = isPressed && isActive
                         ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em ${pressedShadowColorMap[category.id]}` }
                         : isPressed && !isActive
-                        ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em rgba(255, 255, 255, 0.08)` }
-                        : isActive
-                        ? { boxShadow: `inset 0 -0.5em 1.2em -0.125em ${shadowColorMap[category.id]}` }
-                        : {};
-                      
+                          ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em rgba(255, 255, 255, 0.08)` }
+                          : isActive
+                            ? { boxShadow: `inset 0 -0.5em 1.2em -0.125em ${shadowColorMap[category.id]}` }
+                            : {};
+
                       return (
                         <li key={category.id}>
                           <button
@@ -346,11 +489,10 @@ function Home() {
                             onMouseLeave={() => setPressedCategory(null)}
                             onTouchStart={() => setPressedCategory(category.id)}
                             onTouchEnd={() => setPressedCategory(null)}
-                            className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-6 py-2 lg:pl-4 lg:w-full text-sm font-raleway transition-all duration-100 focus:outline-none group ${
-                              isActive
-                                ? `border ${borderColorMap[category.id]} text-theme-text`
-                                : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"
-                            }`}
+                            className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-6 py-2 lg:pl-4 lg:w-full text-sm font-raleway transition-all duration-100 focus:outline-none group ${isActive
+                              ? `border ${borderColorMap[category.id]} text-theme-text`
+                              : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"
+                              }`}
                             style={insetShadow}
                           >
                             <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full blur-3xl bg-gradient-to-br ${category.gradient} transition-opacity duration-100 ${isActive ? 'opacity-60' : 'opacity-0 group-hover:opacity-20'}`} />
@@ -459,10 +601,10 @@ function RequireAuth({ children }: { children: ReactNode }) {
   if (location.search) {
     const searchParams = new URLSearchParams(location.search);
     const hasOpenStyleModal = searchParams.has('openStyleModal');
-    
+
     // Check if there are any query params other than openStyleModal
     const hasOtherParams = Array.from(searchParams.keys()).some(key => key !== 'openStyleModal');
-    
+
     if (hasOpenStyleModal && !hasOtherParams) {
       // Only openStyleModal is present and it's the only param - no need to redirect
     } else if (hasOpenStyleModal && hasOtherParams) {
@@ -475,7 +617,7 @@ function RequireAuth({ children }: { children: ReactNode }) {
       return <Navigate to={location.pathname} replace />;
     }
   }
-  
+
   return children;
 }
 
@@ -511,99 +653,99 @@ function AppContent() {
           <Navbar />
         </Suspense>
         <main id="main-content" tabIndex={-1} className="focus:outline-none">
-        <Suspense fallback={<RouteFallback />}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/learn" element={<LearnLayout />}>
-              <Route index element={<Navigate to="use-cases" replace />} />
-              <Route path="use-cases" element={<Understand />} />
-              <Route path="tools" element={<KnowledgeBase />} />
-              <Route path="prompts" element={<Prompts />} />
-              <Route path="courses" element={<Courses />} />
-            </Route>
-            <Route path="/use-cases" element={<Navigate to="/learn/use-cases" replace />} />
-            <Route path="/learn/use-cases" element={<Navigate to="/learn/use-cases" replace />} />
-            <Route path="/knowledge-base" element={<Navigate to="/learn/tools" replace />} />
-            <Route path="/prompts" element={<Navigate to="/learn/prompts" replace />} />
-            <Route path="/courses" element={<Navigate to="/learn/courses" replace />} />
-            <Route path="/about-us" element={<AboutUs />} />
-            <Route path="/explore" element={<Explore />} />
-            <Route path="/learn/tools/:toolSlug" element={<LearnToolPage />} />
-            <Route path="/digital-copy" element={<DigitalCopy />} />
-            <Route 
-              path="/job/:jobId/*" 
-              element={
-                <RequireAuth>
-                  <Suspense fallback={<RouteFallback />}>
-                    <AuthErrorBoundary fallbackRoute="/create" context="creation">
-                      <CreateRoutes />
-                    </AuthErrorBoundary>
-                  </Suspense>
-                </RequireAuth>
-              } 
-            />
-            <Route 
-              path="/create/*" 
-              element={
-                <RequireAuth>
-                  <Suspense fallback={<RouteFallback />}>
-                    <AuthErrorBoundary fallbackRoute="/create" context="creation">
-                      <CreateRoutes />
-                    </AuthErrorBoundary>
-                  </Suspense>
-                </RequireAuth>
-              } 
-            />
-            <Route 
-              path="/gallery/*" 
-              element={
-                <RequireAuth>
-                  <Suspense fallback={<RouteFallback />}>
-                    <AuthErrorBoundary fallbackRoute="/gallery" context="gallery">
-                      <GalleryRoutes />
-                    </AuthErrorBoundary>
-                  </Suspense>
-                </RequireAuth>
-              } 
-            />
-            <Route path="/upgrade" element={<Upgrade />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route
-              path="/edit"
-              element={(
-                <RequireAuth>
-                  <Suspense fallback={<RouteFallback />}>
-                    <AuthErrorBoundary fallbackRoute="/create" context="editing">
-                      <GenerationProvider>
-                        <Edit />
-                      </GenerationProvider>
-                    </AuthErrorBoundary>
-                  </Suspense>
-                </RequireAuth>
-              )}
-            />
-            <Route path="/account" element={accountRouteElement} />
-            <Route path="/signup" element={accountRouteElement} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="/auth/reset-password" element={<ResetPassword />} />
-            <Route path="/payment/success" element={<PaymentSuccess />} />
-            <Route path="/payment/cancel" element={<PaymentCancel />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Suspense>
-      </main>
-      {isFooterVisible && (
+          <Suspense fallback={<RouteFallback />}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/learn" element={<LearnLayout />}>
+                <Route index element={<Navigate to="use-cases" replace />} />
+                <Route path="use-cases" element={<Understand />} />
+                <Route path="tools" element={<KnowledgeBase />} />
+                <Route path="prompts" element={<Prompts />} />
+                <Route path="courses" element={<Courses />} />
+              </Route>
+              <Route path="/use-cases" element={<Navigate to="/learn/use-cases" replace />} />
+              <Route path="/learn/use-cases" element={<Navigate to="/learn/use-cases" replace />} />
+              <Route path="/knowledge-base" element={<Navigate to="/learn/tools" replace />} />
+              <Route path="/prompts" element={<Navigate to="/learn/prompts" replace />} />
+              <Route path="/courses" element={<Navigate to="/learn/courses" replace />} />
+              <Route path="/about-us" element={<AboutUs />} />
+              <Route path="/explore" element={<Explore />} />
+              <Route path="/learn/tools/:toolSlug" element={<LearnToolPage />} />
+              <Route path="/digital-copy" element={<DigitalCopy />} />
+              <Route
+                path="/job/:jobId/*"
+                element={
+                  <RequireAuth>
+                    <Suspense fallback={<RouteFallback />}>
+                      <AuthErrorBoundary fallbackRoute="/create" context="creation">
+                        <CreateRoutes />
+                      </AuthErrorBoundary>
+                    </Suspense>
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/create/*"
+                element={
+                  <RequireAuth>
+                    <Suspense fallback={<RouteFallback />}>
+                      <AuthErrorBoundary fallbackRoute="/create" context="creation">
+                        <CreateRoutes />
+                      </AuthErrorBoundary>
+                    </Suspense>
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/gallery/*"
+                element={
+                  <RequireAuth>
+                    <Suspense fallback={<RouteFallback />}>
+                      <AuthErrorBoundary fallbackRoute="/gallery" context="gallery">
+                        <GalleryRoutes />
+                      </AuthErrorBoundary>
+                    </Suspense>
+                  </RequireAuth>
+                }
+              />
+              <Route path="/upgrade" element={<Upgrade />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route
+                path="/edit"
+                element={(
+                  <RequireAuth>
+                    <Suspense fallback={<RouteFallback />}>
+                      <AuthErrorBoundary fallbackRoute="/create" context="editing">
+                        <GenerationProvider>
+                          <Edit />
+                        </GenerationProvider>
+                      </AuthErrorBoundary>
+                    </Suspense>
+                  </RequireAuth>
+                )}
+              />
+              <Route path="/account" element={accountRouteElement} />
+              <Route path="/signup" element={accountRouteElement} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/auth/reset-password" element={<ResetPassword />} />
+              <Route path="/payment/success" element={<PaymentSuccess />} />
+              <Route path="/payment/cancel" element={<PaymentCancel />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
+        </main>
+        {isFooterVisible && (
+          <Suspense fallback={null}>
+            <Footer />
+          </Suspense>
+        )}
+
+        {/* Debug Panel - Development Only */}
         <Suspense fallback={null}>
-          <Footer />
+          <DebugPanel />
         </Suspense>
-      )}
-      
-      {/* Debug Panel - Development Only */}
-      <Suspense fallback={null}>
-        <DebugPanel />
-      </Suspense>
-      
+
       </div>
     </StyleModalProvider>
   );
