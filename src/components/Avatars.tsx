@@ -2471,7 +2471,7 @@ export default function Avatars() {
                 }}
               />
             </Suspense>
-            <div className="flex flex-col gap-10">
+            <div className="w-full mb-4 flex flex-col gap-10">
               {showProfileView ? renderProfileView() : renderListView()}
             </div>
           </div>

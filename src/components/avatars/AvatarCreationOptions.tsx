@@ -1,5 +1,5 @@
 import { memo, useRef, useEffect, useState, useCallback } from "react";
-import { Upload, X, Check, Pencil } from "lucide-react";
+import { Upload, X, Check, Pencil, Mic, Image as ImageIcon } from "lucide-react";
 import { buttons } from "../../styles/designSystem";
 import { createCardImageStyle } from "../../utils/cardImageStyle";
 import type { AvatarSelection } from "./types";
@@ -125,7 +125,7 @@ function AvatarCreationOptionsComponent({
 
   return (
     <div className={`flex flex-col items-center gap-6 ${className ?? ""}`}>
-      <div className="w-full max-w-md mx-auto">
+      <div className="w-full max-w-4xl mx-auto">
         {selection ? (
           <div className="relative w-full max-w-[16rem] mx-auto">
             <div
@@ -198,55 +198,82 @@ function AvatarCreationOptionsComponent({
             </button>
           </div>
         ) : (
-          <div
-            className={`border-2 border-dashed rounded-2xl p-12 text-center transition-colors duration-200 cursor-pointer ${
-              isDragging
-                ? "border-brand drag-active"
-                : "border-theme-white/30 hover:border-theme-text/50"
-            }`}
-            onClick={() => fileInputRef.current?.click()}
-            onDragEnter={handleDragEnter}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onPaste={event => {
-              const items = Array.from(event.clipboardData?.items ?? []);
-              const file = items.find(item => item.type.startsWith("image/"))?.getAsFile();
-              if (file) {
-                handleFiles([file]);
-              }
-            }}
-            role="button"
-            tabIndex={0}
-            onKeyDown={event => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                fileInputRef.current?.click();
-              }
-            }}
-          >
-            <Upload className="default-orange-icon mx-auto mb-4" />
-            <p className="mb-2 text-xl font-raleway text-theme-text">Upload your image</p>
-            <p className="mb-6 text-base font-raleway text-theme-white">
-              Click anywhere, drag and drop, or paste your image to get started
-            </p>
-            <div className={`${buttons.primary} inline-flex items-center gap-2`}>
-              <Upload className="h-4 w-4" />
-              Upload
+          <div className="flex flex-col sm:flex-row gap-6 w-full">
+            <div className="flex-1">
+              <div
+                className={`relative overflow-hidden border-2 border-dashed rounded-2xl p-12 text-center transition-colors duration-200 cursor-pointer ${
+                  isDragging
+                    ? "border-brand drag-active"
+                    : "border-theme-white/30 hover:border-theme-text/50"
+                }`}
+                onClick={() => fileInputRef.current?.click()}
+                onDragEnter={handleDragEnter}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onPaste={event => {
+                  const items = Array.from(event.clipboardData?.items ?? []);
+                  const file = items.find(item => item.type.startsWith("image/"))?.getAsFile();
+                  if (file) {
+                    handleFiles([file]);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                onKeyDown={event => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    fileInputRef.current?.click();
+                  }
+                }}
+              >
+                <div className="pointer-events-none absolute -top-24 right-0 h-48 w-48 rounded-full opacity-60 blur-3xl bg-gradient-to-br from-red-400 via-red-500 to-red-600" />
+                <div className="relative z-10">
+                  <ImageIcon className="mx-auto mb-4 text-red-500 w-12 h-12" />
+                  <p className="mb-2 text-xl font-raleway text-theme-text">Upload your image</p>
+                  <p className="mb-6 text-base font-raleway text-theme-white">
+                    Click anywhere, drag and drop, or paste your image to get started
+                  </p>
+                  <div className={`${buttons.primary} inline-flex items-center gap-2`}>
+                    <Upload className="h-4 w-4 text-red-500" />
+                    Upload
+                  </div>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={event => {
+                    const file = event.target.files?.[0];
+                    event.target.value = "";
+                    if (file) {
+                      handleFiles([file]);
+                    }
+                  }}
+                />
+              </div>
             </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={event => {
-                const file = event.target.files?.[0];
-                event.target.value = "";
-                if (file) {
-                  handleFiles([file]);
-                }
-              }}
-            />
+            <div className="flex-1">
+              <div
+                className={`relative overflow-hidden border-2 border-dashed rounded-2xl p-12 text-center transition-colors duration-200 ${
+                  "border-theme-white/30 hover:border-theme-text/50"
+                }`}
+              >
+                <div className="pointer-events-none absolute -top-24 right-0 h-48 w-48 rounded-full opacity-60 blur-3xl bg-gradient-to-br from-cyan-300 via-cyan-400 to-cyan-500" />
+                <div className="relative z-10">
+                  <Mic className="mx-auto mb-4 text-cyan-400 w-12 h-12" />
+                  <p className="mb-2 text-xl font-raleway text-theme-text">Add your voice</p>
+                  <p className="mb-6 text-base font-raleway text-theme-white">
+                    Click anywhere, drag and drop, or paste your audio to get started
+                  </p>
+                  <div className={`${buttons.primary} inline-flex items-center gap-2`}>
+                    <Upload className="h-4 w-4 text-cyan-400" />
+                    Upload
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
         {uploadError && (
