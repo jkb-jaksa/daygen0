@@ -520,7 +520,7 @@ export function AudioVoiceStudio() {
 
   const renderMenu = () => (
     <div
-      className="relative w-full"
+      className="relative w-full h-full flex items-center justify-center min-h-[calc(100vh-var(--nav-h,4rem)-32px)]"
       onDragOver={(event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -532,9 +532,6 @@ export function AudioVoiceStudio() {
       onDrop={handleDrop}
     >
       <div className="flex flex-col items-center gap-8 text-center">
-        <div className="grid size-16 place-items-center rounded-[28px] border border-white/10 bg-theme-black/40">
-          <Mic className="size-8 text-cyan-300" />
-        </div>
         <div className="space-y-2">
           <h2 className={`${text.sectionHeading} text-theme-text`}>
             Upload your voice recording

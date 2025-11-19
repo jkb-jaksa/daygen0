@@ -980,9 +980,11 @@ function CreateRefactoredView() {
                 <ComingSoonCategory category={activeCategory as ComingSoonCategoryKey} />
               )}
               {activeCategory === 'audio' && (
-                <Suspense fallback={null}>
-                  <AudioVoiceStudio />
-                </Suspense>
+                <div className="w-full h-[calc(100vh-var(--nav-h,4rem)-32px)]">
+                  <Suspense fallback={null}>
+                    <AudioVoiceStudio />
+                  </Suspense>
+                </div>
               )}
               {!isGenerationCategory && shouldShowResultsGrid && !FOLDERS_CATEGORY_SET.has(activeCategory) && activeCategory !== 'inspirations' && (
                 <>
