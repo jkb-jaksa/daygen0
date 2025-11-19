@@ -112,9 +112,9 @@ function UseCaseCard({
       <div className="absolute bottom-0 left-0 right-0 h-[70px] bg-gradient-to-t from-black/90 to-transparent pointer-events-none" />
       <div className="absolute bottom-2 left-2 right-2 flex items-end">
         <div className="UseCaseDescription relative z-10 px-4 pt-1.5 pb-0 rounded-2xl">
-          <h2 className="text-2xl font-normal tracking-tight text-white font-raleway whitespace-nowrap">{title}</h2>
+          <h2 className="text-2xl font-normal tracking-tight text-n-text font-raleway whitespace-nowrap">{title}</h2>
           {subtitle && (
-            <p className="text-sm font-normal text-white/90 font-raleway mt-0.5">{subtitle}</p>
+            <p className="text-sm font-normal text-n-text font-raleway mt-0.5">{subtitle}</p>
           )}
         </div>
       </div>
@@ -138,6 +138,68 @@ const HOME_CATEGORIES = [
   { id: "video", label: "video", Icon: VideoIcon, gradient: "from-blue-400 via-blue-500 to-blue-600", iconColor: "text-blue-500" },
   { id: "audio", label: "audio", Icon: Volume2, gradient: "from-cyan-300 via-cyan-400 to-cyan-500", iconColor: "text-cyan-400" },
 ] as const;
+
+function ModalityContainer({
+  category,
+  content,
+}: {
+  category: (typeof HOME_CATEGORIES)[number];
+  content: string;
+}) {
+  const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLDivElement>();
+
+  return (
+    <div
+      className={`${glass.surface} parallax-small relative overflow-hidden group flex flex-col rounded-3xl border border-theme-dark hover:border-theme-mid transition-colors duration-200 aspect-[4/3]`}
+      onPointerMove={onPointerMove}
+      onPointerEnter={onPointerEnter}
+      onPointerLeave={onPointerLeave}
+    >
+      <div className={`absolute top-3 left-3 z-10 flex items-center gap-2 glass-liquid willchange-backdrop isolate backdrop-blur-[40px] bg-[color:var(--glass-dark-bg)] px-3 py-1.5 rounded-full border border-theme-dark`}>
+        <category.Icon className={`w-3.5 h-3.5 ${category.iconColor}`} />
+        <span className="text-theme-text font-raleway text-sm capitalize">{category.label}</span>
+      </div>
+
+      <div className="flex-1 w-full h-full flex items-center justify-center overflow-hidden bg-theme-black/20">
+        {category.id === 'text' && (
+          <div className="w-full h-full p-6 flex items-center justify-center bg-gradient-to-br from-theme-black/40 to-theme-black/10">
+            <p className="text-sm text-theme-text font-raleway text-center line-clamp-5 leading-relaxed">"{content}"</p>
+          </div>
+        )}
+        {category.id === 'image' && (
+          <img src={content} alt="Persona content" className="w-full h-full object-cover" />
+        )}
+        {category.id === 'video' && (
+          <div className="relative w-full h-full">
+            <img src={content} alt="Video thumbnail" className="w-full h-full object-cover opacity-90" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/20 group-hover:scale-110 transition-transform duration-200">
+                <div className="w-0 h-0 border-t-[6px] border-t-transparent border-l-[10px] border-l-white border-b-[6px] border-b-transparent ml-1" />
+              </div>
+            </div>
+          </div>
+        )}
+        {category.id === 'audio' && (
+          <div className="w-full h-full p-4 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-theme-black/40 to-theme-black/10">
+            <div className="flex items-center gap-1 h-12">
+              {[...Array(8)].map((_, i) => (
+                <div
+                  key={i}
+                  className="w-1.5 bg-cyan-400 rounded-full animate-pulse"
+                  style={{
+                    height: `${Math.max(20, Math.random() * 100)}%`,
+                    animationDelay: `${i * 0.1}s`
+                  }}
+                />
+              ))}
+            </div>
+            <p className="text-xs text-theme-white/70 truncate w-full text-center max-w-[80%]">"{content}"</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 type HomeCategoryId = (typeof HOME_CATEGORIES)[number]["id"];
 
@@ -350,51 +412,11 @@ function Home() {
                   {HOME_CATEGORIES.map((category) => {
                     const content = activePersona.content[category.id as keyof typeof activePersona.content];
                     return (
-                      <div
+                      <ModalityContainer
                         key={category.id}
-                        className={`${glass.surface} relative overflow-hidden group flex flex-col gap-3 pt-2 px-4 pb-4 rounded-3xl border border-theme-dark hover:border-theme-mid transition-colors duration-200 aspect-[4/3]`}
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          <category.Icon className={`w-4 h-4 ${category.iconColor}`} />
-                          <span className="text-theme-text font-raleway text-base capitalize">{category.label}</span>
-                        </div>
-
-                        <div className="flex-1 flex items-center justify-center overflow-hidden rounded-xl bg-theme-black/20">
-                          {category.id === 'text' && (
-                            <p className="text-xs text-theme-text font-raleway p-2 text-center line-clamp-4">"{content}"</p>
-                          )}
-                          {category.id === 'image' && (
-                            <img src={content} alt="Persona content" className="w-full h-full object-cover" />
-                          )}
-                          {category.id === 'video' && (
-                            <div className="relative w-full h-full">
-                              <img src={content} alt="Video thumbnail" className="w-full h-full object-cover opacity-80" />
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
-                                  <div className="w-0 h-0 border-t-4 border-t-transparent border-l-8 border-l-white border-b-4 border-b-transparent ml-1" />
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                          {category.id === 'audio' && (
-                            <div className="w-full px-2 flex flex-col items-center gap-2">
-                              <div className="flex items-center gap-1 h-8">
-                                {[...Array(8)].map((_, i) => (
-                                  <div
-                                    key={i}
-                                    className="w-1 bg-cyan-400 rounded-full animate-pulse"
-                                    style={{
-                                      height: `${Math.max(20, Math.random() * 100)}%`,
-                                      animationDelay: `${i * 0.1}s`
-                                    }}
-                                  />
-                                ))}
-                              </div>
-                              <p className="text-[10px] text-theme-white/60 truncate w-full text-center">"{content}"</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                        category={category}
+                        content={content as string}
+                      />
                     );
                   })}
                 </div>
