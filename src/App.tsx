@@ -352,11 +352,11 @@ function Home() {
                     return (
                       <div
                         key={category.id}
-                        className={`${glass.surface} relative overflow-hidden group flex flex-col gap-3 p-4 rounded-3xl border border-theme-dark hover:border-theme-mid transition-colors duration-200 aspect-[4/3]`}
+                        className={`${glass.surface} relative overflow-hidden group flex flex-col gap-3 pt-2 px-4 pb-4 rounded-3xl border border-theme-dark hover:border-theme-mid transition-colors duration-200 aspect-[4/3]`}
                       >
                         <div className="flex items-center gap-2 mb-1">
                           <category.Icon className={`w-4 h-4 ${category.iconColor}`} />
-                          <span className="text-theme-white/60 font-raleway text-xs capitalize">{category.label}</span>
+                          <span className="text-theme-text font-raleway text-base capitalize">{category.label}</span>
                         </div>
 
                         <div className="flex-1 flex items-center justify-center overflow-hidden rounded-xl bg-theme-black/20">
