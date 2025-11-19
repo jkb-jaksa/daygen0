@@ -276,7 +276,17 @@ export function useRecraftImageGeneration() {
         throw new Error(errorData.message || `Failed to variate image: ${response.status}`);
       }
 
-      const result = await response.json();
+      const result = await response.json() as {
+        items?: Array<{
+          url: string;
+          prompt?: string;
+          model?: string;
+          mimeType?: string;
+          r2FileId?: string;
+          r2FileUrl?: string;
+        }>;
+        dataUrls?: string[];
+      };
       const items = Array.isArray(result.items) ? result.items : [];
 
       let images: RecraftGeneratedImage[] = [];
@@ -284,7 +294,7 @@ export function useRecraftImageGeneration() {
       const fallbackModel = options.model;
 
       if (items.length > 0) {
-        images = items.map((item: any) => ({
+        images = items.map((item) => ({
           url: item.url,
           prompt: (typeof item.prompt === 'string' && item.prompt.trim().length > 0)
             ? item.prompt.trim()
