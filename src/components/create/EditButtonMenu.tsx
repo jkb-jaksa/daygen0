@@ -1,6 +1,6 @@
 import React, { memo, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Edit, User, Copy, RefreshCw, Camera } from 'lucide-react';
+import { Edit, User, Copy, RefreshCw, Camera, Shuffle } from 'lucide-react';
 import { MenuPortal } from './shared/MenuPortal';
 import { tooltips } from '../../styles/designSystem';
 import type { GalleryImageLike, GalleryVideoLike } from './types';
@@ -20,6 +20,7 @@ interface EditButtonMenuProps {
   onUseAsReference: () => void;
   onReusePrompt: () => void;
   onMakeVideo: () => void;
+  onMakeVariation?: (event: React.MouseEvent) => void;
 }
 
 const EditButtonMenu = memo<EditButtonMenuProps>(({
@@ -37,10 +38,13 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
   onUseAsReference,
   onReusePrompt,
   onMakeVideo,
+  onMakeVariation,
 }) => {
   const tooltipBaseId = useMemo(() => image.jobId || image.r2FileId || image.url || menuId, [image, menuId]);
   const makeVideoTooltipId = `${tooltipBaseId}-make-video`;
+  const makeVariationTooltipId = `${tooltipBaseId}-make-variation`;
   const editTooltipId = `${tooltipBaseId}-edit`;
+  const isVideo = 'type' in image && image.type === 'video';
 
   const showTooltip = useCallback((target: HTMLElement, tooltipId: string) => {
     if (typeof document === 'undefined') return;
@@ -87,6 +91,11 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
     onMakeVideo();
   }, [onMakeVideo]);
 
+  const handleMakeVariationClick = useCallback((event: React.MouseEvent) => {
+    event.stopPropagation();
+    onMakeVariation?.(event);
+  }, [onMakeVariation]);
+
   const handleButtonClick = useCallback((event: React.MouseEvent) => {
     event.stopPropagation();
     onToggleMenu(menuId, event.currentTarget as HTMLElement, image);
@@ -114,6 +123,27 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
       >
         <Camera className="w-3 h-3" />
       </button>
+      {!isVideo && onMakeVariation && (
+        <button
+          type="button"
+          className={`image-action-btn ${isFullSize ? 'image-action-btn--fullsize' : isGallery ? 'image-action-btn--gallery' : ''} parallax-large transition-opacity duration-100 ${
+            anyMenuOpen
+              ? 'opacity-100 pointer-events-auto'
+              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+          }`}
+          title="Create variation"
+          aria-label="Create variation"
+          onClick={handleMakeVariationClick}
+          onMouseEnter={(e) => {
+            showTooltip(e.currentTarget, makeVariationTooltipId);
+          }}
+          onMouseLeave={() => {
+            hideTooltip(makeVariationTooltipId);
+          }}
+        >
+          <Shuffle className="w-3 h-3" />
+        </button>
+      )}
       <button
         type="button"
         className={`image-action-btn ${isFullSize ? 'image-action-btn--fullsize' : isGallery ? 'image-action-btn--gallery' : ''} parallax-large transition-opacity duration-100 ${
@@ -184,6 +214,16 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
         style={{ zIndex: 9999 }}
       >
         Make video
+      </div>,
+      document.body,
+    )}
+    {onMakeVariation && !isVideo && createPortal(
+      <div
+        data-tooltip-for={makeVariationTooltipId}
+        className={`${tooltips.base} fixed`}
+        style={{ zIndex: 9999 }}
+      >
+        Create variation
       </div>,
       document.body,
     )}

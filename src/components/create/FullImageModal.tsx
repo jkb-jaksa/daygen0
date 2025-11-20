@@ -2,7 +2,7 @@ import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from '
 import { lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { X, Download, Heart, ChevronLeft, ChevronRight, Copy, Globe, Lock, FolderPlus, Trash2, Edit as EditIcon, User, RefreshCw, Camera, Bookmark, BookmarkPlus, MoreHorizontal, Shuffle } from 'lucide-react';
+import { X, Download, Heart, ChevronLeft, ChevronRight, Copy, Globe, Lock, FolderPlus, Trash2, Edit as EditIcon, User, RefreshCw, Camera, Bookmark, BookmarkPlus, MoreHorizontal } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
@@ -915,36 +915,46 @@ const FullImageModal = memo(() => {
               </>
             )}
 
-            {/* Left side - Edit button for non-gallery (only show on hover or when menu is open) */}
-            {activeCategory !== 'gallery' && (
-              <div className="image-gallery-actions absolute top-4 left-4 flex items-start gap-1 z-[40]">
-                <div
-                  className={`${
-                    editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}`
-                      ? 'opacity-100'
-                      : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
-                  } transition-opacity duration-100`}
-                >
-                  <Suspense fallback={null}>
-                    <EditButtonMenu
-                      menuId={`fullsize-edit-${fullSizeImage.jobId}`}
-                      image={fullSizeImage}
-                      isOpen={editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}`}
-                      anchor={editMenu?.anchor || null}
-                      isFullSize={true}
-                      anyMenuOpen={editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId}
-                      onClose={handleCloseEditMenu}
-                      onToggleMenu={handleToggleEditMenu}
-                      onEditImage={handleEditImage}
-                      onCreateAvatar={handleCreateAvatar}
-                      onUseAsReference={handleUseReference}
-                      onReusePrompt={handleReuse}
-                      onMakeVideo={handleVideo}
-                    />
-                  </Suspense>
-                </div>
+            {/* Left side - Edit button for non-gallery and Variate button for all images */}
+            <div className="image-gallery-actions absolute top-4 left-4 flex items-start gap-1 z-[40]">
+              <div
+                className={`flex items-center gap-1 ${
+                  editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || isImageActionMenuOpen
+                    ? 'opacity-100'
+                    : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
+                } transition-opacity duration-100`}
+              >
+                {/* Edit button - Non-gallery only */}
+                {activeCategory !== 'gallery' && (
+                  <div
+                    className={`${
+                      editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}`
+                        ? 'opacity-100'
+                        : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
+                    } transition-opacity duration-100`}
+                  >
+                    <Suspense fallback={null}>
+                      <EditButtonMenu
+                        menuId={`fullsize-edit-${fullSizeImage.jobId}`}
+                        image={fullSizeImage}
+                        isOpen={editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}`}
+                        anchor={editMenu?.anchor || null}
+                        isFullSize={true}
+                        anyMenuOpen={editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId}
+                        onClose={handleCloseEditMenu}
+                        onToggleMenu={handleToggleEditMenu}
+                        onEditImage={handleEditImage}
+                        onCreateAvatar={handleCreateAvatar}
+                        onUseAsReference={handleUseReference}
+                        onReusePrompt={handleReuse}
+                        onMakeVideo={handleVideo}
+                        onMakeVariation={!isVideo ? handleVariateClick : undefined}
+                      />
+                    </Suspense>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
 
             {/* Action buttons overlay - right side (only show on hover or when edit menu is open) */}
             <div className="image-gallery-actions absolute top-4 right-4 flex items-start gap-1 z-[40]">
@@ -972,35 +982,9 @@ const FullImageModal = memo(() => {
                       onUseAsReference={handleUseReference}
                       onReusePrompt={handleReuse}
                       onMakeVideo={handleVideo}
+                      onMakeVariation={!isVideo ? handleVariateClick : undefined}
                     />
                   </Suspense>
-                )}
-                
-              {/* Variate button - Only for images */}
-                {!isVideo && (
-                  <button
-                    type="button"
-                    onClick={handleVariateClick}
-                    disabled={isVariating}
-                    className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${
-                      editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || isImageActionMenuOpen
-                        ? 'opacity-100 pointer-events-auto'
-                        : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                    } ${isVariating ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    onMouseEnter={(e) => {
-                      showHoverTooltip(
-                        e.currentTarget,
-                        `variate-${fullSizeActionTooltipId}`,
-                        { placement: 'below', offset: 2 },
-                      );
-                    }}
-                    onMouseLeave={() => {
-                      hideHoverTooltip(`variate-${fullSizeActionTooltipId}`);
-                    }}
-                    aria-label="Variate image"
-                  >
-                    <Shuffle className="w-4 h-4" />
-                  </button>
                 )}
                 
               {/* Delete, Like, More - hover-revealed (glass tooltip only, no native title) */}
@@ -1280,7 +1264,6 @@ const FullImageModal = memo(() => {
             })()}
 
             {(() => {
-              const variateId = `variate-${fullSizeActionTooltipId}`;
               const deleteId = `delete-${fullSizeActionTooltipId}`;
               const likeId = `like-${fullSizeActionTooltipId}`;
               const moreId = `more-${fullSizeActionTooltipId}`;
@@ -1291,16 +1274,6 @@ const FullImageModal = memo(() => {
               const sidebarDeleteId = `delete-sidebar-${fullSizeActionTooltipId}`;
               return (
                 <>
-                  {!isVideo && createPortal(
-                    <div
-                      data-tooltip-for={variateId}
-                      className={`${tooltips.base} fixed`}
-                      style={{ zIndex: 9999 }}
-                    >
-                      Variate image
-                    </div>,
-                    document.body,
-                  )}
                   {createPortal(
                     <div
                       data-tooltip-for={deleteId}

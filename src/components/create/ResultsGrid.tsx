@@ -1,7 +1,7 @@
 import React, { memo, useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
-import { Heart, MoreHorizontal, Check, Image as ImageIcon, Video as VideoIcon, Copy, BookmarkPlus, Bookmark, Square, Trash2, FileText, Shuffle } from 'lucide-react';
+import { Heart, MoreHorizontal, Check, Image as ImageIcon, Video as VideoIcon, Copy, BookmarkPlus, Bookmark, Square, Trash2, FileText } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
@@ -860,6 +860,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                           onUseAsReference={handleUseReference}
                           onReusePrompt={handleReuse}
                           onMakeVideo={handleVideo}
+                          onMakeVariation={!isVideo(item) ? (e) => handleVariateImage(e, item) : undefined}
                         />
                       </Suspense>
                     </div>
@@ -891,35 +892,9 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                             onUseAsReference={handleUseReference}
                             onReusePrompt={handleReuse}
                             onMakeVideo={handleVideo}
+                            onMakeVariation={!isVideo(item) ? (e) => handleVariateImage(e, item) : undefined}
                           />
                         </Suspense>
-                      )}
-                      
-                      {/* Variate button - Only for images */}
-                      {!isVideo(item) && (
-                        <button
-                          type="button"
-                          onClick={(e) => handleVariateImage(e, item)}
-                          disabled={isVariating}
-                          className={`image-action-btn ${activeCategory === 'gallery' ? 'image-action-btn--gallery' : ''} parallax-large transition-opacity duration-100 ${
-                            isMenuActive
-                              ? 'opacity-100 pointer-events-auto'
-                              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                          } ${isVariating ? 'opacity-50 cursor-not-allowed' : ''}`}
-                          onMouseEnter={(e) => {
-                            showHoverTooltip(
-                              e.currentTarget,
-                              `variate-${baseActionTooltipId}`,
-                              { placement: 'below', offset: 2 },
-                            );
-                          }}
-                          onMouseLeave={() => {
-                            hideHoverTooltip(`variate-${baseActionTooltipId}`);
-                          }}
-                          aria-label="Variate image"
-                        >
-                          <Shuffle className="w-3 h-3" />
-                        </button>
                       )}
                       
                       {/* Delete, Like, More - Always shown (glass tooltip only, no native title) */}
@@ -1275,22 +1250,11 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
               })()}
 
               {(() => {
-                const variateId = `variate-${baseActionTooltipId}`;
                 const deleteId = `delete-${baseActionTooltipId}`;
                 const likeId = `like-${baseActionTooltipId}`;
                 const moreId = `more-${baseActionTooltipId}`;
                 return (
                   <>
-                    {!isVideo(item) && createPortal(
-                      <div
-                        data-tooltip-for={variateId}
-                        className={`${tooltips.base} fixed`}
-                        style={{ zIndex: 9999 }}
-                      >
-                        Variate image
-                      </div>,
-                      document.body,
-                    )}
                     {createPortal(
                       <div
                         data-tooltip-for={deleteId}
