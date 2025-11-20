@@ -36,6 +36,7 @@ import {
   Plus,
   Heart,
   RefreshCw,
+  Fingerprint,
 } from "lucide-react";
 import { layout, text, buttons, glass, headings, iconButtons, tooltips } from "../styles/designSystem";
 import { useAuth } from "../auth/useAuth";
@@ -58,6 +59,10 @@ type AvatarNavigationState = {
   openAvatarCreator?: boolean;
   selectedImageUrl?: string;
   suggestedName?: string;
+};
+
+type AvatarsProps = {
+  showSidebar?: boolean;
 };
 
 const defaultSubtitle =
@@ -238,7 +243,7 @@ const deriveSuggestedName = (raw?: string) => {
   return slice.charAt(0).toUpperCase() + slice.slice(1);
 };
 
-export default function Avatars() {
+export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const { storagePrefix, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -1936,16 +1941,29 @@ export default function Avatars() {
       <header className="max-w-3xl text-left">
         <div className={`${headings.tripleHeading.container} text-left`}>
           <p className={`${headings.tripleHeading.eyebrow} justify-start`}>
-            <User className="h-4 w-4 text-theme-white/60" />
-            Avatars
+            {showSidebar ? (
+              <>
+                <User className="h-4 w-4 text-theme-white/60" />
+                Avatars
+              </>
+            ) : (
+              <>
+                <Fingerprint className="h-4 w-4 text-theme-white/60" />
+                digital copy
+              </>
+            )}
           </p>
           <h1
             className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}
           >
-            Create your <span className="text-theme-text">Avatar</span>.
+            {showSidebar ? (
+              <>Create your <span className="text-theme-text">Avatar</span>.</>
+            ) : (
+              <>Create your Digital Copy.</>
+            )}
           </h1>
           <p className={`${headings.tripleHeading.description} -mb-4`}>
-            {subtitle}
+            {showSidebar ? subtitle : "Complete your setup."}
           </p>
         </div>
       </header>
@@ -2452,6 +2470,9 @@ export default function Avatars() {
   }, [creationsModalAvatar, closeCreationsModal, isFullSizeOpen, closeFullSizeView, navigateFullSizeImage, isAvatarFullSizeOpen, closeAvatarFullSizeView, navigateAvatarImage]);
 
   const sectionLayoutClass = "pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20";
+  const contentLayoutClass = showSidebar
+    ? "mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 lg:gap-2 lg:grid-cols-[160px_minmax(0,1fr)]"
+    : "mt-4 md:mt-0 w-full";
   const showProfileView = Boolean(creationsModalAvatar);
 
   return (
@@ -2459,18 +2480,20 @@ export default function Avatars() {
       <div className={layout.backdrop} aria-hidden />
       <section className={`relative z-10 ${sectionLayoutClass}`}>
         <div className={`${layout.container}`}>
-          <div className="mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 lg:gap-2 lg:grid-cols-[160px_minmax(0,1fr)]">
-            <Suspense fallback={null}>
-              <CreateSidebar
-                activeCategory="avatars"
-                onSelectCategory={(category) => {
-                  navigate(`/create/${category}`);
-                }}
-                onOpenMyFolders={() => {
-                  navigate('/gallery/folders');
-                }}
-              />
-            </Suspense>
+          <div className={contentLayoutClass}>
+            {showSidebar && (
+              <Suspense fallback={null}>
+                <CreateSidebar
+                  activeCategory="avatars"
+                  onSelectCategory={(category) => {
+                    navigate(`/create/${category}`);
+                  }}
+                  onOpenMyFolders={() => {
+                    navigate('/gallery/folders');
+                  }}
+                />
+              </Suspense>
+            )}
             <div className="w-full mb-4 flex flex-col gap-10">
               {showProfileView ? renderProfileView() : renderListView()}
             </div>
@@ -2894,7 +2917,7 @@ export default function Avatars() {
         )}
 
         {/* Left Navigation Sidebar */}
-        {isAvatarFullSizeOpen && creationsModalAvatar && activeAvatarImage && (
+        {showSidebar && isAvatarFullSizeOpen && creationsModalAvatar && activeAvatarImage && (
           <CreateSidebar
             activeCategory="avatars"
             onSelectCategory={(category) => {

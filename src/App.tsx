@@ -21,6 +21,7 @@ const Explore = lazy(() => import("./components/Explore"));
 const KnowledgeBase = lazy(() => import("./components/KnowledgeBase"));
 const LearnToolPage = lazy(() => import("./components/LearnToolPage"));
 const CreateRoutes = lazy(() => import("./routes/CreateRoutes"));
+const MasterRoutes = lazy(() => import("./routes/MasterRoutes"));
 const Edit = lazy(() => import("./components/Edit"));
 const Account = lazy(() => import("./components/Account"));
 const AuthErrorBoundary = lazy(() => import("./components/AuthErrorBoundary"));
@@ -34,7 +35,6 @@ const FAQSection = lazy(() => import("./components/Faq"));
 const Footer = lazy(() => import("./components/Footer"));
 const GlobalSvgDefs = lazy(() => import("./components/GlobalSvgDefs"));
 const ResetPasswordPage = lazy(() => import("./components/ResetPasswordPage"));
-const DigitalCopy = lazy(() => import("./components/DigitalCopy"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const PaymentSuccess = lazy(() => import("./components/payments/PaymentSuccess"));
@@ -363,7 +363,7 @@ function Home() {
                       Create your Digital Copy.
                     </h1>
                     <p className={`${headings.tripleHeading.description} text-theme-text text-left mt-0 mb-1`}>
-                      Your digital presence. All in one place.
+                      Your Digital Soul. All in one place.
                     </p>
                   </div>
                   <div className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-right flex-shrink-0 hidden lg:block font-normal`}>
@@ -656,13 +656,13 @@ function RouteFallback() {
   );
 }
 
-function CreateProtectedLayout() {
+function CreateProtectedLayout({ fallbackRoute = "/create" }: { fallbackRoute?: string } = {}) {
   return (
     <RequireAuth>
       <GenerationProvider>
         <GalleryProvider>
           <Suspense fallback={<RouteFallback />}>
-            <AuthErrorBoundary fallbackRoute="/create" context="creation">
+            <AuthErrorBoundary fallbackRoute={fallbackRoute} context="creation">
               <Outlet />
             </AuthErrorBoundary>
           </Suspense>
@@ -710,10 +710,12 @@ function AppContent() {
               <Route path="/about-us" element={<AboutUs />} />
               <Route path="/explore" element={<Explore />} />
               <Route path="/learn/tools/:toolSlug" element={<LearnToolPage />} />
-              <Route path="/digital-copy" element={<DigitalCopy />} />
               <Route element={<CreateProtectedLayout />}>
                 <Route path="/create/*" element={<CreateRoutes />} />
                 <Route path="/job/:jobId/*" element={<CreateRoutes />} />
+              </Route>
+              <Route element={<CreateProtectedLayout fallbackRoute="/master" />}>
+                <Route path="/master/*" element={<MasterRoutes />} />
               </Route>
               <Route
                 path="/gallery/*"

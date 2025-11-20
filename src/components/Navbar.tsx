@@ -15,7 +15,7 @@ import { apiFetch } from "../utils/api";
 import type { User as AuthUser } from "../auth/context";
 import { supabase } from "../lib/supabase";
 
-type MenuId = "create" | "edit" | "explore" | "learn" | "my works" | "digital copy";
+type MenuId = "create" | "edit" | "explore" | "learn" | "my works" | "master";
 type MenuEntry = { key: string; label: string; Icon: LucideIcon; gradient?: string; iconColor?: string };
 
 type NavItem = {
@@ -24,21 +24,16 @@ type NavItem = {
   prefetch?: () => void;
 };
 
-let hasPrefetchedDigitalCopy = false;
-const prefetchDigitalCopy = () => {
-  if (hasPrefetchedDigitalCopy) return;
-  hasPrefetchedDigitalCopy = true;
-  void import("./DigitalCopy");
-};
-
 const NAV_ITEMS: ReadonlyArray<NavItem> = [
   { label: "create", path: "/create/image" },
   { label: "edit", path: "/edit" },
   { label: "learn", path: "/learn/use-cases" },
-  { label: "digital copy", path: "/digital-copy", prefetch: prefetchDigitalCopy },
   { label: "explore", path: "/explore" },
   { label: "my works", path: "/gallery" },
+  { label: "master", path: "/master" },
 ];
+
+const MENU_DROPDOWN_LABELS: ReadonlySet<MenuId> = new Set(["create", "learn", "my works"]);
 
 const CREATE_MENU_ITEMS: ReadonlyArray<MenuEntry> = [
   { key: "text", label: "text", Icon: Edit, gradient: "from-amber-300 via-amber-400 to-orange-500", iconColor: "text-amber-400" },
@@ -333,7 +328,7 @@ export default function Navbar() {
                   }
                   onMouseEnter={() => {
                     item.prefetch?.();
-                    if (item.label !== "explore" && item.label !== "edit" && item.label !== "digital copy") {
+                    if (MENU_DROPDOWN_LABELS.has(item.label)) {
                       setActiveMenu(item.label);
                     } else {
                       setActiveMenu(null);
@@ -341,7 +336,7 @@ export default function Navbar() {
                   }}
                   onFocus={() => {
                     item.prefetch?.();
-                    if (item.label !== "explore" && item.label !== "edit" && item.label !== "digital copy") {
+                    if (MENU_DROPDOWN_LABELS.has(item.label)) {
                       setActiveMenu(item.label);
                     } else {
                       setActiveMenu(null);
