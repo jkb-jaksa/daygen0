@@ -99,7 +99,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const { user, storagePrefix } = useAuth();
   const { showToast } = useToast();
   const { state, toggleItemSelection, isLoading, filteredItems: contextFilteredItems, addImage } = useGallery();
-  const { variateImage: variateImageHook, isGenerating: isVariating } = useRecraftImageGeneration();
+  const { variateImage: variateImageHook } = useRecraftImageGeneration();
   const {
     handleImageClick,
     handleImageActionMenu,

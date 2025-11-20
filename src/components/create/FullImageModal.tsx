@@ -93,7 +93,7 @@ const buildModalVariateJobId = (item: GalleryImageLike): string => {
 const FullImageModal = memo(() => {
   const { state, setFullSizeImage, filteredItems, addImage } = useGallery();
   const { addActiveJob, updateJobStatus, removeActiveJob } = useGeneration();
-  const { variateImage: variateImageHook, isGenerating: isVariating } = useRecraftImageGeneration();
+  const { variateImage: variateImageHook } = useRecraftImageGeneration();
   const { 
     handleToggleLike, 
     handleTogglePublic,
