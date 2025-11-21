@@ -1142,7 +1142,7 @@ const FullImageModal = memo(() => {
             {/* Close button - positioned on right side of image */}
             <button
               onClick={clearJobUrl}
-              className="absolute -top-3 -right-3 p-1.5 rounded-full bg-theme-black/70 hover:bg-theme-black text-theme-white hover:text-theme-text backdrop-blur-sm transition-colors duration-200"
+              className="absolute -top-3 -right-3 p-1.5 rounded-full bg-[color:var(--glass-dark-bg)] text-theme-white hover:text-theme-text backdrop-blur-sm transition-colors duration-200"
               aria-label="Close"
             >
               <X className="w-4 h-4" />

@@ -1250,7 +1250,7 @@ export default function Edit() {
                   />
                   <button
                     onClick={handleDeleteImage}
-                    className="absolute top-2 right-2 bg-theme-black/80 hover:bg-theme-black text-theme-white hover:text-theme-text transition-colors duration-200 rounded-full p-1.5 pointer-events-auto z-20"
+                    className="absolute top-2 right-2 bg-[color:var(--glass-dark-bg)] text-theme-white hover:text-theme-text transition-colors duration-200 rounded-full p-1.5 pointer-events-auto z-20"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -1853,7 +1853,7 @@ export default function Edit() {
             
             <button
               onClick={() => { setIsFullSizeOpen(false); setSelectedFullImage(null); }}
-              className="absolute -top-3 -right-3 bg-theme-black/70 hover:bg-theme-black text-theme-white hover:text-theme-text rounded-full p-1.5 backdrop-strong transition-colors duration-200"
+              className="absolute -top-3 -right-3 bg-[color:var(--glass-dark-bg)] text-theme-white hover:text-theme-text rounded-full p-1.5 backdrop-strong transition-colors duration-200"
               aria-label="Close full size view"
             >
               <X className="w-4 h-4" />

@@ -2435,7 +2435,7 @@ export default function Products() {
                 {/* Close button - positioned on right side of image */}
                 <button
                   onClick={closeProductFullSizeView}
-                  className="absolute -top-3 -right-3 p-1.5 rounded-full bg-theme-black/70 hover:bg-theme-black text-theme-white hover:text-theme-text backdrop-blur-sm transition-colors duration-200"
+                  className="absolute -top-3 -right-3 p-1.5 rounded-full bg-[color:var(--glass-dark-bg)] text-theme-white hover:text-theme-text backdrop-blur-sm transition-colors duration-200"
                   aria-label="Close"
                 >
                   <X className="w-4 h-4" />
@@ -2991,7 +2991,7 @@ export default function Products() {
             
             <button
               onClick={closeFullSizeView}
-              className="absolute -top-3 -right-3 bg-theme-black/70 hover:bg-theme-black text-theme-white hover:text-theme-text rounded-full p-1.5 backdrop-strong transition-colors duration-200"
+              className="absolute -top-3 -right-3 bg-[color:var(--glass-dark-bg)] text-theme-white hover:text-theme-text rounded-full p-1.5 backdrop-strong transition-colors duration-200"
               aria-label="Close full size view"
             >
               <X className="w-4 h-4" />

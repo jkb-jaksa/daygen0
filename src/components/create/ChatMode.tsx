@@ -234,6 +234,7 @@ const ChatMode: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<StoredAvatar | null>(null);
   const [isProductPickerOpen, setIsProductPickerOpen] = useState(false);
   const [isPromptsDropdownOpen, setIsPromptsDropdownOpen] = useState(false);
+  const [pressedSession, setPressedSession] = useState<string | null>(null);
   const [isAvatarCreationModalOpen, setIsAvatarCreationModalOpen] = useState(false);
   const [avatarSelection, setAvatarSelection] = useState<AvatarSelection | null>(null);
   const [avatarName, setAvatarName] = useState("");
@@ -993,7 +994,7 @@ const ChatMode: React.FC = () => {
               <button
                 type="button"
                 onClick={openCreateModal}
-                className="grid size-7 place-items-center rounded-full text-theme-white transition-colors duration-150 hover:text-theme-text"
+                className="grid size-7 place-items-center rounded-full text-theme-white transition-colors duration-150 hover:text-theme-text hover:bg-theme-white/10"
                 aria-label="Start a new chat"
               >
                 <Plus className="h-3.5 w-3.5" />
@@ -1008,6 +1009,18 @@ const ChatMode: React.FC = () => {
                   <div className="space-y-1">
                     {group.sessions.map(session => {
                       const isActive = session.id === activeSession?.id;
+                      const isPressed = pressedSession === session.id;
+                      
+                      // Enhanced shadow effect: slightly deeper when pressed (very subtle)
+                      // For library items, always use neutral shadow
+                      const insetShadow = isPressed && isActive
+                        ? { boxShadow: 'inset 0 -0.5em 1.4em -0.12em rgba(255, 255, 255, 0.12)' }
+                        : isPressed && !isActive
+                        ? { boxShadow: 'inset 0 -0.5em 1.4em -0.12em rgba(255, 255, 255, 0.08)' }
+                        : isActive
+                        ? { boxShadow: 'inset 0 -0.5em 1.2em -0.125em rgba(255, 255, 255, 0.08)' }
+                        : {};
+                      
                       return (
                         <button
                           key={session.id}
@@ -1017,11 +1030,17 @@ const ChatMode: React.FC = () => {
                             setInput("");
                             setReferencePreviews([]);
                           }}
+                          onMouseDown={() => setPressedSession(session.id)}
+                          onMouseUp={() => setPressedSession(null)}
+                          onMouseLeave={() => setPressedSession(null)}
+                          onTouchStart={() => setPressedSession(session.id)}
+                          onTouchEnd={() => setPressedSession(null)}
                           className={`relative overflow-hidden group w-full rounded-2xl px-3 py-2 text-left transition-colors duration-150 ${
                             isActive
-                              ? "bg-theme-dark border border-theme-mid text-theme-text"
-                              : "border border-transparent hover:border-theme-dark hover:bg-theme-black text-theme-light"
+                              ? "border border-theme-dark text-theme-text"
+                              : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"
                           }`}
+                          style={insetShadow}
                           aria-pressed={isActive}
                         >
                           <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full blur-3xl bg-white transition-opacity duration-100 ${isActive ? 'opacity-60' : 'opacity-0 group-hover:opacity-20'}`} />
@@ -1037,7 +1056,7 @@ const ChatMode: React.FC = () => {
                                   openRenameModal(session);
                                 }}
                                 className={`grid size-6 place-items-center rounded-full opacity-0 transition-opacity duration-150 group-hover:opacity-100 ${
-                                  isActive ? "text-theme-text hover:text-theme-white" : "text-theme-light hover:text-theme-text"
+                                  isActive ? "text-theme-white hover:text-theme-text" : "text-theme-light hover:text-theme-text"
                                 }`}
                                 aria-label="Rename chat"
                               >
@@ -1050,7 +1069,7 @@ const ChatMode: React.FC = () => {
                                   openDeleteModal(session);
                                 }}
                                 className={`grid size-6 place-items-center rounded-full opacity-0 transition-opacity duration-150 group-hover:opacity-100 ${
-                                  isActive ? "text-theme-text hover:text-theme-white" : "text-theme-light hover:text-theme-text"
+                                  isActive ? "text-theme-white hover:text-theme-text" : "text-theme-light hover:text-theme-text"
                                 }`}
                                 aria-label="Delete chat"
                               >
