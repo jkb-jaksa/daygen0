@@ -45,6 +45,7 @@ const AspectRatioBadge = lazy(() => import("./shared/AspectRatioBadge"));
 const AvatarCreationModal = lazy(() => import("./avatars/AvatarCreationModal"));
 const AvatarCreationOptions = lazy(() => import("./avatars/AvatarCreationOptions"));
 const MasterAvatarCreationOptions = lazy(() => import("./avatars/MasterAvatarCreationOptions"));
+const MasterSidebar = lazy(() => import("./master/MasterSidebar"));
 import CreateSidebar from "./create/CreateSidebar";
 import { useGalleryImages } from "../hooks/useGalleryImages";
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
@@ -2488,7 +2489,8 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
 
   const sectionLayoutClass = "pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20";
   const isMasterSection = location.pathname.startsWith("/master");
-  const contentLayoutClass = showSidebar
+  const shouldShowSidebar = showSidebar || isMasterSection;
+  const contentLayoutClass = shouldShowSidebar
     ? "mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 lg:gap-2 lg:grid-cols-[160px_minmax(0,1fr)]"
     : "mt-4 md:mt-0 w-full";
   const showProfileView = Boolean(creationsModalAvatar);
@@ -2499,7 +2501,19 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       <section className={`relative z-10 ${sectionLayoutClass}`}>
         <div className={`${layout.container}`}>
           <div className={contentLayoutClass}>
-            {showSidebar && (
+            {isMasterSection ? (
+              <Suspense fallback={null}>
+                <MasterSidebar
+                  activeCategory="avatars"
+                  onSelectCategory={(category) => {
+                    navigate(`/create/${category}`);
+                  }}
+                  onOpenMyFolders={() => {
+                    navigate('/gallery/folders');
+                  }}
+                />
+              </Suspense>
+            ) : showSidebar && (
               <Suspense fallback={null}>
                 <CreateSidebar
                   activeCategory="avatars"
