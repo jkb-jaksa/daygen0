@@ -44,6 +44,7 @@ const ModelBadge = lazy(() => import("./ModelBadge"));
 const AspectRatioBadge = lazy(() => import("./shared/AspectRatioBadge"));
 const AvatarCreationModal = lazy(() => import("./avatars/AvatarCreationModal"));
 const AvatarCreationOptions = lazy(() => import("./avatars/AvatarCreationOptions"));
+const MasterAvatarCreationOptions = lazy(() => import("./avatars/MasterAvatarCreationOptions"));
 import CreateSidebar from "./create/CreateSidebar";
 import { useGalleryImages } from "../hooks/useGalleryImages";
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
@@ -1971,19 +1972,35 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       {!hasAvatars && (
         <div className="w-full">
           <Suspense fallback={null}>
-            <AvatarCreationOptions
-              selection={selection}
-              uploadError={uploadError}
-              isDragging={isDragging}
-              avatarName={avatarName}
-              disableSave={disableSave}
-              onAvatarNameChange={handleAvatarNameChange}
-              onSave={handleSaveAvatar}
-              onClearSelection={() => setSelection(null)}
-              onProcessFile={processImageFile}
-              onDragStateChange={setIsDragging}
-              onUploadError={setUploadError}
-            />
+            {isMasterSection ? (
+              <MasterAvatarCreationOptions
+                selection={selection}
+                uploadError={uploadError}
+                isDragging={isDragging}
+                avatarName={avatarName}
+                disableSave={disableSave}
+                onAvatarNameChange={handleAvatarNameChange}
+                onSave={handleSaveAvatar}
+                onClearSelection={() => setSelection(null)}
+                onProcessFile={processImageFile}
+                onDragStateChange={setIsDragging}
+                onUploadError={setUploadError}
+              />
+            ) : (
+              <AvatarCreationOptions
+                selection={selection}
+                uploadError={uploadError}
+                isDragging={isDragging}
+                avatarName={avatarName}
+                disableSave={disableSave}
+                onAvatarNameChange={handleAvatarNameChange}
+                onSave={handleSaveAvatar}
+                onClearSelection={() => setSelection(null)}
+                onProcessFile={processImageFile}
+                onDragStateChange={setIsDragging}
+                onUploadError={setUploadError}
+              />
+            )}
           </Suspense>
         </div>
       )}
@@ -2470,6 +2487,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   }, [creationsModalAvatar, closeCreationsModal, isFullSizeOpen, closeFullSizeView, navigateFullSizeImage, isAvatarFullSizeOpen, closeAvatarFullSizeView, navigateAvatarImage]);
 
   const sectionLayoutClass = "pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20";
+  const isMasterSection = location.pathname.startsWith("/master");
   const contentLayoutClass = showSidebar
     ? "mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 lg:gap-2 lg:grid-cols-[160px_minmax(0,1fr)]"
     : "mt-4 md:mt-0 w-full";
