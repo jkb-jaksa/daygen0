@@ -1631,8 +1631,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                     onClick={event => event.stopPropagation()}
                   >
                     <input
-                      className="flex h-full flex-1 bg-transparent px-3 text-base font-raleway font-normal text-theme-text placeholder:text-theme-white focus:outline-none"
-                      placeholder="Enter name..."
+                      className={isMasterSection 
+                        ? "flex-1 h-[32px] rounded-lg border border-theme-mid bg-theme-black/60 px-3 text-base font-raleway font-normal text-theme-text placeholder:text-theme-white focus:border-theme-text focus:outline-none"
+                        : "flex h-full flex-1 bg-transparent px-3 text-base font-raleway font-normal text-theme-text placeholder:text-theme-white focus:outline-none"}
+                      placeholder={isMasterSection ? "Enter your name..." : "Enter name..."}
                       value={editingName}
                       onChange={event => setEditingName(event.target.value)}
                       onKeyDown={event => {
@@ -1688,8 +1690,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               onClick={(event) => event.stopPropagation()}
             >
               <input
-                className="flex h-full flex-1 bg-transparent px-3 text-base font-raleway font-normal text-theme-text placeholder:text-theme-white focus:outline-none"
-                placeholder="Enter name..."
+                className={isMasterSection 
+                  ? "flex-1 h-[32px] rounded-lg border border-theme-mid bg-theme-black/60 px-3 text-base font-raleway font-normal text-theme-text placeholder:text-theme-white focus:border-theme-text focus:outline-none"
+                  : "flex h-full flex-1 bg-transparent px-3 text-base font-raleway font-normal text-theme-text placeholder:text-theme-white focus:outline-none"}
+                placeholder={isMasterSection ? "Enter your name..." : "Enter name..."}
                 value={editingName}
                 onChange={event => setEditingName(event.target.value)}
                 onKeyDown={event => {
@@ -2048,19 +2052,21 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
 
       {hasAvatars && (
         <div className="w-full max-w-6xl space-y-5">
-          <div className="flex items-center gap-2 text-left">
-            <h2 className="text-2xl font-normal font-raleway text-theme-text">
-              {isMasterSection ? "Your Image" : "Your Avatars"}
-            </h2>
-            <button
-              type="button"
-              className={iconButtons.lg}
-              onClick={openAvatarCreator}
-              aria-label="Create Avatar"
-            >
-              <Plus className="h-5 w-5" />
-            </button>
-          </div>
+          {!isMasterSection && (
+            <div className="flex items-center gap-2 text-left">
+              <h2 className="text-2xl font-normal font-raleway text-theme-text">
+                Your Avatars
+              </h2>
+              <button
+                type="button"
+                className={iconButtons.lg}
+                onClick={openAvatarCreator}
+                aria-label="Create Avatar"
+              >
+                <Plus className="h-5 w-5" />
+              </button>
+            </div>
+          )}
           <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-items-center">
             {avatars.map(avatar => renderAvatarCard(avatar))}
           </div>
@@ -2683,11 +2689,6 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                     <div className="text-center">
                       <div className="text-sm font-raleway leading-relaxed">
                         {creationsModalAvatar.name}
-                        {creationsModalAvatar.primaryImageId === activeAvatarImage.id && (
-                          <span className="ml-2 inline text-theme-white/70 text-xs">
-                            (Primary)
-                          </span>
-                        )}
                       </div>
                     </div>
                   </div>

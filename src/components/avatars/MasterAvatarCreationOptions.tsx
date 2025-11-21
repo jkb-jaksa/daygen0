@@ -147,7 +147,7 @@ function MasterAvatarCreationOptionsComponent({
                         <input
                           ref={nameInputRef}
                           className="flex-1 h-[32px] rounded-lg border border-theme-mid bg-theme-black/60 px-3 text-base font-raleway font-normal text-theme-text placeholder:text-theme-white focus:border-theme-text focus:outline-none"
-                          placeholder="Enter name..."
+                          placeholder="Enter your name..."
                           value={avatarName}
                           onChange={(event) => onAvatarNameChange(event.target.value)}
                           onKeyDown={(event) => {
@@ -169,7 +169,7 @@ function MasterAvatarCreationOptionsComponent({
                     ) : (
                       <>
                         <p className="flex-1 h-[32px] flex items-center text-base font-raleway font-normal text-theme-text px-3">
-                          {avatarName || "Enter name..."}
+                          {avatarName || "Enter your name..."}
                         </p>
                         <button
                           type="button"
