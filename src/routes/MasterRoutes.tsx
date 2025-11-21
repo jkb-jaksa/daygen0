@@ -12,6 +12,11 @@ export default function MasterRoutes() {
     <Suspense fallback={<Loading />}>
       <Routes>
         <Route index element={<Avatars showSidebar={false} />} />
+        <Route path="text" element={<Avatars showSidebar={false} />} />
+        <Route path="video" element={<Avatars showSidebar={false} />} />
+        <Route path="image" element={<Avatars showSidebar={false} />} />
+        <Route path="audio" element={<Avatars showSidebar={false} />} />
+        <Route path="avatars" element={<Avatars showSidebar={false} />} />
         <Route path=":avatarSlug" element={<Avatars showSidebar={false} />} />
         <Route path="*" element={<Navigate to=".." replace />} />
       </Routes>

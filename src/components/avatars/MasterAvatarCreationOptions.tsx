@@ -125,11 +125,11 @@ function MasterAvatarCreationOptionsComponent({
 
   return (
     <div className={`flex flex-col items-center gap-6 ${className ?? ""}`}>
-      <div className={`w-full mx-auto ${selection ? 'max-w-[48rem]' : 'max-w-4xl'}`}>
+      <div className="w-full max-w-4xl mx-auto">
         {selection ? (
-          <div className="relative w-full mx-auto max-w-[48rem]">
+          <div className="relative w-full mx-auto max-w-[20rem]">
             <div
-              className="card-media-frame relative aspect-square w-full min-w-[20rem] min-h-[20rem] overflow-hidden rounded-2xl border border-theme-dark/60 bg-theme-black/60"
+              className="card-media-frame relative aspect-square w-full min-w-[10rem] min-h-[10rem] overflow-hidden rounded-2xl border border-theme-dark/60 bg-theme-black/60"
               data-has-image={Boolean(selection?.imageUrl)}
               style={createCardImageStyle(selection?.imageUrl)}
             >

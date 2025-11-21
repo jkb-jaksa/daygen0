@@ -250,6 +250,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const navigate = useNavigate();
   const location = useLocation();
   const { avatarSlug } = useParams<{ avatarSlug?: string }>();
+  const isMasterSection = location.pathname.startsWith("/master");
   const previousNonJobPathRef = useRef<string | null>(null);
   const rememberNonJobPath = useCallback(() => {
     if (!location.pathname.startsWith("/job/")) {
@@ -422,7 +423,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   useEffect(() => {
     if (!avatarSlug) {
       setMissingAvatarSlug(null);
-      if (creationsModalAvatar) {
+      if (creationsModalAvatar && !isMasterSection) {
         setCreationsModalAvatar(null);
       }
       return;
@@ -438,7 +439,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       setCreationsModalAvatar(null);
       setMissingAvatarSlug(avatarSlug);
     }
-  }, [avatarSlug, avatars, creationsModalAvatar]);
+  }, [avatarSlug, avatars, creationsModalAvatar, isMasterSection]);
 
   const persistAvatars = useCallback(
     async (records: StoredAvatar[]) => {
@@ -1265,7 +1266,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const closeAvatarFullSizeView = useCallback(() => {
     setIsAvatarFullSizeOpen(false);
     setActiveAvatarImageId(null);
-  }, []);
+    if (isMasterSection) {
+      setCreationsModalAvatar(null);
+    }
+  }, [isMasterSection]);
 
   const navigateAvatarImage = useCallback(
     (direction: "prev" | "next") => {
@@ -1320,6 +1324,25 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     [avatarSlug, navigate],
   );
 
+  const openMasterFullSizeView = useCallback((avatar: StoredAvatar) => {
+    setCreationsModalAvatar(avatar);
+    setAvatarEditMenu(null);
+    setAvatarMoreMenu(null);
+    setSelectedFullImage(null);
+    setIsFullSizeOpen(false);
+    const targetImageId = avatar.primaryImageId || avatar.images[0]?.id || null;
+    setActiveAvatarImageId(targetImageId);
+    setIsAvatarFullSizeOpen(true);
+  }, []);
+
+  const handleAvatarCardClick = useCallback((avatar: StoredAvatar) => {
+    if (isMasterSection) {
+      openMasterFullSizeView(avatar);
+      return;
+    }
+    openCreationsModal(avatar);
+  }, [isMasterSection, openCreationsModal, openMasterFullSizeView]);
+
   const closeCreationsModal = useCallback(() => {
     setCreationsModalAvatar(null);
     setMissingAvatarSlug(null);
@@ -1327,9 +1350,9 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     setAvatarImageUploadTarget(null);
     setActiveAvatarImageId(null);
     if (avatarSlug) {
-      navigate("/create/avatars", { replace: true });
+      navigate(isMasterSection ? "/master" : "/create/avatars", { replace: true });
     }
-  }, [avatarSlug, navigate]);
+  }, [avatarSlug, isMasterSection, navigate]);
 
   const toggleCreationPublish = useCallback(
     (imageUrl: string) => {
@@ -1365,6 +1388,9 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     const isEditing = editingAvatarId === avatar.id;
     const isInteractive = !(disableModalTrigger || isEditing);
     const displayName = avatar.name.trim() ? avatar.name : "Enter name...";
+    const cardAriaLabel = isInteractive
+      ? (isMasterSection ? `Open image ${displayName}` : `View creations for ${displayName}`)
+      : undefined;
 
     return (
       <div
@@ -1374,11 +1400,11 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
         }`}
         role={isInteractive ? "button" : undefined}
         tabIndex={isInteractive ? 0 : undefined}
-        aria-label={isInteractive ? `View creations for ${displayName}` : undefined}
+        aria-label={cardAriaLabel}
         onClick={
           isInteractive
             ? () => {
-                openCreationsModal(avatar);
+                handleAvatarCardClick(avatar);
               }
             : undefined
         }
@@ -1387,7 +1413,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
             ? event => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
-                  openCreationsModal(avatar);
+                  handleAvatarCardClick(avatar);
                 }
               }
             : undefined
@@ -1938,11 +1964,13 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     </div>
   );
 
-  const renderListView = () => (
-    <>
-      <header className="max-w-3xl text-left">
-        <div className={`${headings.tripleHeading.container} text-left`}>
-          <p className={`${headings.tripleHeading.eyebrow} justify-start`}>
+  const renderHeader = () => {
+    if (!(showSidebar || !hasAvatars)) return null;
+    
+    return (
+      <header className={`max-w-3xl ${showSidebar ? 'text-left' : 'text-center mx-auto'}`}>
+        <div className={`${headings.tripleHeading.container} ${showSidebar ? 'text-left' : 'text-center'}`}>
+          <p className={`${headings.tripleHeading.eyebrow} ${showSidebar ? 'justify-start' : 'justify-center'}`}>
             {showSidebar ? (
               <>
                 <User className="h-4 w-4 text-theme-white/60" />
@@ -1969,47 +1997,61 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
           </p>
         </div>
       </header>
+    );
+  };
 
-      {!hasAvatars && (
-        <div className="w-full">
-          <Suspense fallback={null}>
-            {isMasterSection ? (
-              <MasterAvatarCreationOptions
-                selection={selection}
-                uploadError={uploadError}
-                isDragging={isDragging}
-                avatarName={avatarName}
-                disableSave={disableSave}
-                onAvatarNameChange={handleAvatarNameChange}
-                onSave={handleSaveAvatar}
-                onClearSelection={() => setSelection(null)}
-                onProcessFile={processImageFile}
-                onDragStateChange={setIsDragging}
-                onUploadError={setUploadError}
-              />
-            ) : (
-              <AvatarCreationOptions
-                selection={selection}
-                uploadError={uploadError}
-                isDragging={isDragging}
-                avatarName={avatarName}
-                disableSave={disableSave}
-                onAvatarNameChange={handleAvatarNameChange}
-                onSave={handleSaveAvatar}
-                onClearSelection={() => setSelection(null)}
-                onProcessFile={processImageFile}
-                onDragStateChange={setIsDragging}
-                onUploadError={setUploadError}
-              />
-            )}
-          </Suspense>
-        </div>
-      )}
+  const renderDragDropFields = () => {
+    if (hasAvatars) return null;
+    
+    return (
+      <div className="w-full">
+        <Suspense fallback={null}>
+          {isMasterSection ? (
+            <MasterAvatarCreationOptions
+              selection={selection}
+              uploadError={uploadError}
+              isDragging={isDragging}
+              avatarName={avatarName}
+              disableSave={disableSave}
+              onAvatarNameChange={handleAvatarNameChange}
+              onSave={handleSaveAvatar}
+              onClearSelection={() => setSelection(null)}
+              onProcessFile={processImageFile}
+              onDragStateChange={setIsDragging}
+              onUploadError={setUploadError}
+            />
+          ) : (
+            <AvatarCreationOptions
+              selection={selection}
+              uploadError={uploadError}
+              isDragging={isDragging}
+              avatarName={avatarName}
+              disableSave={disableSave}
+              onAvatarNameChange={handleAvatarNameChange}
+              onSave={handleSaveAvatar}
+              onClearSelection={() => setSelection(null)}
+              onProcessFile={processImageFile}
+              onDragStateChange={setIsDragging}
+              onUploadError={setUploadError}
+            />
+          )}
+        </Suspense>
+      </div>
+    );
+  };
+
+  const renderListView = () => (
+    <>
+      {!isMasterSection && renderHeader()}
+
+      {!isMasterSection && renderDragDropFields()}
 
       {hasAvatars && (
         <div className="w-full max-w-6xl space-y-5">
           <div className="flex items-center gap-2 text-left">
-            <h2 className="text-2xl font-normal font-raleway text-theme-text">Your Avatars</h2>
+            <h2 className="text-2xl font-normal font-raleway text-theme-text">
+              {isMasterSection ? "Your Image" : "Your Avatars"}
+            </h2>
             <button
               type="button"
               className={iconButtons.lg}
@@ -2487,13 +2529,29 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     };
   }, [creationsModalAvatar, closeCreationsModal, isFullSizeOpen, closeFullSizeView, navigateFullSizeImage, isAvatarFullSizeOpen, closeAvatarFullSizeView, navigateAvatarImage]);
 
+  // Derive active category from pathname when in master section
+  const masterActiveCategory = useMemo(() => {
+    if (!isMasterSection) return "avatars";
+    const pathSegments = location.pathname.split("/").filter(Boolean);
+    if (pathSegments.length >= 2 && pathSegments[0] === "master") {
+      const category = pathSegments[1];
+      // Valid categories: text, video, image, audio, avatars
+      if (["text", "video", "image", "audio", "avatars"].includes(category)) {
+        return category;
+      }
+      // If it's an avatar slug (not a category), default to avatars
+      return "avatars";
+    }
+    // Default to avatars for /master
+    return "avatars";
+  }, [isMasterSection, location.pathname]);
+
   const sectionLayoutClass = "pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20";
-  const isMasterSection = location.pathname.startsWith("/master");
   const shouldShowSidebar = showSidebar || isMasterSection;
   const contentLayoutClass = shouldShowSidebar
     ? "mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 lg:gap-2 lg:grid-cols-[160px_minmax(0,1fr)]"
     : "mt-4 md:mt-0 w-full";
-  const showProfileView = Boolean(creationsModalAvatar);
+  const showProfileView = !isMasterSection && Boolean(creationsModalAvatar);
 
   return (
     <div className={layout.page}>
@@ -2502,17 +2560,26 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
         <div className={`${layout.container}`}>
           <div className={contentLayoutClass}>
             {isMasterSection ? (
-              <Suspense fallback={null}>
-                <MasterSidebar
-                  activeCategory="avatars"
-                  onSelectCategory={(category) => {
-                    navigate(`/create/${category}`);
-                  }}
-                  onOpenMyFolders={() => {
-                    navigate('/gallery/folders');
-                  }}
-                />
-              </Suspense>
+              <>
+                <Suspense fallback={null}>
+                  <MasterSidebar
+                    activeCategory={masterActiveCategory}
+                    onSelectCategory={(category) => {
+                      navigate(`/master/${category}`);
+                    }}
+                  />
+                </Suspense>
+                {!hasAvatars && (
+                  <>
+                    <div className="col-span-full flex justify-center pb-8">
+                      {renderHeader()}
+                    </div>
+                    <div className="col-span-full flex justify-center">
+                      {renderDragDropFields()}
+                    </div>
+                  </>
+                )}
+              </>
             ) : showSidebar && (
               <Suspense fallback={null}>
                 <CreateSidebar
@@ -2949,19 +3016,32 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
         )}
 
         {/* Left Navigation Sidebar */}
-        {showSidebar && isAvatarFullSizeOpen && creationsModalAvatar && activeAvatarImage && (
-          <CreateSidebar
-            activeCategory="avatars"
-            onSelectCategory={(category) => {
-              navigate(`/create/${category}`);
-              closeAvatarFullSizeView();
-            }}
-            onOpenMyFolders={() => {
-              navigate('/gallery/folders');
-              closeAvatarFullSizeView();
-            }}
-            isFullSizeOpen={true}
-          />
+        {isAvatarFullSizeOpen && creationsModalAvatar && activeAvatarImage && (
+          isMasterSection ? (
+            <MasterSidebar
+              activeCategory={masterActiveCategory}
+              onSelectCategory={(category) => {
+                navigate(`/master/${category}`);
+                closeAvatarFullSizeView();
+              }}
+              isFullSizeOpen={true}
+            />
+          ) : (
+            showSidebar && (
+              <CreateSidebar
+                activeCategory="avatars"
+                onSelectCategory={(category) => {
+                  navigate(`/create/${category}`);
+                  closeAvatarFullSizeView();
+                }}
+                onOpenMyFolders={() => {
+                  navigate('/gallery/folders');
+                  closeAvatarFullSizeView();
+                }}
+                isFullSizeOpen={true}
+              />
+            )
+          )
         )}
       </>
 
