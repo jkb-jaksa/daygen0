@@ -1649,6 +1649,11 @@ html[data-theme="day"] .image-gallery-actions-menu {
   border-color: var(--theme-mid) !important;
 }
 
+/* Day mode tooltip border color - match dropdown menus */
+html[data-theme="day"] [data-tooltip-for] {
+  border-color: var(--theme-mid) !important;
+}
+
 /* Day mode hover states for image gallery action buttons */
 html[data-theme="day"] .image-gallery-actions .image-action-btn:hover {
   border-color: var(--theme-light);
@@ -1656,6 +1661,15 @@ html[data-theme="day"] .image-gallery-actions .image-action-btn:hover {
 
 html[data-theme="day"] .image-gallery-actions .nav-arrow-btn:hover {
   border-color: var(--theme-light);
+}
+
+/* Day mode colored hover borders for master section action buttons */
+html[data-theme="day"] .image-action-btn.master-action-create-image:hover {
+  border-color: rgba(239, 68, 68, 0.25); /* border-red-500/25 - matches create sidebar */
+}
+
+html[data-theme="day"] .image-action-btn.master-action-make-video:hover {
+  border-color: rgba(59, 130, 246, 0.25); /* border-blue-500/25 - matches create sidebar */
 }
 
 /* Day mode border colors for gallery images */
