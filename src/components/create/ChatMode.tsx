@@ -1,5 +1,5 @@
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState, lazy } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   BookmarkIcon,
   Check,
@@ -42,6 +42,7 @@ import { GEMINI_ASPECT_RATIO_OPTIONS, QWEN_ASPECT_RATIO_OPTIONS } from "../../da
 
 const AvatarCreationModal = lazy(() => import("../avatars/AvatarCreationModal"));
 const SettingsMenu = lazy(() => import("./SettingsMenu"));
+const MasterSidebar = lazy(() => import("../master/MasterSidebar"));
 
 const createId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -204,8 +205,10 @@ type GroupedSessions = {
 
 const ChatMode: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { storagePrefix, user } = useAuth();
   const { setFooterVisible } = useFooter();
+  const isMasterSection = location.pathname.startsWith("/master");
   const {
     sessions,
     activeSessionId,
@@ -528,6 +531,23 @@ const ChatMode: React.FC = () => {
   const clearSelectedProduct = useCallback(() => {
     setSelectedProduct(null);
   }, []);
+
+  const handleSelectCategory = useCallback((category: string) => {
+    if (isMasterSection) {
+      const masterPath = `/master/${category}`;
+      if (location.pathname === masterPath && location.search === location.search) {
+        return;
+      }
+      navigate({ pathname: masterPath, search: location.search });
+      return;
+    }
+    // For non-master sections, navigate to /create/{category}
+    const createPath = `/create/${category}`;
+    if (location.pathname === createPath && location.search === location.search) {
+      return;
+    }
+    navigate({ pathname: createPath, search: location.search });
+  }, [isMasterSection, location.pathname, location.search, navigate]);
 
   const handleProductDelete = useCallback(
     async (product: StoredAvatar) => {
@@ -984,8 +1004,19 @@ const ChatMode: React.FC = () => {
         </div>
       )}
       <div className={`${layout.container} pb-6`}>
-        <div className="relative z-0 flex h-[calc(100dvh-6rem)] w-full gap-3">
-          <aside className="hidden h-full w-56 flex-shrink-0 flex-col rounded-2xl border border-theme-dark bg-theme-black p-4 lg:flex">
+        <div className={`relative z-0 ${isMasterSection ? 'grid grid-cols-[160px_minmax(0,1fr)_224px]' : 'flex'} h-[calc(100dvh-6rem)] w-full gap-3`}>
+          {isMasterSection && (
+            <Suspense fallback={null}>
+              <MasterSidebar
+                activeCategory="text"
+                onSelectCategory={handleSelectCategory}
+                reservedBottomSpace={0}
+                isFullSizeOpen={false}
+              />
+            </Suspense>
+          )}
+          {!isMasterSection && (
+            <aside className="hidden h-full w-56 flex-shrink-0 flex-col rounded-2xl border border-theme-dark bg-theme-black p-4 lg:flex">
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <MessageCircle className="h-4 w-4 text-theme-white" />
@@ -1085,7 +1116,8 @@ const ChatMode: React.FC = () => {
               ))}
             </div>
           </aside>
-          <section className="flex min-h-full flex-1 flex-col gap-4">
+          )}
+          <section className={`flex min-h-full ${isMasterSection ? '' : 'flex-1'} flex-col gap-4`}>
             <div className="flex-1 overflow-hidden rounded-2xl border border-theme-dark bg-theme-black">
               <div className="flex h-full flex-col">
                 <div className="flex-1 space-y-4 overflow-y-auto px-6 py-6">
@@ -1812,6 +1844,108 @@ const ChatMode: React.FC = () => {
             </div>
           </div>
         </section>
+        {isMasterSection && (
+          <aside className="hidden h-full w-56 flex-shrink-0 flex-col rounded-2xl border border-theme-dark bg-theme-black p-4 lg:flex">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <MessageCircle className="h-4 w-4 text-theme-white" />
+                <h2 className="text-base font-raleway font-normal text-theme-white">History</h2>
+              </div>
+              <button
+                type="button"
+                onClick={openCreateModal}
+                className="grid size-7 place-items-center rounded-full text-theme-white transition-colors duration-150 hover:text-theme-text hover:bg-theme-white/10"
+                aria-label="Start a new chat"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto pr-1">
+              {groupedSessions.map(group => (
+                <div key={group.key} className="mb-6">
+                  <div className="mb-2 text-xs font-raleway uppercase tracking-wide text-theme-light">
+                    {group.label}
+                  </div>
+                  <div className="space-y-1">
+                    {group.sessions.map(session => {
+                      const isActive = session.id === activeSession?.id;
+                      const isPressed = pressedSession === session.id;
+                      
+                      // Enhanced shadow effect: slightly deeper when pressed (very subtle)
+                      // For library items, always use neutral shadow
+                      const insetShadow = isPressed && isActive
+                        ? { boxShadow: 'inset 0 -0.5em 1.4em -0.12em rgba(255, 255, 255, 0.12)' }
+                        : isPressed && !isActive
+                        ? { boxShadow: 'inset 0 -0.5em 1.4em -0.12em rgba(255, 255, 255, 0.08)' }
+                        : isActive
+                        ? { boxShadow: 'inset 0 -0.5em 1.2em -0.125em rgba(255, 255, 255, 0.08)' }
+                        : {};
+                      
+                      return (
+                        <button
+                          key={session.id}
+                          type="button"
+                          onClick={() => {
+                            selectSession(session.id);
+                            setInput("");
+                            setReferencePreviews([]);
+                          }}
+                          onMouseDown={() => setPressedSession(session.id)}
+                          onMouseUp={() => setPressedSession(null)}
+                          onMouseLeave={() => setPressedSession(null)}
+                          onTouchStart={() => setPressedSession(session.id)}
+                          onTouchEnd={() => setPressedSession(null)}
+                          className={`relative overflow-hidden group w-full rounded-2xl px-3 py-2 text-left transition-colors duration-150 ${
+                            isActive
+                              ? "border border-theme-dark text-theme-text"
+                              : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"
+                          }`}
+                          style={insetShadow}
+                          aria-pressed={isActive}
+                        >
+                          <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full blur-3xl bg-white transition-opacity duration-100 ${isActive ? 'opacity-60' : 'opacity-0 group-hover:opacity-20'}`} />
+                          <div className="relative z-10 flex items-center justify-between gap-2">
+                            <span className={`truncate text-sm font-raleway font-normal ${isActive ? "text-theme-text" : "text-theme-white"}`}>
+                              {session.title || "New chat"}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={event => {
+                                  event.stopPropagation();
+                                  openRenameModal(session);
+                                }}
+                                className={`grid size-6 place-items-center rounded-full opacity-0 transition-opacity duration-150 group-hover:opacity-100 ${
+                                  isActive ? "text-theme-white hover:text-theme-text" : "text-theme-light hover:text-theme-text"
+                                }`}
+                                aria-label="Rename chat"
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={event => {
+                                  event.stopPropagation();
+                                  openDeleteModal(session);
+                                }}
+                                className={`grid size-6 place-items-center rounded-full opacity-0 transition-opacity duration-150 group-hover:opacity-100 ${
+                                  isActive ? "text-theme-white hover:text-theme-text" : "text-theme-light hover:text-theme-text"
+                                }`}
+                                aria-label="Delete chat"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </aside>
+        )}
       </div>
     </div>
     <Suspense fallback={null}>

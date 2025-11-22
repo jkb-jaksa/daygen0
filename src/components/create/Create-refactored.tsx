@@ -13,6 +13,7 @@ const FoldersView = lazy(() => import('./FoldersView'));
 const FolderContentsView = lazy(() => import('./FolderContentsView'));
 const InspirationsEmptyState = lazy(() => import('./InspirationsView'));
 const AudioVoiceStudio = lazy(() => import('./audio/AudioVoiceStudio'));
+const MasterSidebar = lazy(() => import('../master/MasterSidebar'));
 import CreateSidebar from './CreateSidebar';
 import { useGallery, GalleryProvider } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
@@ -59,6 +60,10 @@ const categoryFromPath = (path: string): SupportedCategory | null => {
   const [pathname] = path.split('?');
   const segments = pathname.split('/').filter(Boolean);
   if (segments[0] === 'create' && segments[1]) {
+    return normalizeCategory(segments[1]);
+  }
+
+  if (segments[0] === 'master' && segments[1]) {
     return normalizeCategory(segments[1]);
   }
 
@@ -109,6 +114,7 @@ function CreateRefactoredView() {
   const navigate = useNavigate();
   const { setFooterVisible } = useFooter();
   const { user } = useAuth();
+  const isMasterSection = location.pathname.startsWith("/master");
   const locationState = (location.state as { jobOrigin?: string } | null) ?? null;
   const libraryNavItems = useMemo(() => [...LIBRARY_CATEGORIES, FOLDERS_ENTRY], []);
   const galleryActions = useGalleryActions();
@@ -477,6 +483,16 @@ function CreateRefactoredView() {
   }, [isGenerationCategory, setPromptBarReservedSpace]);
 
   const handleSelectCategory = useCallback((category: string) => {
+    // If in master section, navigate to /master/{category}
+    if (isMasterSection) {
+      const masterPath = `/master/${category}`;
+      if (location.pathname === masterPath && location.search === location.search) {
+        return;
+      }
+      navigate({ pathname: masterPath, search: location.search });
+      return;
+    }
+
     const resolvedPath = pathForCategory(category);
 
     if (resolvedPath) {
@@ -495,7 +511,7 @@ function CreateRefactoredView() {
     }
 
     navigate({ pathname: fallbackPath, search: location.search });
-  }, [location.pathname, location.search, navigate]);
+  }, [isMasterSection, location.pathname, location.search, navigate]);
 
   const handleOpenMyFolders = useCallback(() => {
     handleSelectCategory('my-folders');
@@ -929,13 +945,22 @@ function CreateRefactoredView() {
 
           <div className="mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 lg:gap-2 lg:grid-cols-[160px_minmax(0,1fr)]">
             <Suspense fallback={null}>
-              <CreateSidebar
-                activeCategory={activeCategory}
-                onSelectCategory={handleSelectCategory}
-                onOpenMyFolders={handleOpenMyFolders}
-                reservedBottomSpace={promptBarReservedSpace}
-                isFullSizeOpen={state.isFullSizeOpen}
-              />
+              {isMasterSection ? (
+                <MasterSidebar
+                  activeCategory={activeCategory}
+                  onSelectCategory={handleSelectCategory}
+                  reservedBottomSpace={promptBarReservedSpace}
+                  isFullSizeOpen={state.isFullSizeOpen}
+                />
+              ) : (
+                <CreateSidebar
+                  activeCategory={activeCategory}
+                  onSelectCategory={handleSelectCategory}
+                  onOpenMyFolders={handleOpenMyFolders}
+                  reservedBottomSpace={promptBarReservedSpace}
+                  isFullSizeOpen={state.isFullSizeOpen}
+                />
+              )}
             </Suspense>
             <div className="w-full mb-4">
               {isGenerationCategory && (
