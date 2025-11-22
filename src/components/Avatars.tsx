@@ -227,7 +227,7 @@ const ImageActionMenuPortal: React.FC<{
         width: pos.width,
         zIndex: zIndex,
       }}
-      className={`image-gallery-actions-menu ${glass.promptDark} rounded-lg py-2`}
+      className={`image-gallery-actions-menu ${glass.promptDark} rounded-lg`}
     >
       {children}
     </div>,
@@ -355,6 +355,17 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const [draggedImageId, setDraggedImageId] = useState<string | null>(null);
   const [dragOverSlotIndex, setDragOverSlotIndex] = useState<number | null>(null);
   const { images: galleryImages } = useGalleryImages();
+
+  // Compute if any menu is open to keep all icons visible
+  const anyMenuOpen = useMemo(() => {
+    return Boolean(
+      avatarEditMenu ||
+      avatarMoreMenu ||
+      galleryEditMenu ||
+      creationMoreMenu ||
+      modalAvatarEditMenu
+    );
+  }, [avatarEditMenu, avatarMoreMenu, galleryEditMenu, creationMoreMenu, modalAvatarEditMenu]);
 
   // Tooltip helper functions (viewport-based positioning for portaled tooltips)
   const showHoverTooltip = useCallback((
@@ -1424,76 +1435,133 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
           data-has-image={Boolean(avatar.imageUrl)}
           style={createCardImageStyle(avatar.imageUrl)}
         >
-          <div className="image-gallery-actions absolute left-2 top-2 z-10">
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                if (disableModalTrigger) {
-                  toggleModalAvatarEditMenu(avatar.id, event.currentTarget);
-                } else {
-                  toggleAvatarEditMenu(avatar.id, event.currentTarget);
-                }
-              }}
-              className={`image-action-btn parallax-large transition-opacity duration-100 ${
-                disableModalTrigger 
-                  ? (modalAvatarEditMenu?.avatarId === avatar.id
+          <div className="image-gallery-actions absolute left-2 top-2 z-10 flex items-center gap-0.5">
+            {isMasterSection ? (
+              <>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleNavigateToImage(avatar);
+                  }}
+                  className={`group/master-action image-action-btn parallax-large transition-opacity duration-100 text-theme-white ${
+                    anyMenuOpen
                       ? 'opacity-100 pointer-events-auto'
-                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100')
-                  : (avatarEditMenu?.avatarId === avatar.id
+                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                  }`}
+                  onMouseEnter={(e) => {
+                    showHoverTooltip(
+                      e.currentTarget,
+                      `create-image-master-${avatar.id}`,
+                      { placement: 'below', offset: 2 },
+                    );
+                  }}
+                  onMouseLeave={() => {
+                    hideHoverTooltip(`create-image-master-${avatar.id}`);
+                  }}
+                  aria-label="Create image"
+                >
+                  <ImageIcon className="w-4 h-4 text-theme-white transition-colors duration-150 group-hover/master-action:text-red-500" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleNavigateToVideo(avatar);
+                  }}
+                  className={`group/master-action image-action-btn parallax-large transition-opacity duration-100 text-theme-white ${
+                    anyMenuOpen
                       ? 'opacity-100 pointer-events-auto'
-                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100')
-              }`}
-              title="Edit Avatar"
-              aria-label="Edit Avatar"
-            >
-              <Edit className="w-3 h-3" />
-            </button>
-            <ImageActionMenuPortal
-              anchorEl={disableModalTrigger 
-                ? (modalAvatarEditMenu?.avatarId === avatar.id ? modalAvatarEditMenu?.anchor ?? null : null)
-                : (avatarEditMenu?.avatarId === avatar.id ? avatarEditMenu?.anchor ?? null : null)
-              }
-              open={disableModalTrigger 
-                ? (modalAvatarEditMenu?.avatarId === avatar.id)
-                : (avatarEditMenu?.avatarId === avatar.id)
-              }
-              onClose={disableModalTrigger ? closeModalAvatarEditMenu : closeAvatarEditMenu}
-              zIndex={creationsModalAvatar ? 10600 : 1200}
-            >
-              <button
-                type="button"
-                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  handleNavigateToImage(avatar);
-                  if (disableModalTrigger) {
-                    closeModalAvatarEditMenu();
-                  } else {
-                    closeAvatarEditMenu();
+                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                  }`}
+                  onMouseEnter={(e) => {
+                    showHoverTooltip(
+                      e.currentTarget,
+                      `make-video-master-${avatar.id}`,
+                      { placement: 'below', offset: 2 },
+                    );
+                  }}
+                  onMouseLeave={() => {
+                    hideHoverTooltip(`make-video-master-${avatar.id}`);
+                  }}
+                  aria-label="Make video"
+                >
+                  <Camera className="w-4 h-4 text-theme-white transition-colors duration-150 group-hover/master-action:text-blue-500" />
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    if (disableModalTrigger) {
+                      toggleModalAvatarEditMenu(avatar.id, event.currentTarget);
+                    } else {
+                      toggleAvatarEditMenu(avatar.id, event.currentTarget);
+                    }
+                  }}
+                  className={`image-action-btn parallax-large transition-opacity duration-100 ${
+                    anyMenuOpen || (disableModalTrigger 
+                      ? (modalAvatarEditMenu?.avatarId === avatar.id)
+                      : (avatarEditMenu?.avatarId === avatar.id))
+                      ? 'opacity-100 pointer-events-auto'
+                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                  }`}
+                  title="Edit Avatar"
+                  aria-label="Edit Avatar"
+                >
+                  <Edit className="w-3 h-3" />
+                </button>
+                <ImageActionMenuPortal
+                  anchorEl={disableModalTrigger 
+                    ? (modalAvatarEditMenu?.avatarId === avatar.id ? modalAvatarEditMenu?.anchor ?? null : null)
+                    : (avatarEditMenu?.avatarId === avatar.id ? avatarEditMenu?.anchor ?? null : null)
                   }
-                }}
-              >
-                <ImageIcon className="h-4 w-4" />
-                Create image
-              </button>
-              <button
-                type="button"
-                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  handleNavigateToVideo(avatar);
-                  if (disableModalTrigger) {
-                    closeModalAvatarEditMenu();
-                  } else {
-                    closeAvatarEditMenu();
+                  open={disableModalTrigger 
+                    ? (modalAvatarEditMenu?.avatarId === avatar.id)
+                    : (avatarEditMenu?.avatarId === avatar.id)
                   }
-                }}
-              >
-                <Camera className="h-4 w-4" />
-                Make video
-              </button>
-            </ImageActionMenuPortal>
+                  onClose={disableModalTrigger ? closeModalAvatarEditMenu : closeAvatarEditMenu}
+                  zIndex={creationsModalAvatar ? 10600 : 1200}
+                >
+                  <button
+                    type="button"
+                    className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleNavigateToImage(avatar);
+                      if (disableModalTrigger) {
+                        closeModalAvatarEditMenu();
+                      } else {
+                        closeAvatarEditMenu();
+                      }
+                    }}
+                  >
+                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                    <ImageIcon className="h-4 w-4 text-red-500 relative z-10" />
+                    <span className="relative z-10">Create image</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleNavigateToVideo(avatar);
+                      if (disableModalTrigger) {
+                        closeModalAvatarEditMenu();
+                      } else {
+                        closeAvatarEditMenu();
+                      }
+                    }}
+                  >
+                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                    <Camera className="h-4 w-4 text-blue-500 relative z-10" />
+                    <span className="relative z-10">Make video</span>
+                  </button>
+                </ImageActionMenuPortal>
+              </>
+            )}
           </div>
           <div className="image-gallery-actions absolute right-2 top-2 z-10 flex gap-1">
             <button
@@ -1502,8 +1570,21 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 event.stopPropagation();
                 setAvatarToDelete(avatar);
               }}
-              className="image-action-btn parallax-large transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100"
-              title="Delete Avatar"
+              className={`image-action-btn parallax-large transition-opacity duration-100 ${
+                anyMenuOpen
+                  ? 'opacity-100 pointer-events-auto'
+                  : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+              }`}
+              onMouseEnter={(e) => {
+                showHoverTooltip(
+                  e.currentTarget,
+                  `delete-avatar-master-${avatar.id}`,
+                  { placement: 'below', offset: 2 },
+                );
+              }}
+              onMouseLeave={() => {
+                hideHoverTooltip(`delete-avatar-master-${avatar.id}`);
+              }}
               aria-label="Delete Avatar"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -1515,11 +1596,20 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 toggleAvatarMoreMenu(avatar.id, event.currentTarget);
               }}
               className={`image-action-btn parallax-large transition-opacity duration-100 ${
-                avatarMoreMenu?.avatarId === avatar.id
+                anyMenuOpen || avatarMoreMenu?.avatarId === avatar.id
                   ? 'opacity-100 pointer-events-auto'
                   : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
               }`}
-              title="More options"
+              onMouseEnter={(e) => {
+                showHoverTooltip(
+                  e.currentTarget,
+                  `more-avatar-master-${avatar.id}`,
+                  { placement: 'below', offset: 2 },
+                );
+              }}
+              onMouseLeave={() => {
+                hideHoverTooltip(`more-avatar-master-${avatar.id}`);
+              }}
               aria-label="More options"
             >
               <MoreHorizontal className="w-3 h-3" />
@@ -1532,51 +1622,55 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
             >
               <button
                 type="button"
-                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   handleDownloadImage(avatar.imageUrl);
                   closeAvatarMoreMenu();
                 }}
               >
-                <Download className="h-4 w-4" />
-                Download
+                <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                <Download className="h-4 w-4 text-theme-text relative z-10" />
+                <span className="relative z-10">Download</span>
               </button>
               <button
                 type="button"
-                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   handleCopyLink(avatar.imageUrl);
                   closeAvatarMoreMenu();
                 }}
               >
-                <Copy className="h-4 w-4" />
-                Copy link
+                <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                <Copy className="h-4 w-4 text-theme-text relative z-10" />
+                <span className="relative z-10">Copy link</span>
               </button>
               <button
                 type="button"
-                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   handleManageFolders(avatar.imageUrl);
                   closeAvatarMoreMenu();
                 }}
               >
-                <FolderIcon className="h-4 w-4" />
-                Manage folders
+                <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                <FolderIcon className="h-4 w-4 text-theme-text relative z-10" />
+                <span className="relative z-10">Manage folders</span>
               </button>
               <button
                 type="button"
-                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   setAvatarToPublish(avatar);
                   closeAvatarMoreMenu();
                 }}
               >
-                <Globe className="h-4 w-4" />
-                {avatar.published ? 'Unpublish' : 'Publish'}
+                <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                <Globe className="h-4 w-4 text-theme-text relative z-10" />
+                <span className="relative z-10">{avatar.published ? 'Unpublish' : 'Publish'}</span>
               </button>
             </ImageActionMenuPortal>
           </div>
@@ -1737,6 +1831,57 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
             </div>
           )}
         </div>
+        {/* Tooltips rendered via portal to avoid clipping - Master section */}
+        {isMasterSection && (() => {
+          const createImageTooltipId = `create-image-master-${avatar.id}`;
+          const makeVideoTooltipId = `make-video-master-${avatar.id}`;
+          const deleteTooltipId = `delete-avatar-master-${avatar.id}`;
+          const moreTooltipId = `more-avatar-master-${avatar.id}`;
+          return (
+            <>
+              {createPortal(
+                <div
+                  data-tooltip-for={createImageTooltipId}
+                  className={`${tooltips.base} fixed`}
+                  style={{ zIndex: 9999 }}
+                >
+                  Create image
+                </div>,
+                document.body,
+              )}
+              {createPortal(
+                <div
+                  data-tooltip-for={makeVideoTooltipId}
+                  className={`${tooltips.base} fixed`}
+                  style={{ zIndex: 9999 }}
+                >
+                  Make video
+                </div>,
+                document.body,
+              )}
+              {createPortal(
+                <div
+                  data-tooltip-for={deleteTooltipId}
+                  className={`${tooltips.base} fixed`}
+                  style={{ zIndex: 9999 }}
+                >
+                  Delete
+                </div>,
+                document.body,
+              )}
+              {createPortal(
+                <div
+                  data-tooltip-for={moreTooltipId}
+                  className={`${tooltips.base} fixed`}
+                  style={{ zIndex: 9999 }}
+                >
+                  More
+                </div>,
+                document.body,
+              )}
+            </>
+          );
+        })()}
       </div>
     );
   };
@@ -1784,7 +1929,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 toggleGalleryEditMenu(image.url, event.currentTarget);
               }}
               className={`image-action-btn parallax-large transition-opacity duration-100 ${
-                galleryEditMenu?.imageUrl === image.url
+                anyMenuOpen || galleryEditMenu?.imageUrl === image.url
                   ? 'opacity-100 pointer-events-auto'
                   : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
               }`}
@@ -1801,19 +1946,20 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
             >
               <button
                 type="button"
-                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   handleEditCreation(image);
                   closeGalleryEditMenu();
                 }}
               >
-                <ImageIcon className="h-4 w-4" />
-                Edit image
+                <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                <ImageIcon className="h-4 w-4 text-red-500 relative z-10" />
+                <span className="relative z-10">Edit image</span>
               </button>
               <button
                 type="button"
-                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
                   navigate("/create/video", {
@@ -1825,8 +1971,9 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                   closeGalleryEditMenu();
                 }}
               >
-                <Camera className="h-4 w-4" />
-                Make video
+                <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                <Camera className="h-4 w-4 text-blue-500 relative z-10" />
+                <span className="relative z-10">Make video</span>
               </button>
             </ImageActionMenuPortal>
           </div>
@@ -1838,7 +1985,11 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               event.stopPropagation();
               confirmDeleteImage(image);
             }}
-            className="image-action-btn parallax-large transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100"
+            className={`image-action-btn parallax-large transition-opacity duration-100 ${
+              anyMenuOpen
+                ? 'opacity-100 pointer-events-auto'
+                : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+            }`}
             title="Delete image"
             aria-label="Delete image"
           >
@@ -1851,7 +2002,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               toggleCreationMoreMenu(image.url, event.currentTarget);
             }}
             className={`image-action-btn parallax-large transition-opacity duration-100 ${
-              creationMoreMenu?.imageUrl === image.url
+              anyMenuOpen || creationMoreMenu?.imageUrl === image.url
                 ? 'opacity-100 pointer-events-auto'
                 : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
             }`}
@@ -1868,51 +2019,55 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
           >
             <button
               type="button"
-              className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+              className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
               onClick={(event) => {
                 event.stopPropagation();
                 handleDownloadImage(image.url);
                 closeCreationMoreMenu();
               }}
             >
-              <Download className="h-4 w-4" />
-              Download
+              <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+              <Download className="h-4 w-4 text-theme-text relative z-10" />
+              <span className="relative z-10">Download</span>
             </button>
             <button
               type="button"
-              className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+              className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
               onClick={(event) => {
                 event.stopPropagation();
                 handleCopyLink(image.url);
                 closeCreationMoreMenu();
               }}
             >
-              <Copy className="h-4 w-4" />
-              Copy link
+              <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+              <Copy className="h-4 w-4 text-theme-text relative z-10" />
+              <span className="relative z-10">Copy link</span>
             </button>
             <button
               type="button"
-              className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+              className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
               onClick={(event) => {
                 event.stopPropagation();
                 handleManageFolders(image.url);
                 closeCreationMoreMenu();
               }}
             >
-              <FolderIcon className="h-4 w-4" />
-              Manage folders
+              <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+              <FolderIcon className="h-4 w-4 text-theme-text relative z-10" />
+              <span className="relative z-10">Manage folders</span>
             </button>
             <button
               type="button"
-              className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+              className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
               onClick={(event) => {
                 event.stopPropagation();
                 toggleCreationPublish(image.url);
                 closeCreationMoreMenu();
               }}
             >
-              <Globe className="h-4 w-4" />
-              {image.isPublic ? "Unpublish" : "Publish"}
+              <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+              <Globe className="h-4 w-4 text-theme-text relative z-10" />
+              <span className="relative z-10">{image.isPublic ? "Unpublish" : "Publish"}</span>
             </button>
           </ImageActionMenuPortal>
         </div>
@@ -2674,6 +2829,233 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                   style={{ objectPosition: 'top' }}
                 />
 
+                {/* Action buttons overlay - left side */}
+                <div className="image-gallery-actions absolute top-4 left-4 flex items-start gap-1 z-[40]">
+                  <div
+                    className={`flex items-center gap-1 ${
+                      anyMenuOpen
+                        ? 'opacity-100'
+                        : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
+                    } transition-opacity duration-100`}
+                  >
+                    {isMasterSection ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleNavigateToImage(creationsModalAvatar);
+                            closeAvatarFullSizeView();
+                          }}
+                          className={`group/master-action image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 text-theme-white ${
+                            anyMenuOpen
+                              ? 'opacity-100 pointer-events-auto'
+                              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                          }`}
+                          aria-label="Create image"
+                        >
+                          <ImageIcon className="w-4 h-4 text-theme-white transition-colors duration-150 group-hover/master-action:text-red-500" />
+                          <span className="text-sm font-medium">Create image</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleNavigateToVideo(creationsModalAvatar);
+                            closeAvatarFullSizeView();
+                          }}
+                          className={`group/master-action image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 text-theme-white ${
+                            anyMenuOpen
+                              ? 'opacity-100 pointer-events-auto'
+                              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                          }`}
+                          aria-label="Make video"
+                        >
+                          <Camera className="w-4 h-4 text-theme-white transition-colors duration-150 group-hover/master-action:text-blue-500" />
+                          <span className="text-sm font-medium">Make video</span>
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            toggleAvatarEditMenu(creationsModalAvatar.id, event.currentTarget);
+                          }}
+                          className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${
+                            anyMenuOpen || avatarEditMenu?.avatarId === creationsModalAvatar.id
+                              ? 'opacity-100 pointer-events-auto'
+                              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                          }`}
+                          title="Edit"
+                          aria-haspopup="menu"
+                          aria-expanded={avatarEditMenu?.avatarId === creationsModalAvatar.id}
+                        >
+                          <Edit className="w-3 h-3" />
+                        </button>
+                        <ImageActionMenuPortal
+                          anchorEl={avatarEditMenu?.avatarId === creationsModalAvatar.id ? avatarEditMenu?.anchor ?? null : null}
+                          open={avatarEditMenu?.avatarId === creationsModalAvatar.id}
+                          onClose={closeAvatarEditMenu}
+                          zIndex={10700}
+                        >
+                          <button
+                            type="button"
+                            className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleNavigateToImage(creationsModalAvatar);
+                              closeAvatarEditMenu();
+                              closeAvatarFullSizeView();
+                            }}
+                          >
+                            <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                            <ImageIcon className="h-4 w-4 text-red-500 relative z-10" />
+                            <span className="relative z-10">Create image</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleNavigateToVideo(creationsModalAvatar);
+                              closeAvatarEditMenu();
+                              closeAvatarFullSizeView();
+                            }}
+                          >
+                            <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                            <Camera className="h-4 w-4 text-blue-500 relative z-10" />
+                            <span className="relative z-10">Make video</span>
+                          </button>
+                        </ImageActionMenuPortal>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Action buttons overlay - right side */}
+                <div className="image-gallery-actions absolute top-4 right-4 flex items-start gap-1 z-[40]">
+                  <div
+                    className={`flex items-center gap-1 ${
+                      anyMenuOpen || avatarMoreMenu?.avatarId === creationsModalAvatar.id
+                        ? 'opacity-100'
+                        : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
+                    } transition-opacity duration-100`}
+                  >
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setAvatarToDelete(creationsModalAvatar);
+                        closeAvatarFullSizeView();
+                      }}
+                      className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${
+                        anyMenuOpen
+                          ? 'opacity-100 pointer-events-auto'
+                          : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                      }`}
+                      onMouseEnter={(e) => {
+                        showHoverTooltip(
+                          e.currentTarget,
+                          `delete-avatar-fullsize-${creationsModalAvatar.id}`,
+                          { placement: 'below', offset: 2 },
+                        );
+                      }}
+                      onMouseLeave={() => {
+                        hideHoverTooltip(`delete-avatar-fullsize-${creationsModalAvatar.id}`);
+                      }}
+                      aria-label="Delete Avatar"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        toggleAvatarMoreMenu(creationsModalAvatar.id, event.currentTarget);
+                      }}
+                      className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${
+                        anyMenuOpen || avatarMoreMenu?.avatarId === creationsModalAvatar.id
+                          ? 'opacity-100 pointer-events-auto'
+                          : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                      }`}
+                      onMouseEnter={(e) => {
+                        showHoverTooltip(
+                          e.currentTarget,
+                          `more-avatar-fullsize-${creationsModalAvatar.id}`,
+                          { placement: 'below', offset: 2 },
+                        );
+                      }}
+                      onMouseLeave={() => {
+                        hideHoverTooltip(`more-avatar-fullsize-${creationsModalAvatar.id}`);
+                      }}
+                      aria-label="More options"
+                    >
+                      <MoreHorizontal className="w-3 h-3" />
+                    </button>
+                    <ImageActionMenuPortal
+                      anchorEl={avatarMoreMenu?.avatarId === creationsModalAvatar.id ? avatarMoreMenu?.anchor ?? null : null}
+                      open={avatarMoreMenu?.avatarId === creationsModalAvatar.id}
+                      onClose={closeAvatarMoreMenu}
+                      zIndex={10700}
+                    >
+                      <button
+                        type="button"
+                        className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleDownloadImage(activeAvatarImage.url);
+                          closeAvatarMoreMenu();
+                        }}
+                      >
+                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                        <Download className="h-4 w-4 text-theme-text relative z-10" />
+                        <span className="relative z-10">Download</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleCopyLink(activeAvatarImage.url);
+                          closeAvatarMoreMenu();
+                        }}
+                      >
+                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                        <Copy className="h-4 w-4 text-theme-text relative z-10" />
+                        <span className="relative z-10">Copy link</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleManageFolders(activeAvatarImage.url);
+                          closeAvatarMoreMenu();
+                        }}
+                      >
+                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                        <FolderIcon className="h-4 w-4 text-theme-text relative z-10" />
+                        <span className="relative z-10">Manage folders</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setAvatarToPublish(creationsModalAvatar);
+                          closeAvatarMoreMenu();
+                        }}
+                      >
+                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                        <Globe className="h-4 w-4 text-theme-text relative z-10" />
+                        <span className="relative z-10">{creationsModalAvatar.published ? 'Unpublish' : 'Publish'}</span>
+                      </button>
+                    </ImageActionMenuPortal>
+                  </div>
+                </div>
+
                 {/* Close button - positioned on right side of image */}
                 <button
                   onClick={closeAvatarFullSizeView}
@@ -2975,6 +3357,36 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 </>
               );
             })()}
+
+            {/* Portaled tooltips for avatar full-size action buttons (Delete and More) */}
+            {(() => {
+              const deleteFullsizeTooltipId = `delete-avatar-fullsize-${creationsModalAvatar.id}`;
+              const moreFullsizeTooltipId = `more-avatar-fullsize-${creationsModalAvatar.id}`;
+              return (
+                <>
+                  {createPortal(
+                    <div
+                      data-tooltip-for={deleteFullsizeTooltipId}
+                      className={`${tooltips.base} fixed`}
+                      style={{ zIndex: 9999 }}
+                    >
+                      Delete
+                    </div>,
+                    document.body,
+                  )}
+                  {createPortal(
+                    <div
+                      data-tooltip-for={moreFullsizeTooltipId}
+                      className={`${tooltips.base} fixed`}
+                      style={{ zIndex: 9999 }}
+                    >
+                      More
+                    </div>,
+                    document.body,
+                  )}
+                </>
+              );
+            })()}
           </>
         )}
 
@@ -3088,15 +3500,19 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
             {/* Action buttons - only show on hover */}
             <div className="absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-4 pointer-events-none">
               <div className={`pointer-events-auto ${
-                galleryEditMenu?.imageUrl === selectedFullImage.url || creationMoreMenu?.imageUrl === selectedFullImage.url ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-              }`}>
+                anyMenuOpen || galleryEditMenu?.imageUrl === selectedFullImage.url ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+              } transition-opacity duration-100`}>
                 <button
                   type="button"
                   onClick={(event) => {
                     event.stopPropagation();
                     toggleGalleryEditMenu(selectedFullImage.url, event.currentTarget);
                   }}
-                  className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100`}
+                  className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${
+                    anyMenuOpen || galleryEditMenu?.imageUrl === selectedFullImage.url
+                      ? 'opacity-100 pointer-events-auto'
+                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                  }`}
                   title="Edit image"
                   aria-label="Edit image"
                 >
@@ -3110,19 +3526,20 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 >
                   <button
                     type="button"
-                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleEditCreation(selectedFullImage);
                       closeGalleryEditMenu();
                     }}
                   >
-                    <ImageIcon className="h-4 w-4" />
-                    Edit image
+                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                    <ImageIcon className="h-4 w-4 text-red-500 relative z-10" />
+                    <span className="relative z-10">Edit image</span>
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       navigate("/create/video", {
@@ -3134,21 +3551,26 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                       closeGalleryEditMenu();
                     }}
                   >
-                    <Camera className="h-4 w-4" />
-                    Make video
+                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                    <Camera className="h-4 w-4 text-blue-500 relative z-10" />
+                    <span className="relative z-10">Make video</span>
                   </button>
                 </ImageActionMenuPortal>
               </div>
               <div className={`flex items-center gap-0.5 pointer-events-auto ${
-                galleryEditMenu?.imageUrl === selectedFullImage.url || creationMoreMenu?.imageUrl === selectedFullImage.url ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-              }`}>
+                anyMenuOpen || galleryEditMenu?.imageUrl === selectedFullImage.url || creationMoreMenu?.imageUrl === selectedFullImage.url ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+              } transition-opacity duration-100`}>
                 <button
                   type="button"
                   onClick={(event) => {
                     event.stopPropagation();
                     confirmDeleteImage(selectedFullImage);
                   }}
-                  className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100`}
+                  className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${
+                    anyMenuOpen
+                      ? 'opacity-100 pointer-events-auto'
+                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                  }`}
                   title="Delete image" 
                   aria-label="Delete image"
                 >
@@ -3160,7 +3582,11 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                     event.stopPropagation();
                     toggleCreationMoreMenu(selectedFullImage.url, event.currentTarget);
                   }}
-                  className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100`}
+                  className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${
+                    anyMenuOpen || creationMoreMenu?.imageUrl === selectedFullImage.url
+                      ? 'opacity-100 pointer-events-auto'
+                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                  }`}
                   title="More options" 
                   aria-label="More options"
                 >
@@ -3174,51 +3600,55 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 >
                   <button
                     type="button"
-                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleDownloadImage(selectedFullImage.url);
                       closeCreationMoreMenu();
                     }}
                   >
-                    <Download className="h-4 w-4" />
-                    Download
+                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                    <Download className="h-4 w-4 text-theme-text relative z-10" />
+                    <span className="relative z-10">Download</span>
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleCopyLink(selectedFullImage.url);
                       closeCreationMoreMenu();
                     }}
                   >
-                    <Copy className="h-4 w-4" />
-                    Copy link
+                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                    <Copy className="h-4 w-4 text-theme-text relative z-10" />
+                    <span className="relative z-10">Copy link</span>
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleManageFolders(selectedFullImage.url);
                       closeCreationMoreMenu();
                     }}
                   >
-                    <FolderIcon className="h-4 w-4" />
-                    Manage folders
+                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                    <FolderIcon className="h-4 w-4 text-theme-text relative z-10" />
+                    <span className="relative z-10">Manage folders</span>
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
                       toggleCreationPublish(selectedFullImage.url);
                       closeCreationMoreMenu();
                     }}
                   >
-                    <Globe className="h-4 w-4" />
-                    {selectedFullImage.isPublic ? "Unpublish" : "Publish"}
+                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                    <Globe className="h-4 w-4 text-theme-text relative z-10" />
+                    <span className="relative z-10">{selectedFullImage.isPublic ? "Unpublish" : "Publish"}</span>
                   </button>
                 </ImageActionMenuPortal>
               </div>

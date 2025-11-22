@@ -124,4 +124,3 @@ function MasterSidebarComponent({
 export const MasterSidebar = memo(MasterSidebarComponent);
 
 export default MasterSidebar;
-
