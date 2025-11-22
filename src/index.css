@@ -375,7 +375,7 @@ html[data-theme="day"] {
 
   --glass-border: color-mix(in srgb, var(--theme-dark) 70%, var(--theme-mid) 30%);
   --glass-base-bg: rgb(var(--d-dark-rgb) / 0.5);
-  --glass-surface-bg: rgb(var(--d-black-rgb) / 0.85);
+  --glass-surface-bg: rgb(var(--d-black-rgb) / 0.70);
   --glass-tight-bg: var(--glass-base-bg);
   --glass-dark-bg: rgb(var(--d-black-rgb) / 0.70);
   --glass-prompt-bg: rgb(var(--n-mid-rgb) / 0.80);
@@ -864,7 +864,7 @@ html[data-theme="day"] .prompt-surface {
   --glass-base-bg: rgb(var(--n-light-rgb) / 0.15);
   --glass-surface-bg: rgb(var(--n-black-rgb) / 0.15);
   --glass-tight-bg: var(--glass-base-bg);
-  --glass-dark-bg: rgb(var(--n-black-rgb) / 0.60);
+  --glass-dark-bg: rgb(var(--n-black-rgb) / 0.70);
   --glass-prompt-bg: rgb(var(--n-mid-rgb) / 0.80);
   --glass-prompt-text: var(--n-text);
   --glass-prompt-text-rgb: var(--n-text-rgb);
