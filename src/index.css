@@ -1561,6 +1561,17 @@ html[data-theme="day"] .card-media-frame::before {
   transform: scale(1.01);
 }
 
+/* Colored hover tint for master section action buttons */
+.image-action-btn.master-action-create-image:hover {
+  background: color-mix(in srgb, rgba(239, 68, 68, 0.25) 30%, var(--glass-dark-bg) 70%);
+  border-color: rgba(239, 68, 68, 0.25); /* border-red-500/25 - matches create sidebar */
+}
+
+.image-action-btn.master-action-make-video:hover {
+  background: color-mix(in srgb, rgba(59, 130, 246, 0.25) 30%, var(--glass-dark-bg) 70%);
+  border-color: rgba(59, 130, 246, 0.25); /* border-blue-500/25 - matches create sidebar */
+}
+
 /* Override image-action-btn transform for parallax elements */
 .image-action-btn.parallax-large:hover {
   transform: scale(1.01);

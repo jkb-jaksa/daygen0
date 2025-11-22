@@ -1444,7 +1444,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                     event.stopPropagation();
                     handleNavigateToImage(avatar);
                   }}
-                  className={`group/master-action image-action-btn parallax-large transition-opacity duration-100 text-theme-white ${
+                  className={`group/master-action master-action-create-image image-action-btn parallax-large transition-opacity duration-100 text-theme-white ${
                     anyMenuOpen
                       ? 'opacity-100 pointer-events-auto'
                       : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -1469,7 +1469,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                     event.stopPropagation();
                     handleNavigateToVideo(avatar);
                   }}
-                  className={`group/master-action image-action-btn parallax-large transition-opacity duration-100 text-theme-white ${
+                  className={`group/master-action master-action-make-video image-action-btn parallax-large transition-opacity duration-100 text-theme-white ${
                     anyMenuOpen
                       ? 'opacity-100 pointer-events-auto'
                       : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -2847,7 +2847,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                             handleNavigateToImage(creationsModalAvatar);
                             closeAvatarFullSizeView();
                           }}
-                          className={`group/master-action image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 text-theme-white ${
+                          className={`group/master-action master-action-create-image image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 text-theme-white ${
                             anyMenuOpen
                               ? 'opacity-100 pointer-events-auto'
                               : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
@@ -2864,7 +2864,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                             handleNavigateToVideo(creationsModalAvatar);
                             closeAvatarFullSizeView();
                           }}
-                          className={`group/master-action image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 text-theme-white ${
+                          className={`group/master-action master-action-make-video image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 text-theme-white ${
                             anyMenuOpen
                               ? 'opacity-100 pointer-events-auto'
                               : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
