@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { buttons, text } from "../../../styles/designSystem";
+import { buttons, inputs, text } from "../../../styles/designSystem";
 import {
   Mic,
   Upload,
@@ -50,6 +50,7 @@ const base64ToObjectUrl = (base64: string, contentType: string) => {
 
 export function AudioVoiceStudio() {
   const [mode, setMode] = useState<VoiceFlowMode>("menu");
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
   const [recordingState, setRecordingState] = useState<RecordingState>({
@@ -68,7 +69,9 @@ export function AudioVoiceStudio() {
   const recordingIntervalRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scriptInputRef = useRef<HTMLTextAreaElement>(null);
+  const voiceModalityTextRef = useRef<HTMLTextAreaElement>(null);
   const [script, setScript] = useState("");
+  const [voiceModalityText, setVoiceModalityText] = useState("");
   const [modelId, setModelId] = useState("eleven_multilingual_v2");
   const [voiceName, setVoiceName] = useState("My Digital Voice");
   const [voiceDescription, setVoiceDescription] = useState(
@@ -260,6 +263,7 @@ export function AudioVoiceStudio() {
     (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
       event.stopPropagation();
+      setIsDraggingFile(false);
       const files = Array.from(event.dataTransfer.files);
       if (!files.length) {
         return;
@@ -381,43 +385,6 @@ export function AudioVoiceStudio() {
     setDesignError(null);
   }, [generatedPreviewUrl]);
 
-  const stopRecording = useCallback(
-    (silent = false) => {
-      const recorder = mediaRecorderRef.current;
-      if (!recorder) {
-        return;
-      }
-      if (recorder.state !== "inactive") {
-        recorder.stop();
-      }
-      mediaRecorderRef.current = null;
-      if (recordingIntervalRef.current) {
-        window.clearInterval(recordingIntervalRef.current);
-        recordingIntervalRef.current = null;
-      }
-      if (silent) {
-        recordingStreamRef.current
-          ?.getTracks()
-          .forEach((track) => track.stop());
-        recordingStreamRef.current = null;
-        recordingChunksRef.current = [];
-        setRecordingState((prev) => {
-          if (prev.audioUrl) {
-            URL.revokeObjectURL(prev.audioUrl);
-          }
-          return {
-            isRecording: false,
-            durationMs: 0,
-            audioUrl: null,
-            blob: null,
-            error: null,
-          };
-        });
-      }
-    },
-    [],
-  );
-
   const startRecording = useCallback(async () => {
     try {
       setRecordingIntent("requesting");
@@ -489,6 +456,7 @@ export function AudioVoiceStudio() {
         });
       }, 250);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error("Failed to start recording", error);
       setRecordingState({
         isRecording: false,
@@ -503,7 +471,44 @@ export function AudioVoiceStudio() {
     } finally {
       setRecordingIntent("idle");
     }
-  }, [recordingState.audioUrl, stopRecording]);
+  }, [recordingState.audioUrl]);
+
+  const stopRecording = useCallback(
+    (silent = false) => {
+      const recorder = mediaRecorderRef.current;
+      if (!recorder) {
+        return;
+      }
+      if (recorder.state !== "inactive") {
+        recorder.stop();
+      }
+      mediaRecorderRef.current = null;
+      if (recordingIntervalRef.current) {
+        window.clearInterval(recordingIntervalRef.current);
+        recordingIntervalRef.current = null;
+      }
+      if (silent) {
+        recordingStreamRef.current
+          ?.getTracks()
+          .forEach((track) => track.stop());
+        recordingStreamRef.current = null;
+        recordingChunksRef.current = [];
+        setRecordingState((prev) => {
+          if (prev.audioUrl) {
+            URL.revokeObjectURL(prev.audioUrl);
+          }
+          return {
+            isRecording: false,
+            durationMs: 0,
+            audioUrl: null,
+            blob: null,
+            error: null,
+          };
+        });
+      }
+    },
+    [],
+  );
 
   const recordingStatusLabel = useMemo(() => {
     if (recordingState.error) {
@@ -520,23 +525,25 @@ export function AudioVoiceStudio() {
 
   const renderMenu = () => (
     <div
-      className="relative w-full h-full flex items-center justify-center min-h-[calc(100vh-var(--nav-h,4rem)-32px)]"
+      className="relative w-full h-full flex items-center justify-center"
       onDragOver={(event) => {
         event.preventDefault();
         event.stopPropagation();
+        setIsDraggingFile(true);
       }}
       onDragLeave={(event) => {
         event.preventDefault();
         event.stopPropagation();
+        setIsDraggingFile(false);
       }}
       onDrop={handleDrop}
     >
-      <div className="flex flex-col items-center gap-8 text-center">
+      <div className="flex flex-col items-center gap-8 text-center w-full px-2">
         <div className="space-y-2">
           <h2 className={`${text.sectionHeading} text-theme-text`}>
             Upload your voice recording
           </h2>
-          <p className="max-w-lg text-sm font-raleway text-theme-white/80">
+          <p className="max-w-4xl text-sm font-raleway text-theme-white">
             Click anywhere or drag and drop to get started. You can record a new
             clip, upload an existing file, or design a custom voice with
             ElevenLabs.
@@ -564,6 +571,20 @@ export function AudioVoiceStudio() {
             <Sparkles className="size-4" />
             Design
           </button>
+        </div>
+        <div className="w-full max-w-6xl space-y-2">
+          <label className="block text-left text-sm font-raleway text-theme-text">
+            Text for Voice Modality
+            <textarea
+              ref={voiceModalityTextRef}
+              value={voiceModalityText}
+              onChange={(event) => setVoiceModalityText(event.target.value)}
+              style={{ resize: 'none' }}
+              className={`${inputs.textarea} resize-none mt-2`}
+              placeholder="Enter text that can be used in Voice Modality..."
+              rows={4}
+            />
+          </label>
         </div>
         <input
           ref={fileInputRef}
@@ -970,7 +991,7 @@ export function AudioVoiceStudio() {
   );
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full h-full">
       {mode === "menu" && renderMenu()}
       {mode === "record" && renderRecording()}
       {mode === "design" && renderDesign()}
@@ -985,5 +1006,3 @@ function SquareIcon() {
 }
 
 export default AudioVoiceStudio;
-
-

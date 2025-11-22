@@ -1005,7 +1005,14 @@ function CreateRefactoredView() {
                 <ComingSoonCategory category={activeCategory as ComingSoonCategoryKey} />
               )}
               {activeCategory === 'audio' && (
-                <div className="w-full h-[calc(100vh-var(--nav-h,4rem)-32px)]">
+                <div 
+                  className="fixed h-[calc(100vh-var(--nav-h,4rem)-32px)] max-w-4xl w-[70%]"
+                  style={{
+                    left: '50%',
+                    top: 'calc(var(--nav-h) + 16px)',
+                    transform: 'translateX(-50%)',
+                  }}
+                >
                   <Suspense fallback={null}>
                     <AudioVoiceStudio />
                   </Suspense>
