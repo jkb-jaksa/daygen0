@@ -127,24 +127,35 @@ export const useGalleryImages = () => {
     }
   }, [storagePrefix]);
 
+  // Helper to check if a URL is an R2 URL
+  const isR2Url = useCallback((url: string | undefined): boolean => {
+    if (!url) return false;
+    try {
+      const urlObj = new URL(url);
+      return (
+        urlObj.hostname.includes('r2.dev') ||
+        urlObj.hostname.includes('cloudflarestorage.com') ||
+        urlObj.hostname.includes('pub-')
+      );
+    } catch {
+      return false;
+    }
+  }, []);
+
   // Merge R2 images with local cache, prioritizing R2 URLs
   const mergeImages = useCallback((r2Images: GalleryImageLike[], localImages: GalleryImageLike[]): GalleryImageLike[] => {
     const r2ImageMap = new Map<string, GalleryImageLike>();
-    const localImageMap = new Map<string, GalleryImageLike>();
+    const r2UrlSet = new Set<string>();
 
-    // Index R2 images by getImageKey
+    // Index R2 images by getImageKey and collect all R2 URLs
     r2Images.forEach(image => {
       const key = getImageKey(image);
       if (key) {
         r2ImageMap.set(key, image);
       }
-    });
-
-    // Index local images by getImageKey
-    localImages.forEach(image => {
-      const key = getImageKey(image);
-      if (key) {
-        localImageMap.set(key, image);
+      // Track all R2 URLs to identify deleted images
+      if (image.url) {
+        r2UrlSet.add(image.url.trim());
       }
     });
 
@@ -164,6 +175,15 @@ export const useGalleryImages = () => {
     localImages.forEach(image => {
       const key = getImageKey(image);
       if (key && !processedKeys.has(key)) {
+        const imageUrl = image.url?.trim();
+        
+        // Skip local images with R2 URLs that are not in the R2 list (they're likely deleted)
+        if (imageUrl && isR2Url(imageUrl) && !r2UrlSet.has(imageUrl)) {
+          // This image has an R2 URL but is not in the R2 list, so it's likely deleted
+          // Skip it to avoid showing deleted images
+          return;
+        }
+        
         // Only add non-base64 local images, or base64 images that don't have R2 equivalents
         if (!isBase64Url(image.url) || !r2ImageMap.has(key)) {
           mergedImages.push(image);
@@ -173,7 +193,7 @@ export const useGalleryImages = () => {
     });
 
     return mergedImages;
-  }, []);
+  }, [isR2Url]);
 
   // Fetch gallery images from backend
   const fetchGalleryImages = useCallback(async () => {
@@ -230,18 +250,29 @@ export const useGalleryImages = () => {
         return true;
       });
 
-      // Update local storage to remove base64 images that now have R2 equivalents
-      if (r2Images.length > 0 && storagePrefix) {
+      // Update local storage to remove:
+      // 1. Base64 images that now have R2 equivalents
+      // 2. R2 images that are deleted (not in the R2 list)
+      if (storagePrefix) {
         try {
+          const r2UrlSet = new Set(r2Images.map(img => img.url?.trim()).filter(Boolean));
           const updatedLocalImages = localImages.filter(image => {
-            const key = image.jobId || image.url;
+            const imageUrl = image.url?.trim();
+            
+            // Remove R2 images that are not in the R2 list (deleted)
+            if (imageUrl && isR2Url(imageUrl) && !r2UrlSet.has(imageUrl)) {
+              return false;
+            }
+            
             // Keep non-base64 images, or base64 images that don't have R2 equivalents
+            const key = image.jobId || image.url;
             return !isBase64Url(image.url) || !r2Images.some((r2Image: GalleryImageLike) => (r2Image.jobId || r2Image.url) === key);
           });
 
           if (updatedLocalImages.length !== localImages.length) {
             await setPersistedValue(storagePrefix, 'gallery', serializeGallery(updatedLocalImages));
-            debugLog(`Removed ${localImages.length - updatedLocalImages.length} base64 images from local storage`);
+            const removedCount = localImages.length - updatedLocalImages.length;
+            debugLog(`Cleaned local storage: removed ${removedCount} images (base64 migrated or deleted R2 images)`);
           }
         } catch (error) {
           debugError('Failed to update local storage:', error);
@@ -297,7 +328,7 @@ export const useGalleryImages = () => {
     } finally {
       isFetchingRef.current = false;
     }
-  }, [token, storagePrefix, loadLocalImages, convertR2FileToGalleryItem, mergeImages]);
+  }, [token, storagePrefix, loadLocalImages, convertR2FileToGalleryItem, mergeImages, isR2Url]);
 
   // Delete an image (soft delete)
   const deleteImage = useCallback(async (imageId: string) => {
