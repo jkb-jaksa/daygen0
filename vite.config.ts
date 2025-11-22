@@ -21,6 +21,8 @@ export default defineConfig(({ mode }) => {
     // Vite automatically exposes VITE_* environment variables
     // No need for manual define configuration
     server: {
+      host: '0.0.0.0',
+      port: 5173,
       proxy: useProxy ? {
         '/api': {
           target: 'http://localhost:3000',

@@ -143,7 +143,8 @@
           var isBackendRequest = urlStr.includes('localhost:3000') || 
                                  urlStr.includes('/api/auth/me') || 
                                  urlStr.includes('/api/auth/oauth-callback') ||
-                                 urlStr.includes('api/auth');
+                                 urlStr.includes('api/auth') ||
+                                 urlStr.includes('/api/audio/');
           
           // Wrap all fetch calls to catch connection errors
           var fetchPromise = originalFetch.apply(window, args);
@@ -220,7 +221,8 @@
               var isBackendRequest = requestUrl.includes('localhost:3000') || 
                                      requestUrl.includes('/api/auth/me') || 
                                      requestUrl.includes('/api/auth/oauth-callback') ||
-                                     requestUrl.includes('api/auth');
+                                     requestUrl.includes('api/auth') ||
+                                     requestUrl.includes('/api/audio/');
               
               if (isBackendRequest) {
                 xhr.addEventListener('error', function(e) {
