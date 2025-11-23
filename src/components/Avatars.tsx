@@ -1824,7 +1824,11 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                     {!disableModalTrigger && (
                       <button
                         type="button"
-                        className="flex-shrink-0 text-theme-white transition-colors duration-200 hover:text-theme-text"
+                        className={`flex-shrink-0 text-theme-white transition-colors duration-200 hover:text-theme-text ${
+                          isMasterSection
+                            ? 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100 transition-opacity duration-100'
+                            : ''
+                        }`}
                         onClick={(event) => {
                           event.stopPropagation();
                           startRenaming(avatar);
@@ -1883,7 +1887,11 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               {!disableModalTrigger && (
                 <button
                   type="button"
-                  className="flex-shrink-0 text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  className={`flex-shrink-0 text-theme-white transition-colors duration-200 hover:text-theme-text ${
+                    isMasterSection
+                      ? 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100 transition-opacity duration-100'
+                      : ''
+                  }`}
                   onClick={(event) => {
                     event.stopPropagation();
                     startRenaming(avatar);
@@ -2276,27 +2284,29 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       {!isMasterSection && renderDragDropFields()}
 
       {hasAvatars && (
-        <div className="w-full max-w-6xl space-y-5">
-          {!isMasterSection && (
-            <div className="flex items-center gap-2 text-left">
-              <h2 className="text-2xl font-normal font-raleway text-theme-text">
-                Your Avatars
-              </h2>
-              <button
-                type="button"
-                className={iconButtons.lg}
-                onClick={openAvatarCreator}
-                aria-label="Create Avatar"
-              >
-                <Plus className="h-5 w-5" />
-              </button>
+        <>
+          <div className={`w-full max-w-6xl ${!isMasterSection ? 'space-y-5' : ''} ${isMasterSection ? 'mb-0' : ''}`}>
+            {!isMasterSection && (
+              <div className="flex items-center gap-2 text-left">
+                <h2 className="text-2xl font-normal font-raleway text-theme-text">
+                  Your Avatars
+                </h2>
+                <button
+                  type="button"
+                  className={iconButtons.lg}
+                  onClick={openAvatarCreator}
+                  aria-label="Create Avatar"
+                >
+                  <Plus className="h-5 w-5" />
+                </button>
+              </div>
+            )}
+            <div className={`grid grid-cols-1 gap-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-items-start ${isMasterSection ? 'mb-0' : ''}`}>
+              {avatars.map(avatar => renderAvatarCard(avatar))}
             </div>
-          )}
-          <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-items-start">
-            {avatars.map(avatar => renderAvatarCard(avatar))}
           </div>
           {isMasterSection && (
-            <div className="w-full mt-8">
+            <div className="w-full">
               <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                 <UseCaseCard
                   title="lifestyle images"
@@ -2357,7 +2367,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               </div>
             </div>
           )}
-        </div>
+        </>
       )}
 
       {missingAvatarSlug && (
@@ -2842,7 +2852,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const sectionLayoutClass = "pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20";
   const shouldShowSidebar = showSidebar || isMasterSection;
   const contentLayoutClass = shouldShowSidebar
-    ? "mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 lg:gap-3 lg:grid-cols-[160px_minmax(0,1fr)]"
+    ? "mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 lg:gap-4 lg:grid-cols-[160px_minmax(0,1fr)]"
     : "mt-4 md:mt-0 w-full";
   const showProfileView = !isMasterSection && Boolean(creationsModalAvatar);
 
@@ -2886,7 +2896,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 />
               </Suspense>
             )}
-            <div className="w-full mb-4 flex flex-col gap-10">
+            <div className={`w-full mb-4 flex flex-col ${isMasterSection ? 'gap-4' : 'gap-10'}`}>
               {showProfileView ? renderProfileView() : renderListView()}
             </div>
           </div>
