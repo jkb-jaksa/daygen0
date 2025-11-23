@@ -6,6 +6,7 @@ import { makeRemixUrl, withUtm, copyLink } from '../../../lib/shareUtils';
 import { useSavedPrompts } from '../../../hooks/useSavedPrompts';
 import { useAuth } from '../../../auth/useAuth';
 import { debugLog, debugError } from '../../../utils/debug';
+import { STUDIO_BASE_PATH } from '../../../utils/navigation';
 import type { GalleryImageLike, GalleryVideoLike } from '../types';
 
 // Helper to get consistent item identifier for UI actions (jobId → r2FileId → url)
@@ -28,7 +29,8 @@ const getItemIdentifier = (item: GalleryImageLike | GalleryVideoLike): string | 
 export function useGalleryActions() {
   const navigate = useNavigate();
   const location = useLocation();
-  const fallbackRouteRef = useRef<string>('/create/image');
+  const defaultStudioImagePath = `${STUDIO_BASE_PATH}/image`;
+  const fallbackRouteRef = useRef<string>(defaultStudioImagePath);
   const { user } = useAuth();
   const userKey = user?.id || user?.email || 'anon';
   const { savePrompt, isPromptSaved } = useSavedPrompts(userKey);
@@ -65,9 +67,9 @@ export function useGalleryActions() {
   useEffect(() => {
     if (!location.pathname.startsWith('/job/')) {
       const currentPath = `${location.pathname}${location.search ?? ''}`;
-      fallbackRouteRef.current = currentPath || '/create/image';
+      fallbackRouteRef.current = currentPath || defaultStudioImagePath;
     }
-  }, [location.pathname, location.search]);
+  }, [defaultStudioImagePath, location.pathname, location.search]);
 
   // Navigate to job URL
   const navigateToJobUrl = useCallback(
@@ -92,20 +94,20 @@ export function useGalleryActions() {
   // Clear job URL
   const clearJobUrl = useCallback(() => {
     const jobOrigin = locationState?.jobOrigin;
-    const fallbackPath = jobOrigin ?? fallbackRouteRef.current ?? '/create/image';
+    const fallbackPath = jobOrigin ?? fallbackRouteRef.current ?? defaultStudioImagePath;
     setFullSizeOpen(false);
     setFullSizeImage(null, 0);
 
     if (location.pathname.startsWith("/job/")) {
       const currentFullPath = `${location.pathname}${location.search ?? ''}`;
-      const destination = fallbackPath || '/create/image';
+      const destination = fallbackPath || defaultStudioImagePath;
       if (currentFullPath !== destination) {
         navigate(destination, { replace: false });
       } else {
-        navigate('/create/image', { replace: false });
+        navigate(defaultStudioImagePath, { replace: false });
       }
     }
-  }, [location.pathname, location.search, locationState?.jobOrigin, navigate, setFullSizeImage, setFullSizeOpen]);
+  }, [defaultStudioImagePath, location.pathname, location.search, locationState?.jobOrigin, navigate, setFullSizeImage, setFullSizeOpen]);
 
   const resolveItemIndex = useCallback(
     (image: GalleryImageLike | GalleryVideoLike): number => {
@@ -647,7 +649,7 @@ export function useGalleryActions() {
 
   // Handle create avatar from menu - navigate to avatars page
   const handleCreateAvatarFromMenu = useCallback((image: GalleryImageLike | GalleryVideoLike) => {
-    navigate('/create/avatars', {
+    navigate(`${STUDIO_BASE_PATH}/avatars`, {
       state: {
         openAvatarCreator: true,
         selectedImageUrl: image.url,
@@ -664,8 +666,12 @@ export function useGalleryActions() {
         return;
       }
 
-      if (!location.pathname.startsWith('/create/image')) {
-        navigate('/create/image');
+      const isOnStudioImageRoute =
+        location.pathname.startsWith(`${STUDIO_BASE_PATH}/image`) ||
+        location.pathname.startsWith('/job/');
+
+      if (!isOnStudioImageRoute) {
+        navigate(defaultStudioImagePath);
       }
 
       const ready = await ensureBridgeReady();
@@ -679,13 +685,17 @@ export function useGalleryActions() {
     } catch (error) {
       debugError('Error applying gallery reference:', error);
     }
-  }, [bridgeActionsRef, ensureBridgeReady, location.pathname, navigate]);
+  }, [bridgeActionsRef, defaultStudioImagePath, ensureBridgeReady, location.pathname, navigate]);
   
   const handleReusePrompt = useCallback((image: GalleryImageLike | GalleryVideoLike) => {
     const promptText = image.prompt ?? '';
 
-    if (!location.pathname.startsWith('/create/image')) {
-      navigate('/create/image');
+    const isOnStudioImageRoute =
+      location.pathname.startsWith(`${STUDIO_BASE_PATH}/image`) ||
+      location.pathname.startsWith('/job/');
+
+    if (!isOnStudioImageRoute) {
+      navigate(defaultStudioImagePath);
     }
 
     void (async () => {
@@ -696,10 +706,10 @@ export function useGalleryActions() {
       }
       bridgeActionsRef.current.setPromptFromGallery(promptText, { focus: true });
     })();
-  }, [bridgeActionsRef, ensureBridgeReady, location.pathname, navigate]);
+  }, [bridgeActionsRef, defaultStudioImagePath, ensureBridgeReady, location.pathname, navigate]);
   
   const handleMakeVideo = useCallback(() => {
-    navigate('/create/video');
+    navigate(`${STUDIO_BASE_PATH}/video`);
 
     void (async () => {
       const ready = await ensureBridgeReady();

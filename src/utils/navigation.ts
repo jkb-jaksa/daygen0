@@ -3,11 +3,15 @@ import { debugLog } from './debug';
 
 export const ACCOUNT_ROUTE = "/account" as const;
 export const AUTH_ENTRY_PATH = "/signup" as const;
+export const STUDIO_BASE_PATH = "/app" as const;
+const DEFAULT_DESTINATION = STUDIO_BASE_PATH;
+const LEGACY_CREATE_PREFIX = "/create";
 const AUTH_RETURN_STORAGE_KEY = "daygen::auth:return";
 const isBrowserEnvironment = typeof window !== "undefined";
 
 const ALLOWED_DESTINATIONS = [
-  "/create",
+  STUDIO_BASE_PATH,
+  "/job",
   "/edit", 
   "/gallery",
   "/learn",
@@ -18,7 +22,8 @@ const ALLOWED_DESTINATIONS = [
 type AllowedDestination = (typeof ALLOWED_DESTINATIONS)[number];
 
 const DESTINATION_LABELS: Record<AllowedDestination, string> = {
-  "/create": "the Create studio",
+  [STUDIO_BASE_PATH]: "the DayGen app",
+  "/job": "your job view",
   "/edit": "the Edit workspace",
   "/gallery": "your gallery",
   "/learn": "the Learn hub",
@@ -33,33 +38,75 @@ const formatSegment = (segment: string) =>
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
 
+export function normalizeLegacyStudioPath(path: string): string {
+  if (!path.startsWith(LEGACY_CREATE_PREFIX)) {
+    return path;
+  }
+
+  try {
+    const url = new URL(path, "https://example.com");
+    const segments = url.pathname.split("/").filter(Boolean);
+
+    if (segments[0] !== "create") {
+      return path;
+    }
+
+    const [, first, ...rest] = segments;
+    const remaining = rest.length ? `/${rest.join("/")}` : "";
+
+    if (!first) {
+      return `${STUDIO_BASE_PATH}/image${url.search}${url.hash}`;
+    }
+
+    if (["text", "image", "video", "audio"].includes(first)) {
+      return `${STUDIO_BASE_PATH}/${first}${remaining}${url.search}${url.hash}`;
+    }
+
+    if (first === "avatars") {
+      return `${STUDIO_BASE_PATH}/avatars${remaining}${url.search}${url.hash}`;
+    }
+
+    if (first === "products") {
+      return `${STUDIO_BASE_PATH}/products${remaining}${url.search}${url.hash}`;
+    }
+
+    if (first === "gallery") {
+      return `/gallery${remaining}${url.search}${url.hash}`;
+    }
+
+    return `${STUDIO_BASE_PATH}${url.search}${url.hash}`;
+  } catch {
+    return DEFAULT_DESTINATION;
+  }
+}
+
 export function safeNext(path?: string | null): string {
   const trimmed = path?.trim();
-  if (!trimmed) return "/create";
+  if (!trimmed) return DEFAULT_DESTINATION;
   
   // Security checks for open-redirect prevention
   
   // 1. Check for protocol indicators anywhere in the string
   if (trimmed.includes("://")) {
     authMetrics.increment('next_protocol_rejected');
-    return "/create";
+    return DEFAULT_DESTINATION;
   }
   
   // 2. Check for protocol-relative URLs (double slash anywhere)
   if (trimmed.includes("//")) {
     authMetrics.increment('next_protocol_rejected');
-    return "/create";
+    return DEFAULT_DESTINATION;
   }
   
   // 3. Check for credential injection attempts
   if (trimmed.includes("@")) {
     authMetrics.increment('next_credential_rejected');
-    return "/create";
+    return DEFAULT_DESTINATION;
   }
   
   // 4. Must start with forward slash
   if (!trimmed.startsWith("/")) {
-    return "/create";
+    return DEFAULT_DESTINATION;
   }
   
   // 5. Try to parse as URL to strip any origin that might be present
@@ -72,9 +119,12 @@ export function safeNext(path?: string | null): string {
     // If URL parsing fails, use the original trimmed path
     cleanPath = trimmed;
   }
+
+  // Normalize legacy /create paths to the new studio base
+  const normalizedPath = normalizeLegacyStudioPath(cleanPath);
   
   // 6. Extract just the pathname (ignore query params and hash for validation)
-  const [pathname] = cleanPath.split(/[?#]/);
+  const [pathname] = normalizedPath.split(/[?#]/);
   
   // 7. Validate against allowed destinations
   const isAllowed = ALLOWED_DESTINATIONS.some(
@@ -82,10 +132,10 @@ export function safeNext(path?: string | null): string {
   );
 
   if (!isAllowed) {
-    return "/create";
+    return DEFAULT_DESTINATION;
   }
 
-  return cleanPath;
+  return normalizedPath;
 }
 
 export function describePath(path?: string | null): string {
@@ -96,9 +146,13 @@ export function describePath(path?: string | null): string {
   const segments = pathname.split("/").filter(Boolean);
   const section = segments[0];
 
-  if (section === "create") {
+  if (section === "app" || section === "create") {
     const category = segments[1];
-    return category ? `Create → ${formatSegment(category)}` : DESTINATION_LABELS["/create"];
+    return category ? `App → ${formatSegment(category)}` : DESTINATION_LABELS[STUDIO_BASE_PATH];
+  }
+
+  if (section === "job") {
+    return DESTINATION_LABELS["/job"];
   }
 
   const key = (`/${section}`) as AllowedDestination;
@@ -145,7 +199,7 @@ export function safeResolveNext(
   // If location is a string (from query param), decode and sanitize it
   if (typeof location === 'string') {
     const trimmed = location.trim();
-    if (!trimmed) return "/create";
+    if (!trimmed) return DEFAULT_DESTINATION;
     
     try {
       const decoded = decodeURIComponent(trimmed);
@@ -169,7 +223,7 @@ export function safeResolveNext(
   const isEditRoute = location.pathname.startsWith("/edit");
   
   if (isEditRoute && isEditProtected) {
-    return "/create/image";
+    return `${STUDIO_BASE_PATH}/image`;
   }
   
   const fullPath = location.pathname + location.search;
@@ -222,20 +276,20 @@ export function peekPendingAuthRedirect(): string | null {
 
 // Category to path mapping for navigation
 const CATEGORY_TO_PATH: Record<string, string> = {
-  text: "/create/text",
-  image: "/create/image",
-  video: "/create/video",
-  avatars: "/create/avatars",
-  products: "/create/products",
-  audio: "/create/audio",
+  text: `${STUDIO_BASE_PATH}/text`,
+  image: `${STUDIO_BASE_PATH}/image`,
+  video: `${STUDIO_BASE_PATH}/video`,
+  avatars: `${STUDIO_BASE_PATH}/avatars`,
+  products: `${STUDIO_BASE_PATH}/products`,
+  audio: `${STUDIO_BASE_PATH}/audio`,
   gallery: "/gallery",
   uploads: "/gallery/uploads",
-  "my-folders": "/gallery/folders",
-  inspirations: "/gallery/inspirations",
+  "my-folders": "/app/folders",
+  inspirations: "/app/inspirations",
 };
 
-// Valid create category segments
-const CREATE_CATEGORY_SEGMENTS = new Set(["text", "image", "video", "audio", "avatars", "products"]);
+// Valid studio category segments
+const STUDIO_CATEGORY_SEGMENTS = new Set(["text", "image", "video", "audio", "avatars", "products"]);
 
 // Gallery segment to category mapping
 const GALLERY_SEGMENT_TO_CATEGORY: Record<string, string> = {
@@ -259,10 +313,16 @@ export function deriveCategoryFromPath(pathname: string): string {
     return "gallery";
   }
 
-  if (normalized.startsWith("/create")) {
+  if (normalized.startsWith(STUDIO_BASE_PATH) || normalized.startsWith(LEGACY_CREATE_PREFIX)) {
     const parts = normalized.split("/").filter(Boolean);
     const segment = parts[1];
-    if (segment && CREATE_CATEGORY_SEGMENTS.has(segment)) {
+    if (segment === "folders") {
+      return "my-folders";
+    }
+    if (segment === "inspirations") {
+      return "inspirations";
+    }
+    if (segment && STUDIO_CATEGORY_SEGMENTS.has(segment)) {
       return segment;
     }
     return "image";

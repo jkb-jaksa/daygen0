@@ -14,7 +14,6 @@ const FolderContentsView = lazy(() => import('./FolderContentsView'));
 const InspirationsEmptyState = lazy(() => import('./InspirationsView'));
 const AudioVoiceStudio = lazy(() => import('./audio/AudioVoiceStudio'));
 const MasterSidebar = lazy(() => import('../master/MasterSidebar'));
-import CreateSidebar from './CreateSidebar';
 import { useGallery, GalleryProvider } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
@@ -64,6 +63,10 @@ const categoryFromPath = (path: string): SupportedCategory | null => {
   }
 
   if (segments[0] === 'app' && segments[1]) {
+    // Handle special case for folders
+    if (segments[1] === 'folders') {
+      return normalizeCategory('my-folders');
+    }
     return normalizeCategory(segments[1]);
   }
 
@@ -445,6 +448,12 @@ function CreateRefactoredView() {
   }, [resolvedCategory]);
 
   useEffect(() => {
+    // Don't override footer visibility for /app routes - let App.tsx handle it
+    const isAppRoute = location.pathname.startsWith('/app');
+    if (isAppRoute) {
+      return;
+    }
+
     const isGalleryRoute = location.pathname.startsWith('/gallery');
     const isGalleryCategory = activeCategory === 'gallery' || activeCategory === 'my-folders' || activeCategory === 'inspirations';
     const hideFooterSections = new Set(['text', 'image', 'video', 'audio']);
@@ -483,8 +492,24 @@ function CreateRefactoredView() {
   }, [isGenerationCategory, setPromptBarReservedSpace]);
 
   const handleSelectCategory = useCallback((category: string) => {
-    // If in master section, navigate to /app/{category}
-    if (isMasterSection) {
+    // Check if category is a library category (gallery, avatars, products, inspirations, my-folders)
+    const libraryCategories = ['gallery', 'avatars', 'products', 'inspirations', 'my-folders'];
+    const isLibraryCategory = libraryCategories.includes(category);
+    
+    // For library categories, always use pathForCategory for proper routing
+    // For master section with non-library categories, use /app/{category}
+    const resolvedPath = isLibraryCategory ? pathForCategory(category) : null;
+    
+    if (resolvedPath) {
+      if (location.pathname === resolvedPath && location.search === location.search) {
+        return;
+      }
+      navigate({ pathname: resolvedPath, search: location.search });
+      return;
+    }
+    
+    // If in master section and not a library category, navigate to /app/{category}
+    if (isMasterSection && !isLibraryCategory) {
       const masterPath = `/app/${category}`;
       if (location.pathname === masterPath && location.search === location.search) {
         return;
@@ -493,24 +518,24 @@ function CreateRefactoredView() {
       return;
     }
 
-    const resolvedPath = pathForCategory(category);
-
-    if (resolvedPath) {
-      if (location.pathname === resolvedPath && location.search === location.search) {
+    // Try pathForCategory for non-master sections or fallback
+    const fallbackPath = pathForCategory(category);
+    if (fallbackPath) {
+      if (location.pathname === fallbackPath && location.search === location.search) {
         return;
       }
-      navigate({ pathname: resolvedPath, search: location.search });
+      navigate({ pathname: fallbackPath, search: location.search });
       return;
     }
 
     // Fallback to create/image for unknown categories
     const normalized = normalizeCategory(category) ?? 'image';
-    const fallbackPath = `/create/${normalized}`;
-    if (location.pathname === fallbackPath && location.search === location.search) {
+    const finalFallbackPath = `/app/${normalized}`;
+    if (location.pathname === finalFallbackPath && location.search === location.search) {
       return;
     }
 
-    navigate({ pathname: fallbackPath, search: location.search });
+    navigate({ pathname: finalFallbackPath, search: location.search });
   }, [isMasterSection, location.pathname, location.search, navigate]);
 
   const handleOpenMyFolders = useCallback(() => {
@@ -949,11 +974,12 @@ function CreateRefactoredView() {
                 <MasterSidebar
                   activeCategory={activeCategory}
                   onSelectCategory={handleSelectCategory}
+                  onOpenMyFolders={handleOpenMyFolders}
                   reservedBottomSpace={promptBarReservedSpace}
                   isFullSizeOpen={state.isFullSizeOpen}
                 />
               ) : (
-                <CreateSidebar
+                <MasterSidebar
                   activeCategory={activeCategory}
                   onSelectCategory={handleSelectCategory}
                   onOpenMyFolders={handleOpenMyFolders}

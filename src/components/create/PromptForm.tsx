@@ -1066,7 +1066,7 @@ const PromptForm = memo<PromptFormProps>(
                   <div className="relative">
                   <button
                     type="button"
-                    onClick={() => navigate('/create/chat')}
+                    onClick={() => navigate('/app/text')}
                     className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small`}
                     aria-label="Chat mode"
                     onMouseEnter={(e) => {
@@ -1663,7 +1663,7 @@ const PromptForm = memo<PromptFormProps>(
               type="button"
               onClick={() => {
                 handleAvatarPickerClose();
-                navigate('/create/avatars');
+                navigate('/app/avatars');
               }}
               className="text-base font-raleway text-theme-text"
             >
@@ -1836,7 +1836,7 @@ const PromptForm = memo<PromptFormProps>(
                 type="button"
                 className="inline-flex items-center justify-start gap-1 rounded-full px-3 py-1 text-xs font-raleway font-medium transition-colors duration-200 text-theme-white hover:text-theme-text"
                 onClick={() => {
-                  navigate('/create/avatars');
+                  navigate('/app/avatars');
                   setIsAvatarPickerOpen(false);
                 }}
               >
@@ -1859,7 +1859,7 @@ const PromptForm = memo<PromptFormProps>(
               type="button"
               onClick={() => {
                 handleProductPickerClose();
-                navigate('/create/products');
+                navigate('/app/products');
               }}
               className="text-base font-raleway text-theme-text"
             >
@@ -2032,7 +2032,7 @@ const PromptForm = memo<PromptFormProps>(
                 type="button"
                 className="inline-flex items-center justify-start gap-1 rounded-full px-3 py-1 text-xs font-raleway font-medium transition-colors duration-200 text-theme-white hover:text-theme-text"
                 onClick={() => {
-                  navigate('/create/products');
+                  navigate('/app/products');
                   setIsProductPickerOpen(false);
                 }}
               >
@@ -2185,7 +2185,7 @@ const PromptForm = memo<PromptFormProps>(
                     type="button"
                     className={buttons.ghost}
                     onClick={() => {
-                      navigate(`/create/avatars/${creationsModalAvatar.slug}`);
+                      navigate(`/app/avatars/${creationsModalAvatar.slug}`);
                       setCreationsModalAvatar(null);
                     }}
                   >

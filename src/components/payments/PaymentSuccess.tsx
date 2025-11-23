@@ -102,7 +102,7 @@ export function PaymentSuccess() {
   }, [sessionId, getSessionStatus, getSessionStatusQuick, refreshUser]); // Include all dependencies
 
   const handleContinue = () => {
-    navigate('/create');
+    navigate('/app');
   };
 
   const handleViewAccount = () => {

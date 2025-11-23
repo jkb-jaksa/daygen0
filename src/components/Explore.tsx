@@ -1020,7 +1020,7 @@ const Explore: React.FC = () => {
   );
 
   const handleNavigateToAvatars = useCallback(() => {
-    navigate('/create/avatars');
+    navigate('/app/avatars');
   }, [navigate]);
 
   const persistInspirations = useCallback(
@@ -1479,7 +1479,7 @@ const Explore: React.FC = () => {
 
   const handleRecreateUseAsReference = (item: GalleryItem) => {
     closeRecreateActionMenu();
-    navigate("/create/image", {
+    navigate("/app/image", {
       state: {
         referenceImageUrl: item.imageUrl,
         selectedModel: item.modelId,
@@ -1490,7 +1490,7 @@ const Explore: React.FC = () => {
 
   const handleRecreateRunPrompt = (item: GalleryItem) => {
     closeRecreateActionMenu();
-    navigate("/create/image", {
+    navigate("/app/image", {
       state: {
         promptToPrefill: item.prompt,
         selectedModel: item.modelId,

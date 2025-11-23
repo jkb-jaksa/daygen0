@@ -25,7 +25,7 @@ type NavItem = {
 };
 
 const NAV_ITEMS: ReadonlyArray<NavItem> = [
-  { label: "create", path: "/create/image" },
+  { label: "create", path: "/app/image" },
   { label: "edit", path: "/edit" },
   { label: "learn", path: "/learn/use-cases" },
   { label: "explore", path: "/explore" },
@@ -51,8 +51,8 @@ const LEARN_MENU_LINKS: ReadonlyArray<{ to: string; label: string; Icon: LucideI
 
 const MY_WORKS_MENU_LINKS: ReadonlyArray<{ to: string; label: string; Icon: LucideIcon }> = [
   { to: "/gallery", label: "gallery", Icon: LayoutGrid },
-  { to: "/create/avatars", label: "avatars", Icon: User },
-  { to: "/create/products", label: "products", Icon: Package },
+  { to: "/app/avatars", label: "avatars", Icon: User },
+  { to: "/app/products", label: "products", Icon: Package },
 ];
 
 export default function Navbar() {
@@ -280,12 +280,12 @@ export default function Navbar() {
 
   const handleCategoryClick = useCallback((category: string) => {
     const targetMap: Record<string, string> = {
-      text: "/create/text",
-      image: "/create/image",
-      video: "/create/video",
-      audio: "/create/audio",
+      text: "/app/text",
+      image: "/app/image",
+      video: "/app/video",
+      audio: "/app/audio",
     };
-    const target = targetMap[category] ?? "/create";
+    const target = targetMap[category] ?? "/app";
     navigate(target);
     closeMenu();
     emitNavigateToCategory(category);
@@ -682,7 +682,10 @@ export default function Navbar() {
                         setMenuOpen(false);
                         setMobileNavOpen(false);
                         const shouldPreserveFlow =
-                          location.pathname.startsWith('/create') || location.pathname.startsWith('/edit');
+                          location.pathname.startsWith('/app') ||
+                          location.pathname.startsWith('/job/') ||
+                          location.pathname.startsWith('/edit') ||
+                          location.pathname.startsWith('/create');
 
                         if (shouldPreserveFlow) {
                           const params = new URLSearchParams();
@@ -819,7 +822,10 @@ export default function Navbar() {
                 setActiveMenu(null);
                 setMenuOpen(false);
                 const shouldPreserveFlow =
-                  location.pathname.startsWith("/create") || location.pathname.startsWith("/edit");
+                  location.pathname.startsWith("/app") ||
+                  location.pathname.startsWith("/job/") ||
+                  location.pathname.startsWith("/edit") ||
+                  location.pathname.startsWith("/create");
 
                 if (shouldPreserveFlow) {
                   const params = new URLSearchParams();

@@ -13,7 +13,6 @@ import { useSavedPrompts } from '../../hooks/useSavedPrompts';
 import { useAuth } from '../../auth/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { loadSavedPrompts } from '../../lib/savedPrompts';
-import CreateSidebar from './CreateSidebar';
 import type { StoredAvatar } from '../avatars/types';
 import type { StoredProduct } from '../products/types';
 import type { StoredStyle } from '../styles/types';
@@ -30,6 +29,7 @@ import { useRecraftImageGeneration } from '../../hooks/useRecraftImageGeneration
 // Lazy load VerticalGalleryNav
 const VerticalGalleryNav = lazy(() => import('../shared/VerticalGalleryNav'));
 const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
+const MasterSidebar = lazy(() => import('../master/MasterSidebar'));
 // Individual badges are rendered via ImageBadgeRow
 
 // Helper function to get initials from name
@@ -188,10 +188,11 @@ const FullImageModal = memo(() => {
   // Derive active category from pathname
   const getActiveCategory = useCallback(() => {
     const path = location.pathname;
-    if (path.startsWith('/create/image')) return 'image';
-    if (path.startsWith('/create/video')) return 'video';
+    if (path.startsWith('/app/image') || path.startsWith('/create/image')) return 'image';
+    if (path.startsWith('/app/video') || path.startsWith('/create/video')) return 'video';
     if (path.startsWith('/gallery')) return 'gallery';
     if (path.startsWith('/create/gallery')) return 'gallery';
+    if (path.startsWith('/app')) return 'image';
     return 'image';
   }, [location.pathname]);
   
@@ -216,7 +217,7 @@ const FullImageModal = memo(() => {
   
   // Handle category selection
   const handleSelectCategory = useCallback((category: string) => {
-    navigate(`/create/${category}`);
+    navigate(`/app/${category}`);
     clearJobUrl();
   }, [navigate, clearJobUrl]);
   
@@ -861,7 +862,7 @@ const FullImageModal = memo(() => {
       
       {/* Left Navigation Sidebar */}
       {open && fullSizeImage && (
-        <CreateSidebar
+        <MasterSidebar
           activeCategory={activeCategory}
           onSelectCategory={handleSelectCategory}
           onOpenMyFolders={handleOpenMyFolders}
@@ -1561,4 +1562,3 @@ const FullImageModal = memo(() => {
 FullImageModal.displayName = 'FullImageModal';
 
 export default FullImageModal;
-

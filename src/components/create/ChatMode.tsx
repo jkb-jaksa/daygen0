@@ -23,7 +23,6 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 import { useAuth } from "../../auth/useAuth";
-import { useFooter } from "../../contexts/useFooter";
 import { buttons, glass, inputs, layout, tooltips } from "../../styles/designSystem";
 import { useChatSessions } from "../../hooks/useChatSessions";
 import type { ChatMessage, ChatSession } from "../../hooks/useChatSessions";
@@ -36,6 +35,7 @@ import { createAvatarRecord, normalizeStoredAvatars } from "../../utils/avatars"
 import { getPersistedValue, setPersistedValue } from "../../lib/clientStorage";
 import { getToolLogo, hasToolLogo } from "../../utils/toolLogos";
 import { debugWarn } from "../../utils/debug";
+import { pathForCategory } from "../../utils/navigation";
 import { AspectRatioDropdown } from "../AspectRatioDropdown";
 import type { AspectRatioOption, GeminiAspectRatio } from "../../types/aspectRatio";
 import { GEMINI_ASPECT_RATIO_OPTIONS, QWEN_ASPECT_RATIO_OPTIONS } from "../../data/aspectRatios";
@@ -207,7 +207,6 @@ const ChatMode: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { storagePrefix, user } = useAuth();
-  const { setFooterVisible } = useFooter();
   const isMasterSection = location.pathname.startsWith("/app");
   const {
     sessions,
@@ -314,11 +313,6 @@ const ChatMode: React.FC = () => {
       setIsAspectRatioMenuOpen(false);
     }
   }, [aspectRatioConfig]);
-
-  useEffect(() => {
-    setFooterVisible(false);
-    return () => setFooterVisible(true);
-  }, [setFooterVisible]);
 
   const activeSession = useMemo(() => {
     if (!sessions.length) return undefined;
@@ -533,21 +527,30 @@ const ChatMode: React.FC = () => {
   }, []);
 
   const handleSelectCategory = useCallback((category: string) => {
-    if (isMasterSection) {
-      const masterPath = `/app/${category}`;
-      if (location.pathname === masterPath && location.search === location.search) {
-        return;
-      }
-      navigate({ pathname: masterPath, search: location.search });
+    // Check if category is a library category (gallery, avatars, products, inspirations, my-folders)
+    const libraryCategories = ['gallery', 'avatars', 'products', 'inspirations', 'my-folders'];
+    const isLibraryCategory = libraryCategories.includes(category);
+    
+    let targetPath: string;
+    if (isLibraryCategory) {
+      const path = pathForCategory(category);
+      targetPath = path || `/app/${category}`;
+    } else {
+      targetPath = `/app/${category}`;
+    }
+    
+    if (location.pathname === targetPath && location.search === location.search) {
       return;
     }
-    // For non-master sections, navigate to /create/{category}
-    const createPath = `/create/${category}`;
-    if (location.pathname === createPath && location.search === location.search) {
-      return;
+    navigate({ pathname: targetPath, search: location.search });
+  }, [location.pathname, location.search, navigate]);
+
+  const handleOpenMyFolders = useCallback(() => {
+    const path = pathForCategory('my-folders');
+    if (path) {
+      navigate(path);
     }
-    navigate({ pathname: createPath, search: location.search });
-  }, [isMasterSection, location.pathname, location.search, navigate]);
+  }, [navigate]);
 
   const handleProductDelete = useCallback(
     async (product: StoredAvatar) => {
@@ -1010,6 +1013,7 @@ const ChatMode: React.FC = () => {
               <MasterSidebar
                 activeCategory="text"
                 onSelectCategory={handleSelectCategory}
+                onOpenMyFolders={handleOpenMyFolders}
                 reservedBottomSpace={0}
                 isFullSizeOpen={false}
               />
@@ -1178,7 +1182,7 @@ const ChatMode: React.FC = () => {
                       <div className="relative">
                         <button
                           type="button"
-                          onClick={() => navigate("/create/image")}
+                          onClick={() => navigate("/app/image")}
                           className={`${glass.promptBorderless} grid h-8 w-8 place-items-center rounded-full text-xs font-raleway text-theme-white transition-colors duration-200 hover:bg-theme-text/20 hover:text-theme-text`}
                           aria-label="Platform mode"
                           onMouseEnter={(e) => {
@@ -1412,7 +1416,7 @@ const ChatMode: React.FC = () => {
                               type="button"
                               className="w-full inline-flex items-center justify-start gap-1 rounded-full px-3 py-1 text-xs font-raleway font-medium transition-colors duration-200 text-theme-white hover:text-theme-text"
                               onClick={() => {
-                                navigate("/create/avatars");
+                                navigate("/app/avatars");
                                 setIsAvatarPickerOpen(false);
                               }}
                             >

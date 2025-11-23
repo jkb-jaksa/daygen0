@@ -9,36 +9,42 @@ export function StyleModalProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const previousPathRef = useRef<string>(location.pathname);
 
-  const isOnCreateImagePage = location.pathname === "/create/image" || location.pathname.startsWith("/create/image");
+  const imagePaths = ["/app/image", "/create/image"];
+  const isOnStudioImagePage = imagePaths.some(
+    (path) => location.pathname === path || location.pathname.startsWith(`${path}/`),
+  );
 
   const openStyleModal = useCallback(() => {
-    if (isOnCreateImagePage) {
-      // Already on create/image page - dispatch custom event for PromptForm to handle
+    if (isOnStudioImagePage) {
+      // Already on image page - dispatch custom event for PromptForm to handle
       window.dispatchEvent(new CustomEvent(STYLE_MODAL_OPEN_EVENT));
     } else {
-      // Navigate to create/image with query param to auto-open modal
+      // Navigate to app/image with query param to auto-open modal
       // Use object form to ensure query params are preserved
       navigate({
-        pathname: "/create/image",
+        pathname: "/app/image",
         search: "?openStyleModal=true"
       }, { replace: false });
     }
-  }, [isOnCreateImagePage, navigate]);
+  }, [isOnStudioImagePage, navigate]);
 
   const closeStyleModal = useCallback(() => {
-    if (isOnCreateImagePage) {
+    if (isOnStudioImagePage) {
       // Dispatch close event for PromptForm
       window.dispatchEvent(new CustomEvent(STYLE_MODAL_CLOSE_EVENT));
     }
-  }, [isOnCreateImagePage]);
+  }, [isOnStudioImagePage]);
 
-  // Close modal on navigation (except when navigating to create/image to open it)
+  // Close modal on navigation (except when navigating to image route to open it)
   useEffect(() => {
     const currentPath = location.pathname;
     const prevPath = previousPathRef.current;
     
-    // If navigating away from create/image (and not to another create route), close modal
-    if (prevPath === "/create/image" && currentPath !== "/create/image" && !currentPath.startsWith("/create/image")) {
+    const wasOnImagePath = imagePaths.some((path) => prevPath === path || prevPath.startsWith(`${path}/`));
+    const isOnImagePath = imagePaths.some((path) => currentPath === path || currentPath.startsWith(`${path}/`));
+
+    // If navigating away from image route entirely, close modal
+    if (wasOnImagePath && !isOnImagePath) {
       closeStyleModal();
     }
     
@@ -49,4 +55,3 @@ export function StyleModalProvider({ children }: { children: ReactNode }) {
 
   return <StyleModalContext.Provider value={value}>{children}</StyleModalContext.Provider>;
 }
-

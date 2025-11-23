@@ -25,7 +25,7 @@ export async function copyLink(url: string) {
 
 export function makeRemixUrl(baseUrl: string, prompt: string): string {
   const encoded = btoa(unescape(encodeURIComponent(prompt))).replace(/=+$/, "");
-  return `${baseUrl.replace(/\/$/, "")}/create?from=share&prompt=${encoded}`;
+  return `${baseUrl.replace(/\/$/, "")}/app/image?from=share&prompt=${encoded}`;
 }
 
 export function decodeSharePrompt(encodedPrompt: string): string | null {

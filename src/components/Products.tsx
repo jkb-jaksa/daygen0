@@ -40,7 +40,7 @@ import { useAuth } from "../auth/useAuth";
 const ModelBadge = lazy(() => import("./ModelBadge"));
 const ProductCreationModal = lazy(() => import("./products/ProductCreationModal"));
 const ProductCreationOptions = lazy(() => import("./products/ProductCreationOptions"));
-import CreateSidebar from "./create/CreateSidebar";
+const MasterSidebar = lazy(() => import("./master/MasterSidebar"));
 import { useGalleryImages } from "../hooks/useGalleryImages";
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
 // import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage";
@@ -49,6 +49,7 @@ import type { ProductImage, ProductSelection, StoredProduct } from "./products/t
 import { debugError } from "../utils/debug";
 import { createProductRecord, findProductBySlug, normalizeStoredProducts, withUpdatedProductImages } from "../utils/products";
 import { createCardImageStyle } from "../utils/cardImageStyle";
+import { STUDIO_BASE_PATH } from "../utils/navigation";
 import { VerticalGalleryNav } from "./shared/VerticalGalleryNav";
 
 type ProductNavigationState = {
@@ -239,6 +240,7 @@ export default function Products() {
   const { storagePrefix, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const studioBasePath = STUDIO_BASE_PATH;
   const { productSlug } = useParams<{ productSlug?: string }>();
   const previousNonJobPathRef = useRef<string | null>(null);
   const rememberNonJobPath = useCallback(() => {
@@ -273,9 +275,9 @@ export default function Products() {
     if (window.history.length > 1) {
       navigate(-1);
     } else {
-      navigate("/create/products");
+      navigate(`${studioBasePath}/products`);
     }
-  }, [navigate]);
+  }, [navigate, studioBasePath]);
 
   const syncJobUrlForImage = useCallback(
     (image: GalleryImageLike | null | undefined) => {
@@ -894,7 +896,7 @@ export default function Products() {
     if (creationsModalProduct?.id === productToDelete.id) {
       setCreationsModalProduct(null);
       if (productSlug === productToDelete.slug) {
-        navigate("/create/products", { replace: true });
+        navigate(`${studioBasePath}/products`, { replace: true });
       }
     }
 
@@ -903,7 +905,7 @@ export default function Products() {
       setEditingName("");
     }
     setProductToDelete(null);
-  }, [productSlug, productToDelete, creationsModalProduct, editingProductId, navigate, persistProducts]);
+  }, [productSlug, productToDelete, creationsModalProduct, editingProductId, navigate, persistProducts, studioBasePath]);
 
   const confirmPublish = useCallback(() => {
     if (publishConfirmation.imageUrl) {
@@ -935,26 +937,26 @@ export default function Products() {
 
   const handleNavigateToImage = useCallback(
     (product: StoredProduct) => {
-      navigate("/create/image", {
+      navigate(`${studioBasePath}/image`, {
         state: {
           productId: product.id,
           focusPromptBar: true,
         },
       });
     },
-    [navigate],
+    [navigate, studioBasePath],
   );
 
   const handleNavigateToVideo = useCallback(
     (product: StoredProduct) => {
-      navigate("/create/video", {
+      navigate(`${studioBasePath}/video`, {
         state: {
           productId: product.id,
           focusPromptBar: true,
         },
       });
     },
-    [navigate],
+    [navigate, studioBasePath],
   );
 
   const toggleProductEditMenu = useCallback((productId: string, anchor: HTMLElement) => {
@@ -1270,10 +1272,10 @@ export default function Products() {
       setProductEditMenu(null);
       setProductMoreMenu(null);
       if (productSlug !== product.slug) {
-        navigate(`/create/products/${product.slug}`);
+        navigate(`${studioBasePath}/products/${product.slug}`);
       }
     },
-    [productSlug, navigate],
+    [productSlug, navigate, studioBasePath],
   );
 
   const closeCreationsModal = useCallback(() => {
@@ -1283,9 +1285,9 @@ export default function Products() {
     setProductImageUploadTarget(null);
     setActiveProductImageId(null);
     if (productSlug) {
-      navigate("/create/products", { replace: true });
+      navigate(`${studioBasePath}/products`, { replace: true });
     }
-  }, [productSlug, navigate]);
+  }, [productSlug, navigate, studioBasePath]);
 
   const toggleCreationPublish = useCallback(
     (imageUrl: string) => {
@@ -1707,7 +1709,7 @@ export default function Products() {
                 className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
-                  navigate("/create/video", {
+                  navigate(`${studioBasePath}/video`, {
                     state: {
                       productId: image.productId,
                       focusPromptBar: true,
@@ -1833,7 +1835,7 @@ export default function Products() {
                     return (
                       <ProductBadge
                         product={productForImage}
-                        onClick={() => navigate(`/create/products/${productForImage.slug}`)}
+                        onClick={() => navigate(`${studioBasePath}/products/${productForImage.slug}`)}
                       />
                     );
                   })()}
@@ -2325,13 +2327,13 @@ export default function Products() {
         <div className={`${layout.container}`}>
           <div className="mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 lg:gap-4 lg:grid-cols-[160px_minmax(0,1fr)]">
             <Suspense fallback={null}>
-              <CreateSidebar
+              <MasterSidebar
                 activeCategory="products"
                 onSelectCategory={(category) => {
-                  navigate(`/create/${category}`);
+                  navigate(`${studioBasePath}/${category}`);
                 }}
                 onOpenMyFolders={() => {
-                  navigate('/gallery/folders');
+                  navigate('/app/folders');
                 }}
               />
             </Suspense>
@@ -2374,14 +2376,14 @@ export default function Products() {
       <>
         {/* Left Navigation Sidebar */}
         {isProductFullSizeOpen && creationsModalProduct && activeProductImage && (
-          <CreateSidebar
+          <MasterSidebar
             activeCategory="products"
             onSelectCategory={(category) => {
-              navigate(`/create/${category}`);
+              navigate(`${studioBasePath}/${category}`);
               closeProductFullSizeView();
             }}
             onOpenMyFolders={() => {
-              navigate('/gallery/folders');
+              navigate('/app/folders');
               closeProductFullSizeView();
             }}
             isFullSizeOpen={true}
@@ -2606,7 +2608,7 @@ export default function Products() {
                 onClick={(e) => {
                   e.stopPropagation();
                   // Navigate to edit page with product image
-                  navigate("/create/image", {
+                  navigate(`${studioBasePath}/image`, {
                     state: {
                       productId: creationsModalProduct.id,
                       referenceImageUrl: activeProductImage.url,
@@ -2625,7 +2627,7 @@ export default function Products() {
                 onClick={(e) => {
                   e.stopPropagation();
                   // Navigate to video creation with product
-                  navigate("/create/video", {
+                  navigate(`${studioBasePath}/video`, {
                     state: {
                       productId: creationsModalProduct.id,
                       referenceImageUrl: activeProductImage.url,
@@ -2738,10 +2740,10 @@ export default function Products() {
       <>
         {/* Left Navigation Sidebar */}
         {isFullSizeOpen && selectedFullImage && creationsModalProduct && (
-          <CreateSidebar
+          <MasterSidebar
             activeCategory="products"
             onSelectCategory={(category) => {
-              navigate(`/create/${category}`);
+              navigate(`${studioBasePath}/${category}`);
               closeFullSizeView();
             }}
             onOpenMyFolders={() => {
@@ -2830,7 +2832,7 @@ export default function Products() {
                     className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
-                      navigate("/create/video", {
+                      navigate(`${studioBasePath}/video`, {
                         state: {
                           productId: selectedFullImage.productId,
                           focusPromptBar: true,
@@ -3104,7 +3106,7 @@ export default function Products() {
                     <div className="flex justify-start">
                       <button
                         onClick={() => {
-                          navigate("/create/image");
+                          navigate(`${studioBasePath}/image`);
                         }}
                         className="inline-flex items-center gap-1 text-sm text-theme-white hover:text-theme-text transition-colors duration-200"
                         title="Create new folder"
@@ -3202,7 +3204,7 @@ export default function Products() {
                 <div className="flex justify-start">
                   <button
                     onClick={() => {
-                      navigate("/create/image");
+                      navigate(`${studioBasePath}/image`);
                     }}
                     className="inline-flex items-center gap-1 text-sm text-theme-white hover:text-theme-text transition-colors duration-200"
                     aria-label="Create new folder"

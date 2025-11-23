@@ -2,12 +2,13 @@ import { memo, useState } from "react";
 import { Link } from "react-router-dom";
 import { glass } from "../../styles/designSystem";
 import { SIDEBAR_TOP_PADDING, SIDEBAR_WIDTH, SIDEBAR_PROMPT_GAP } from "../create/layoutConstants";
-import { CREATE_CATEGORIES } from "../create/sidebarData";
+import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from "../create/sidebarData";
 import { scrollLockExemptAttr } from "../../hooks/useGlobalScrollLock";
 
 export interface MasterSidebarProps {
   activeCategory: string;
   onSelectCategory: (category: string) => void;
+  onOpenMyFolders?: () => void;
   reservedBottomSpace?: number;
   isFullSizeOpen?: boolean;
 }
@@ -15,6 +16,7 @@ export interface MasterSidebarProps {
 function MasterSidebarComponent({
   activeCategory,
   onSelectCategory,
+  onOpenMyFolders,
   reservedBottomSpace = 0,
   isFullSizeOpen = false,
 }: MasterSidebarProps) {
@@ -119,6 +121,89 @@ function MasterSidebarComponent({
               </button>
             );
           })}
+
+          <div className="border-t border-theme-dark my-2" />
+
+          <div className="flex items-center px-2 text-[12px] text-theme-text font-raleway uppercase tracking-wider mb-1 sidebar-section-header">
+            My works
+          </div>
+
+          {LIBRARY_CATEGORIES.map(({ key, label, Icon }) => {
+            const isActive = activeCategory === key;
+            const isPressed = pressedCategory === key;
+            
+            // Enhanced shadow effect: slightly deeper when pressed (very subtle)
+            // For library items, always use neutral shadow
+            const insetShadow = isPressed && isActive
+              ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em rgba(255, 255, 255, 0.12)` }
+              : isPressed && !isActive
+              ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em rgba(255, 255, 255, 0.08)` }
+              : isActive
+              ? { boxShadow: `inset 0 -0.5em 1.2em -0.125em rgba(255, 255, 255, 0.08)` }
+              : {};
+            
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => onSelectCategory(key)}
+                onMouseDown={() => setPressedCategory(key)}
+                onMouseUp={() => setPressedCategory(null)}
+                onMouseLeave={() => setPressedCategory(null)}
+                onTouchStart={() => setPressedCategory(key)}
+                onTouchEnd={() => setPressedCategory(null)}
+                className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-4 py-2 flex-shrink-0 text-sm font-raleway transition-all duration-100 focus:outline-none group ${
+                  isActive
+                    ? "border border-theme-dark text-theme-text"
+                    : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"
+                }`}
+                style={insetShadow}
+                aria-pressed={isActive}
+              >
+                <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full blur-3xl bg-white transition-opacity duration-100 ${isActive ? 'opacity-60' : 'opacity-0 group-hover:opacity-20'}`} />
+                <Icon className={`h-4 w-4 flex-shrink-0 relative z-10 transition-colors duration-100 ${isActive ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'}`} />
+                <span className="relative z-10 whitespace-nowrap">{label}</span>
+              </button>
+            );
+          })}
+
+          {onOpenMyFolders && (
+            <button
+              type="button"
+              onClick={onOpenMyFolders}
+              onMouseDown={() => setPressedCategory(FOLDERS_ENTRY.key)}
+              onMouseUp={() => setPressedCategory(null)}
+              onMouseLeave={() => setPressedCategory(null)}
+              onTouchStart={() => setPressedCategory(FOLDERS_ENTRY.key)}
+              onTouchEnd={() => setPressedCategory(null)}
+              className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-4 py-2 flex-shrink-0 text-sm font-raleway transition-all duration-100 focus:outline-none group ${
+                activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"
+                  ? "border border-theme-dark text-theme-text"
+                  : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"
+              }`}
+              style={(() => {
+                const isActive = activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view";
+                const isPressed = pressedCategory === FOLDERS_ENTRY.key;
+                
+                return isPressed && isActive
+                  ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em rgba(255, 255, 255, 0.12)` }
+                  : isPressed && !isActive
+                  ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em rgba(255, 255, 255, 0.08)` }
+                  : isActive
+                  ? { boxShadow: `inset 0 -0.5em 1.2em -0.125em rgba(255, 255, 255, 0.08)` }
+                  : {};
+              })()}
+              aria-pressed={activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"}
+            >
+              <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full blur-3xl bg-white transition-opacity duration-100 ${(activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view") ? 'opacity-60' : 'opacity-0 group-hover:opacity-20'}`} />
+              <FOLDERS_ENTRY.Icon className={`h-4 w-4 flex-shrink-0 relative z-10 transition-colors duration-100 ${
+                activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"
+                  ? 'text-theme-text'
+                  : 'text-theme-text group-hover:text-theme-text'
+              }`} />
+              <span className="relative z-10 whitespace-nowrap">{FOLDERS_ENTRY.label}</span>
+            </button>
+          )}
         </aside>
       </nav>
     </div>

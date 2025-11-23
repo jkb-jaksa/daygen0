@@ -87,7 +87,7 @@ export default function Account() {
     }
   }, [rawNext]);
 
-  const effectiveNextSource = rawNext ?? storedNextPath ?? "/create";
+  const effectiveNextSource = rawNext ?? storedNextPath ?? "/app";
 
   const sanitizedNextPath = useMemo(
     () => safeResolveNext(effectiveNextSource),
@@ -270,7 +270,7 @@ export default function Account() {
       await updateProfile({ displayName: trimmedName });
       setSaveError(null);
 
-      if (sanitizedNextPath && sanitizedNextPath !== "/create") {
+      if (sanitizedNextPath && sanitizedNextPath !== "/app") {
         debugLog("Account - redirecting after profile save to:", sanitizedNextPath);
         navigate(sanitizedNextPath, { replace: true });
       } else {
@@ -306,7 +306,7 @@ export default function Account() {
     if (window.history.length > 1) {
       navigate(-1);
     } else {
-      navigate(sanitizedNextPath ?? "/create");
+      navigate(sanitizedNextPath ?? "/app");
     }
   }, [navigate, sanitizedNextPath]);
 
@@ -333,7 +333,7 @@ export default function Account() {
   }
 
   // Show return button when there's a next parameter
-  const showReturnButton = user && sanitizedNextPath && sanitizedNextPath !== "/create";
+  const showReturnButton = user && sanitizedNextPath && sanitizedNextPath !== "/app";
 
   return (
     <main className="min-h-screen text-theme-text px-6 lg:px-8 pt-[calc(var(--nav-h,4rem)+16px)] pb-8">

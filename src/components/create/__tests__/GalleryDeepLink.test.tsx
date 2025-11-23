@@ -11,7 +11,7 @@ import type { GalleryImageLike } from '../types';
 import { CreateBridgeProvider, type GalleryBridgeActions } from '../contexts/CreateBridgeContext';
 
 const mockLocation = {
-  pathname: '/create/image',
+  pathname: '/app/image',
   search: '',
   hash: '',
   state: null,
@@ -129,7 +129,7 @@ function renderWithProviders(children: React.ReactNode) {
 
 beforeEach(() => {
   mockNavigate.mockClear();
-  mockLocation.pathname = '/create/image';
+  mockLocation.pathname = '/app/image';
   mockLocation.search = '';
   mockLocation.state = null;
 });
@@ -198,7 +198,7 @@ describe('Gallery action navigation fallbacks', () => {
 
     expect(mockNavigate).toHaveBeenCalledWith('/job/r2-fallback', expect.objectContaining({
       replace: false,
-      state: { jobOrigin: '/create/image' },
+      state: { jobOrigin: '/app/image' },
     }));
   });
 
@@ -213,7 +213,7 @@ describe('Gallery action navigation fallbacks', () => {
       `/job/${encodeURIComponent(image.url)}`,
       expect.objectContaining({
         replace: false,
-        state: { jobOrigin: '/create/image' },
+        state: { jobOrigin: '/app/image' },
       }),
     );
   });

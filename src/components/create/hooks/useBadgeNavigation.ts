@@ -73,7 +73,7 @@ export function useBadgeNavigation() {
       if (!avatar?.slug) {
         return;
       }
-      navigate(`/create/avatars/${avatar.slug}`);
+      navigate(`/app/avatars/${avatar.slug}`);
     },
     [navigate],
   );
@@ -83,7 +83,7 @@ export function useBadgeNavigation() {
       if (!product?.slug) {
         return;
       }
-      navigate(`/create/products/${product.slug}`);
+      navigate(`/app/products/${product.slug}`);
     },
     [navigate],
   );
