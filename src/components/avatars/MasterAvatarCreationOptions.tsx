@@ -36,6 +36,7 @@ function MasterAvatarCreationOptionsComponent({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
   const [isEditingName, setIsEditingName] = useState(true);
+  const [showEditIcon, setShowEditIcon] = useState(false);
   const dragCounterRef = useRef(0);
 
   // Auto-focus the name input when an avatar is selected
@@ -52,8 +53,22 @@ function MasterAvatarCreationOptionsComponent({
   useEffect(() => {
     if (selection) {
       setIsEditingName(true);
+      setShowEditIcon(false);
     }
   }, [selection]);
+
+  // Show edit icon with transition when not editing and selection exists
+  useEffect(() => {
+    if (selection && !isEditingName) {
+      // Small delay to ensure smooth transition
+      const timer = setTimeout(() => {
+        setShowEditIcon(true);
+      }, 10);
+      return () => clearTimeout(timer);
+    } else {
+      setShowEditIcon(false);
+    }
+  }, [selection, isEditingName]);
 
   const validateAvatarFile = (file: File): string | null => {
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
@@ -159,7 +174,7 @@ function MasterAvatarCreationOptionsComponent({
                         />
                         <button
                           type="button"
-                          className="text-theme-white/70 hover:text-theme-text transition-colors duration-200 flex-shrink-0"
+                          className="relative z-10 flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-lg text-theme-white/70 hover:text-theme-text hover:bg-theme-white/10 transition-all duration-100 pointer-events-auto"
                           onClick={() => setIsEditingName(false)}
                           aria-label="Save avatar name"
                         >
@@ -173,7 +188,9 @@ function MasterAvatarCreationOptionsComponent({
                         </p>
                         <button
                           type="button"
-                          className="text-theme-white/70 hover:text-theme-text transition-colors duration-200 flex-shrink-0"
+                          className={`relative z-10 flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-lg text-theme-white/70 hover:text-theme-text hover:bg-theme-white/10 transition-all duration-100 pointer-events-auto ${
+                            showEditIcon ? 'opacity-100' : 'opacity-0'
+                          }`}
                           onClick={() => setIsEditingName(true)}
                           aria-label="Edit avatar name"
                         >

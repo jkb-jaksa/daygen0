@@ -1811,7 +1811,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                     />
                     <button
                       type="submit"
-                      className="flex-shrink-0 text-theme-white transition-colors duration-200 hover:text-theme-text"
+                      className="relative z-10 flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-lg text-theme-white/70 hover:text-theme-text hover:bg-theme-white/10 transition-all duration-100 pointer-events-auto"
                     >
                       <Check className="h-4 w-4" />
                     </button>
@@ -1824,10 +1824,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                     {!disableModalTrigger && (
                       <button
                         type="button"
-                        className={`flex-shrink-0 p-1 rounded-lg text-theme-white hover:text-theme-text hover:bg-theme-white/10 ${
+                        className={`relative z-10 flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-lg text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-100 pointer-events-auto ${
                           isMasterSection
-                            ? 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100 transition-opacity duration-100 transition-colors duration-200'
-                            : 'transition-colors duration-200'
+                            ? 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                            : ''
                         }`}
                         onClick={(event) => {
                           event.stopPropagation();
@@ -1874,7 +1874,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               />
               <button
                 type="submit"
-                className="flex-shrink-0 text-theme-white transition-colors duration-200 hover:text-theme-text"
+                className="relative z-10 flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-lg text-theme-white/70 hover:text-theme-text hover:bg-theme-white/10 transition-all duration-100 pointer-events-auto"
               >
                 <Check className="h-4 w-4" />
               </button>
@@ -1887,10 +1887,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               {!disableModalTrigger && (
                 <button
                   type="button"
-                  className={`flex-shrink-0 p-1 rounded-lg text-theme-white hover:text-theme-text hover:bg-theme-white/10 ${
+                  className={`relative z-10 flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-lg text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-100 pointer-events-auto ${
                     isMasterSection
-                      ? 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100 transition-opacity duration-100 transition-colors duration-200'
-                      : 'transition-colors duration-200'
+                      ? 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                      : ''
                   }`}
                   onClick={(event) => {
                     event.stopPropagation();
