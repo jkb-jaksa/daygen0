@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { ArrowLeft, Folder as FolderIcon, Copy, BookmarkPlus, Bookmark, Check, Square, Trash2, Heart } from 'lucide-react';
-import { glass, tooltips } from '../../styles/designSystem';
+import { tooltips } from '../../styles/designSystem';
 import type { Folder, GalleryImageLike, GalleryVideoLike } from './types';
 import type { StoredAvatar } from '../avatars/types';
 import type { StoredProduct } from '../products/types';

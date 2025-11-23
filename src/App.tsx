@@ -22,6 +22,7 @@ const KnowledgeBase = lazy(() => import("./components/KnowledgeBase"));
 const LearnToolPage = lazy(() => import("./components/LearnToolPage"));
 const CreateRoutes = lazy(() => import("./routes/CreateRoutes"));
 const MasterRoutes = lazy(() => import("./routes/MasterRoutes"));
+const CreateRefactored = lazy(() => import("./components/create/Create-refactored"));
 const Edit = lazy(() => import("./components/Edit"));
 const Account = lazy(() => import("./components/Account"));
 const AuthErrorBoundary = lazy(() => import("./components/AuthErrorBoundary"));
@@ -281,15 +282,6 @@ function Home() {
   const [pressedCategory, setPressedCategory] = useState<HomeCategoryId | null>(null);
   const [activePersonaId, setActivePersonaId] = useState<string>("dominik");
 
-  // Redirect logged-in users to /app
-  if (isLoading) {
-    return <RouteFallback />;
-  }
-
-  if (user) {
-    return <Navigate to="/app" replace />;
-  }
-
   const activePersona = PERSONAS.find(p => p.id === activePersonaId) || PERSONAS[0];
   const sidebarRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
@@ -298,7 +290,7 @@ function Home() {
   const handlePrefetch = useCallback(() => {
     if (!prefetchedRef.current) {
       prefetchedRef.current = true;
-      import("./routes/CreateRoutes");
+      import("./routes/MasterRoutes");
     }
   }, []);
 
@@ -313,10 +305,6 @@ function Home() {
     }
     return undefined;
   }, [location.hash]);
-
-  const activeCategoryInfo = HOME_CATEGORIES.find((category) => category.id === activeCategory);
-  const activeCategoryLabel = activeCategoryInfo ? activeCategoryInfo.label : activeCategory;
-  const isImageCategory = activeCategory === "image";
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -359,6 +347,19 @@ function Home() {
       sidebar.style.removeProperty("minHeight");
     };
   }, [activeCategory]);
+
+  // Redirect logged-in users to /app
+  if (isLoading) {
+    return <RouteFallback />;
+  }
+
+  if (user) {
+    return <Navigate to="/app" replace />;
+  }
+
+  const activeCategoryInfo = HOME_CATEGORIES.find((category) => category.id === activeCategory);
+  const activeCategoryLabel = activeCategoryInfo ? activeCategoryInfo.label : activeCategory;
+  const isImageCategory = activeCategory === "image";
 
   return (
     <div className={`${layout.page} home-page`}>
@@ -452,7 +453,7 @@ function Home() {
                         Learn
                       </Link>
                       <Link
-                        to="/create/image"
+                        to="/app/image"
                         className={buttons.primary}
                         onMouseEnter={handlePrefetch}
                       >
@@ -666,7 +667,7 @@ function RouteFallback() {
   );
 }
 
-function CreateProtectedLayout({ fallbackRoute = "/create" }: { fallbackRoute?: string } = {}) {
+function CreateProtectedLayout({ fallbackRoute = "/app" }: { fallbackRoute?: string } = {}) {
   return (
     <RequireAuth>
       <GenerationProvider>
@@ -683,7 +684,20 @@ function CreateProtectedLayout({ fallbackRoute = "/create" }: { fallbackRoute?: 
 }
 
 function AppContent() {
-  const { isFooterVisible } = useFooter();
+  const { isFooterVisible, setFooterVisible } = useFooter();
+  const location = useLocation();
+  
+  // Hide footer in app section
+  useEffect(() => {
+    const isInAppSection = location.pathname.startsWith("/app");
+    setFooterVisible(!isInAppSection);
+    
+    // Cleanup: restore footer visibility on unmount
+    return () => {
+      setFooterVisible(true);
+    };
+  }, [location.pathname, setFooterVisible]);
+  
   const accountRouteElement = (
     <Suspense fallback={<RouteFallback />}>
       <AuthErrorBoundary fallbackRoute="/" context="authentication">
@@ -720,12 +734,10 @@ function AppContent() {
               <Route path="/about-us" element={<AboutUs />} />
               <Route path="/explore" element={<Explore />} />
               <Route path="/learn/tools/:toolSlug" element={<LearnToolPage />} />
+              <Route path="/create/*" element={<CreateRoutes />} />
               <Route element={<CreateProtectedLayout />}>
-                <Route path="/create/*" element={<CreateRoutes />} />
-                <Route path="/job/:jobId/*" element={<CreateRoutes />} />
-              </Route>
-              <Route element={<CreateProtectedLayout fallbackRoute="/app" />}>
                 <Route path="/app/*" element={<MasterRoutes />} />
+                <Route path="/job/:jobId/*" element={<CreateRefactored />} />
               </Route>
               <Route
                 path="/gallery/*"
@@ -746,7 +758,7 @@ function AppContent() {
                 element={(
                   <RequireAuth>
                     <Suspense fallback={<RouteFallback />}>
-                      <AuthErrorBoundary fallbackRoute="/create" context="editing">
+                      <AuthErrorBoundary fallbackRoute="/app" context="editing">
                         <GenerationProvider>
                           <Edit />
                         </GenerationProvider>
