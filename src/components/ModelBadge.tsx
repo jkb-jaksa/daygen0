@@ -13,11 +13,11 @@ interface ModelBadgeProps {
 
 // Model configuration with display names and icons
 const MODEL_CONFIG = {
-  'gemini-2.5-flash-image': {
-    name: 'Gemini 2.5 Flash',
-    shortName: 'G2.5',
+  'gemini-3.0-pro-image': {
+    name: 'Gemini 3 Pro (Nano Banana)',
+    shortName: 'G3',
     icon: '🤖',
-    description: 'Google Gemini 2.5 Flash - Best for image editing and multimodal tasks'
+    description: 'Google Gemini 3 Pro - Best for image generation and editing'
   },
   'flux-pro-1.1': {
     name: 'FLUX Pro 1.1',
@@ -263,10 +263,10 @@ export const ModelBadge: React.FC<ModelBadgeProps> = ({
   // Final fallback
   if (!config) {
     config = {
-      name: 'Gemini 2.5 Flash',
-      shortName: 'G2.5',
+      name: 'Gemini 3 Pro (Nano Banana)',
+      shortName: 'G3',
       icon: '🤖',
-      description: 'Google Gemini 2.5 Flash - Best for image editing and multimodal tasks'
+      description: 'Google Gemini 3 Pro - Best for image generation and editing'
     };
   }
 

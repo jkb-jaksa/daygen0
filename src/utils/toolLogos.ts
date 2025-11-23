@@ -8,8 +8,11 @@ const TOOL_LOGO_GROUPS: readonly ToolLogoGroup[] = [
     logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/gemini logo.png',
     names: [
       'Gemini',
-      'Gemini 2.5 Flash',
-      'gemini-2.5-flash-image',
+      'Gemini 3 Pro',
+      'Gemini 3 Pro (Nano Banana)',
+      'gemini-3.0-pro-image',
+      'gemini-3.0-pro',
+      'gemini-3.0-pro-exp-01',
       'Gemini Voice',
       'Imagen',
     ],

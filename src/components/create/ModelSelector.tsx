@@ -14,7 +14,7 @@ import { isVideoModelId } from './constants';
 // Exported as single source of truth for all model lists in the app
 // eslint-disable-next-line react-refresh/only-export-components
 export const AI_MODELS = [
-  { name: "Gemini 2.5 Flash", desc: "Best image editing.", Icon: Sparkles, id: "gemini-2.5-flash-image" },
+  { name: "Gemini 3 Pro (Nano Banana)", desc: "Best image generation.", Icon: Sparkles, id: "gemini-3.0-pro-image" },
   { name: "Flux 1.1", desc: "High-quality text-to-image generation and editing.", Icon: Wand2, id: "flux-1.1" },
   { name: "Reve", desc: "Great text-to-image and image editing.", Icon: Sparkles, id: "reve-image" },
   { name: "Ideogram 3.0", desc: "Advanced image generation, editing, and enhancement.", Icon: Package, id: "ideogram" },
@@ -44,7 +44,7 @@ interface ModelSelectorProps {
 }
 
 const REFERENCE_SUPPORTED_MODELS = [
-  "gemini-2.5-flash-image",
+  "gemini-3.0-pro-image",
   "ideogram",
   "recraft"
 ];
@@ -600,14 +600,14 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
               return true;
             }).map((model) => {
               const isSelected = selectedModel === model.id;
-              const isComingSoon = model.id !== "flux-1.1" && model.id !== "gemini-2.5-flash-image" && model.id !== "grok-2-image" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "reve-image" && model.id !== "recraft" && model.id !== "luma-photon-1" && model.id !== "luma-ray-2" && model.id !== "wan-video-2.2" && model.id !== "hailuo-02" && model.id !== "kling-video";
+              const isComingSoon = model.id !== "flux-1.1" && model.id !== "gemini-3.0-pro-image" && model.id !== "grok-2-image" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "reve-image" && model.id !== "recraft" && model.id !== "luma-photon-1" && model.id !== "luma-ray-2" && model.id !== "wan-video-2.2" && model.id !== "hailuo-02" && model.id !== "kling-video";
               
               return (
                 <button
                   key={model.name}
                   onClick={() => {
                     if (isComingSoon) {
-                      alert('This model is coming soon! Currently only Gemini 2.5 Flash, Flux 1.1, Grok 2 Image, ChatGPT, Ideogram, Qwen, Runway, Wan 2.2 Video, Hailuo 02, Reve, Recraft, and Luma models are available.');
+                      alert('This model is coming soon! Currently only Gemini 3 Pro, Flux 1.1, Grok 2 Image, ChatGPT, Ideogram, Qwen, Runway, Wan 2.2 Video, Hailuo 02, Reve, Recraft, and Luma models are available.');
                       return;
                     }
                     handleModelSelect(model.name);
