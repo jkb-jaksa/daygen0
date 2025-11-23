@@ -50,7 +50,6 @@ const base64ToObjectUrl = (base64: string, contentType: string) => {
 
 export function AudioVoiceStudio() {
   const [mode, setMode] = useState<VoiceFlowMode>("menu");
-  const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
   const [recordingState, setRecordingState] = useState<RecordingState>({
@@ -105,8 +104,7 @@ export function AudioVoiceStudio() {
       }
       stopRecording(true);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [stopRecording, recordingState.audioUrl]);
 
   const voiceOptions = useMemo(() => {
     const combined = [...availableVoices];
@@ -263,7 +261,6 @@ export function AudioVoiceStudio() {
     (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
       event.stopPropagation();
-      setIsDraggingFile(false);
       const files = Array.from(event.dataTransfer.files);
       if (!files.length) {
         return;
@@ -529,12 +526,10 @@ export function AudioVoiceStudio() {
       onDragOver={(event) => {
         event.preventDefault();
         event.stopPropagation();
-        setIsDraggingFile(true);
       }}
       onDragLeave={(event) => {
         event.preventDefault();
         event.stopPropagation();
-        setIsDraggingFile(false);
       }}
       onDrop={handleDrop}
     >
