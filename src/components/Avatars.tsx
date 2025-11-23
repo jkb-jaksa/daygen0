@@ -1796,7 +1796,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                   >
                     <input
                       className={isMasterSection 
-                        ? "flex-1 h-[32px] rounded-lg border border-theme-mid bg-theme-black/60 px-3 text-base font-raleway font-normal text-theme-text placeholder:text-theme-white focus:border-theme-text focus:outline-none"
+                        ? "flex-1 h-[32px] rounded-lg border border-theme-mid bg-theme-black/60 px-3 max-w-[140px] text-base font-raleway font-normal text-theme-text placeholder:text-theme-white focus:border-theme-text focus:outline-none"
                         : "flex h-full flex-1 bg-transparent px-3 text-base font-raleway font-normal text-theme-text placeholder:text-theme-white focus:outline-none"}
                       placeholder={isMasterSection ? "Enter your name..." : "Enter name..."}
                       value={editingName}
@@ -1859,7 +1859,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
             >
               <input
                 className={isMasterSection 
-                  ? "flex-1 h-[32px] rounded-lg border border-theme-mid bg-theme-black/60 px-3 text-base font-raleway font-normal text-theme-text placeholder:text-theme-white focus:border-theme-text focus:outline-none"
+                  ? "flex-1 h-[32px] rounded-lg border border-theme-mid bg-theme-black/60 px-3 max-w-[140px] text-base font-raleway font-normal text-theme-text placeholder:text-theme-white focus:border-theme-text focus:outline-none"
                   : "flex h-full flex-1 bg-transparent px-3 text-base font-raleway font-normal text-theme-text placeholder:text-theme-white focus:outline-none"}
                 placeholder={isMasterSection ? "Enter your name..." : "Enter name..."}
                 value={editingName}
