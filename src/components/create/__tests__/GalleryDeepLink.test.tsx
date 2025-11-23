@@ -30,6 +30,9 @@ const mockNavigate = vi.fn((path: unknown, options?: { replace?: boolean; state?
 vi.mock('react-router-dom', () => ({
   useLocation: () => mockLocation,
   useNavigate: () => mockNavigate,
+  Link: ({ to, children, ...props }: { to: string; children: React.ReactNode; [key: string]: unknown }) => {
+    return React.createElement('a', { href: to, ...props }, children);
+  },
 }));
 
 // Mock auth to avoid requiring AuthProvider
