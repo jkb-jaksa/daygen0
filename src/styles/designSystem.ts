@@ -144,7 +144,7 @@ export const iconButtons = {
 const inputFocus =
   "focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-theme-light";
 const inputCore =
-  `w-full glass-liquid willchange-backdrop isolate backdrop-blur-[32px] border border-theme-dark bg-theme-mid/85 px-4 text-theme-white placeholder:text-theme-white/60 font-raleway transition-colors duration-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-theme-mid disabled:cursor-not-allowed disabled:opacity-60 ${inputFocus}`;
+  `w-full glass-liquid willchange-backdrop isolate backdrop-blur-[32px] border-t-[color:var(--theme-dark)] border-r-[color:var(--theme-dark)] border-b-[color:var(--theme-dark)] border-l-[color:var(--theme-dark)] border-t border-r border-b border-l border-solid border-opacity-100 bg-theme-dark px-4 text-theme-white placeholder:text-theme-white/60 font-raleway transition-colors duration-200 hover:border-t-[color:var(--theme-mid)] hover:border-r-[color:var(--theme-mid)] hover:border-b-[color:var(--theme-mid)] hover:border-l-[color:var(--theme-mid)] disabled:cursor-not-allowed disabled:opacity-60 ${inputFocus}`;
 
 /**
  * Input field utilities

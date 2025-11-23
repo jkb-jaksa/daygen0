@@ -10,7 +10,7 @@ import {
   type DragEvent,
   type FormEvent,
 } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams, Link } from "react-router-dom";
 import AvatarBadge from "./avatars/AvatarBadge";
 import { createPortal } from "react-dom";
 import {
@@ -56,6 +56,8 @@ import { debugError } from "../utils/debug";
 import { createAvatarRecord, findAvatarBySlug, normalizeStoredAvatars, withUpdatedAvatarImages } from "../utils/avatars";
 import { createCardImageStyle } from "../utils/cardImageStyle";
 import { VerticalGalleryNav } from "./shared/VerticalGalleryNav";
+import { useStyleModal } from "../contexts/useStyleModal";
+import useParallaxHover from "../hooks/useParallaxHover";
 
 type AvatarNavigationState = {
   openAvatarCreator?: boolean;
@@ -245,11 +247,77 @@ const deriveSuggestedName = (raw?: string) => {
   return slice.charAt(0).toUpperCase() + slice.slice(1);
 };
 
+function UseCaseCard({
+  title,
+  imageUrl,
+  imageAlt,
+  to,
+  onClick,
+  imageHeight = "h-40 sm:h-44 md:h-48",
+  subtitle,
+}: {
+  title: string;
+  imageUrl: string;
+  imageAlt: string;
+  to?: string;
+  onClick?: () => void;
+  imageHeight?: string;
+  subtitle?: string;
+}) {
+  const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLDivElement>();
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (onClick) {
+      e.preventDefault();
+      e.stopPropagation();
+      onClick();
+    }
+  };
+
+  const cardContent = (
+    <div
+      className="relative parallax-small mouse-glow border border-theme-dark hover:border-theme-mid transition-colors duration-200 rounded-2xl overflow-hidden cursor-pointer"
+      onPointerMove={onPointerMove}
+      onPointerEnter={onPointerEnter}
+      onPointerLeave={onPointerLeave}
+      onClick={handleClick}
+    >
+      <img
+        src={imageUrl}
+        alt={imageAlt}
+        loading="lazy"
+        decoding="async"
+        className={`${imageHeight} w-full object-cover parallax-isolate`}
+      />
+      <div className="absolute bottom-0 left-0 right-0 h-[70px] bg-gradient-to-t from-black/90 to-transparent pointer-events-none" />
+      <div className="absolute bottom-2 left-2 right-2 flex items-end">
+        <div className="UseCaseDescription relative z-10 px-4 pt-1.5 pb-0 rounded-2xl">
+          <h2 className="text-xl font-normal tracking-tight text-n-text font-raleway whitespace-nowrap">{title}</h2>
+          {subtitle && (
+            <p className="text-xs font-normal text-n-text font-raleway mt-0.5">{subtitle}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (to && !onClick) {
+    return (
+      <Link to={to} className="block">
+        {cardContent}
+      </Link>
+    );
+  }
+
+  return cardContent;
+}
+
 export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const { storagePrefix, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { avatarSlug } = useParams<{ avatarSlug?: string }>();
+  const { openStyleModal } = useStyleModal();
   const isMasterSection = location.pathname.startsWith("/master");
   const previousNonJobPathRef = useRef<string | null>(null);
   const rememberNonJobPath = useCallback(() => {
@@ -1407,6 +1475,8 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       <div
         key={`${keyPrefix}-${avatar.id}`}
         className={`group flex flex-col overflow-hidden rounded-[28px] border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small${
+          isMasterSection ? " max-w-[200px] w-full" : ""
+        }${
           isInteractive ? " cursor-pointer" : ""
         }`}
         role={isInteractive ? "button" : undefined}
@@ -2222,9 +2292,71 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               </button>
             </div>
           )}
-          <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-items-center">
+          <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-items-start">
             {avatars.map(avatar => renderAvatarCard(avatar))}
           </div>
+          {isMasterSection && (
+            <div className="w-full mt-8">
+              <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                <UseCaseCard
+                  title="lifestyle images"
+                  imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/lifestyle images.png"
+                  imageAlt="Lifestyle images example"
+                  onClick={openStyleModal}
+                  imageHeight="h-32 sm:h-36 md:h-40"
+                />
+                <UseCaseCard
+                  title="formal images"
+                  imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/3b632ef0-3d13-4359-a2ba-5dec11fc3eab.png"
+                  imageAlt="Business woman in a suit"
+                  onClick={openStyleModal}
+                  imageHeight="h-32 sm:h-36 md:h-40"
+                />
+                <UseCaseCard
+                  title="artistic images"
+                  imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/artistic images.png"
+                  imageAlt="Artistic images example"
+                  onClick={openStyleModal}
+                  imageHeight="h-32 sm:h-36 md:h-40"
+                />
+                <UseCaseCard
+                  title="product placement"
+                  imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/product visualizations.png"
+                  imageAlt="Product placement example"
+                  onClick={openStyleModal}
+                  imageHeight="h-32 sm:h-36 md:h-40"
+                />
+                <UseCaseCard
+                  title="virtual try-on"
+                  imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/virtual try-on.png"
+                  imageAlt="Virtual try-on example"
+                  onClick={openStyleModal}
+                  imageHeight="h-32 sm:h-36 md:h-40"
+                />
+                <UseCaseCard
+                  title="brand identity kits"
+                  imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/brand identity.png"
+                  imageAlt="Brand identity example"
+                  onClick={openStyleModal}
+                  imageHeight="h-32 sm:h-36 md:h-40"
+                />
+                <UseCaseCard
+                  title="infographics"
+                  imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/infographics.png"
+                  imageAlt="Infographics example"
+                  onClick={openStyleModal}
+                  imageHeight="h-32 sm:h-36 md:h-40"
+                />
+                <UseCaseCard
+                  title="upscaling"
+                  imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/upscaling.png"
+                  imageAlt="Upscaling example"
+                  onClick={openStyleModal}
+                  imageHeight="h-32 sm:h-36 md:h-40"
+                />
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -2710,7 +2842,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const sectionLayoutClass = "pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20";
   const shouldShowSidebar = showSidebar || isMasterSection;
   const contentLayoutClass = shouldShowSidebar
-    ? "mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 lg:gap-2 lg:grid-cols-[160px_minmax(0,1fr)]"
+    ? "mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 lg:gap-3 lg:grid-cols-[160px_minmax(0,1fr)]"
     : "mt-4 md:mt-0 w-full";
   const showProfileView = !isMasterSection && Boolean(creationsModalAvatar);
 

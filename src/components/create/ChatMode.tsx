@@ -1160,7 +1160,7 @@ const ChatMode: React.FC = () => {
                 <div ref={messagesEndRef} />
               </div>
               <form onSubmit={handleSubmit} className="border-t border-theme-dark px-4 py-4">
-                <div className={`rounded-2xl px-4 py-3 ${glass.prompt}`}>
+                <div className={`rounded-2xl px-4 py-2 ${glass.prompt}`}>
                   <div className="mb-1">
                     <textarea
                       ref={textareaRef}
@@ -1169,6 +1169,7 @@ const ChatMode: React.FC = () => {
                       onChange={event => setInput(event.target.value)}
                       onKeyDown={handleKeyDown}
                       rows={1}
+                      style={{ resize: 'none' }}
                       className="h-[36px] w-full resize-none overflow-hidden rounded-lg border-0 bg-transparent px-3 py-2 font-raleway text-base text-theme-text placeholder:text-theme-light focus:outline-none"
                     />
                   </div>
