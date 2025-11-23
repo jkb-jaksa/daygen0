@@ -110,7 +110,7 @@ export function useFormalImageGeneration() {
             prompt: finalPrompt,
             imageData: imageFile,
             references: referenceImages,
-            model: 'gemini-2.5-flash-image',
+            model: 'gemini-3.0-pro-image',
             temperature: 0.8,
             topP: 0.95,
             outputLength: 64,
@@ -293,4 +293,3 @@ export function useFormalImageGeneration() {
     },
   };
 }
-

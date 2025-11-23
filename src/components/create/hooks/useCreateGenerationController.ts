@@ -37,6 +37,8 @@ import type { AspectRatioOption, GeminiAspectRatio } from '../../../types/aspect
 import type { SettingsMenuProps } from '../SettingsMenu';
 import { isVideoModelId } from '../constants';
 import { MAX_PARALLEL_GENERATIONS } from '../../../utils/config';
+import { getAvatarPrimaryImage } from '../../../utils/avatars';
+import { getProductPrimaryImage } from '../../../utils/products';
 
 type AspectRatioControl = {
   options: ReadonlyArray<AspectRatioOption>;
@@ -47,6 +49,8 @@ type AspectRatioControl = {
 
 type SettingsSections = Omit<SettingsMenuProps, 'anchorRef' | 'open' | 'onClose'>;
 
+const MAX_GEMINI_REFERENCES = 3;
+
 const fileToDataUrl = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -54,6 +58,37 @@ const fileToDataUrl = (file: File): Promise<string> =>
     reader.onerror = () => reject(new Error('Failed to read reference file.'));
     reader.readAsDataURL(file);
   });
+
+const blobToDataUrl = (blob: Blob): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error('Failed to read reference blob.'));
+    reader.readAsDataURL(blob);
+  });
+
+const urlToDataUrl = async (value: string): Promise<string | null> => {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  if (trimmed.startsWith('data:')) {
+    return trimmed;
+  }
+
+  try {
+    const response = await fetch(trimmed);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch reference (${response.status})`);
+    }
+    const blob = await response.blob();
+    return await blobToDataUrl(blob);
+  } catch (error) {
+    debugError('[create] Failed to convert reference URL to data URL', error);
+    return null;
+  }
+};
 
 const ensureJobId = (candidate?: string | null) => {
   if (candidate && candidate.trim().length > 0) {
@@ -225,7 +260,20 @@ export function useCreateGenerationController(): CreateGenerationController {
 
   const selectedAvatarId = avatarHandlers.selectedAvatar?.id;
   const activeAvatarImageId = avatarHandlers.activeAvatarImageId ?? undefined;
+  const selectedAvatarImageUrl =
+    avatarHandlers.selectedAvatarImage?.url ??
+    (avatarHandlers.selectedAvatar
+      ? getAvatarPrimaryImage(avatarHandlers.selectedAvatar)?.url
+      : undefined) ??
+    avatarHandlers.selectedAvatar?.imageUrl ??
+    null;
   const selectedProductId = productHandlers.selectedProduct?.id ?? undefined;
+  const selectedProductImageUrl =
+    (productHandlers.selectedProduct
+      ? getProductPrimaryImage(productHandlers.selectedProduct)?.url
+      : undefined) ??
+    productHandlers.selectedProduct?.imageUrl ??
+    null;
   const selectedStyleId = useMemo(
     () => styleHandlers.selectedStylesList[0]?.id ?? undefined,
     [styleHandlers.selectedStylesList],
@@ -244,7 +292,7 @@ export function useCreateGenerationController(): CreateGenerationController {
     });
 
     switch (selectedModel) {
-      case 'gemini-2.5-flash-image':
+      case 'gemini-3.0-pro-image':
       case 'luma-photon-1':
         return makeControl(
           GEMINI_ASPECT_RATIO_OPTIONS,
@@ -306,7 +354,7 @@ export function useCreateGenerationController(): CreateGenerationController {
   const [veoSeed, setVeoSeed] = useState<number | undefined>(undefined);
 
   const settingsSections = useMemo<SettingsSections>(() => {
-    const isGeminiModel = selectedModel === 'gemini-2.5-flash-image';
+    const isGeminiModel = selectedModel === 'gemini-3.0-pro-image';
     const isQwenModel = selectedModel === 'qwen-image';
     const isWanVideo = selectedModel === 'wan-video-2.2';
     const isKlingVideo = selectedModel === 'kling-video';
@@ -556,15 +604,30 @@ export function useCreateGenerationController(): CreateGenerationController {
     setIsSubmitting(true);
     setButtonSpinning(true);
 
-    const referencesBase64 = referenceHandlers.referenceFiles.length
-      ? await Promise.all(referenceHandlers.referenceFiles.map((file) => {
-          if (typeof file === 'string') {
-            return Promise.resolve(file);
-          }
-          return fileToDataUrl(file);
-        }))
+    const referenceSources: (File | string)[] = [];
+    if (selectedAvatarImageUrl) referenceSources.push(selectedAvatarImageUrl);
+    if (selectedProductImageUrl) referenceSources.push(selectedProductImageUrl);
+    if (referenceHandlers.referenceFiles.length > 0) {
+      referenceSources.push(...referenceHandlers.referenceFiles);
+    }
+
+    const referencesBase64 = referenceSources.length
+      ? await Promise.all(
+          referenceSources.map(async (fileOrUrl) => {
+            if (typeof fileOrUrl === 'string') {
+              return urlToDataUrl(fileOrUrl);
+            }
+            return fileToDataUrl(fileOrUrl);
+          }),
+        )
       : [];
-    const references = referencesBase64.length ? referencesBase64 : undefined;
+
+    const normalizedReferences = referencesBase64
+      .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+      .filter((value, index, arr) => arr.indexOf(value) === index)
+      .slice(0, MAX_GEMINI_REFERENCES);
+
+    const references = normalizedReferences.length ? normalizedReferences : undefined;
     const finalPrompt = promptHandlers.getFinalPrompt();
 
     const resolveErrorMessage = (error: unknown) => {
@@ -791,7 +854,7 @@ export function useCreateGenerationController(): CreateGenerationController {
 
     const executeGeneration = async () => {
       switch (selectedModel) {
-        case 'gemini-2.5-flash-image':
+        case 'gemini-3.0-pro-image':
           return runGeminiGeneration();
         case 'flux-1.1': {
           const fluxImage = await generateFluxImage({

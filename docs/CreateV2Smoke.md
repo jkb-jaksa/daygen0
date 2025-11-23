@@ -8,7 +8,7 @@
 ## Steps
 1. Navigate to `/create/image?v2=1`.
 2. Enter a simple prompt (e.g., "cinematic portrait").
-3. Ensure model is `Gemini 2.5 Flash` (`gemini-2.5-flash-image`).
+3. Ensure model is `Gemini 3 Pro` (`gemini-3.0-pro-image`).
 4. Click Generate.
 5. Observe a job appear in the progress list; progress should advance.
 6. When complete, the image appears in the grid.

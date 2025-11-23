@@ -70,7 +70,7 @@ const tools: readonly LearnToolPage[] = [
   {
     slug: "gemini",
     name: "Gemini",
-    tagline: "Best image editing.",
+    tagline: "Best image generation.",
     overview:
       "Google's Gemini family now includes robust image generation and editing capabilities inside Gemini Advanced and Google Workspace. It combines natural language prompts with fine-grained editing options powered by Imagen models.",
     categories: ["image"],
@@ -107,7 +107,7 @@ const tools: readonly LearnToolPage[] = [
       { label: "Gemini help centre", href: "https://support.google.com/gemini" },
       { label: "Google AI Studio", href: "https://aistudio.google.com" },
     ],
-    aliases: ["Gemini 2.5 Flash", "Imagen", "Imagen 2"],
+    aliases: ["Gemini 3 Pro", "Imagen", "Imagen 2"],
   },
   {
     slug: "higgsfield",

@@ -38,7 +38,6 @@ import {
 import { layout, text, buttons, glass, headings, iconButtons, tooltips } from "../styles/designSystem";
 import { useAuth } from "../auth/useAuth";
 const ModelBadge = lazy(() => import("./ModelBadge"));
-const AspectRatioBadge = lazy(() => import("./shared/AspectRatioBadge"));
 const ProductCreationModal = lazy(() => import("./products/ProductCreationModal"));
 const ProductCreationOptions = lazy(() => import("./products/ProductCreationOptions"));
 import CreateSidebar from "./create/CreateSidebar";
@@ -1838,11 +1837,6 @@ export default function Products() {
                       />
                     );
                   })()}
-                  {image.aspectRatio && (
-                    <Suspense fallback={null}>
-                      <AspectRatioBadge aspectRatio={image.aspectRatio} size="sm" />
-                    </Suspense>
-                  )}
                 </div>
                 {image.isPublic && (
                   <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
@@ -2329,7 +2323,7 @@ export default function Products() {
       <div className={layout.backdrop} aria-hidden />
       <section className={`relative z-10 ${sectionLayoutClass}`}>
         <div className={`${layout.container}`}>
-          <div className="mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 lg:gap-2 lg:grid-cols-[160px_minmax(0,1fr)]">
+          <div className="mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 lg:gap-4 lg:grid-cols-[160px_minmax(0,1fr)]">
             <Suspense fallback={null}>
               <CreateSidebar
                 activeCategory="products"
@@ -2980,7 +2974,7 @@ export default function Products() {
                     )}
                     <Suspense fallback={null}>
                       <AspectRatioBadge 
-                        aspectRatio={selectedFullImage.aspectRatio} 
+                        aspectRatio={selectedFullImage.aspectRatio || '1:1'} 
                         size="md" 
                       />
                     </Suspense>

@@ -38,7 +38,7 @@ function createToolResource(name: string, description: string): ToolResource {
 }
 
 const IMAGE_TOOLS: readonly ToolResource[] = [
-  createToolResource("Gemini 2.5 Flash", "Best for image editing and manipulation"),
+  createToolResource("Gemini 3 Pro", "Best for image editing and manipulation"),
   createToolResource("FLUX Pro 1.1", "High-quality text-to-image generation"),
   createToolResource("FLUX Pro 1.1 Ultra", "Ultra-high quality 4MP+ generation"),
   createToolResource("FLUX Kontext Pro/Max", "Advanced image editing with text prompts"),

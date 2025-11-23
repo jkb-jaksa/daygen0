@@ -45,13 +45,14 @@ const ImageBadgeRow: React.FC<ImageBadgeRowProps> = ({
   align = 'left',
   className = '',
 }) => {
+  const normalizedAspectRatio = aspectRatio && aspectRatio.trim().length > 0 ? aspectRatio : '1:1';
   const hasAnyBadges =
     !!model ||
     avatars.length > 0 ||
     products.length > 0 ||
     styles.length > 0 ||
     !!isPublic ||
-    !!aspectRatio;
+    !!normalizedAspectRatio;
 
   if (!hasAnyBadges) {
     return null;
@@ -103,9 +104,9 @@ const ImageBadgeRow: React.FC<ImageBadgeRowProps> = ({
       ))}
 
       {/* Aspect ratio badge */}
-      {aspectRatio && (
+      {normalizedAspectRatio && (
         <AspectRatioBadge
-          aspectRatio={aspectRatio}
+          aspectRatio={normalizedAspectRatio}
           size={badgeSize}
         />
       )}
@@ -121,5 +122,3 @@ const ImageBadgeRow: React.FC<ImageBadgeRowProps> = ({
 };
 
 export default ImageBadgeRow;
-
-

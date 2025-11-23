@@ -119,8 +119,8 @@ Record results side-by-side and note any differences.
 ## 4. Provider Coverage Validation
 
 ### 4.1 Image Providers - Gemini
-- [ ] **V1**: Select `Gemini 2.5 Flash` → generate → verify success
-- [ ] **V2**: Select `Gemini 2.5 Flash` → generate → verify success
+- [ ] **V1**: Select `Gemini 3 Pro` → generate → verify success
+- [ ] **V2**: Select `Gemini 3 Pro` → generate → verify success
 - [ ] **Result**: ✅ Pass / ❌ Fail / ⚠️ Partial
 - [ ] **Notes**: 
 
@@ -512,4 +512,3 @@ Record results side-by-side and note any differences.
 ## Notes
 
 _Use this section to document any observations, edge cases, or unexpected behaviors discovered during testing._
-

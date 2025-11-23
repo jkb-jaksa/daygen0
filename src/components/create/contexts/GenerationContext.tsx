@@ -95,7 +95,7 @@ type GenerationAction =
 const initialState: GenerationState = {
   activeJobs: [],
   isButtonSpinning: false,
-  selectedModel: 'gemini-2.5-flash-image',
+  selectedModel: 'gemini-3.0-pro-image',
   batchSize: 1,
   temperature: 1,
   outputLength: 8192,

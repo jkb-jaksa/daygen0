@@ -156,7 +156,7 @@ Follow the checklist in `docs/CreateV2Smoke.md`:
 
 1. Navigate to `/create/image?v2=1`
 2. Enter prompt: "cinematic portrait"
-3. Ensure model is Gemini 2.5 Flash
+3. Ensure model is Gemini 3 Pro
 4. Click Generate
 5. Observe progress in generation list
 6. Wait for completion (image appears in grid)
@@ -262,4 +262,3 @@ Based on REFACTORING_SUMMARY.md Phase 1 recommendations:
 - ✅ Reference/avatar/product/style handling
 
 The only remaining work is testing, folder backend integration, and eventual migration of all users to the modular surface.
-

@@ -53,7 +53,7 @@ Open http://localhost:5173 in your browser.
 ## 🔧 Available AI Models
 
 ### Image Generation
-- **Gemini 2.5 Flash** - Google's latest, fast and versatile with experimental preview support
+- **Gemini 3 Pro** - Google's latest, fast and versatile with experimental preview support
 - **FLUX Pro 1.1** - Black Forest Labs, highest quality image generation
 - **FLUX Ultra** - Premium quality with advanced features
 - **FLUX Kontext Pro/Max** - Context-aware generation with multiple variants

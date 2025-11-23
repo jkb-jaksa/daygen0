@@ -13,7 +13,7 @@ export type VideoModelId = (typeof VIDEO_MODEL_IDS)[number];
 export const VIDEO_MODEL_ID_SET: ReadonlySet<VideoModelId> = new Set(VIDEO_MODEL_IDS);
 
 export const DEFAULT_VIDEO_MODEL_ID: VideoModelId = 'veo-3';
-export const DEFAULT_IMAGE_MODEL_ID = 'gemini-2.5-flash-image';
+export const DEFAULT_IMAGE_MODEL_ID = 'gemini-3.0-pro-image';
 
 export const isVideoModelId = (modelId?: string | null): modelId is VideoModelId =>
   typeof modelId === 'string' && VIDEO_MODEL_ID_SET.has(modelId as VideoModelId);

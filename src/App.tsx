@@ -275,10 +275,20 @@ function ComingSoonPanel({ label, className }: { label: string; className?: stri
 
 function Home() {
   const location = useLocation();
+  const { user, isLoading } = useAuth();
   const { openStyleModal } = useStyleModal();
   const [activeCategory, setActiveCategory] = useState<HomeCategoryId>("image");
   const [pressedCategory, setPressedCategory] = useState<HomeCategoryId | null>(null);
   const [activePersonaId, setActivePersonaId] = useState<string>("dominik");
+
+  // Redirect logged-in users to /app
+  if (isLoading) {
+    return <RouteFallback />;
+  }
+
+  if (user) {
+    return <Navigate to="/app" replace />;
+  }
 
   const activePersona = PERSONAS.find(p => p.id === activePersonaId) || PERSONAS[0];
   const sidebarRef = useRef<HTMLDivElement | null>(null);
@@ -714,8 +724,8 @@ function AppContent() {
                 <Route path="/create/*" element={<CreateRoutes />} />
                 <Route path="/job/:jobId/*" element={<CreateRoutes />} />
               </Route>
-              <Route element={<CreateProtectedLayout fallbackRoute="/master" />}>
-                <Route path="/master/*" element={<MasterRoutes />} />
+              <Route element={<CreateProtectedLayout fallbackRoute="/app" />}>
+                <Route path="/app/*" element={<MasterRoutes />} />
               </Route>
               <Route
                 path="/gallery/*"

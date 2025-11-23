@@ -45,7 +45,7 @@ const mockGalleryImages: GalleryImageLike[] = [
   {
     url: 'https://example.com/image.jpg',
     prompt: 'test',
-    model: 'gemini-2.5-flash-image',
+    model: 'gemini-3.0-pro-image',
     jobId: 'abc',
     r2FileId: 'r2-primary',
     timestamp: now,

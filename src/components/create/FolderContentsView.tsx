@@ -46,16 +46,6 @@ interface FolderContentsViewProps {
   hideHoverTooltip?: (id: string) => void;
 }
 
-const AspectRatioBadge = ({ aspectRatio, size = 'md' }: { aspectRatio?: string; size?: 'sm' | 'md' }) => {
-  if (!aspectRatio) return null;
-  const sizeClasses = size === 'sm' ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-1 text-xs';
-  return (
-    <div className={`${glass.promptDark} text-theme-white ${sizeClasses} rounded-full font-medium font-raleway`}>
-      {aspectRatio}
-    </div>
-  );
-};
-
 export default function FolderContentsView({
   folder,
   folderImages,
@@ -310,7 +300,6 @@ export default function FolderContentsView({
                               );
                             })()}
 
-                            <AspectRatioBadge aspectRatio={img.aspectRatio} size="md" />
                           </div>
 
                           {img.isPublic && (

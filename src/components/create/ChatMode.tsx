@@ -93,9 +93,9 @@ type ImageModelOption = {
 
 const IMAGE_MODEL_OPTIONS: ReadonlyArray<ImageModelOption> = [
   {
-    id: "gemini-2.5-flash-image",
-    name: "Gemini 2.5 Flash",
-    desc: "Best image editing.",
+    id: "gemini-3.0-pro-image",
+    name: "Gemini 3 Pro",
+    desc: "Best image generation.",
     Icon: Sparkles,
   },
   {
@@ -208,7 +208,7 @@ const ChatMode: React.FC = () => {
   const location = useLocation();
   const { storagePrefix, user } = useAuth();
   const { setFooterVisible } = useFooter();
-  const isMasterSection = location.pathname.startsWith("/master");
+  const isMasterSection = location.pathname.startsWith("/app");
   const {
     sessions,
     activeSessionId,
@@ -244,7 +244,7 @@ const ChatMode: React.FC = () => {
   const [avatarUploadError, setAvatarUploadError] = useState<string | null>(null);
   const [isDraggingAvatar, setIsDraggingAvatar] = useState(false);
   const [batchSize, setBatchSize] = useState<number>(1);
-  const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-image");
+  const [selectedModel, setSelectedModel] = useState<string>("gemini-3.0-pro-image");
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAspectRatioMenuOpen, setIsAspectRatioMenuOpen] = useState(false);
@@ -276,7 +276,7 @@ const ChatMode: React.FC = () => {
     return IMAGE_MODEL_OPTIONS.find(model => model.id === selectedModel) ?? IMAGE_MODEL_OPTIONS[0];
   }, [selectedModel]);
 
-  const isGeminiModel = selectedModel === "gemini-2.5-flash-image";
+  const isGeminiModel = selectedModel === "gemini-3.0-pro-image";
   const isFluxModel = selectedModel === "flux-1.1";
   const isRunwayImageModel = selectedModel === "runway-gen4";
   const isRecraftModel = selectedModel === "recraft";
@@ -534,7 +534,7 @@ const ChatMode: React.FC = () => {
 
   const handleSelectCategory = useCallback((category: string) => {
     if (isMasterSection) {
-      const masterPath = `/master/${category}`;
+      const masterPath = `/app/${category}`;
       if (location.pathname === masterPath && location.search === location.search) {
         return;
       }
@@ -1004,7 +1004,7 @@ const ChatMode: React.FC = () => {
         </div>
       )}
       <div className={`${layout.container} pb-6`}>
-        <div className={`relative z-0 ${isMasterSection ? 'grid grid-cols-[160px_minmax(0,1fr)_224px]' : 'flex'} h-[calc(100dvh-6rem)] w-full gap-3`}>
+        <div className={`relative z-0 ${isMasterSection ? 'grid grid-cols-[160px_minmax(0,1fr)_224px]' : 'flex'} h-[calc(100dvh-6rem)] w-full gap-4`}>
           {isMasterSection && (
             <Suspense fallback={null}>
               <MasterSidebar

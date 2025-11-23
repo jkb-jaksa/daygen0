@@ -196,7 +196,7 @@ export default function Edit() {
   const [isDragging, setIsDragging] = useState(false);
   const [referenceFiles, setReferenceFiles] = useState<File[]>([]);
   const [referencePreviews, setReferencePreviews] = useState<string[]>([]);
-  const [selectedModel, setSelectedModel] = useState<EditModelId>("gemini-2.5-flash-image");
+  const [selectedModel, setSelectedModel] = useState<EditModelId>("gemini-3.0-pro-image");
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState<boolean>(false);
   const [isFullSizeOpen, setIsFullSizeOpen] = useState<boolean>(false);
   const [selectedFullImage, setSelectedFullImage] = useState<string | null>(null);
@@ -216,7 +216,7 @@ export default function Edit() {
   const [allPaths, setAllPaths] = useState<{ points: { x: number; y: number }[]; brushSize: number; isErase: boolean }[]>([]);
   const [redoStack, setRedoStack] = useState<{ points: { x: number; y: number }[]; brushSize: number; isErase: boolean }[][]>([]);
 
-  const isGemini = selectedModel === "gemini-2.5-flash-image";
+  const isGemini = selectedModel === "gemini-3.0-pro-image";
   const isFlux = isFluxModelId(selectedModel);
   const isChatGPT = selectedModel === "chatgpt-image";
   const isIdeogram = selectedModel === "ideogram";

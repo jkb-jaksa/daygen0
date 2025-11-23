@@ -63,7 +63,7 @@ const categoryFromPath = (path: string): SupportedCategory | null => {
     return normalizeCategory(segments[1]);
   }
 
-  if (segments[0] === 'master' && segments[1]) {
+  if (segments[0] === 'app' && segments[1]) {
     return normalizeCategory(segments[1]);
   }
 
@@ -114,7 +114,7 @@ function CreateRefactoredView() {
   const navigate = useNavigate();
   const { setFooterVisible } = useFooter();
   const { user } = useAuth();
-  const isMasterSection = location.pathname.startsWith("/master");
+  const isMasterSection = location.pathname.startsWith("/app");
   const locationState = (location.state as { jobOrigin?: string } | null) ?? null;
   const libraryNavItems = useMemo(() => [...LIBRARY_CATEGORIES, FOLDERS_ENTRY], []);
   const galleryActions = useGalleryActions();
@@ -150,7 +150,7 @@ function CreateRefactoredView() {
       {
         url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1024',
         prompt: 'Majestic mountain peaks under a starry night sky',
-        model: 'gemini-2.5-flash-image',
+        model: 'gemini-3.0-pro-image',
         jobId: `dummy-${Date.now()}`,
         r2FileId: `r2-dummy-${Date.now()}`,
         isLiked: true,
@@ -244,7 +244,7 @@ function CreateRefactoredView() {
     const dummyImageWithProduct = {
       url: `https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1024&t=${Date.now()}`,
       prompt: 'Test image with product badge - Starry night sky',
-      model: 'gemini-2.5-flash-image',
+      model: 'gemini-3.0-pro-image',
       jobId: `dummy-product-${Date.now()}`,
       r2FileId: `r2-product-${Date.now()}`,
       productId: 'test-product-badge',
@@ -483,9 +483,9 @@ function CreateRefactoredView() {
   }, [isGenerationCategory, setPromptBarReservedSpace]);
 
   const handleSelectCategory = useCallback((category: string) => {
-    // If in master section, navigate to /master/{category}
+    // If in master section, navigate to /app/{category}
     if (isMasterSection) {
-      const masterPath = `/master/${category}`;
+      const masterPath = `/app/${category}`;
       if (location.pathname === masterPath && location.search === location.search) {
         return;
       }
@@ -943,7 +943,7 @@ function CreateRefactoredView() {
             </nav>
           </div>
 
-          <div className="mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 lg:gap-2 lg:grid-cols-[160px_minmax(0,1fr)]">
+          <div className="mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 lg:gap-4 lg:grid-cols-[160px_minmax(0,1fr)]">
             <Suspense fallback={null}>
               {isMasterSection ? (
                 <MasterSidebar

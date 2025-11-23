@@ -318,7 +318,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const location = useLocation();
   const { avatarSlug } = useParams<{ avatarSlug?: string }>();
   const { openStyleModal } = useStyleModal();
-  const isMasterSection = location.pathname.startsWith("/master");
+  const isMasterSection = location.pathname.startsWith("/app");
   const previousNonJobPathRef = useRef<string | null>(null);
   const rememberNonJobPath = useCallback(() => {
     if (!location.pathname.startsWith("/job/")) {
@@ -1429,7 +1429,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     setAvatarImageUploadTarget(null);
     setActiveAvatarImageId(null);
     if (avatarSlug) {
-      navigate(isMasterSection ? "/master" : "/create/avatars", { replace: true });
+      navigate(isMasterSection ? "/app" : "/create/avatars", { replace: true });
     }
   }, [avatarSlug, isMasterSection, navigate]);
 
@@ -2179,11 +2179,6 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                       />
                     );
                   })()}
-                  {image.aspectRatio && (
-                    <Suspense fallback={null}>
-                      <AspectRatioBadge aspectRatio={image.aspectRatio} size="sm" />
-                    </Suspense>
-                  )}
                 </div>
                 {image.isPublic && (
                   <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
@@ -2836,7 +2831,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const masterActiveCategory = useMemo(() => {
     if (!isMasterSection) return "avatars";
     const pathSegments = location.pathname.split("/").filter(Boolean);
-    if (pathSegments.length >= 2 && pathSegments[0] === "master") {
+    if (pathSegments.length >= 2 && pathSegments[0] === "app") {
       const category = pathSegments[1];
       // Valid categories: text, video, image, audio, avatars
       if (["text", "video", "image", "audio", "avatars"].includes(category)) {
@@ -2845,7 +2840,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       // If it's an avatar slug (not a category), default to avatars
       return "avatars";
     }
-    // Default to avatars for /master
+    // Default to avatars for /app
     return "avatars";
   }, [isMasterSection, location.pathname]);
 
@@ -2868,7 +2863,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                   <MasterSidebar
                     activeCategory={masterActiveCategory}
                     onSelectCategory={(category) => {
-                      navigate(`/master/${category}`);
+                      navigate(`/app/${category}`);
                     }}
                   />
                 </Suspense>
@@ -3576,7 +3571,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
             <MasterSidebar
               activeCategory={masterActiveCategory}
               onSelectCategory={(category) => {
-                navigate(`/master/${category}`);
+                navigate(`/app/${category}`);
                 closeAvatarFullSizeView();
               }}
               isFullSizeOpen={true}
@@ -3841,7 +3836,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                     )}
                     <Suspense fallback={null}>
                       <AspectRatioBadge 
-                        aspectRatio={selectedFullImage.aspectRatio} 
+                        aspectRatio={selectedFullImage.aspectRatio || '1:1'} 
                         size="md" 
                       />
                     </Suspense>

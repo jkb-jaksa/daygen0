@@ -204,8 +204,8 @@ const galleryItems: GalleryItem[] = [
       avatarColor: "from-blue-400/70 via-sky-300/70 to-cyan-400/70",
       location: "Oslo, NO",
     },
-    modelId: "gemini-2.5-flash-image",
-    modelLabel: "Gemini Advanced",
+    modelId: "gemini-3.0-pro-image",
+    modelLabel: "Gemini 3 Pro",
     timeAgo: "1d ago",
     likes: 278,
     prompt:
@@ -307,8 +307,8 @@ const avatarGallery: AvatarGalleryItem[] = [
     likes: 744,
     publishedAgo: "2d ago",
     tags: ["lifestyle", "storyteller", "warm"],
-    modelId: "gemini-2.5-flash-image",
-    modelLabel: "Gemini Portrait",
+    modelId: "gemini-3.0-pro-image",
+    modelLabel: "Gemini 3 Pro",
     shareUrl: "https://www.daygen.ai/avatars/solstice-echo",
     accentGradient: "from-amber-300/70 via-emerald-300/60 to-sky-300/70",
     creator: {
@@ -2792,7 +2792,7 @@ const Explore: React.FC = () => {
                           <ModelBadge model={selectedFullImage.modelId ?? 'unknown'} size="md" />
                         </Suspense>
                         <Suspense fallback={null}>
-                          <AspectRatioBadge aspectRatio={selectedFullImage.aspectRatio} size="md" />
+                          <AspectRatioBadge aspectRatio={selectedFullImage.aspectRatio || '1:1'} size="md" />
                         </Suspense>
                       </div>
                     </div>

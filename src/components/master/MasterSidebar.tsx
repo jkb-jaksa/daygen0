@@ -49,7 +49,7 @@ function MasterSidebarComponent({
           {...(isFullSizeOpen ? { [scrollLockExemptAttr]: "true" } : {})}
         >
           <Link 
-            to="/master" 
+            to="/app" 
             className="flex items-center px-2 text-[12px] text-theme-text font-raleway uppercase tracking-wider mb-1 sidebar-section-header hover:opacity-80 transition-opacity cursor-pointer"
           >
             master

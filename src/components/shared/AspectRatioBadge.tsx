@@ -3,7 +3,7 @@ import { Scan } from 'lucide-react';
 import { glass } from '../../styles/designSystem';
 
 interface AspectRatioBadgeProps {
-  aspectRatio: string | undefined;
+  aspectRatio?: string | null;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
@@ -13,10 +13,8 @@ export const AspectRatioBadge: React.FC<AspectRatioBadgeProps> = ({
   size = 'sm',
   className = '' 
 }) => {
-  // Don't render if no aspect ratio
-  if (!aspectRatio) {
-    return null;
-  }
+  const displayAspectRatio = aspectRatio && aspectRatio.trim().length > 0 ? aspectRatio.trim() : null;
+  if (!displayAspectRatio) return null;
 
   const sizeClasses = {
     sm: 'px-2 py-1 text-xs',
@@ -40,12 +38,12 @@ export const AspectRatioBadge: React.FC<AspectRatioBadgeProps> = ({
         font-medium font-raleway 
         ${className}
       `}
-      title={`Aspect Ratio: ${aspectRatio}`}
+      title={`Aspect Ratio: ${displayAspectRatio}`}
     >
       <div className="flex items-center gap-1">
         <Scan className={`${iconSizes[size]} flex-shrink-0`} />
         <span className="leading-none">
-          {aspectRatio}
+          {displayAspectRatio}
         </span>
       </div>
     </div>
@@ -53,4 +51,3 @@ export const AspectRatioBadge: React.FC<AspectRatioBadgeProps> = ({
 };
 
 export default AspectRatioBadge;
-

@@ -771,7 +771,7 @@ const PromptForm = memo<PromptFormProps>(
       setModeSwitcherNode(node);
     }, []);
 
-    const isGeminiModel = selectedModel === 'gemini-2.5-flash-image';
+    const isGeminiModel = selectedModel === 'gemini-3.0-pro-image';
 
     const handleDragAreaEnter = useCallback(
       (event: React.DragEvent<HTMLDivElement>) => {

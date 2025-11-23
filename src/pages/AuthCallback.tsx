@@ -24,7 +24,7 @@ export default function AuthCallback() {
       if (hasHandledRef.current || (handledTimestamp && Date.now() - parseInt(handledTimestamp, 10) < 30000)) {
         // If already handled recently, navigate away immediately
         if (handledTimestamp) {
-          navigate('/', { replace: true });
+          navigate('/app', { replace: true });
         }
         return;
       }
@@ -229,11 +229,11 @@ export default function AuthCallback() {
         // Clear the handled flag on success to allow future callbacks
         sessionStorage.removeItem(handledKey);
         
-        // Navigate to home
+        // Navigate to app
         if (!timeoutFired) {
           clearTimeout(guard);
           setIsLoading(false);
-          navigate('/', { replace: true });
+          navigate('/app', { replace: true });
         }
       } catch (err) {
         debugError('Auth callback error:', err);

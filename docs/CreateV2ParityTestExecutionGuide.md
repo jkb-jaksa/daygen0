@@ -44,7 +44,7 @@ This guide provides step-by-step instructions for executing the parity tests bet
 
 **Test 1.1: Credit Decrement on Generation**
 1. Note current credit count in header (both tabs)
-2. In V1 tab: Enter prompt "test image" → Select Gemini 2.5 Flash → Click Generate
+2. In V1 tab: Enter prompt "test image" → Select Gemini 3 Pro → Click Generate
 3. Wait for completion → Verify credit decremented by 1
 4. In V2 tab: Repeat same steps → Verify credit decremented by 1
 5. Compare results → Record in results document
@@ -75,7 +75,7 @@ This guide provides step-by-step instructions for executing the parity tests bet
 ### Phase 5: Provider Coverage Tests (Section 4)
 
 **Test 4.1: Gemini Provider**
-1. In V1: Select Gemini 2.5 Flash → Enter prompt → Generate
+1. In V1: Select Gemini 3 Pro → Enter prompt → Generate
 2. Verify generation succeeds → Note any issues
 3. In V2: Repeat same steps → Compare results
 4. Record pass/fail status
@@ -268,4 +268,3 @@ You can stop testing and move to fixes when:
 - [ ] Ready to begin testing
 
 **Start Testing**: Begin with Section 1 (Credit Flow) and work through sequentially.
-

@@ -10,11 +10,11 @@ export interface ModelInfo {
 
 // Model configuration - matches the existing model mapping in Create.tsx
 export const MODEL_INFO: Record<string, ModelInfo> = {
-  'gemini-2.5-flash-image': {
-    id: 'gemini-2.5-flash-image',
-    name: 'Gemini 2.5 Flash (Nano Banana)',
-    shortName: 'Gemini 2.5',
-    description: 'Google Gemini 2.5 Flash Preview',
+  'gemini-3.0-pro-image': {
+    id: 'gemini-3.0-pro-image',
+    name: 'Gemini 3 Pro Image',
+    shortName: 'Gemini 3 Pro',
+    description: 'Google Gemini 3 Pro image generation',
     isAvailable: true
   },
   'flux-pro': {
@@ -153,6 +153,11 @@ export const normalizeModelId = (modelId: string): string => {
   
   // Handle common model ID variations
   const modelMappings: Record<string, string> = {
+    // Gemini 3 Pro image variants
+    'gemini-3.0-pro': 'gemini-3.0-pro-image',
+    'gemini-3.0-pro-exp-01': 'gemini-3.0-pro-image',
+    'gemini-3-pro-image': 'gemini-3.0-pro-image',
+    'gemini-3-pro': 'gemini-3.0-pro-image',
     // Runway models
     'gen4_image': 'runway-gen4',
     'gen4_image_turbo': 'runway-gen4-turbo',

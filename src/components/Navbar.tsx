@@ -15,7 +15,7 @@ import { apiFetch } from "../utils/api";
 import type { User as AuthUser } from "../auth/context";
 import { supabase } from "../lib/supabase";
 
-type MenuId = "create" | "edit" | "explore" | "learn" | "my works" | "master";
+type MenuId = "create" | "edit" | "explore" | "learn" | "my works";
 type MenuEntry = { key: string; label: string; Icon: LucideIcon; gradient?: string; iconColor?: string };
 
 type NavItem = {
@@ -30,7 +30,6 @@ const NAV_ITEMS: ReadonlyArray<NavItem> = [
   { label: "learn", path: "/learn/use-cases" },
   { label: "explore", path: "/explore" },
   { label: "my works", path: "/gallery" },
-  { label: "master", path: "/master" },
 ];
 
 const MENU_DROPDOWN_LABELS: ReadonlySet<MenuId> = new Set(["create", "learn", "my works"]);

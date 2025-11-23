@@ -62,7 +62,7 @@ export function normalizeAspectRatio(ar: string | undefined): string | null {
 export function getAspectRatiosForModel(modelId: string): AspectRatioOption[] {
   // Gemini models
   if (
-    modelId === 'gemini-2.5-flash-image' ||
+    modelId === 'gemini-3.0-pro-image' ||
     modelId === 'luma-photon-1' ||
     modelId === 'luma-photon-flash-1'
   ) {
@@ -134,7 +134,7 @@ export function getAspectRatiosForModels(modelIds: string[]): AspectRatioOption[
  */
 export function getAllAvailableAspectRatios(): AspectRatioOption[] {
   const allModelIds = [
-    'gemini-2.5-flash-image',
+    'gemini-3.0-pro-image',
     'flux-1.1',
     'reve-image',
     'ideogram',
@@ -155,4 +155,3 @@ export function getAllAvailableAspectRatios(): AspectRatioOption[] {
 
   return getAspectRatiosForModels(allModelIds);
 }
-

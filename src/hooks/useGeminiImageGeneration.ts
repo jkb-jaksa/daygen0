@@ -548,12 +548,12 @@ export const useGeminiImageGeneration = () => {
 
     type ApiFetchError = Error & { status?: number };
 
-    const primaryModel = options.model ?? 'gemini-2.5-flash-image';
-    let didAttemptPreviewFallback = false;
+    const primaryModel = options.model ?? 'gemini-3.0-pro-image';
+    let didAttemptFallback = false;
 
     const attemptGeneration = async (
       modelToUse: string,
-      allowPreviewFallback: boolean,
+      allowFallback: boolean,
     ): Promise<{ image: GeneratedImage; jobId?: string; modelUsed: string }> => {
       debugLog('[image] POST /api/image/gemini', { model: modelToUse });
 
@@ -612,16 +612,18 @@ export const useGeminiImageGeneration = () => {
         }
 
         const shouldFallback =
-          allowPreviewFallback &&
-          !didAttemptPreviewFallback &&
+          allowFallback &&
+          !didAttemptFallback &&
           (status === 400 ||
+            status === 404 ||
             message.includes('service unavailable') ||
-            message.includes('unavailable'));
+            message.includes('unavailable') ||
+            message.includes('unsupported'));
 
         if (shouldFallback) {
-          didAttemptPreviewFallback = true;
+          didAttemptFallback = true;
           debugWarn(
-            '[image] Gemini primary model failed; retrying with preview fallback.',
+            '[image] Gemini primary model failed; retrying with fallback.',
             { error },
           );
 
@@ -642,7 +644,7 @@ export const useGeminiImageGeneration = () => {
             jobId: null,
           }));
 
-          return attemptGeneration('gemini-2.5-flash-image-preview', false);
+          return attemptGeneration('imagen-3.0-generate-002', false);
         }
 
         throw error;
@@ -652,7 +654,7 @@ export const useGeminiImageGeneration = () => {
     try {
       const { image, jobId } = await attemptGeneration(
         primaryModel,
-        primaryModel === 'gemini-2.5-flash-image',
+        primaryModel === 'gemini-3.0-pro-image' || primaryModel === 'gemini-3.0-pro',
       );
 
       stopProgressController({

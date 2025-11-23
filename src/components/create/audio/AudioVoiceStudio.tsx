@@ -94,6 +94,43 @@ export function AudioVoiceStudio() {
   const [isSavingRecordingClone, setIsSavingRecordingClone] = useState(false);
   const [cloneError, setCloneError] = useState<string | null>(null);
 
+  const stopRecording = useCallback(
+    (silent = false) => {
+      const recorder = mediaRecorderRef.current;
+      if (!recorder) {
+        return;
+      }
+      if (recorder.state !== "inactive") {
+        recorder.stop();
+      }
+      mediaRecorderRef.current = null;
+      if (recordingIntervalRef.current) {
+        window.clearInterval(recordingIntervalRef.current);
+        recordingIntervalRef.current = null;
+      }
+      if (silent) {
+        recordingStreamRef.current
+          ?.getTracks()
+          .forEach((track) => track.stop());
+        recordingStreamRef.current = null;
+        recordingChunksRef.current = [];
+        setRecordingState((prev) => {
+          if (prev.audioUrl) {
+            URL.revokeObjectURL(prev.audioUrl);
+          }
+          return {
+            isRecording: false,
+            durationMs: 0,
+            audioUrl: null,
+            blob: null,
+            error: null,
+          };
+        });
+      }
+    },
+    [],
+  );
+
   useEffect(() => {
     return () => {
       if (recordingIntervalRef.current) {
@@ -468,44 +505,7 @@ export function AudioVoiceStudio() {
     } finally {
       setRecordingIntent("idle");
     }
-  }, [recordingState.audioUrl]);
-
-  const stopRecording = useCallback(
-    (silent = false) => {
-      const recorder = mediaRecorderRef.current;
-      if (!recorder) {
-        return;
-      }
-      if (recorder.state !== "inactive") {
-        recorder.stop();
-      }
-      mediaRecorderRef.current = null;
-      if (recordingIntervalRef.current) {
-        window.clearInterval(recordingIntervalRef.current);
-        recordingIntervalRef.current = null;
-      }
-      if (silent) {
-        recordingStreamRef.current
-          ?.getTracks()
-          .forEach((track) => track.stop());
-        recordingStreamRef.current = null;
-        recordingChunksRef.current = [];
-        setRecordingState((prev) => {
-          if (prev.audioUrl) {
-            URL.revokeObjectURL(prev.audioUrl);
-          }
-          return {
-            isRecording: false,
-            durationMs: 0,
-            audioUrl: null,
-            blob: null,
-            error: null,
-          };
-        });
-      }
-    },
-    [],
-  );
+  }, [recordingState.audioUrl, stopRecording]);
 
   const recordingStatusLabel = useMemo(() => {
     if (recordingState.error) {

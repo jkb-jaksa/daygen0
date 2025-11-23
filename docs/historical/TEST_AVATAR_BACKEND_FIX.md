@@ -36,7 +36,7 @@ Now we need to test if everything is working correctly:
 4. Select an avatar from your saved avatars
 5. Make sure the avatar appears in the prompt bar area
 6. Enter a prompt (e.g., "portrait photo")
-7. Select "Gemini 2.5 Flash Image" model
+7. Select "Gemini 3 Pro Image" model
 8. Click Generate
 
 **What to look for in console**:
@@ -69,7 +69,7 @@ Generated image data being sent to backend: {
   avatarId: "avatar-1234567890",      // ← Should NOT be undefined
   avatarImageId: "avatar-img-...",    // ← Should NOT be undefined
   productId: undefined,
-  model: "gemini-2.5-flash-image",
+  model: "gemini-3.0-pro-image",
   prompt: "..."
 }
 ```
@@ -174,4 +174,3 @@ Console logs:
 Screenshots:
 [Attach screenshots if helpful]
 ```
-

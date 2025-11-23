@@ -85,7 +85,7 @@ After applying the migration:
 1. Reload your application (hard refresh: Cmd+Shift+R)
 2. Navigate to /create
 3. Select an avatar from the avatar picker
-4. Generate an image with Gemini 2.5 Flash Image
+4. Generate an image with Gemini 3 Pro Image
 5. Check the browser console for the new debug log: `[DEBUG] Avatar state before generation:`
 6. Note what values are shown for `selectedAvatar` and `selectedAvatarId`
 
@@ -134,4 +134,3 @@ ALTER TABLE "public"."R2File" DROP COLUMN IF EXISTS "productId";
 ```
 
 **⚠️ Warning:** Only rollback if absolutely necessary, as this will remove avatar/product data from existing records.
-
