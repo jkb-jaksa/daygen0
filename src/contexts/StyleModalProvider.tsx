@@ -4,12 +4,12 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { StyleModalContext } from "./StyleModalContext";
 import { STYLE_MODAL_OPEN_EVENT, STYLE_MODAL_CLOSE_EVENT } from "./styleModalEvents";
 
+const imagePaths = ["/app/image", "/create/image"];
+
 export function StyleModalProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const previousPathRef = useRef<string>(location.pathname);
-
-  const imagePaths = ["/app/image", "/create/image"];
   const isOnStudioImagePage = imagePaths.some(
     (path) => location.pathname === path || location.pathname.startsWith(`${path}/`),
   );
