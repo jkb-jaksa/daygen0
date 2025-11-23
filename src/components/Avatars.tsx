@@ -46,7 +46,6 @@ const AvatarCreationModal = lazy(() => import("./avatars/AvatarCreationModal"));
 const AvatarCreationOptions = lazy(() => import("./avatars/AvatarCreationOptions"));
 const MasterAvatarCreationOptions = lazy(() => import("./avatars/MasterAvatarCreationOptions"));
 const MasterSidebar = lazy(() => import("./master/MasterSidebar"));
-import CreateSidebar from "./create/CreateSidebar";
 import { useGalleryImages } from "../hooks/useGalleryImages";
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
 // import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage";
@@ -55,6 +54,7 @@ import type { AvatarImage, AvatarSelection, StoredAvatar } from "./avatars/types
 import { debugError } from "../utils/debug";
 import { createAvatarRecord, findAvatarBySlug, normalizeStoredAvatars, withUpdatedAvatarImages } from "../utils/avatars";
 import { createCardImageStyle } from "../utils/cardImageStyle";
+import { STUDIO_BASE_PATH, deriveCategoryFromPath, pathForCategory } from "../utils/navigation";
 import { VerticalGalleryNav } from "./shared/VerticalGalleryNav";
 import { useStyleModal } from "../contexts/useStyleModal";
 import useParallaxHover from "../hooks/useParallaxHover";
@@ -319,6 +319,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const { avatarSlug } = useParams<{ avatarSlug?: string }>();
   const { openStyleModal } = useStyleModal();
   const isMasterSection = location.pathname.startsWith("/app");
+  const studioBasePath = STUDIO_BASE_PATH;
   const previousNonJobPathRef = useRef<string | null>(null);
   const rememberNonJobPath = useCallback(() => {
     if (!location.pathname.startsWith("/job/")) {
@@ -352,9 +353,9 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     if (window.history.length > 1) {
       navigate(-1);
     } else {
-      navigate("/create/avatars");
+      navigate(`${studioBasePath}/avatars`);
     }
-  }, [navigate]);
+  }, [navigate, studioBasePath]);
 
   const syncJobUrlForImage = useCallback(
     (image: GalleryImageLike | null | undefined) => {
@@ -1017,7 +1018,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     if (creationsModalAvatar?.id === avatarToDelete.id) {
       setCreationsModalAvatar(null);
       if (avatarSlug === avatarToDelete.slug) {
-        navigate("/create/avatars", { replace: true });
+        navigate(`${studioBasePath}/avatars`, { replace: true });
       }
     }
 
@@ -1026,7 +1027,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       setEditingName("");
     }
     setAvatarToDelete(null);
-  }, [avatarSlug, avatarToDelete, creationsModalAvatar, editingAvatarId, navigate, persistAvatars]);
+  }, [avatarSlug, avatarToDelete, creationsModalAvatar, editingAvatarId, navigate, persistAvatars, studioBasePath]);
 
   const confirmPublish = useCallback(() => {
     if (publishConfirmation.imageUrl) {
@@ -1058,26 +1059,26 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
 
   const handleNavigateToImage = useCallback(
     (avatar: StoredAvatar) => {
-      navigate("/create/image", {
+      navigate(`${studioBasePath}/image`, {
         state: {
           avatarId: avatar.id,
           focusPromptBar: true,
         },
       });
     },
-    [navigate],
+    [navigate, studioBasePath],
   );
 
   const handleNavigateToVideo = useCallback(
     (avatar: StoredAvatar) => {
-      navigate("/create/video", {
+      navigate(`${studioBasePath}/video`, {
         state: {
           avatarId: avatar.id,
           focusPromptBar: true,
         },
       });
     },
-    [navigate],
+    [navigate, studioBasePath],
   );
 
   const toggleAvatarEditMenu = useCallback((avatarId: string, anchor: HTMLElement) => {
@@ -1397,10 +1398,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       setAvatarEditMenu(null);
       setAvatarMoreMenu(null);
       if (avatarSlug !== avatar.slug) {
-        navigate(`/create/avatars/${avatar.slug}`);
+        navigate(`${studioBasePath}/avatars/${avatar.slug}`);
       }
     },
-    [avatarSlug, navigate],
+    [avatarSlug, navigate, studioBasePath],
   );
 
   const openMasterFullSizeView = useCallback((avatar: StoredAvatar) => {
@@ -1429,9 +1430,9 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     setAvatarImageUploadTarget(null);
     setActiveAvatarImageId(null);
     if (avatarSlug) {
-      navigate(isMasterSection ? "/app" : "/create/avatars", { replace: true });
+      navigate(`${studioBasePath}/avatars`, { replace: true });
     }
-  }, [avatarSlug, isMasterSection, navigate]);
+  }, [avatarSlug, navigate, studioBasePath]);
 
   const toggleCreationPublish = useCallback(
     (imageUrl: string) => {
@@ -2040,7 +2041,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
-                  navigate("/create/video", {
+                  navigate(`${studioBasePath}/video`, {
                     state: {
                       avatarId: image.avatarId,
                       focusPromptBar: true,
@@ -2175,7 +2176,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                     return (
                       <AvatarBadge
                         avatar={avatarForImage}
-                        onClick={() => navigate(`/create/avatars/${avatarForImage.slug}`)}
+                        onClick={() => navigate(`${studioBasePath}/avatars/${avatarForImage.slug}`)}
                       />
                     );
                   })()}
@@ -2301,7 +2302,13 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
             </div>
           </div>
           {isMasterSection && (
-            <div className="w-full">
+            <>
+              <div className="w-full">
+                <h2 className="text-2xl font-normal font-raleway text-theme-text">
+                  What do you want to do?
+                </h2>
+              </div>
+              <div className="w-full">
               <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                 <UseCaseCard
                   title="lifestyle images"
@@ -2361,6 +2368,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 />
               </div>
             </div>
+            </>
           )}
         </>
       )}
@@ -2830,18 +2838,16 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   // Derive active category from pathname when in master section
   const masterActiveCategory = useMemo(() => {
     if (!isMasterSection) return "avatars";
-    const pathSegments = location.pathname.split("/").filter(Boolean);
-    if (pathSegments.length >= 2 && pathSegments[0] === "app") {
-      const category = pathSegments[1];
-      // Valid categories: text, video, image, audio, avatars
-      if (["text", "video", "image", "audio", "avatars"].includes(category)) {
-        return category;
-      }
-      // If it's an avatar slug (not a category), default to avatars
+    // When on the /app index route, don't mark any category as active
+    if (location.pathname === "/app") {
+      return "";
+    }
+    const category = deriveCategoryFromPath(location.pathname);
+    // For avatar slugs (when path is /app/:slug but slug is not a category), default to avatars
+    if (category === "image" && location.pathname.startsWith("/app/") && !["text", "video", "image", "audio", "avatars", "products"].includes(location.pathname.split("/")[2] || "")) {
       return "avatars";
     }
-    // Default to avatars for /app
-    return "avatars";
+    return category || "avatars";
   }, [isMasterSection, location.pathname]);
 
   const sectionLayoutClass = "pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20";
@@ -2863,7 +2869,26 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                   <MasterSidebar
                     activeCategory={masterActiveCategory}
                     onSelectCategory={(category) => {
+                      // Check if category is a library category
+                      const libraryCategories = ['gallery', 'avatars', 'products', 'inspirations', 'my-folders'];
+                      const isLibraryCategory = libraryCategories.includes(category);
+                      
+                      if (isLibraryCategory) {
+                        const path = pathForCategory(category);
+                        if (path) {
+                          navigate(path);
+                          return;
+                        }
+                      }
+                      
+                      // For non-library categories, use /app/{category}
                       navigate(`/app/${category}`);
+                    }}
+                    onOpenMyFolders={() => {
+                      const path = pathForCategory('my-folders');
+                      if (path) {
+                        navigate(path);
+                      }
                     }}
                   />
                 </Suspense>
@@ -2880,13 +2905,13 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               </>
             ) : showSidebar && (
               <Suspense fallback={null}>
-                <CreateSidebar
+                <MasterSidebar
                   activeCategory="avatars"
                   onSelectCategory={(category) => {
-                    navigate(`/create/${category}`);
+                    navigate(`${studioBasePath}/${category}`);
                   }}
                   onOpenMyFolders={() => {
-                    navigate('/gallery/folders');
+                    navigate('/app/folders');
                   }}
                 />
               </Suspense>
@@ -3353,7 +3378,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 onClick={(e) => {
                   e.stopPropagation();
                   // Navigate to edit page with avatar image
-                  navigate("/create/image", {
+                  navigate(`${studioBasePath}/image`, {
                     state: {
                       avatarId: creationsModalAvatar.id,
                       referenceImageUrl: activeAvatarImage.url,
@@ -3390,7 +3415,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 onClick={(e) => {
                   e.stopPropagation();
                   // Use as reference in create page
-                  navigate("/create/image", {
+                  navigate(`${studioBasePath}/image`, {
                     state: {
                       referenceImageUrl: activeAvatarImage.url,
                       focusPromptBar: true,
@@ -3571,17 +3596,38 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
             <MasterSidebar
               activeCategory={masterActiveCategory}
               onSelectCategory={(category) => {
+                // Check if category is a library category
+                const libraryCategories = ['gallery', 'avatars', 'products', 'inspirations', 'my-folders'];
+                const isLibraryCategory = libraryCategories.includes(category);
+                
+                if (isLibraryCategory) {
+                  const path = pathForCategory(category);
+                  if (path) {
+                    navigate(path);
+                    closeAvatarFullSizeView();
+                    return;
+                  }
+                }
+                
+                // For non-library categories, use /app/{category}
                 navigate(`/app/${category}`);
                 closeAvatarFullSizeView();
+              }}
+              onOpenMyFolders={() => {
+                const path = pathForCategory('my-folders');
+                if (path) {
+                  navigate(path);
+                  closeAvatarFullSizeView();
+                }
               }}
               isFullSizeOpen={true}
             />
           ) : (
             showSidebar && (
-              <CreateSidebar
+              <MasterSidebar
                 activeCategory="avatars"
                 onSelectCategory={(category) => {
-                  navigate(`/create/${category}`);
+                  navigate(`${studioBasePath}/${category}`);
                   closeAvatarFullSizeView();
                 }}
                 onOpenMyFolders={() => {
@@ -3676,14 +3722,14 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                   </button>
                   <button
                     type="button"
-                    className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      navigate("/create/video", {
-                        state: {
-                          avatarId: selectedFullImage.avatarId,
-                          focusPromptBar: true,
-                        },
+                  className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    navigate(`${studioBasePath}/video`, {
+                      state: {
+                        avatarId: selectedFullImage.avatarId,
+                        focusPromptBar: true,
+                      },
                       });
                       closeGalleryEditMenu();
                     }}
@@ -3964,7 +4010,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                     <div className="flex justify-start">
                       <button
                         onClick={() => {
-                          navigate("/create/image");
+                          navigate(`${studioBasePath}/image`);
                         }}
                         className="inline-flex items-center gap-1 text-sm text-theme-white hover:text-theme-text transition-colors duration-200"
                         title="Create new folder"
@@ -4062,7 +4108,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 <div className="flex justify-start">
                   <button
                     onClick={() => {
-                      navigate("/create/image");
+                      navigate(`${studioBasePath}/image`);
                     }}
                     className="inline-flex items-center gap-1 text-sm text-theme-white hover:text-theme-text transition-colors duration-200"
                     aria-label="Create new folder"
