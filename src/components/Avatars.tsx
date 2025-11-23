@@ -1531,7 +1531,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                   }}
                   aria-label="Create image"
                 >
-                  <ImageIcon className="w-4 h-4 text-theme-white transition-colors duration-150 group-hover/master-action:text-red-500" />
+                  <ImageIcon className="w-4 h-4 text-theme-white transition-colors duration-100 group-hover/master-action:text-red-500" />
                 </button>
                 <button
                   type="button"
@@ -1556,7 +1556,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                   }}
                   aria-label="Make video"
                 >
-                  <Camera className="w-4 h-4 text-theme-white transition-colors duration-150 group-hover/master-action:text-blue-500" />
+                  <Camera className="w-4 h-4 text-theme-white transition-colors duration-100 group-hover/master-action:text-blue-500" />
                 </button>
               </>
             ) : (
@@ -1824,10 +1824,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                     {!disableModalTrigger && (
                       <button
                         type="button"
-                        className={`flex-shrink-0 text-theme-white transition-colors duration-200 hover:text-theme-text ${
+                        className={`flex-shrink-0 p-1 rounded-lg text-theme-white hover:text-theme-text hover:bg-theme-white/10 ${
                           isMasterSection
-                            ? 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100 transition-opacity duration-100'
-                            : ''
+                            ? 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100 transition-opacity duration-100 transition-colors duration-200'
+                            : 'transition-colors duration-200'
                         }`}
                         onClick={(event) => {
                           event.stopPropagation();
@@ -1887,10 +1887,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               {!disableModalTrigger && (
                 <button
                   type="button"
-                  className={`flex-shrink-0 text-theme-white transition-colors duration-200 hover:text-theme-text ${
+                  className={`flex-shrink-0 p-1 rounded-lg text-theme-white hover:text-theme-text hover:bg-theme-white/10 ${
                     isMasterSection
-                      ? 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100 transition-opacity duration-100'
-                      : ''
+                      ? 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100 transition-opacity duration-100 transition-colors duration-200'
+                      : 'transition-colors duration-200'
                   }`}
                   onClick={(event) => {
                     event.stopPropagation();
@@ -2996,8 +2996,8 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                           }`}
                           aria-label="Create image"
                         >
-                          <ImageIcon className="w-4 h-4 text-theme-white transition-colors duration-150 group-hover/master-action:text-red-500" />
-                          <span className="text-sm font-medium">Create image</span>
+                          <ImageIcon className="w-4 h-4 text-theme-white transition-colors duration-100 group-hover/master-action:text-red-500" />
+                          <span className="text-sm font-normal">Create image</span>
                         </button>
                         <button
                           type="button"
@@ -3013,8 +3013,8 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                           }`}
                           aria-label="Make video"
                         >
-                          <Camera className="w-4 h-4 text-theme-white transition-colors duration-150 group-hover/master-action:text-blue-500" />
-                          <span className="text-sm font-medium">Make video</span>
+                          <Camera className="w-4 h-4 text-theme-white transition-colors duration-100 group-hover/master-action:text-blue-500" />
+                          <span className="text-sm font-normal">Make video</span>
                         </button>
                       </>
                     ) : (
