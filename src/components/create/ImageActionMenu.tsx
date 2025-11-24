@@ -56,11 +56,9 @@ const ImageActionMenu = memo<ImageActionMenuProps>(({ open, onClose }) => {
     try {
       // Use backend proxy to avoid CORS issues
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-      const proxyUrl = `${apiBaseUrl}/r2files/proxy?url=${encodeURIComponent(currentImage.url)}`;
+      const proxyUrl = `${apiBaseUrl}/api/r2files/proxy?url=${encodeURIComponent(currentImage.url)}`;
 
-      const response = await fetch(proxyUrl, {
-        credentials: 'include',
-      });
+      const response = await fetch(proxyUrl);
 
       if (!response.ok) throw new Error('Failed to fetch image');
 
