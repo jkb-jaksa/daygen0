@@ -83,6 +83,8 @@ const mockGalleryImages: GalleryImageLike[] = [
   },
 ];
 
+const mockFetchGalleryImages = vi.fn().mockResolvedValue(undefined);
+
 vi.mock('../../../hooks/useGalleryImages', () => ({
   useGalleryImages: () => ({
     images: mockGalleryImages,
@@ -90,17 +92,33 @@ vi.mock('../../../hooks/useGalleryImages', () => ({
     error: null,
     hasBase64Images: false,
     needsMigration: false,
-    fetchGalleryImages: vi.fn(),
-    updateImages: vi.fn(),
-    removeImages: vi.fn(),
+    fetchGalleryImages: mockFetchGalleryImages,
+    updateImages: vi.fn().mockResolvedValue(undefined),
+    removeImages: vi.fn().mockResolvedValue(undefined),
     deleteImage: vi.fn().mockResolvedValue(true),
   }),
 }));
 
+// Mock clientStorage to prevent IndexedDB hangs
+vi.mock('../../../lib/clientStorage', () => ({
+  getPersistedValue: vi.fn().mockResolvedValue(null),
+  setPersistedValue: vi.fn().mockResolvedValue(undefined),
+  removePersistedValue: vi.fn().mockResolvedValue(undefined),
+}));
+
+// Mock API module to prevent actual API calls
+vi.mock('../../../utils/api', () => ({
+  apiFetch: vi.fn(),
+  getApiUrl: vi.fn((path: string) => path),
+  API_BASE_URL: '',
+}));
+
 const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+const consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
 
 afterAll(() => {
   consoleLogSpy.mockRestore();
+  consoleInfoSpy.mockRestore();
 });
 
 function Probe() {
@@ -153,6 +171,7 @@ function renderWithProviders(children: React.ReactNode) {
 
 beforeEach(() => {
   mockNavigate.mockClear();
+  mockFetchGalleryImages.mockClear();
   mockLocation.pathname = '/app/image';
   mockLocation.search = '';
   mockLocation.state = null;
