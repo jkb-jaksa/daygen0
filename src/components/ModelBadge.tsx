@@ -91,6 +91,12 @@ const MODEL_CONFIG = {
     icon: '🎥',
     description: 'Runway Gen-4 Video - Text → Video using Gen-4 Turbo'
   },
+  'sora-2': {
+    name: 'Sora 2',
+    shortName: 'Sora',
+    icon: '🎥',
+    description: 'OpenAI Sora 2 - Text-to-video generation with sound'
+  },
   'wan-video-2.2': {
     name: 'Wan 2.2 Video',
     shortName: 'Wan',

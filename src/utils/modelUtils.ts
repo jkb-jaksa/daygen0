@@ -142,6 +142,13 @@ export const MODEL_INFO: Record<string, ModelInfo> = {
     shortName: 'Ray Flash',
     description: 'Luma Ray Flash 2 - Fast video generation',
     isAvailable: true
+  },
+  'sora-2': {
+    id: 'sora-2',
+    name: 'Sora 2',
+    shortName: 'Sora',
+    description: 'OpenAI Sora 2 video generation',
+    isAvailable: true
   }
 };
 
@@ -198,6 +205,9 @@ export const normalizeModelId = (modelId: string): string => {
     'kling-v2-master': 'kling-v2-master',
     'seedance-1.0-pro': 'seedance-1.0-pro',
     'seedance-1.0-pro-video': 'seedance-1.0-pro',
+    'sora-2': 'sora-2',
+    'sora': 'sora-2',
+    'openai-sora-2': 'sora-2',
   };
   
   return modelMappings[modelId] || modelId;

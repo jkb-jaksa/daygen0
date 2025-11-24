@@ -468,11 +468,11 @@ export function AudioVoiceStudio() {
         error: null,
       });
       const startTime = Date.now();
-      recordingIntervalRef.current = window.setInterval(() => {
-        setRecordingState((prev) => {
-          if (!prev.isRecording) {
-            return prev;
-          }
+    recordingIntervalRef.current = window.setInterval(() => {
+      setRecordingState((prev) => {
+        if (!prev.isRecording) {
+          return prev;
+        }
           const elapsedMs = Date.now() - startTime;
           const maxDuration = MAX_RECORDING_MINUTES * 60 * 1000;
           if (elapsedMs >= maxDuration) {
@@ -490,7 +490,6 @@ export function AudioVoiceStudio() {
         });
       }, 250);
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error("Failed to start recording", error);
       setRecordingState({
         isRecording: false,

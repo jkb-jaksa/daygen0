@@ -2304,7 +2304,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
           {isMasterSection && (
             <>
               <div className="w-full">
-                <h2 className="text-2xl font-normal font-raleway text-theme-text">
+                <h2 className="text-xl font-normal font-raleway text-theme-text">
                   What do you want to do?
                 </h2>
               </div>

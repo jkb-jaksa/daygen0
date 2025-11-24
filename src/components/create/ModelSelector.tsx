@@ -23,6 +23,7 @@ export const AI_MODELS = [
   { name: "Qwen", desc: "Great image editing.", Icon: Wand2, id: "qwen-image" },
   { name: "Runway Gen-4", desc: "Great image model. Great control & editing features", Icon: Film, id: "runway-gen4" },
   { name: "Runway Gen-4 (Video)", desc: "Text → Video using Gen-4 Turbo", Icon: VideoIcon, id: "runway-video-gen4" },
+  { name: "Sora 2", desc: "OpenAI video generation with Sora 2.", Icon: VideoIcon, id: "sora-2" },
   { name: "Wan 2.2 Video", desc: "Alibaba's Wan 2.2 text-to-video model.", Icon: VideoIcon, id: "wan-video-2.2" },
   { name: "Hailuo 02", desc: "MiniMax video with start & end frame control.", Icon: VideoIcon, id: "hailuo-02" },
   { name: "Kling", desc: "ByteDance's cinematic video model.", Icon: VideoIcon, id: "kling-video" },
@@ -78,6 +79,9 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
     if (inferredCategory === "video") {
       if (selectedModel === "veo-3") {
         return { name: "Veo 3", Icon: Film, desc: "Best video model. Great cinematic quality with sound output.", id: "veo-3" };
+      }
+      if (selectedModel === "sora-2") {
+        return { name: "Sora 2", Icon: VideoIcon, desc: "OpenAI’s Sora 2 with high-quality text-to-video.", id: "sora-2" };
       }
       if (selectedModel === "runway-video-gen4") {
         return { name: "Runway Gen-4 (Video)", Icon: VideoIcon, desc: "Good video model. Great editing with Runway Aleph.", id: "runway-video-gen4" };
@@ -347,6 +351,51 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
               </button>
               <button
                 onClick={() => {
+                  handleModelSelect("Sora 2");
+                  setIsOpen(false);
+                }}
+                className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
+                  selectedModel === "sora-2"
+                    ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
+                    : 'bg-transparent hover:bg-theme-text/20 border-0'
+                }`}
+              >
+                {hasToolLogo("Sora 2") ? (
+                  <img
+                    src={getToolLogo("Sora 2")!}
+                    alt="Sora 2 logo"
+                    loading="lazy"
+                    className="w-5 h-5 flex-shrink-0 object-contain rounded"
+                  />
+                ) : (
+                  <VideoIcon
+                    className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
+                      selectedModel === "sora-2" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
+                    }`}
+                  />
+                )}
+                <div className="flex-1 min-w-0">
+                  <div
+                    className={`text-sm font-raleway truncate transition-colors duration-100 ${
+                      selectedModel === "sora-2" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
+                    }`}
+                  >
+                    Sora 2
+                  </div>
+                  <div
+                    className={`text-xs font-raleway truncate transition-colors duration-100 ${
+                      selectedModel === "sora-2" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
+                    }`}
+                  >
+                    OpenAI’s Sora 2 with long-form video and audio support.
+                  </div>
+                </div>
+                {selectedModel === "sora-2" && (
+                  <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>
+                )}
+              </button>
+              <button
+                onClick={() => {
                   debugLog('[ModelSelector] Selecting Runway video model');
                   handleModelSelect("Runway Gen-4 (Video)");
                   setIsOpen(false);
@@ -600,7 +649,7 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
               return true;
             }).map((model) => {
               const isSelected = selectedModel === model.id;
-              const isComingSoon = model.id !== "flux-1.1" && model.id !== "gemini-3.0-pro-image" && model.id !== "grok-2-image" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "reve-image" && model.id !== "recraft" && model.id !== "luma-photon-1" && model.id !== "luma-ray-2" && model.id !== "wan-video-2.2" && model.id !== "hailuo-02" && model.id !== "kling-video";
+              const isComingSoon = model.id !== "flux-1.1" && model.id !== "gemini-3.0-pro-image" && model.id !== "grok-2-image" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "reve-image" && model.id !== "recraft" && model.id !== "luma-photon-1" && model.id !== "luma-ray-2" && model.id !== "wan-video-2.2" && model.id !== "hailuo-02" && model.id !== "kling-video" && model.id !== "sora-2";
               
               return (
                 <button

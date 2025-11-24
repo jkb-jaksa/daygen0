@@ -1,5 +1,6 @@
 export const VIDEO_MODEL_IDS = [
   'veo-3',
+  'sora-2',
   'runway-video-gen4',
   'wan-video-2.2',
   'hailuo-02',

@@ -66,6 +66,10 @@ const TOOL_LOGO_GROUPS: readonly ToolLogoGroup[] = [
     names: ['ChatGPT', 'ChatGPT Voice', 'Sora'],
   },
   {
+    logo: '/sora logo.png',
+    names: ['Sora 2', 'sora-2'],
+  },
+  {
     logo: '/grok logo.jpg',
     names: ['Grok', 'Grok Image', 'Grok Voice', 'grok-2-image', 'grok-2-image-1212', 'grok-2-image-latest'],
   },

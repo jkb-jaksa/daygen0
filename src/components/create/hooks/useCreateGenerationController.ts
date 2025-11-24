@@ -26,6 +26,7 @@ import { useHailuoVideoGeneration } from '../../../hooks/useHailuoVideoGeneratio
 import { useKlingVideoGeneration } from '../../../hooks/useKlingVideoGeneration';
 import { useSeedanceVideoGeneration } from '../../../hooks/useSeedanceVideoGeneration';
 import { useLumaVideoGeneration } from '../../../hooks/useLumaVideoGeneration';
+import { useSoraVideoGeneration } from '../../../hooks/useSoraVideoGeneration';
 import {
   BASIC_ASPECT_RATIO_OPTIONS,
   GEMINI_ASPECT_RATIO_OPTIONS,
@@ -244,6 +245,7 @@ export function useCreateGenerationController(): CreateGenerationController {
   const { generateVideo: generateKlingVideo } = useKlingVideoGeneration();
   const { generateVideo: generateSeedanceVideo } = useSeedanceVideoGeneration();
   const { generate: generateLumaVideo } = useLumaVideoGeneration();
+  const { generateVideo: generateSoraVideo } = useSoraVideoGeneration();
 
   const [localError, setLocalError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -301,6 +303,7 @@ export function useCreateGenerationController(): CreateGenerationController {
         );
       case 'veo-3':
       case 'runway-video-gen4':
+      case 'sora-2':
         return makeControl(
           VIDEO_ASPECT_RATIO_OPTIONS,
           videoAspectRatio,
@@ -1012,6 +1015,22 @@ export function useCreateGenerationController(): CreateGenerationController {
           });
           return;
         }
+        case 'sora-2': {
+          const soraVideo = await generateSoraVideo({
+            prompt: finalPrompt,
+            model: 'sora-2',
+            aspectRatio: normalizedVeoAspectRatio,
+            durationSeconds: 8,
+            withSound: true,
+          });
+
+          persistVideoResults(soraVideo, {
+            aspectRatio: normalizedVeoAspectRatio,
+            operationName: 'sora_video_generate',
+            model: 'sora-2',
+          });
+          return;
+        }
         case 'runway-video-gen4': {
           const runwayVideo = await generateRunwayVideo({
             prompt: finalPrompt,
@@ -1190,6 +1209,7 @@ export function useCreateGenerationController(): CreateGenerationController {
     generateKlingVideo,
     generateSeedanceVideo,
     generateLumaVideo,
+    generateSoraVideo,
     addImage,
     addVideo,
     setButtonSpinning,
