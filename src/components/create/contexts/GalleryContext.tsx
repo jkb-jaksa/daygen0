@@ -119,8 +119,6 @@ const initialState: GalleryState = {
   addToFolderDialog: false,
 };
 
-const JOB_ROUTE_PREFIX = '/job/';
-
 const getGalleryItemKey = (item: GalleryImageLike | GalleryVideoLike): string | null => {
   const normalizedUrl = item.url?.trim();
   if (normalizedUrl) {
@@ -435,6 +433,10 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
   const stateRef = useRef(state);
   const hasInitialLoadCompletedRef = useRef(false);
   const deepLinkRetryRef = useRef<{ jobId: string; retryCount: number } | null>(null);
+  const routeSyncRef = useRef<{ target: string | null; pending: boolean }>({
+    target: null,
+    pending: false,
+  });
   const previousActiveJobsRef = useRef<typeof generation.state.activeJobs>([]);
   const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasFoldersLoadedRef = useRef(false);
@@ -1058,7 +1060,10 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
 
     const identifier = getGalleryItemIdentifier(item);
     if (identifier) {
+      routeSyncRef.current = { target: identifier, pending: true };
       setJobIdParam(identifier);
+    } else {
+      routeSyncRef.current = { target: null, pending: false };
     }
   }, [filteredItems, resolveItemIndex, setFullSizeImage, setFullSizeOpen, setJobIdParam]);
 
@@ -1083,6 +1088,7 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
 
   const closeFullSize = useCallback(() => {
     setFullSizeOpen(false);
+    routeSyncRef.current = { target: null, pending: false };
     setFullSizeImage(null, 0);
     clearJobIdParam();
   }, [clearJobIdParam, setFullSizeImage, setFullSizeOpen]);
@@ -1112,15 +1118,29 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
 
     const identifier = getGalleryItemIdentifier(nextItem);
     if (identifier) {
-      setJobIdParam(identifier, { replace: true });
+      routeSyncRef.current = { target: identifier, pending: true };
+      setJobIdParam(identifier, { replace: false });
+    } else {
+      routeSyncRef.current = { target: null, pending: false };
     }
   }, [filteredItems, setFullSizeImage, setFullSizeOpen, setJobIdParam]);
 
   useEffect(() => {
     const targetIdentifier = jobIdParam?.trim() ?? '';
 
+    if (targetIdentifier) {
+      if (routeSyncRef.current.pending && routeSyncRef.current.target === targetIdentifier) {
+        routeSyncRef.current.pending = false;
+      } else if (routeSyncRef.current.target !== targetIdentifier) {
+        routeSyncRef.current = { target: targetIdentifier, pending: false };
+      }
+    }
+
     if (!targetIdentifier) {
       deepLinkRetryRef.current = null;
+      if (routeSyncRef.current.pending) {
+        return;
+      }
       if (stateRef.current.isFullSizeOpen) {
         setFullSizeImage(null, 0);
         setFullSizeOpen(false);

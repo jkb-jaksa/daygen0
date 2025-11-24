@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useGallery } from '../contexts/GalleryContext';
 import { useCreateBridge } from '../contexts/hooks';
@@ -30,11 +30,9 @@ export function useGalleryActions() {
   const navigate = useNavigate();
   const location = useLocation();
   const defaultStudioImagePath = `${STUDIO_BASE_PATH}/image`;
-  const fallbackRouteRef = useRef<string>(defaultStudioImagePath);
   const { user } = useAuth();
   const userKey = user?.id || user?.email || 'anon';
   const { savePrompt, isPromptSaved } = useSavedPrompts(userKey);
-  const locationState = (location.state as { jobOrigin?: string } | null) ?? null;
   const {
     state,
     setImageActionMenu,

@@ -6,17 +6,41 @@ type SetJobIdOptions = {
 };
 
 const JOB_ID_PARAM = 'jobId';
+const LEGACY_JOB_ROUTE_PREFIX = '/job/';
 
 export function useJobIdSearch(paramKey: string = JOB_ID_PARAM) {
   const navigate = useNavigate();
   const location = useLocation();
   const lastJobIdRef = useRef<string | null>(null);
 
-  const currentJobId = useMemo(() => {
+  const jobIdFromSearch = useMemo(() => {
     const params = new URLSearchParams(location.search ?? '');
     const value = params.get(paramKey)?.trim();
     return value && value.length > 0 ? value : null;
   }, [location.search, paramKey]);
+
+  const legacyJobId = useMemo(() => {
+    if (!location.pathname.startsWith(LEGACY_JOB_ROUTE_PREFIX)) {
+      return null;
+    }
+
+    const rawValue = location.pathname.slice(LEGACY_JOB_ROUTE_PREFIX.length);
+    if (!rawValue) {
+      return null;
+    }
+
+    try {
+      const decoded = decodeURIComponent(rawValue).trim();
+      return decoded.length > 0 ? decoded : null;
+    } catch {
+      const trimmed = rawValue.trim();
+      return trimmed.length > 0 ? trimmed : null;
+    }
+  }, [location.pathname]);
+
+  const currentJobId = useMemo(() => {
+    return jobIdFromSearch ?? legacyJobId;
+  }, [jobIdFromSearch, legacyJobId]);
 
   useEffect(() => {
     lastJobIdRef.current = currentJobId;
@@ -39,7 +63,7 @@ export function useJobIdSearch(paramKey: string = JOB_ID_PARAM) {
       lastJobIdRef.current = trimmed;
       navigate(
         {
-          pathname: location.pathname,
+          pathname: location.pathname.startsWith(LEGACY_JOB_ROUTE_PREFIX) ? '/app/image' : location.pathname,
           search: params.toString(),
         },
         {
@@ -68,7 +92,7 @@ export function useJobIdSearch(paramKey: string = JOB_ID_PARAM) {
 
     navigate(
       {
-        pathname: location.pathname,
+        pathname: location.pathname.startsWith(LEGACY_JOB_ROUTE_PREFIX) ? '/app/image' : location.pathname,
         search: params.toString(),
       },
       {
