@@ -48,7 +48,7 @@ function createBaseProps(anchor: HTMLElement): SettingsMenuProps {
       enabled: false,
       aspectRatio: '16:9',
       onAspectRatioChange: vi.fn(),
-      model: 'veo-3.0-generate-001',
+      model: 'veo-3.1-generate-preview',
       onModelChange: vi.fn(),
       negativePrompt: '',
       onNegativePromptChange: vi.fn(),
@@ -203,7 +203,7 @@ describe('SettingsMenu', () => {
 
     render(<SettingsMenu {...props} />);
 
-    expect(screen.getByText('Veo 3 Settings')).toBeInTheDocument();
+    expect(screen.getByText('Veo 3.1 Settings')).toBeInTheDocument();
 
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(props.onClose).toHaveBeenCalledTimes(1);

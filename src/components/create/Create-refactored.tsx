@@ -454,7 +454,7 @@ function CreateRefactoredView() {
       return;
     }
 
-    const isGalleryRoute = location.pathname.startsWith('/gallery');
+    const isGalleryRoute = location.pathname.startsWith('/app/gallery') || location.pathname.startsWith('/gallery');
     const isGalleryCategory = activeCategory === 'gallery' || activeCategory === 'my-folders' || activeCategory === 'inspirations';
     const hideFooterSections = new Set(['text', 'image', 'video', 'audio']);
 

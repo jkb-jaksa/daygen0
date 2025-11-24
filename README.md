@@ -17,7 +17,7 @@ A modern AI-powered content generation platform featuring comprehensive image an
 - **Luma AI**: Dream Shaper, Realistic Vision, and Photon models for various styles
 
 ### Video Generation
-- **Veo 3**: Google's latest cinematic video generation with advanced prompting
+- **Veo 3.1**: Google's latest cinematic video generation with advanced prompting
 - **Kling**: Advanced video generation with multiple models and camera controls
 - **Runway Gen-4 Video**: Professional video generation with style consistency
 - **Wan 2.2**: Alibaba's text-to-video generation with high quality output

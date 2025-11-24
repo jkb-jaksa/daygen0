@@ -19,8 +19,8 @@ interface VeoSettingsProps {
   enabled: boolean;
   aspectRatio: "16:9" | "9:16";
   onAspectRatioChange: (ratio: "16:9" | "9:16") => void;
-  model: "veo-3.0-generate-001" | "veo-3.0-fast-generate-001";
-  onModelChange: (model: "veo-3.0-generate-001" | "veo-3.0-fast-generate-001") => void;
+  model: "veo-3.1-generate-preview" | "veo-3.1-fast-generate-preview";
+  onModelChange: (model: "veo-3.1-generate-preview" | "veo-3.1-fast-generate-preview") => void;
   negativePrompt: string;
   onNegativePromptChange: (value: string) => void;
   seed: number | undefined;
@@ -370,7 +370,7 @@ export function SettingsMenu({
   if (veo.enabled) {
     sections.push(
       <div key="veo" className="space-y-4">
-        <div className="text-base font-raleway text-theme-text mb-3">Veo 3 Settings</div>
+        <div className="text-base font-raleway text-theme-text mb-3">Veo 3.1 Settings</div>
         <div className="space-y-3">
           <div>
             <label className="block text-xs font-raleway text-theme-white/80 mb-1">Aspect Ratio</label>
@@ -387,11 +387,11 @@ export function SettingsMenu({
             <label className="block text-xs font-raleway text-theme-white/80 mb-1">Model Type</label>
             <select
               value={veo.model}
-              onChange={event => veo.onModelChange(event.target.value as "veo-3.0-generate-001" | "veo-3.0-fast-generate-001")}
+              onChange={event => veo.onModelChange(event.target.value as "veo-3.1-generate-preview" | "veo-3.1-fast-generate-preview")}
               className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white focus:ring-2 focus:ring-theme-text focus:border-transparent outline-none"
             >
-              <option value="veo-3.0-generate-001">Veo 3.0 (Standard)</option>
-              <option value="veo-3.0-fast-generate-001">Veo 3.0 Fast</option>
+              <option value="veo-3.1-generate-preview">Veo 3.1 (Standard)</option>
+              <option value="veo-3.1-fast-generate-preview">Veo 3.1 Fast</option>
             </select>
           </div>
           <div>

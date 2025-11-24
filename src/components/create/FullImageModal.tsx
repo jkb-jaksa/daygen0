@@ -7,7 +7,11 @@ import { useGallery } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
 import { glass, buttons, tooltips } from '../../styles/designSystem';
-import ImageBadgeRow from '../shared/ImageBadgeRow';
+import ModelBadge from '../ModelBadge';
+import AvatarBadge from '../avatars/AvatarBadge';
+import ProductBadge from '../products/ProductBadge';
+import StyleBadge from '../styles/StyleBadge';
+import PublicBadge from './PublicBadge';
 import { debugError } from '../../utils/debug';
 import { useSavedPrompts } from '../../hooks/useSavedPrompts';
 import { useAuth } from '../../auth/useAuth';
@@ -164,7 +168,14 @@ const FullImageModal = memo(() => {
     goToModelGallery,
   } = useBadgeNavigation();
   
-  const { fullSizeImage, fullSizeIndex, isFullSizeOpen } = state;
+  const { fullSizeIndex, isFullSizeOpen } = state;
+  // Derive fullSizeImage from filteredItems to ensure it's always in sync with updates
+  const fullSizeImage = useMemo(() => {
+    if (fullSizeIndex >= 0 && fullSizeIndex < filteredItems.length) {
+      return filteredItems[fullSizeIndex];
+    }
+    return state.fullSizeImage;
+  }, [filteredItems, fullSizeIndex, state.fullSizeImage]);
   const open = isFullSizeOpen;
   const fullSizeItemType: 'image' | 'video' = getGalleryItemType(fullSizeImage);
   // Identify current item and whether the image action (More) menu is open for it
@@ -190,7 +201,7 @@ const FullImageModal = memo(() => {
     const path = location.pathname;
     if (path.startsWith('/app/image') || path.startsWith('/create/image')) return 'image';
     if (path.startsWith('/app/video') || path.startsWith('/create/video')) return 'video';
-    if (path.startsWith('/gallery')) return 'gallery';
+    if (path.startsWith('/app/gallery') || path.startsWith('/gallery')) return 'gallery';
     if (path.startsWith('/create/gallery')) return 'gallery';
     if (path.startsWith('/app')) return 'image';
     return 'image';
@@ -223,7 +234,7 @@ const FullImageModal = memo(() => {
   
   // Handle open my folders
   const handleOpenMyFolders = useCallback(() => {
-    navigate('/gallery');
+    navigate('/app/gallery');
     clearJobUrl();
   }, [navigate, clearJobUrl]);
   
@@ -800,6 +811,130 @@ const FullImageModal = memo(() => {
   const isVideo = 'type' in fullSizeImage && fullSizeImage.type === 'video';
   const hasMultipleItems = filteredItems.length > 1;
   const fullSizeActionTooltipId = fullSizeImage.jobId || fullSizeImage.r2FileId || fullSizeImage.url || 'fullsize';
+  const promptTooltipId = `copy-fullsize-${fullSizeImage.jobId || fullSizeImage.r2FileId || 'modal'}`;
+  
+  // Get badge data
+  const avatarForImage = fullSizeImage.avatarId ? avatarMap.get(fullSizeImage.avatarId) : undefined;
+  const productForImage = fullSizeImage.productId ? productMap.get(fullSizeImage.productId) : undefined;
+  const styleForImage = fullSizeImage.styleId ? styleIdToStoredStyle(fullSizeImage.styleId) : null;
+  const displayModelName = fullSizeImage.model || 'unknown';
+  const modelIdForFilter = fullSizeImage.model;
+  const filterType: 'image' | 'video' = isVideo ? 'video' : 'image';
+  const isPublic = !!fullSizeImage.isPublic;
+  
+  // Count total badges to determine layout
+  const totalBadges = 
+    1 + // ModelBadge always present
+    (isPublic ? 1 : 0) +
+    (avatarForImage ? 1 : 0) +
+    (productForImage ? 1 : 0) +
+    (styleForImage ? 1 : 0);
+
+  const useTwoRowLayout = totalBadges >= 3;
+
+  const badgeRow = useTwoRowLayout ? (
+    /* Two-row layout for 3+ badges */
+    <div className="space-y-1.5">
+      {/* Row 1: Model Badge + Public Badge */}
+      <div className="flex items-center justify-center gap-1">
+        <Suspense fallback={null}>
+          <ModelBadge
+            model={displayModelName}
+            size="md"
+            onClick={() => goToModelGallery(modelIdForFilter, filterType)}
+          />
+        </Suspense>
+        
+        {/* Public indicator */}
+        {isPublic && (
+          <Suspense fallback={null}>
+            <PublicBadge onClick={goToPublicGallery} />
+          </Suspense>
+        )}
+      </div>
+      
+      {/* Row 2: Avatar, Product, Style Badges */}
+      {(avatarForImage || productForImage || styleForImage) && (
+        <div className="flex items-center justify-center gap-1">
+          {avatarForImage && (
+            <Suspense fallback={null}>
+              <AvatarBadge
+                avatar={avatarForImage}
+                onClick={() => goToAvatarProfile(avatarForImage)}
+              />
+            </Suspense>
+          )}
+          
+          {productForImage && (
+            <Suspense fallback={null}>
+              <ProductBadge
+                product={productForImage}
+                onClick={() => goToProductProfile(productForImage)}
+              />
+            </Suspense>
+          )}
+          
+          {styleForImage && (
+            <Suspense fallback={null}>
+              <StyleBadge
+                style={styleForImage}
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              />
+            </Suspense>
+          )}
+        </div>
+      )}
+    </div>
+  ) : (
+    /* Single-row layout for 1-2 badges */
+    <div className="flex items-center justify-center gap-1">
+      <Suspense fallback={null}>
+        <ModelBadge
+          model={displayModelName}
+          size="md"
+          onClick={() => goToModelGallery(modelIdForFilter, filterType)}
+        />
+      </Suspense>
+      
+      {/* Public indicator */}
+      {isPublic && (
+        <Suspense fallback={null}>
+          <PublicBadge onClick={goToPublicGallery} />
+        </Suspense>
+      )}
+      
+      {avatarForImage && (
+        <Suspense fallback={null}>
+          <AvatarBadge
+            avatar={avatarForImage}
+            onClick={() => goToAvatarProfile(avatarForImage)}
+          />
+        </Suspense>
+      )}
+      
+      {productForImage && (
+        <Suspense fallback={null}>
+          <ProductBadge
+            product={productForImage}
+            onClick={() => goToProductProfile(productForImage)}
+          />
+        </Suspense>
+      )}
+      
+      {styleForImage && (
+        <Suspense fallback={null}>
+          <StyleBadge
+            style={styleForImage}
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+          />
+        </Suspense>
+      )}
+    </div>
+  );
   
   return (
     <>
@@ -1073,31 +1208,80 @@ const FullImageModal = memo(() => {
               <div className="text-center text-theme-white/70">
                 <p>Failed to load {isVideo ? 'video' : 'image'}</p>
               </div>
-            ) : (
-              <>
-                {isVideo ? (
+            ) : isVideo ? (
+              <div className="flex w-full flex-col items-center gap-3">
+                <div className="relative max-w-[90vw] sm:max-w-[calc(100vw-20rem)] lg:max-w-[calc(100vw-40rem)] max-h-[80vh] w-full rounded-2xl overflow-hidden border border-theme-dark/70 bg-theme-black shadow-2xl">
                   <video
                     src={fullSizeImage.url}
                     controls
-                    className="max-w-[90vw] sm:max-w-[calc(100vw-20rem)] lg:max-w-[calc(100vw-40rem)] max-h-[85vh] object-contain rounded-lg"
-                    style={{ objectPosition: 'top' }}
+                    playsInline
+                    className="block h-full w-full object-contain bg-theme-black"
+                    style={{ objectPosition: 'center' }}
                     onLoadStart={() => setIsLoading(true)}
                     onLoadedData={handleImageLoad}
                     onError={handleImageError}
                   />
-                ) : (
-                  <img
-                    ref={imageRef}
-                    src={fullSizeImage.url}
-                    alt={fullSizeImage.prompt || 'Generated image'}
-                    loading="lazy"
-                    className="max-w-[90vw] sm:max-w-[calc(100vw-20rem)] lg:max-w-[calc(100vw-40rem)] max-h-[85vh] object-contain rounded-lg"
-                    style={{ objectPosition: 'top' }}
-                    onLoad={handleImageLoad}
-                    onError={handleImageError}
-                  />
+                </div>
+                {(fullSizeImage.prompt || fullSizeImage.model) && (
+                  <div className={`${glass.promptDark} w-full max-w-[90vw] sm:max-w-[calc(100vw-20rem)] lg:max-w-[calc(100vw-36rem)] rounded-2xl p-4 shadow-xl border border-theme-dark/50`}>
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-start gap-3">
+                        <p className="flex-1 text-sm font-raleway text-theme-text leading-relaxed">
+                          {fullSizeImage.prompt || 'Generated video'}
+                        </p>
+                        {fullSizeImage.prompt && (
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              onClick={handleCopyPrompt}
+                              onMouseEnter={(e) => {
+                                showHoverTooltip(e.currentTarget, promptTooltipId);
+                              }}
+                              onMouseLeave={() => {
+                                hideHoverTooltip(promptTooltipId);
+                              }}
+                              className="inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
+                              aria-label="Copy prompt"
+                            >
+                              <Copy className="w-3 h-3" />
+                            </button>
+                            <button
+                              onClick={handleSavePrompt}
+                              onMouseEnter={(e) => {
+                                showHoverTooltip(e.currentTarget, `save-${promptTooltipId}`);
+                              }}
+                              onMouseLeave={() => {
+                                hideHoverTooltip(`save-${promptTooltipId}`);
+                              }}
+                              className="inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
+                              aria-label={isPromptSaved(fullSizeImage.prompt) ? 'Unsave prompt' : 'Save prompt'}
+                            >
+                              {isPromptSaved(fullSizeImage.prompt) ? (
+                                <Bookmark className="w-3 h-3 fill-current" />
+                              ) : (
+                                <BookmarkPlus className="w-3 h-3" />
+                              )}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex justify-center">
+                        {badgeRow}
+                      </div>
+                    </div>
+                  </div>
                 )}
-              </>
+              </div>
+            ) : (
+              <img
+                ref={imageRef}
+                src={fullSizeImage.url}
+                alt={fullSizeImage.prompt || 'Generated image'}
+                loading="lazy"
+                className="max-w-[90vw] sm:max-w-[calc(100vw-20rem)] lg:max-w-[calc(100vw-40rem)] max-h-[85vh] object-contain rounded-lg"
+                style={{ objectPosition: 'top' }}
+                onLoad={handleImageLoad}
+                onError={handleImageError}
+              />
             )}
 
             {/* Saved inspiration badge - positioned at top-left of image */}
@@ -1150,24 +1334,23 @@ const FullImageModal = memo(() => {
             </button>
 
             {/* PromptDescriptionBar overlay at bottom */}
-            <div
-              className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 opacity-0 group-hover:opacity-100`}
-            >
-              <div className="flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-sm font-raleway leading-relaxed relative">
-                    {fullSizeImage.prompt || 'Generated Image'}
-                    {fullSizeImage.prompt && (() => {
-                      const tooltipId = `copy-fullsize-${fullSizeImage.jobId || fullSizeImage.r2FileId || 'modal'}`;
-                      return (
+            {!isVideo && (
+              <div
+                className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 opacity-0 group-hover:opacity-100`}
+              >
+                <div className="flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-sm font-raleway leading-relaxed relative">
+                      {fullSizeImage.prompt || 'Generated Image'}
+                      {fullSizeImage.prompt && (
                         <>
                           <button
                             onClick={handleCopyPrompt}
                             onMouseEnter={(e) => {
-                              showHoverTooltip(e.currentTarget, tooltipId);
+                              showHoverTooltip(e.currentTarget, promptTooltipId);
                             }}
                             onMouseLeave={() => {
-                              hideHoverTooltip(tooltipId);
+                              hideHoverTooltip(promptTooltipId);
                             }}
                             className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
                           >
@@ -1176,10 +1359,10 @@ const FullImageModal = memo(() => {
                           <button
                             onClick={handleSavePrompt}
                             onMouseEnter={(e) => {
-                              showHoverTooltip(e.currentTarget, `save-${tooltipId}`);
+                              showHoverTooltip(e.currentTarget, `save-${promptTooltipId}`);
                             }}
                             onMouseLeave={() => {
-                              hideHoverTooltip(`save-${tooltipId}`);
+                              hideHoverTooltip(`save-${promptTooltipId}`);
                             }}
                             className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
                           >
@@ -1190,79 +1373,41 @@ const FullImageModal = memo(() => {
                             )}
                           </button>
                         </>
-                      );
-                    })()}
-                  </div>
-                  <div className="mt-2 flex justify-center items-center">
-                    <ImageBadgeRow
-                      align="center"
-                      model={{
-                        name: fullSizeImage.model || 'unknown',
-                        size: 'md',
-                        onClick: () => goToModelGallery(fullSizeImage.model, fullSizeItemType)
-                      }}
-                      avatars={
-                        fullSizeImage.avatarId
-                          ? (() => {
-                              const avatarForImage = avatarMap.get(fullSizeImage.avatarId!);
-                              return avatarForImage ? [{ data: avatarForImage, onClick: () => goToAvatarProfile(avatarForImage) }] : [];
-                            })()
-                          : []
-                      }
-                      products={
-                        fullSizeImage.productId
-                          ? (() => {
-                              const productForImage = productMap.get(fullSizeImage.productId!);
-                              return productForImage ? [{ data: productForImage, onClick: () => goToProductProfile(productForImage) }] : [];
-                            })()
-                          : []
-                      }
-                      styles={
-                        fullSizeImage.styleId
-                          ? (() => {
-                              const styleForImage = styleIdToStoredStyle(fullSizeImage.styleId!);
-                              return styleForImage ? [{ data: styleForImage }] : [];
-                            })()
-                          : []
-                      }
-                      isPublic={!!fullSizeImage.isPublic && !('savedFrom' in fullSizeImage && fullSizeImage.savedFrom)}
-                      onPublicClick={goToPublicGallery}
-                      aspectRatio={fullSizeImage.aspectRatio}
-                      compact={false}
-                    />
+                      )}
+                    </div>
+                    <div className="mt-2 flex justify-center items-center">
+                      {badgeRow}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Tooltips rendered via portal to avoid clipping */}
-            {fullSizeImage.prompt && (() => {
-              const tooltipId = `copy-fullsize-${fullSizeImage.jobId || fullSizeImage.r2FileId || 'modal'}`;
-              return (
-                <>
-                  {createPortal(
-                    <div
-                      data-tooltip-for={tooltipId}
-                      className={`${tooltips.base} fixed`}
-                      style={{ zIndex: 9999 }}
-                    >
-                      Copy prompt
-                    </div>,
-                    document.body
-                  )}
-                  {createPortal(
-                    <div
-                      data-tooltip-for={`save-${tooltipId}`}
-                      className={`${tooltips.base} fixed`}
-                      style={{ zIndex: 9999 }}
-                    >
-                      {isPromptSaved(fullSizeImage.prompt) ? 'Prompt saved' : 'Save prompt'}
-                    </div>,
-                    document.body
-                  )}
-                </>
-              );
-            })()}
+            {fullSizeImage.prompt && (
+              <>
+                {createPortal(
+                  <div
+                    data-tooltip-for={promptTooltipId}
+                    className={`${tooltips.base} fixed`}
+                    style={{ zIndex: 9999 }}
+                  >
+                    Copy prompt
+                  </div>,
+                  document.body
+                )}
+                {createPortal(
+                  <div
+                    data-tooltip-for={`save-${promptTooltipId}`}
+                    className={`${tooltips.base} fixed`}
+                    style={{ zIndex: 9999 }}
+                  >
+                    {isPromptSaved(fullSizeImage.prompt) ? 'Prompt saved' : 'Save prompt'}
+                  </div>,
+                  document.body
+                )}
+              </>
+            )}
 
             {(() => {
               const deleteId = `delete-${fullSizeActionTooltipId}`;

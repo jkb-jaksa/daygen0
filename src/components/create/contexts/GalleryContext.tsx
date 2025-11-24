@@ -15,6 +15,7 @@ import { getPersistedValue, setPersistedValue } from '../../../lib/clientStorage
 import { debugError, debugWarn } from '../../../utils/debug';
 import { consumePendingBadgeFilters } from '../hooks/badgeNavigationStorage';
 import { normalizeAspectRatio } from '../../../utils/aspectRatioUtils';
+import { hydrateStoredGalleryVideos, serializeGalleryVideos } from '../../../utils/galleryStorage';
 import type {
   GalleryImageLike,
   GalleryVideoLike,
@@ -25,6 +26,7 @@ import type {
   UnpublishConfirmationState,
   DownloadConfirmationState,
   SerializedFolder,
+  StoredGalleryVideo,
 } from '../types';
 
 type GalleryState = {
@@ -402,11 +404,16 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
   const deepLinkRetryRef = useRef<{ jobId: string; retryCount: number } | null>(null);
   const previousActiveJobsRef = useRef<typeof generation.state.activeJobs>([]);
   const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasLoadedStoredVideosRef = useRef(false);
   const hasFoldersLoadedRef = useRef(false);
 
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  useEffect(() => {
+    hasLoadedStoredVideosRef.current = false;
+  }, [storagePrefix]);
 
   const findImageById = useCallback((identifier: string) => {
     if (!identifier) {
@@ -520,6 +527,33 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (!storagePrefix || hasLoadedStoredVideosRef.current) return;
+
+    let isMounted = true;
+
+    const loadStoredVideos = async () => {
+      try {
+        const stored = await getPersistedValue<StoredGalleryVideo[]>(storagePrefix, 'galleryVideos');
+        if (!isMounted || !stored || !Array.isArray(stored)) {
+          return;
+        }
+        const hydratedVideos = hydrateStoredGalleryVideos(stored);
+        const mergedVideos = mergeGalleryCollections(stateRef.current.videos, hydratedVideos);
+        setVideos(mergedVideos);
+        hasLoadedStoredVideosRef.current = true;
+      } catch (error) {
+        debugError('Failed to load videos from storage', error);
+      }
+    };
+
+    void loadStoredVideos();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [setVideos, storagePrefix]);
+
+  useEffect(() => {
     const sourceItems = galleryItems ?? [];
     const currentState = stateRef.current;
     const { images: incomingImages, videos: incomingVideos } = partitionGalleryItems(sourceItems);
@@ -537,6 +571,20 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
       hasInitialLoadCompletedRef.current = true;
     }
   }, [isGalleryLoading, galleryItems.length]);
+
+  useEffect(() => {
+    if (!storagePrefix) return;
+
+    const persistVideos = async () => {
+      try {
+        await setPersistedValue(storagePrefix, 'galleryVideos', serializeGalleryVideos(state.videos));
+      } catch (error) {
+        debugWarn('Failed to persist videos to storage', error);
+      }
+    };
+
+    void persistVideos();
+  }, [state.videos, storagePrefix]);
 
   // Load folders from storage on mount
   useEffect(() => {
@@ -1049,7 +1097,7 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
   }, [filteredItems, location.pathname, setFullSizeImage, setFullSizeOpen, isGalleryLoading, fetchGalleryImages]);
 
   useEffect(() => {
-    if (!location.pathname.startsWith('/gallery')) {
+    if (!location.pathname.startsWith('/app/gallery') && !location.pathname.startsWith('/gallery')) {
       return;
     }
 

@@ -772,48 +772,49 @@ const PromptForm = memo<PromptFormProps>(
     }, []);
 
     const isGeminiModel = selectedModel === 'gemini-3.0-pro-image';
+    const isReferenceModel = isGeminiModel || selectedModel === 'veo-3';
 
     const handleDragAreaEnter = useCallback(
       (event: React.DragEvent<HTMLDivElement>) => {
-        if (!isGeminiModel) {
+        if (!isReferenceModel) {
           return;
         }
         handleDragEnter(event);
         setIsDragActive(true);
       },
-      [handleDragEnter, isGeminiModel],
+      [handleDragEnter, isReferenceModel],
     );
 
     const handleDragAreaLeave = useCallback(
       (event: React.DragEvent<HTMLDivElement>) => {
-        if (!isGeminiModel) {
+        if (!isReferenceModel) {
           return;
         }
         handleDragLeave(event);
         setIsDragActive(false);
       },
-      [handleDragLeave, isGeminiModel],
+      [handleDragLeave, isReferenceModel],
     );
 
     const handleDragAreaOver = useCallback(
       (event: React.DragEvent<HTMLDivElement>) => {
-        if (!isGeminiModel) {
+        if (!isReferenceModel) {
           return;
         }
         handleDragOver(event);
       },
-      [handleDragOver, isGeminiModel],
+      [handleDragOver, isReferenceModel],
     );
 
     const handleDragAreaDrop = useCallback(
       (event: React.DragEvent<HTMLDivElement>) => {
-        if (!isGeminiModel) {
+        if (!isReferenceModel) {
           return;
         }
         handleDrop(event);
         setIsDragActive(false);
       },
-      [handleDrop, isGeminiModel],
+      [handleDrop, isReferenceModel],
     );
 
     const applyPromptFromGallery = useCallback(
@@ -1029,7 +1030,7 @@ const PromptForm = memo<PromptFormProps>(
       <>
       <div
         ref={promptBarRef}
-        className={`promptbar fixed z-40 rounded-[16px] transition-colors duration-200 ${glass.prompt} ${isGeminiModel && isDragActive ? 'border-brand drag-active' : 'border-n-mid'} px-4 py-2`}
+        className={`promptbar fixed z-40 rounded-[16px] transition-colors duration-200 ${glass.prompt} ${isReferenceModel && isDragActive ? 'border-brand drag-active' : 'border-n-mid'} px-4 py-2`}
         style={{
           bottom: '0.75rem',
           transform: 'translateX(-50%) translateZ(0)',
@@ -1095,7 +1096,7 @@ const PromptForm = memo<PromptFormProps>(
                   <button
                     type="button"
                     onClick={() => {
-                      if (!isGeminiModel) {
+                      if (!isReferenceModel) {
                         return;
                       }
                       if (referenceFiles.length === 0) {
@@ -1105,10 +1106,10 @@ const PromptForm = memo<PromptFormProps>(
                       }
                     }}
                     aria-label="Add reference image"
-                    disabled={!isGeminiModel || remainingReferenceSlots === 0}
-                    className={`${isGeminiModel ? `${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text` : 'bg-n-black/20 text-n-white/40 cursor-not-allowed'} grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small`}
+                    disabled={!isReferenceModel || remainingReferenceSlots === 0}
+                    className={`${isReferenceModel ? `${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text` : 'bg-n-black/20 text-n-white/40 cursor-not-allowed'} grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small`}
                     onMouseEnter={() => {
-                      if (isGeminiModel && typeof document !== 'undefined') {
+                      if (isReferenceModel && typeof document !== 'undefined') {
                         const tooltip = document.querySelector(`[data-tooltip-for="reference-tooltip"]`) as HTMLElement | null;
                         if (tooltip) {
                           tooltip.style.top = '0px';

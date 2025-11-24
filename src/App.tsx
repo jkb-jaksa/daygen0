@@ -739,18 +739,6 @@ function AppContent() {
                 <Route path="/app/*" element={<MasterRoutes />} />
                 <Route path="/job/:jobId/*" element={<CreateRefactored />} />
               </Route>
-              <Route
-                path="/gallery/*"
-                element={
-                  <RequireAuth>
-                    <Suspense fallback={<RouteFallback />}>
-                      <AuthErrorBoundary fallbackRoute="/gallery" context="gallery">
-                        <GalleryRoutes />
-                      </AuthErrorBoundary>
-                    </Suspense>
-                  </RequireAuth>
-                }
-              />
               <Route path="/upgrade" element={<Upgrade />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route

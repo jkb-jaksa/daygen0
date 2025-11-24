@@ -352,7 +352,9 @@ export function useCreateGenerationController(): CreateGenerationController {
   const [grokModel, setGrokModel] = useState<'grok-2-image' | 'grok-2-image-1212' | 'grok-2-image-latest'>('grok-2-image');
   const [lumaPhotonModel, setLumaPhotonModel] = useState<'luma-photon-1' | 'luma-photon-flash-1'>('luma-photon-1');
   const [lumaRayVariant, setLumaRayVariant] = useState<'luma-ray-2' | 'luma-ray-flash-2'>('luma-ray-2');
-  const [veoModel, setVeoModel] = useState<'veo-3.0-generate-001' | 'veo-3.0-fast-generate-001'>('veo-3.0-generate-001');
+  const [veoModel, setVeoModel] = useState<
+    'veo-3.1-generate-preview' | 'veo-3.1-fast-generate-preview'
+  >('veo-3.1-generate-preview');
   const [veoNegativePrompt, setVeoNegativePrompt] = useState('');
   const [veoSeed, setVeoSeed] = useState<number | undefined>(undefined);
 
@@ -393,7 +395,8 @@ export function useCreateGenerationController(): CreateGenerationController {
         aspectRatio: (videoAspectRatio === '9:16' ? '9:16' : '16:9'),
         onAspectRatioChange: value => setVideoAspectRatio(value),
         model: veoModel,
-        onModelChange: value => setVeoModel(value as 'veo-3.0-generate-001' | 'veo-3.0-fast-generate-001'),
+        onModelChange: value =>
+          setVeoModel(value as 'veo-3.1-generate-preview' | 'veo-3.1-fast-generate-preview'),
         negativePrompt: veoNegativePrompt,
         onNegativePromptChange: value => setVeoNegativePrompt(value),
         seed: veoSeed,
@@ -632,6 +635,7 @@ export function useCreateGenerationController(): CreateGenerationController {
 
     const references = normalizedReferences.length ? normalizedReferences : undefined;
     const finalPrompt = promptHandlers.getFinalPrompt();
+    const referencesForRequest = references;
 
     const resolveErrorMessage = (error: unknown) => {
       const withStatus = error as (Error & { status?: number }) | undefined;
@@ -786,7 +790,7 @@ export function useCreateGenerationController(): CreateGenerationController {
 
     debugLog('[create] Starting modular generation', {
       model: selectedModel,
-      references: references?.length ?? 0,
+      references: referencesForRequest?.length ?? 0,
     });
 
     const runGeminiGeneration = async () => {
@@ -1007,11 +1011,13 @@ export function useCreateGenerationController(): CreateGenerationController {
             aspectRatio: normalizedVeoAspectRatio,
             negativePrompt: veoNegativePrompt?.trim() || undefined,
             seed: veoSeed,
+            references: referencesForRequest,
           });
 
           persistVideoResults(veoVideo, {
             aspectRatio: normalizedVeoAspectRatio,
             operationName: 'veo_video_generate',
+            references: referencesForRequest,
           });
           return;
         }

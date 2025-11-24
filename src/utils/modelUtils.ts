@@ -143,6 +143,20 @@ export const MODEL_INFO: Record<string, ModelInfo> = {
     description: 'Luma Ray Flash 2 - Fast video generation',
     isAvailable: true
   },
+  'veo-3.1-generate-preview': {
+    id: 'veo-3.1-generate-preview',
+    name: 'Veo 3.1',
+    shortName: 'Veo 3.1',
+    description: 'Google Veo 3.1 cinematic video generation with audio',
+    isAvailable: true
+  },
+  'veo-3.1-fast-generate-preview': {
+    id: 'veo-3.1-fast-generate-preview',
+    name: 'Veo 3.1 Fast',
+    shortName: 'Veo 3.1 Fast',
+    description: 'Google Veo 3.1 Fast preview for quicker renders',
+    isAvailable: true
+  },
   'sora-2': {
     id: 'sora-2',
     name: 'Sora 2',
@@ -195,8 +209,13 @@ export const normalizeModelId = (modelId: string): string => {
     'recraft-v3': 'recraft-v3',
     'recraftv2': 'recraft-v2',
     'recraft-v2': 'recraft-v2',
-    'veo-3.0-generate-001': 'veo-3.0-generate-001',
-    'veo-3.0-fast-generate-001': 'veo-3.0-fast-generate-001',
+    'veo-3.1-generate-preview': 'veo-3.1-generate-preview',
+    'veo-3.1-fast-generate-preview': 'veo-3.1-fast-generate-preview',
+    'veo-3.1': 'veo-3.1-generate-preview',
+    'veo-3.1-fast': 'veo-3.1-fast-generate-preview',
+    'veo-3.0-generate-001': 'veo-3.1-generate-preview',
+    'veo-3.0-fast-generate-001': 'veo-3.1-fast-generate-preview',
+    'veo-3': 'veo-3.1-generate-preview',
     'wan-video-2.2': 'wan-video-2.2',
     'wan2.2-t2v-plus': 'wan-video-2.2',
     'hailuo-02': 'hailuo-02',

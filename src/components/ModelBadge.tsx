@@ -163,17 +163,17 @@ const MODEL_CONFIG = {
     icon: '🎨',
     description: 'Recraft v2 - High-quality image generation and editing'
   },
-  'veo-3.0-generate-001': {
-    name: 'Veo 3',
-    shortName: 'V3',
+  'veo-3.1-generate-preview': {
+    name: 'Veo 3.1',
+    shortName: 'V3.1',
     icon: '🎬',
-    description: 'Google Veo 3 - Advanced video generation model'
+    description: 'Google Veo 3.1 - Advanced video generation model'
   },
-  'veo-3.0-fast-generate-001': {
-    name: 'Veo 3 Fast',
-    shortName: 'V3F',
+  'veo-3.1-fast-generate-preview': {
+    name: 'Veo 3.1 Fast',
+    shortName: 'V3.1F',
     icon: '⚡',
-    description: 'Google Veo 3 Fast - Quick video generation'
+    description: 'Google Veo 3.1 Fast - Quick video generation'
   },
   'wan2.2-t2v-plus': {
     name: 'Wan 2.2 Video',

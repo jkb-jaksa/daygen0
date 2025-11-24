@@ -227,6 +227,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Migrate legacy unscoped keys once on sign-in
     try {
       void migrateKeyToIndexedDb('daygen:', 'gallery');
+      void migrateKeyToIndexedDb('daygen:', 'galleryVideos');
       void migrateKeyToIndexedDb('daygen:', 'favorites');
       void migrateKeyToIndexedDb('daygen:', 'folders');
       void migrateKeyToIndexedDb('daygen:', 'editGallery');
@@ -236,7 +237,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Copy legacy unscoped values into scoped prefix if missing
       const newPrefix = `daygen:${profile.authUserId || profile.id}:`;
       const keys: Array<Parameters<typeof setPersistedValue>[1]> = [
-        'gallery','favorites','folders','editGallery','inspirations','avatars','avatar-favorites'
+        'gallery','galleryVideos','favorites','folders','editGallery','inspirations','avatars','avatar-favorites'
       ];
       for (const key of keys) {
         const [legacy, scoped] = await Promise.all([
@@ -287,6 +288,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSession(data.session ?? null);
     try {
       void migrateKeyToIndexedDb('daygen:', 'gallery');
+      void migrateKeyToIndexedDb('daygen:', 'galleryVideos');
       void migrateKeyToIndexedDb('daygen:', 'favorites');
       void migrateKeyToIndexedDb('daygen:', 'folders');
       void migrateKeyToIndexedDb('daygen:', 'editGallery');
@@ -295,7 +297,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       void migrateKeyToIndexedDb('daygen:', 'avatar-favorites');
       const newPrefix = `daygen:${profile.authUserId || profile.id}:`;
       const keys: Array<Parameters<typeof setPersistedValue>[1]> = [
-        'gallery','favorites','folders','editGallery','inspirations','avatars','avatar-favorites'
+        'gallery','galleryVideos','favorites','folders','editGallery','inspirations','avatars','avatar-favorites'
       ];
       for (const key of keys) {
         const [legacy, scoped] = await Promise.all([
@@ -358,6 +360,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       if (storagePrefix) {
         await removePersistedValue(storagePrefix, 'gallery');
+        await removePersistedValue(storagePrefix, 'galleryVideos');
         await removePersistedValue(storagePrefix, 'favorites');
         await removePersistedValue(storagePrefix, 'folders');
         await removePersistedValue(storagePrefix, 'editGallery');
@@ -800,4 +803,3 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     </AuthContext.Provider>
   );
 }
-

@@ -82,6 +82,26 @@ export type StoredGalleryImage = {
   aspectRatio?: string;
 };
 
+export type StoredGalleryVideo = {
+  url: string;
+  prompt: string;
+  model?: string;
+  timestamp: string;
+  ownerId?: string;
+  jobId?: string;
+  r2FileId?: string;
+  isPublic?: boolean;
+  savedFrom?: SavedCreator;
+  avatarId?: string;
+  productId?: string;
+  avatarImageId?: string;
+  styleId?: string;
+  aspectRatio?: string;
+  type: "video";
+  operationName?: string;
+  references?: string[];
+};
+
 export type PendingGalleryItem = {
   pending: true;
   id: string;
