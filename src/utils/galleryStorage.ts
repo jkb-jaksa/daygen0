@@ -1,4 +1,9 @@
-import type { GalleryImageLike, StoredGalleryImage } from "../components/create/types";
+import type {
+  GalleryImageLike,
+  GalleryVideoLike,
+  StoredGalleryImage,
+  StoredGalleryVideo,
+} from "../components/create/types";
 import { normalizeModelId } from './modelUtils';
 import { debugWarn } from './debug';
 
@@ -95,6 +100,63 @@ export const hydrateStoredGallery = (
         ...base,
         jobId: `url-${simpleHash(base.url)}`,
       } as GalleryImageLike;
+    }
+
+    return base;
+  });
+
+export const serializeGalleryVideos = (
+  videos: GalleryVideoLike[],
+): StoredGalleryVideo[] => {
+  return videos.map(video => ({
+    url: video.url,
+    prompt: video.prompt,
+    model: video.model,
+    timestamp: video.timestamp,
+    ownerId: video.ownerId,
+    jobId: video.jobId,
+    r2FileId: video.r2FileId,
+    isPublic: video.isPublic,
+    savedFrom: video.savedFrom,
+    avatarId: video.avatarId,
+    productId: video.productId,
+    avatarImageId: video.avatarImageId,
+    styleId: video.styleId,
+    aspectRatio: video.aspectRatio,
+    type: 'video',
+    operationName: video.operationName,
+    references: video.references,
+  }));
+};
+
+export const hydrateStoredGalleryVideos = (
+  items: StoredGalleryVideo[],
+): GalleryVideoLike[] =>
+  items.map((item) => {
+    const base: GalleryVideoLike = {
+      url: item.url,
+      prompt: item.prompt,
+      model: normalizeModelId(item.model ?? "unknown"),
+      timestamp: item.timestamp,
+      ownerId: item.ownerId,
+      isPublic: item.isPublic ?? false,
+      savedFrom: item.savedFrom,
+      avatarId: item.avatarId,
+      productId: item.productId,
+      avatarImageId: item.avatarImageId,
+      styleId: item.styleId,
+      jobId: item.jobId,
+      aspectRatio: item.aspectRatio,
+      type: 'video',
+      operationName: item.operationName,
+      references: item.references,
+    };
+
+    if (!base.jobId && base.url) {
+      return {
+        ...base,
+        jobId: `video-${simpleHash(base.url)}`,
+      };
     }
 
     return base;

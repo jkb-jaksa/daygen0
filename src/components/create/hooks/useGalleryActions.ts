@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useGallery } from '../contexts/GalleryContext';
 import { useCreateBridge } from '../contexts/hooks';
@@ -30,9 +30,11 @@ export function useGalleryActions() {
   const navigate = useNavigate();
   const location = useLocation();
   const defaultStudioImagePath = `${STUDIO_BASE_PATH}/image`;
+  const fallbackRouteRef = useRef<string>(defaultStudioImagePath);
   const { user } = useAuth();
   const userKey = user?.id || user?.email || 'anon';
   const { savePrompt, isPromptSaved } = useSavedPrompts(userKey);
+  const locationState = (location.state as { jobOrigin?: string } | null) ?? null;
   const {
     state,
     setImageActionMenu,
@@ -41,7 +43,8 @@ export function useGalleryActions() {
     toggleImagesInFolder,
     updateImage,
     deleteImage: deleteGalleryImage,
-    openFullSize,
+    setFullSizeOpen,
+    setFullSizeImage,
     filteredItems,
     setSelectedItems,
     toggleItemSelection,
@@ -56,18 +59,139 @@ export function useGalleryActions() {
     bulkDownloadItems,
   } = useGallery();
   const bridgeActionsRef = useCreateBridge();
-
+  
   // Copy notification state
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
+  
+  // Track the most recent non-job route for reliable unwinding
+  useEffect(() => {
+    if (!location.pathname.startsWith('/job/')) {
+      const currentPath = `${location.pathname}${location.search ?? ''}`;
+      fallbackRouteRef.current = currentPath || defaultStudioImagePath;
+    }
+  }, [defaultStudioImagePath, location.pathname, location.search]);
 
+  // Navigate to job URL
+  const navigateToJobUrl = useCallback(
+    (targetJobId: string, options: { replace?: boolean } = {}) => {
+      const encodedTargetId = encodeURIComponent(targetJobId);
+      const targetPath = `/job/${encodedTargetId}`;
+      const currentFullPath = `${location.pathname}${location.search ?? ''}`;
+      const targetFullPath = `${targetPath}${location.search || ''}`;
+      if (currentFullPath === targetFullPath) {
+        return;
+      }
+      
+      const origin = currentFullPath;
+      navigate(targetFullPath, {
+        replace: options.replace ?? false,
+        state: { jobOrigin: origin },
+      });
+    },
+    [navigate, location.pathname, location.search]
+  );
+  
+  // Clear job URL
+  const clearJobUrl = useCallback(() => {
+    const jobOrigin = locationState?.jobOrigin;
+    const fallbackPath = jobOrigin ?? fallbackRouteRef.current ?? defaultStudioImagePath;
+    setFullSizeOpen(false);
+    setFullSizeImage(null, 0);
+
+    if (location.pathname.startsWith("/job/")) {
+      const currentFullPath = `${location.pathname}${location.search ?? ''}`;
+      const destination = fallbackPath || defaultStudioImagePath;
+      if (currentFullPath !== destination) {
+        navigate(destination, { replace: false });
+      } else {
+        navigate(defaultStudioImagePath, { replace: false });
+      }
+    }
+  }, [defaultStudioImagePath, location.pathname, location.search, locationState?.jobOrigin, navigate, setFullSizeImage, setFullSizeOpen]);
+
+  const resolveItemIndex = useCallback(
+    (image: GalleryImageLike | GalleryVideoLike): number => {
+      if (!filteredItems.length) {
+        return 0;
+      }
+
+      const keyCandidates = [
+        image.jobId?.trim(),
+        image.r2FileId?.trim(),
+        image.url?.trim(),
+      ].filter(Boolean) as string[];
+
+      if (!keyCandidates.length) {
+        return 0;
+      }
+
+      const foundIndex = filteredItems.findIndex(candidate => {
+        const candidateKeys = [
+          candidate.jobId?.trim(),
+          candidate.r2FileId?.trim(),
+          candidate.url?.trim(),
+        ].filter(Boolean) as string[];
+
+        return candidateKeys.some(candidateKey =>
+          keyCandidates.includes(candidateKey),
+        );
+      });
+
+      return foundIndex >= 0 ? foundIndex : 0;
+    },
+    [filteredItems],
+  );
+
+  const openImageInGallery = useCallback(
+    (image: GalleryImageLike | GalleryVideoLike, index?: number) => {
+      const resolvedIndex =
+        typeof index === 'number' && Number.isFinite(index)
+          ? index
+          : resolveItemIndex(image);
+
+      console.log('[useGalleryActions] openImageInGallery', { 
+        image: { url: image.url, jobId: image.jobId },
+        resolvedIndex 
+      });
+      setFullSizeImage(image, resolvedIndex);
+      setFullSizeOpen(true);
+      console.log('[useGalleryActions] setFullSizeOpen(true) called');
+    },
+    [resolveItemIndex, setFullSizeImage, setFullSizeOpen],
+  );
+  
+  // Sync job URL for image
+  const syncJobUrlForImage = useCallback(
+    (image: GalleryImageLike | GalleryVideoLike | null | undefined) => {
+      const identifier = image ? getItemIdentifier(image) : null;
+      console.log('[useGalleryActions] syncJobUrlForImage', { 
+        hasIdentifier: !!identifier, 
+        identifier 
+      });
+      if (identifier) {
+        console.log('[useGalleryActions] Navigating to job URL:', identifier);
+        navigateToJobUrl(identifier);
+      } else {
+        console.log('[useGalleryActions] No identifier, clearing URL');
+        clearJobUrl();
+      }
+    },
+    [clearJobUrl, navigateToJobUrl]
+  );
+  
   // Handle image click
   const handleImageClick = useCallback(
     (image: GalleryImageLike | GalleryVideoLike, index?: number) => {
-      openFullSize(image, index);
+      console.log('[useGalleryActions] handleImageClick called', { 
+        image: { url: image.url, jobId: image.jobId }, 
+        index 
+      });
+      openImageInGallery(image, index);
+      syncJobUrlForImage(image);
     },
-    [openFullSize],
+    [openImageInGallery, syncJobUrlForImage],
   );
-
+  
   // Handle image action menu
   const handleImageActionMenu = useCallback((event: React.MouseEvent, item: GalleryImageLike | GalleryVideoLike) => {
     event.preventDefault();
@@ -82,7 +206,7 @@ export function useGalleryActions() {
       }
     }
   }, [state.imageActionMenu, setImageActionMenu]);
-
+  
   // Handle bulk actions menu
   const handleBulkActionsMenu = useCallback((event: React.MouseEvent) => {
     event.preventDefault();
@@ -159,7 +283,7 @@ export function useGalleryActions() {
     setSelectedImagesForFolder(normalized);
     setAddToFolderDialog(true);
   }, [resolveFolderIds, setAddToFolderDialog, setSelectedImagesForFolder]);
-
+  
   const ensureBridgeReady = useCallback(async () => {
     if (bridgeActionsRef.current.isInitialized) {
       return true;
@@ -179,8 +303,8 @@ export function useGalleryActions() {
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
 
     if (item.jobId) {
-      // Use query param format for sharing
-      return `${baseUrl}/app/image?jobId=${encodeURIComponent(item.jobId)}`;
+      const normalizedBase = baseUrl.replace(/\/$/, '');
+      return `${normalizedBase}/job/${encodeURIComponent(item.jobId)}`;
     }
 
     const remixUrl = makeRemixUrl(baseUrl, item.prompt || '');
@@ -195,7 +319,7 @@ export function useGalleryActions() {
       debugError('Error downloading image:', error);
     }
   }, [bulkDownloadItems]);
-
+  
   // Show delete confirmation for single image
   const handleDeleteImage = useCallback((imageUrl: string) => {
     setDeleteConfirmation({
@@ -256,7 +380,7 @@ export function useGalleryActions() {
       source: null,
     });
   }, [setDeleteConfirmation]);
-
+  
   // Handle delete video
   const handleDeleteVideo = useCallback(async (videoId: string) => {
     try {
@@ -267,7 +391,7 @@ export function useGalleryActions() {
       debugError('Error deleting video:', error);
     }
   }, [removeVideo]);
-
+  
   // Show publish/unpublish confirmation for single item
   const handleTogglePublic = useCallback((item: GalleryImageLike | GalleryVideoLike) => {
     const itemId = getItemIdentifier(item);
@@ -359,7 +483,7 @@ export function useGalleryActions() {
       source: 'gallery',
     });
   }, [setDeleteConfirmation]);
-
+  
   // Show publish/unpublish confirmation for bulk action
   const handleBulkTogglePublic = useCallback((imageIds: string[], targetPublic?: boolean) => {
     if (targetPublic === true || targetPublic === undefined) {
@@ -419,7 +543,7 @@ export function useGalleryActions() {
   const cancelBulkDownload = useCallback(() => {
     setDownloadConfirmation({ show: false, count: 0, imageUrls: null });
   }, [setDownloadConfirmation]);
-
+  
   // Handle bulk move to folder
   const handleBulkMoveToFolder = useCallback(async (imageIds?: string[], folderId?: string) => {
     try {
@@ -471,7 +595,7 @@ export function useGalleryActions() {
       imageUrls: normalized,
     });
   }, [setDownloadConfirmation, state.selectedItems]);
-
+  
   // Handle share image
   const handleShareImage = useCallback(async (image: GalleryImageLike | GalleryVideoLike) => {
     try {
@@ -490,7 +614,7 @@ export function useGalleryActions() {
       debugError('Error sharing image:', error);
     }
   }, [resolveShareUrl]);
-
+  
   // Handle copy image URL
   const handleCopyImageUrl = useCallback(async (image: GalleryImageLike | GalleryVideoLike) => {
     try {
@@ -517,7 +641,7 @@ export function useGalleryActions() {
     clearSelection();
     debugLog('Cleared selection');
   }, [clearSelection]);
-
+  
   // Handle edit menu select - navigate to edit page
   const handleEditMenuSelect = useCallback((image: GalleryImageLike | GalleryVideoLike) => {
     navigate('/edit', { state: { imageToEdit: image } });
@@ -562,7 +686,7 @@ export function useGalleryActions() {
       debugError('Error applying gallery reference:', error);
     }
   }, [bridgeActionsRef, defaultStudioImagePath, ensureBridgeReady, location.pathname, navigate]);
-
+  
   const handleReusePrompt = useCallback((image: GalleryImageLike | GalleryVideoLike) => {
     const promptText = image.prompt ?? '';
 
@@ -583,7 +707,7 @@ export function useGalleryActions() {
       bridgeActionsRef.current.setPromptFromGallery(promptText, { focus: true });
     })();
   }, [bridgeActionsRef, defaultStudioImagePath, ensureBridgeReady, location.pathname, navigate]);
-
+  
   const handleMakeVideo = useCallback(() => {
     navigate(`${STUDIO_BASE_PATH}/video`);
 
@@ -641,8 +765,13 @@ export function useGalleryActions() {
     toggleItemSelection(imageId);
     debugLog('Toggled selection for:', imageId);
   }, [toggleItemSelection]);
-
+  
   return {
+    // Navigation
+    navigateToJobUrl,
+    clearJobUrl,
+    syncJobUrlForImage,
+    
     // Image actions
     handleImageClick,
     handleImageActionMenu,
@@ -661,11 +790,11 @@ export function useGalleryActions() {
     handleSelectAll,
     handleClearSelection,
     handleToggleSelection,
-
+    
     // Prompt actions
     handleCopyPrompt,
     handleSavePrompt,
-
+    
     // Confirmation handlers
     confirmDeleteImage,
     cancelDelete,
@@ -677,7 +806,7 @@ export function useGalleryActions() {
     confirmBulkUnpublish,
     confirmBulkDownload,
     cancelBulkDownload,
-
+    
     // Edit menu actions
     handleEditMenuSelect,
     handleCreateAvatarFromMenu,
@@ -685,7 +814,7 @@ export function useGalleryActions() {
     handleReusePrompt,
     handleMakeVideo,
     handleAddToFolder,
-
+    
     // Notification state
     copyNotification,
   };
