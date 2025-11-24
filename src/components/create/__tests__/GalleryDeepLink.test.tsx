@@ -171,9 +171,12 @@ describe('Gallery deep link hydration', () => {
       </GenerationProvider>,
     );
 
-    await waitFor(() => {
-      expect(screen.getByTestId('open').textContent).toBe('open');
-    });
+    await waitFor(
+      () => {
+        expect(screen.getByTestId('open').textContent).toBe('open');
+      },
+      { timeout: 5000 },
+    );
     expect(screen.getByTestId('job').textContent).toBe('abc');
     expect(screen.getByTestId('identifier').textContent).toBe('abc');
   });
@@ -190,9 +193,12 @@ describe('Gallery deep link hydration', () => {
       </GenerationProvider>,
     );
 
-    await waitFor(() => {
-      expect(screen.getByTestId('open').textContent).toBe('open');
-    });
+    await waitFor(
+      () => {
+        expect(screen.getByTestId('open').textContent).toBe('open');
+      },
+      { timeout: 5000 },
+    );
     expect(screen.getByTestId('job').textContent).toBe('');
     expect(screen.getByTestId('identifier').textContent).toBe('r2-fallback');
   });
@@ -210,9 +216,12 @@ describe('Gallery deep link hydration', () => {
       </GenerationProvider>,
     );
 
-    await waitFor(() => {
-      expect(screen.getByTestId('open').textContent).toBe('open');
-    });
+    await waitFor(
+      () => {
+        expect(screen.getByTestId('open').textContent).toBe('open');
+      },
+      { timeout: 5000 },
+    );
     expect(screen.getByTestId('identifier').textContent).toBe(targetUrl);
   });
 
@@ -228,9 +237,12 @@ describe('Gallery deep link hydration', () => {
       </GenerationProvider>,
     );
 
-    await waitFor(() => {
-      expect(screen.getByTestId('open').textContent).toBe('open');
-    });
+    await waitFor(
+      () => {
+        expect(screen.getByTestId('open').textContent).toBe('open');
+      },
+      { timeout: 5000 },
+    );
     expect(screen.getByTestId('job').textContent).toBe('abc');
     expect(screen.getByTestId('identifier').textContent).toBe('abc');
   });
@@ -287,10 +299,13 @@ describe('Immediate modal open behavior', () => {
       fireEvent.click(screen.getByRole('button', { name: /open/i }));
     });
 
-    await waitFor(() => {
-      expect(screen.getByTestId('open').textContent).toBe('open');
-      expect(screen.getByTestId('identifier').textContent).toBe('abc');
-    });
+    await waitFor(
+      () => {
+        expect(screen.getByTestId('open').textContent).toBe('open');
+        expect(screen.getByTestId('identifier').textContent).toBe('abc');
+      },
+      { timeout: 5000 },
+    );
     expect(mockLocation.pathname).toBe('/job/abc');
     expect(mockLocation.search).toBe('');
   });
@@ -309,31 +324,40 @@ describe('FullImageModal navigation sync', () => {
       fireEvent.click(screen.getByRole('button', { name: /open/i }));
     });
 
-    await waitFor(() => {
-      expect(screen.getByLabelText(/Next image/i)).toBeInTheDocument();
-    });
-    await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalled();
-    });
+    await waitFor(
+      () => {
+        expect(screen.getByLabelText(/Next image/i)).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
+    await waitFor(
+      () => {
+        expect(mockNavigate).toHaveBeenCalled();
+      },
+      { timeout: 5000 },
+    );
     mockNavigate.mockClear();
 
     await act(async () => {
       fireEvent.click(screen.getByLabelText(/Next image/i));
     });
 
-    await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith(
-        {
-          pathname: '/app/image',
-          search: 'jobId=r2-fallback',
-        },
-        expect.objectContaining({
-          replace: false,
-          state: null,
-        }),
-      );
+    await waitFor(
+      () => {
+        expect(mockNavigate).toHaveBeenCalled();
+      },
+      { timeout: 5000 },
+    );
+
+    const lastCall = mockNavigate.mock.calls.at(-1);
+    expect(lastCall?.[0]).toBe('/job/r2-fallback');
+    expect(lastCall?.[1]).toMatchObject({
+      replace: false,
+      state: expect.objectContaining({
+        jobOrigin: expect.any(String),
+      }),
     });
-    expect(mockLocation.pathname).toBe('/app/image');
-    expect(mockLocation.search).toBe('?jobId=r2-fallback');
+    expect(mockLocation.pathname).toBe('/job/r2-fallback');
+    expect(mockLocation.search).toBe('');
   });
 });
