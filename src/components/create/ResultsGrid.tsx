@@ -1,7 +1,7 @@
 import React, { memo, useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
-import { Heart, MoreHorizontal, Check, Image as ImageIcon, Video as VideoIcon, Copy, BookmarkPlus, Bookmark, Square, Trash2 } from 'lucide-react';
+import { Heart, MoreHorizontal, Check, Image as ImageIcon, Video as VideoIcon, Copy, BookmarkPlus, Bookmark, Square, Trash2, FileText } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
@@ -116,6 +116,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const [editMenu, setEditMenu] = useState<{ id: string; anchor: HTMLElement | null } | null>(null);
   const [storedAvatars, setStoredAvatars] = useState<StoredAvatar[]>([]);
   const [storedProducts, setStoredProducts] = useState<StoredProduct[]>([]);
+  const [hoveredPromptButton, setHoveredPromptButton] = useState<string | null>(null);
   const [savePromptModalState, setSavePromptModalState] = useState<{ prompt: string; originalPrompt: string } | null>(null);
   const savePromptModalRef = useRef<HTMLDivElement>(null);
   const lastOpenRef = useRef<{ id: string | null; ts: number }>({ id: null, ts: 0 });
@@ -1231,10 +1232,133 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                   </div>
                 </div>
               )}
+
+              {/* Gallery Prompt Hover Button */}
+              {shouldShowPromptDetails && isGalleryView && !isVideoItem && (
+                <div className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-center justify-center z-10 ${
+                  isMenuActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                }`}
+                onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Button content */}
+                  <div className="relative z-10 w-full p-3 flex items-center justify-center">
+                    <button
+                      type="button"
+                      className="flex items-center gap-2 text-theme-white hover:text-theme-text transition-colors duration-200"
+                      aria-label="Show prompt"
+                      onMouseEnter={() => {
+                        const itemId = item.jobId || item.r2FileId || item.url;
+                        setHoveredPromptButton(itemId);
+                      }}
+                      onMouseLeave={() => {
+                        setHoveredPromptButton(null);
+                      }}
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      <span className="text-xs font-raleway font-medium">Show prompt</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Tooltips rendered via portal to avoid clipping - Gallery view */}
+            {/* Gallery Prompt Popup - Outside card-media-frame to avoid clipping */}
+            {shouldShowPromptDetails && isGalleryView && !isVideoItem && (() => {
+              const itemId = item.jobId || item.r2FileId || item.url;
+              const isPopupVisible = hoveredPromptButton === itemId;
+              return (
+                <div 
+                  className={`absolute bottom-0 left-0 right-0 transition-all duration-100 z-50 pointer-events-auto ${
+                    isPopupVisible ? 'opacity-100 visible' : 'opacity-0 invisible'
+                  }`}
+                  onMouseEnter={() => setHoveredPromptButton(itemId)}
+                  onMouseLeave={() => setHoveredPromptButton(null)}
+                >
+                  <div className="PromptDescriptionBar rounded-lg text-theme-white px-4 py-3 mb-2 text-xs font-raleway shadow-xl max-h-48 overflow-hidden">
+                    <div className="relative">
+                      <p className="leading-relaxed break-words whitespace-pre-wrap max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-theme-mid/40 scrollbar-track-transparent">
+                          {promptForDisplay}
+                          {promptForActions && (() => {
+                            const tooltipId = `copy-gallery-${item.jobId || item.r2FileId || index}`;
+                            return (
+                              <>
+                                <button
+                                  onClick={(e) => void handleCopyPrompt(promptForActions, e)}
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    showHoverTooltip(e.currentTarget, tooltipId, { placement: 'above', offset: 2 });
+                                  }}
+                                  onMouseLeave={() => {
+                                    hideHoverTooltip(tooltipId);
+                                  }}
+                                  className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
+                                >
+                                  <Copy className="w-3 h-3" />
+                                </button>
+                                <button
+                                  onClick={(e) => handleToggleSavePrompt(promptForActions, e)}
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    showHoverTooltip(e.currentTarget, `save-${tooltipId}`, { placement: 'above', offset: 2 });
+                                  }}
+                                  onMouseLeave={() => {
+                                    hideHoverTooltip(`save-${tooltipId}`);
+                                  }}
+                                  className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
+                                >
+                                  {isPromptSaved(promptForActions) ? (
+                                    <Bookmark className="w-3 h-3 fill-current" />
+                                  ) : (
+                                    <BookmarkPlus className="w-3 h-3" />
+                                  )}
+                                </button>
+                              </>
+                            );
+                          })()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Tooltips rendered via portal to avoid clipping - Image section */}
             {promptForActions && shouldShowPromptDetails && shouldShowPromptBar && !isVideoItem && (() => {
+              const tooltipId = `copy-gallery-${item.jobId || item.r2FileId || index}`;
+              return (
+                <>
+                  {createPortal(
+                    <div
+                      data-tooltip-for={tooltipId}
+                        className={`${tooltips.base} fixed`}
+                        style={{ zIndex: 9999 }}
+                    >
+                      Copy prompt
+                    </div>,
+                    document.body
+                  )}
+                  {createPortal(
+                    <div
+                      data-tooltip-for={`save-${tooltipId}`}
+                        className={`${tooltips.base} fixed`}
+                        style={{ zIndex: 9999 }}
+                    >
+                      {isPromptSaved(promptForActions) ? 'Prompt saved' : 'Save prompt'}
+                    </div>,
+                    document.body
+                  )}
+                </>
+              );
+            })()}
+
+            {/* Tooltips rendered via portal to avoid clipping - Gallery view */}
+            {promptForActions && shouldShowPromptDetails && isGalleryView && !isVideoItem && (() => {
               const tooltipId = `copy-gallery-${item.jobId || item.r2FileId || index}`;
               return (
                 <>
