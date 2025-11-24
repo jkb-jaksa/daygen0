@@ -29,7 +29,6 @@ const AuthErrorBoundary = lazy(() => import("./components/AuthErrorBoundary"));
 const Upgrade = lazy(() => import("./components/Upgrade"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Courses = lazy(() => import("./components/Courses"));
-const GalleryRoutes = lazy(() => import("./routes/GalleryRoutes"));
 const LearnLayout = lazy(() => import("./routes/LearnLayout"));
 const Navbar = lazy(() => import("./components/Navbar"));
 const FAQSection = lazy(() => import("./components/Faq"));

@@ -177,7 +177,6 @@ const FullImageModal = memo(() => {
     return state.fullSizeImage;
   }, [filteredItems, fullSizeIndex, state.fullSizeImage]);
   const open = isFullSizeOpen;
-  const fullSizeItemType: 'image' | 'video' = getGalleryItemType(fullSizeImage);
   // Identify current item and whether the image action (More) menu is open for it
   const currentItemId =
     fullSizeImage?.jobId?.trim() ||
