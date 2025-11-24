@@ -137,7 +137,15 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       // Only show images WITHOUT savedFrom property for gallery
       return contextFilteredItems.filter(item => !item.savedFrom);
     }
-    // For other categories (image, video), show all
+    if (activeCategory === 'image') {
+      // Only show images (exclude videos)
+      return contextFilteredItems.filter(item => !('type' in item && item.type === 'video'));
+    }
+    if (activeCategory === 'video') {
+      // Only show videos
+      return contextFilteredItems.filter(item => 'type' in item && item.type === 'video');
+    }
+    // For other categories, show all
     return contextFilteredItems;
   }, [activeCategory, contextFilteredItems]);
   
