@@ -46,13 +46,6 @@ const getInitials = (name: string) =>
     .slice(0, 2)
     .toUpperCase();
 
-const getGalleryItemType = (item: GalleryImageLike | GalleryVideoLike | null): 'image' | 'video' => {
-  if (item && 'type' in item && item.type === 'video') {
-    return 'video';
-  }
-  return 'image';
-};
-
 const styleIdToStoredStyle = (styleId: string): StoredStyle | null => {
   const parts = styleId.split('-');
   if (parts.length < 3) return null;
