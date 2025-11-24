@@ -21,7 +21,7 @@ import type { StoredAvatar } from '../avatars/types';
 import type { StoredProduct } from '../products/types';
 import type { StoredStyle } from '../styles/types';
 import { getStyleThumbnailUrl } from './hooks/useStyleHandlers';
-import type { GalleryImageLike, GalleryVideoLike } from './types';
+import type { GalleryImageLike } from './types';
 import { normalizeStoredAvatars } from '../../utils/avatars';
 import { normalizeStoredProducts } from '../../utils/products';
 import { getPersistedValue } from '../../lib/clientStorage';
