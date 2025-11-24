@@ -1,7 +1,7 @@
 import React, { memo, useCallback, useMemo } from 'react';
 import { useGeneration } from './contexts/GenerationContext';
+import { useGallery } from './contexts/GalleryContext';
 import { debugLog } from '../../utils/debug';
-import { useGalleryActions } from './hooks/useGalleryActions';
 import { CircularProgressRing } from '../CircularProgressRing';
 const statusLabelMap = (status: string) => {
   switch (status) {
@@ -19,7 +19,7 @@ const statusLabelMap = (status: string) => {
 const GenerationProgress = memo(() => {
   const { state } = useGeneration();
   const { activeJobs } = state;
-  const { navigateToJobUrl } = useGalleryActions();
+  const { openFullSizeById } = useGallery();
 
   const activeJobsCount = useMemo(() => activeJobs.length, [activeJobs]);
 
@@ -27,10 +27,10 @@ const GenerationProgress = memo(() => {
     (jobId: string) => {
       debugLog('Job clicked:', jobId);
       if (jobId && !jobId.startsWith('local-')) {
-        navigateToJobUrl(jobId);
+        openFullSizeById(jobId);
       }
     },
-    [navigateToJobUrl],
+    [openFullSizeById],
   );
 
   if (activeJobsCount === 0) {

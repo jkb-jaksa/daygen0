@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation, Link, Outlet } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, Link, Outlet, useParams } from "react-router-dom";
 import { lazy, Suspense, useEffect, useState, useRef, useCallback } from "react";
 import type { ReactNode } from "react";
 import { useFooter } from "./contexts/useFooter";
@@ -41,6 +41,11 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const PaymentSuccess = lazy(() => import("./components/payments/PaymentSuccess"));
 const PaymentCancel = lazy(() => import("./pages/PaymentCancel"));
 const DebugPanel = lazy(() => import("./components/DebugPanel").then(({ DebugPanel }) => ({ default: DebugPanel })));
+
+function JobRedirect() {
+  const { jobId } = useParams();
+  return <Navigate to={`/app/image?jobId=${jobId}`} replace />;
+}
 
 function NavbarFallback() {
   return (
@@ -630,24 +635,31 @@ function RequireAuth({ children }: { children: ReactNode }) {
   }
 
   // If user is authenticated but URL has query parameters, clean them up
-  // BUT preserve openStyleModal query param for style modal functionality
-  // Only redirect if there are query params we need to clean up
+  // Allowlisted params (like openStyleModal, jobId) should remain intact.
   if (location.search) {
     const searchParams = new URLSearchParams(location.search);
-    const hasOpenStyleModal = searchParams.has('openStyleModal');
+    const allowedParams = new Set(['openStyleModal', 'jobId']);
+    const entries = Array.from(searchParams.entries());
+    const disallowedEntries = entries.filter(([key]) => !allowedParams.has(key));
 
-    // Check if there are any query params other than openStyleModal
-    const hasOtherParams = Array.from(searchParams.keys()).some(key => key !== 'openStyleModal');
+    if (disallowedEntries.length > 0) {
+      const preservedEntries = entries.filter(([key]) => allowedParams.has(key));
+      if (preservedEntries.length > 0) {
+        const preservedParams = new URLSearchParams();
+        preservedEntries.forEach(([key, value]) => preservedParams.set(key, value));
+        const preservedSearch = preservedParams.toString();
+        return (
+          <Navigate
+            to={{
+              pathname: location.pathname,
+              search: preservedSearch ? `?${preservedSearch}` : '',
+            }}
+            replace
+          />
+        );
+      }
 
-    if (hasOpenStyleModal && !hasOtherParams) {
-      // Only openStyleModal is present and it's the only param - no need to redirect
-    } else if (hasOpenStyleModal && hasOtherParams) {
-      // Has openStyleModal but also other params - preserve openStyleModal and remove others
-      const preservedParams = new URLSearchParams();
-      preservedParams.set('openStyleModal', searchParams.get('openStyleModal') || 'true');
-      return <Navigate to={{ pathname: location.pathname, search: `?${preservedParams.toString()}` }} replace />;
-    } else {
-      // No openStyleModal param, clean up all query params
+      // No allowlisted params left, clean up all query params
       return <Navigate to={location.pathname} replace />;
     }
   }
@@ -686,18 +698,18 @@ function CreateProtectedLayout({ fallbackRoute = "/app" }: { fallbackRoute?: str
 function AppContent() {
   const { isFooterVisible, setFooterVisible } = useFooter();
   const location = useLocation();
-  
+
   // Hide footer in app section
   useEffect(() => {
     const isInAppSection = location.pathname.startsWith("/app");
     setFooterVisible(!isInAppSection);
-    
+
     // Cleanup: restore footer visibility on unmount
     return () => {
       setFooterVisible(true);
     };
   }, [location.pathname, setFooterVisible]);
-  
+
   const accountRouteElement = (
     <Suspense fallback={<RouteFallback />}>
       <AuthErrorBoundary fallbackRoute="/" context="authentication">
@@ -737,7 +749,7 @@ function AppContent() {
               <Route path="/create/*" element={<CreateRoutes />} />
               <Route element={<CreateProtectedLayout />}>
                 <Route path="/app/*" element={<MasterRoutes />} />
-                <Route path="/job/:jobId/*" element={<CreateRefactored />} />
+                <Route path="/job/:jobId/*" element={<JobRedirect />} />
               </Route>
               <Route
                 path="/gallery/*"

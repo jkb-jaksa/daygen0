@@ -15,6 +15,7 @@ import { getPersistedValue, setPersistedValue } from '../../../lib/clientStorage
 import { debugError, debugWarn } from '../../../utils/debug';
 import { consumePendingBadgeFilters } from '../hooks/badgeNavigationStorage';
 import { normalizeAspectRatio } from '../../../utils/aspectRatioUtils';
+import { useJobIdSearch } from '../hooks/useJobIdSearch';
 import type {
   GalleryImageLike,
   GalleryVideoLike,
@@ -150,6 +151,31 @@ const matchGalleryItemId = (
     (item.r2FileId && item.r2FileId === identifier) ||
     item.url === identifier
   );
+};
+
+const getGalleryItemIdentifier = (
+  item: GalleryImageLike | GalleryVideoLike | null,
+): string | null => {
+  if (!item) {
+    return null;
+  }
+
+  const jobId = item.jobId?.trim();
+  if (jobId) {
+    return jobId;
+  }
+
+  const r2FileId = item.r2FileId?.trim();
+  if (r2FileId) {
+    return r2FileId;
+  }
+
+  const url = item.url?.trim();
+  if (url) {
+    return url;
+  }
+
+  return null;
 };
 
 const mergeGalleryCollections = <T extends GalleryImageLike | GalleryVideoLike>(
@@ -367,6 +393,10 @@ type GalleryContextType = {
   setDownloadConfirmation: (confirmation: DownloadConfirmationState) => void;
   setNewFolderDialog: (open: boolean) => void;
   setAddToFolderDialog: (open: boolean) => void;
+  openFullSize: (item: GalleryImageLike | GalleryVideoLike, index?: number) => void;
+  openFullSizeById: (identifier: string) => boolean;
+  closeFullSize: () => void;
+  moveFullSize: (delta: number) => void;
   filteredItems: (GalleryImageLike | GalleryVideoLike)[];
   selectedCount: number;
   hasSelection: boolean;
@@ -385,6 +415,11 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(galleryReducer, initialState);
   const location = useLocation();
   const { storagePrefix } = useAuth();
+  const {
+    jobId: jobIdParam,
+    setJobId: setJobIdParam,
+    clearJobId: clearJobIdParam,
+  } = useJobIdSearch();
   const {
     images: galleryItems,
     isLoading: isGalleryLoading,
@@ -986,67 +1021,150 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     });
   }, [state.images, state.videos, state.filters]);
 
-  useEffect(() => {
-    const path = location.pathname;
-    const current = stateRef.current;
+  const resolveItemIndex = useCallback((item: GalleryImageLike | GalleryVideoLike | null) => {
+    if (!item) {
+      return -1;
+    }
 
-    if (!path.startsWith(JOB_ROUTE_PREFIX)) {
-      // Clear retry ref when navigating away from job route
+    const identifier = getGalleryItemIdentifier(item);
+    if (!identifier) {
+      return -1;
+    }
+
+    return filteredItems.findIndex(candidate => matchGalleryItemId(candidate, identifier));
+  }, [filteredItems]);
+
+  const openFullSize = useCallback((
+    item: GalleryImageLike | GalleryVideoLike,
+    explicitIndex?: number,
+  ) => {
+    if (!item) {
+      return;
+    }
+
+    const totalItems = filteredItems.length;
+    let resolvedIndex: number;
+
+    if (typeof explicitIndex === 'number' && Number.isFinite(explicitIndex)) {
+      const clampedIndex = Math.max(0, Math.min(explicitIndex, Math.max(totalItems - 1, 0)));
+      resolvedIndex = clampedIndex;
+    } else {
+      const foundIndex = resolveItemIndex(item);
+      resolvedIndex = foundIndex >= 0 ? foundIndex : 0;
+    }
+
+    setFullSizeImage(item, resolvedIndex);
+    setFullSizeOpen(true);
+
+    const identifier = getGalleryItemIdentifier(item);
+    if (identifier) {
+      setJobIdParam(identifier);
+    }
+  }, [filteredItems, resolveItemIndex, setFullSizeImage, setFullSizeOpen, setJobIdParam]);
+
+  const openFullSizeById = useCallback((identifier: string) => {
+    if (!identifier) {
+      return false;
+    }
+
+    const targetIndex = filteredItems.findIndex(item => matchGalleryItemId(item, identifier));
+    if (targetIndex === -1) {
+      return false;
+    }
+
+    const targetItem = filteredItems[targetIndex];
+    if (!targetItem) {
+      return false;
+    }
+
+    openFullSize(targetItem, targetIndex);
+    return true;
+  }, [filteredItems, openFullSize]);
+
+  const closeFullSize = useCallback(() => {
+    setFullSizeOpen(false);
+    setFullSizeImage(null, 0);
+    clearJobIdParam();
+  }, [clearJobIdParam, setFullSizeImage, setFullSizeOpen]);
+
+  const moveFullSize = useCallback((delta: number) => {
+    if (!Number.isFinite(delta) || delta === 0) {
+      return;
+    }
+
+    if (!filteredItems.length) {
+      return;
+    }
+
+    const currentIndex = stateRef.current.fullSizeIndex;
+    let nextIndex = (currentIndex + delta) % filteredItems.length;
+    if (nextIndex < 0) {
+      nextIndex = filteredItems.length + nextIndex;
+    }
+
+    const nextItem = filteredItems[nextIndex];
+    if (!nextItem) {
+      return;
+    }
+
+    setFullSizeImage(nextItem, nextIndex);
+    setFullSizeOpen(true);
+
+    const identifier = getGalleryItemIdentifier(nextItem);
+    if (identifier) {
+      setJobIdParam(identifier, { replace: true });
+    }
+  }, [filteredItems, setFullSizeImage, setFullSizeOpen, setJobIdParam]);
+
+  useEffect(() => {
+    const targetIdentifier = jobIdParam?.trim() ?? '';
+
+    if (!targetIdentifier) {
       deepLinkRetryRef.current = null;
-      if (current.isFullSizeOpen || current.fullSizeImage !== null) {
-        setFullSizeOpen(false);
+      if (stateRef.current.isFullSizeOpen) {
         setFullSizeImage(null, 0);
+        setFullSizeOpen(false);
       }
       return;
     }
 
-    const jobId = decodeURIComponent(path.slice(JOB_ROUTE_PREFIX.length));
-    if (!jobId) {
-      return;
-    }
-
-    // Wait for initial gallery load to complete before attempting to find item
     const hasInitialLoad = hasInitialLoadCompletedRef.current;
-    const isCurrentlyLoading = isGalleryLoading;
-    
-    // If still loading initial data and haven't completed load yet, wait
-    if (isCurrentlyLoading && !hasInitialLoad) {
+    if (isGalleryLoading && !hasInitialLoad) {
       return;
     }
 
-    const targetIndex = filteredItems.findIndex(item => matchGalleryItemId(item, jobId));
-    
-    // If item not found, try refresh once (might be a newly completed job)
+    const targetIndex = filteredItems.findIndex(item => matchGalleryItemId(item, targetIdentifier));
+
     if (targetIndex === -1) {
       const retryInfo = deepLinkRetryRef.current;
-      const shouldRetry = !retryInfo || retryInfo.jobId !== jobId || retryInfo.retryCount < 1;
-      
+      const shouldRetry = !retryInfo || retryInfo.jobId !== targetIdentifier || retryInfo.retryCount < 1;
+
       if (shouldRetry && hasInitialLoad) {
-        // Only retry if we've completed initial load (prevents infinite loops)
         deepLinkRetryRef.current = {
-          jobId,
-          retryCount: retryInfo?.jobId === jobId ? retryInfo.retryCount + 1 : 1,
+          jobId: targetIdentifier,
+          retryCount: retryInfo?.jobId === targetIdentifier ? retryInfo.retryCount + 1 : 1,
         };
-        // Refresh gallery once to fetch newly completed job
         void fetchGalleryImages();
       }
       return;
     }
 
-    // Clear retry ref when item is found
     deepLinkRetryRef.current = null;
-
     const targetItem = filteredItems[targetIndex];
+    if (!targetItem) {
+      return;
+    }
+
+    const current = stateRef.current;
     const alreadySelected =
       current.isFullSizeOpen &&
       current.fullSizeIndex === targetIndex &&
-      (current.fullSizeImage ? matchGalleryItemId(current.fullSizeImage, jobId) : false);
+      (current.fullSizeImage ? matchGalleryItemId(current.fullSizeImage, targetIdentifier) : false);
 
     if (!alreadySelected) {
-      setFullSizeImage(targetItem, targetIndex);
-      setFullSizeOpen(true);
+      openFullSize(targetItem, targetIndex);
     }
-  }, [filteredItems, location.pathname, setFullSizeImage, setFullSizeOpen, isGalleryLoading, fetchGalleryImages]);
+  }, [jobIdParam, filteredItems, isGalleryLoading, fetchGalleryImages, openFullSize, setFullSizeImage, setFullSizeOpen]);
 
   useEffect(() => {
     if (!location.pathname.startsWith('/gallery')) {
@@ -1160,6 +1278,10 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     setDownloadConfirmation,
     setNewFolderDialog,
     setAddToFolderDialog,
+    openFullSize,
+    openFullSizeById,
+    closeFullSize,
+    moveFullSize,
     filteredItems,
     selectedCount,
     hasSelection,
@@ -1207,6 +1329,10 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     setDownloadConfirmation,
     setNewFolderDialog,
     setAddToFolderDialog,
+    openFullSize,
+    openFullSizeById,
+    closeFullSize,
+    moveFullSize,
     filteredItems,
     selectedCount,
     hasSelection,

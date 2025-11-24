@@ -108,6 +108,7 @@ function CreateRefactoredView() {
     addFolder,
     toggleImagesInFolder,
     setSelectedImagesForFolder,
+    openFullSize,
   } = useGallery();
   const generation = useGeneration();
   const { selectedModel } = generation.state;
@@ -201,7 +202,7 @@ function CreateRefactoredView() {
         await avatarHandlers.saveAvatar(testAvatar);
       }
     }
-    
+
     const dummyImageWithAvatar = {
       url: `https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1024&t=${Date.now()}`,
       prompt: 'Test image with avatar badge - Mountain landscape',
@@ -243,7 +244,7 @@ function CreateRefactoredView() {
         await productHandlers.saveProduct(testProduct);
       }
     }
-    
+
     const dummyImageWithProduct = {
       url: `https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1024&t=${Date.now()}`,
       prompt: 'Test image with product badge - Starry night sky',
@@ -285,7 +286,7 @@ function CreateRefactoredView() {
         await avatarHandlers.saveAvatar(testAvatar);
       }
     }
-    
+
     // Create or reuse test product
     let testProduct = productHandlers.storedProducts.find(p => p.id === 'test-product-badge');
     if (!testProduct && user?.id) {
@@ -310,7 +311,7 @@ function CreateRefactoredView() {
         await productHandlers.saveProduct(testProduct);
       }
     }
-    
+
     const dummyImageWithBoth = {
       url: `https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1024&t=${Date.now()}`,
       prompt: 'Test image with both avatar and product badges - Forest path',
@@ -495,11 +496,11 @@ function CreateRefactoredView() {
     // Check if category is a library category (gallery, avatars, products, inspirations, my-folders)
     const libraryCategories = ['gallery', 'avatars', 'products', 'inspirations', 'my-folders'];
     const isLibraryCategory = libraryCategories.includes(category);
-    
+
     // For library categories, always use pathForCategory for proper routing
     // For master section with non-library categories, use /app/{category}
     const resolvedPath = isLibraryCategory ? pathForCategory(category) : null;
-    
+
     if (resolvedPath) {
       if (location.pathname === resolvedPath && location.search === location.search) {
         return;
@@ -507,7 +508,7 @@ function CreateRefactoredView() {
       navigate({ pathname: resolvedPath, search: location.search });
       return;
     }
-    
+
     // If in master section and not a library category, navigate to /app/{category}
     if (isMasterSection && !isLibraryCategory) {
       const masterPath = `/app/${category}`;
@@ -556,7 +557,7 @@ function CreateRefactoredView() {
   const handleImageMenuClose = () => {
     setImageActionMenu(null);
   };
-  
+
   const handleBulkMenuClose = () => {
     setBulkActionsMenu(null);
   };
@@ -580,7 +581,7 @@ function CreateRefactoredView() {
     if (!newFolderName.trim()) {
       return;
     }
-    
+
     const newFolder: Folder = {
       id: `folder-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       name: newFolderName.trim(),
@@ -588,13 +589,13 @@ function CreateRefactoredView() {
       videoIds: [],
       createdAt: new Date(),
     };
-    
+
     if (state.folders.length === 0) {
       setFolders([newFolder]);
     } else {
       addFolder(newFolder);
     }
-    
+
     setNewFolderDialog(false);
     setNewFolderName('');
     if (returnToFolderDialog) {
@@ -638,12 +639,12 @@ function CreateRefactoredView() {
     // Update pending changes instead of immediately applying
     setPendingFolderChanges(prev => {
       const next = new Map(prev);
-      
+
       // Determine the effective current state of this folder
       // If folder is in pending changes, use that; otherwise use current folder state
       const currentFolder = state.folders.find(f => f.id === folderId);
       const pendingImages = next.get(folderId);
-      
+
       // Get effective images in folder (considering pending changes)
       let effectiveImages: Set<string>;
       if (pendingImages) {
@@ -652,7 +653,7 @@ function CreateRefactoredView() {
       } else if (currentFolder) {
         // Use current folder state, but only for selected images
         // Other images in the folder are not part of our selection management
-        const selectedInCurrentFolder = state.selectedImagesForFolder.filter(url => 
+        const selectedInCurrentFolder = state.selectedImagesForFolder.filter(url =>
           currentFolder.imageIds.includes(url)
         );
         effectiveImages = new Set(selectedInCurrentFolder);
@@ -660,15 +661,15 @@ function CreateRefactoredView() {
         // Folder doesn't exist, start with empty
         effectiveImages = new Set<string>();
       }
-      
+
       // Check if all selected images are currently in the effective folder state
       const allSelectedInFolder = state.selectedImagesForFolder.every(url => effectiveImages.has(url));
-      
+
       if (allSelectedInFolder) {
         // Remove all selected images from this folder
         const updatedImages = new Set(effectiveImages);
         state.selectedImagesForFolder.forEach(url => updatedImages.delete(url));
-        
+
         if (updatedImages.size === 0) {
           // If no selected images remain, remove folder from pending (will remove from current on confirm)
           next.delete(folderId);
@@ -694,7 +695,7 @@ function CreateRefactoredView() {
 
       // Determine which images to add and which to remove
       const imagesToAdd = Array.from(imageUrls).filter(url => !currentFolder.imageIds.includes(url));
-      const imagesToRemove = currentFolder.imageIds.filter(url => 
+      const imagesToRemove = currentFolder.imageIds.filter(url =>
         !imageUrls.has(url) && state.selectedImagesForFolder.includes(url)
       );
 
@@ -809,10 +810,10 @@ function CreateRefactoredView() {
     (imageUrl: string) => {
       const item = getGalleryItemByUrl(imageUrl);
       if (item) {
-        galleryActions.handleImageClick(item);
+        openFullSize(item);
       }
     },
-    [galleryActions, getGalleryItemByUrl],
+    [getGalleryItemByUrl, openFullSize],
   );
 
   const handleFolderToggleLike = useCallback(
@@ -892,7 +893,7 @@ function CreateRefactoredView() {
   const handleSetFolderThumbnail = useCallback((folderId: string) => {
     setFolderThumbnailDialog({ show: true, folderId });
   }, [setFolderThumbnailDialog]);
-  
+
   return (
     <header
       className={`relative z-[10] ${layout.container} pb-48`}
@@ -925,11 +926,10 @@ function CreateRefactoredView() {
                         key={item.key}
                         type="button"
                         onClick={() => handleSelectCategory(item.key)}
-                        className={`flex-shrink-0 inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-raleway transition-colors duration-200 ${
-                          isActive
+                        className={`flex-shrink-0 inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-raleway transition-colors duration-200 ${isActive
                             ? 'border-theme-light bg-theme-white/10 text-theme-text'
                             : 'border-theme-dark text-theme-white hover:text-theme-text'
-                        }`}
+                          }`}
                         aria-pressed={isActive}
                       >
                         <item.Icon className="size-4" />
@@ -951,11 +951,10 @@ function CreateRefactoredView() {
                         key={item.key}
                         type="button"
                         onClick={() => handleSelectCategory(item.key)}
-                        className={`flex-shrink-0 inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-raleway transition-colors duration-200 ${
-                          isActive
+                        className={`flex-shrink-0 inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-raleway transition-colors duration-200 ${isActive
                             ? 'border-theme-light bg-theme-white/10 text-theme-text'
                             : 'border-theme-dark text-theme-white hover:text-theme-text'
-                        }`}
+                          }`}
                         aria-pressed={isActive}
                       >
                         <item.Icon className="size-4" />
@@ -1031,7 +1030,7 @@ function CreateRefactoredView() {
                 <ComingSoonCategory category={activeCategory as ComingSoonCategoryKey} />
               )}
               {activeCategory === 'audio' && (
-                <div 
+                <div
                   className="fixed h-[calc(100vh-var(--nav-h,4rem)-32px)] max-w-4xl w-[70%]"
                   style={{
                     left: '50%',
@@ -1092,7 +1091,7 @@ function CreateRefactoredView() {
                 <Suspense fallback={null}>
                   <FolderContentsView
                     folder={state.folders.find(f => f.id === activeFolderId)!}
-                    folderImages={[...state.images, ...state.videos].filter(img => 
+                    folderImages={[...state.images, ...state.videos].filter(img =>
                       state.folders.find(f => f.id === activeFolderId)?.imageIds.includes(img.url)
                     )}
                     onBack={handleBackToFolders}

@@ -91,7 +91,7 @@ const buildModalVariateJobId = (item: GalleryImageLike): string => {
 };
 
 const FullImageModal = memo(() => {
-  const { state, setFullSizeImage, filteredItems, addImage } = useGallery();
+  const { state, filteredItems, addImage, closeFullSize, moveFullSize, openFullSize } = useGallery();
   const { addActiveJob, updateJobStatus, removeActiveJob } = useGeneration();
   const { variateImage: variateImageHook } = useRecraftImageGeneration();
   const { 
@@ -106,8 +106,6 @@ const FullImageModal = memo(() => {
     handleImageActionMenu,
     handleDownloadImage,
     handleAddToFolder,
-    syncJobUrlForImage,
-    clearJobUrl 
   } = useGalleryActions();
   
   const location = useLocation();
@@ -218,44 +216,30 @@ const FullImageModal = memo(() => {
   // Handle category selection
   const handleSelectCategory = useCallback((category: string) => {
     navigate(`/app/${category}`);
-    clearJobUrl();
-  }, [navigate, clearJobUrl]);
+    closeFullSize();
+  }, [navigate, closeFullSize]);
   
   // Handle open my folders
   const handleOpenMyFolders = useCallback(() => {
     navigate('/gallery');
-    clearJobUrl();
-  }, [navigate, clearJobUrl]);
+    closeFullSize();
+  }, [navigate, closeFullSize]);
   
   // Handle previous image (with wraparound)
   const handlePrevious = useCallback(() => {
-    const totalItems = filteredItems.length;
-    if (totalItems === 0) return;
-    
-    const newIndex = fullSizeIndex > 0 ? fullSizeIndex - 1 : totalItems - 1;
-    const prevImage = filteredItems[newIndex];
-    if (prevImage) {
-      setFullSizeImage(prevImage, newIndex);
-    }
-  }, [fullSizeIndex, filteredItems, setFullSizeImage]);
+    moveFullSize(-1);
+  }, [moveFullSize]);
 
   // Handle next image (with wraparound)
   const handleNext = useCallback(() => {
-    const totalItems = filteredItems.length;
-    if (totalItems === 0) return;
-    
-    const newIndex = fullSizeIndex < totalItems - 1 ? fullSizeIndex + 1 : 0;
-    const nextImage = filteredItems[newIndex];
-    if (nextImage) {
-      setFullSizeImage(nextImage, newIndex);
-    }
-  }, [fullSizeIndex, filteredItems, setFullSizeImage]);
+    moveFullSize(1);
+  }, [moveFullSize]);
 
   // Handle escape key
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && open) {
-        clearJobUrl();
+        closeFullSize();
       }
     };
     
@@ -266,7 +250,7 @@ const FullImageModal = memo(() => {
     return () => {
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [open, clearJobUrl]);
+  }, [open, closeFullSize]);
   
   // Handle click outside
   useEffect(() => {
@@ -300,7 +284,7 @@ const FullImageModal = memo(() => {
       // Don't close if clicking inside the modal or sidebar
       if (!isInsideModal && !isInsideSidebar) {
         console.log('[FullImageModal] Closing modal - click outside modal and sidebar');
-        clearJobUrl();
+        closeFullSize();
       } else {
         console.log('[FullImageModal] Keeping modal open - click inside modal or sidebar');
       }
@@ -311,7 +295,7 @@ const FullImageModal = memo(() => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [open, clearJobUrl]);
+  }, [open, closeFullSize]);
   
   // Handle keyboard navigation
   useEffect(() => {
@@ -326,7 +310,7 @@ const FullImageModal = memo(() => {
           handleNext();
           break;
         case 'Escape':
-          clearJobUrl();
+          closeFullSize();
           break;
       }
     };
@@ -338,15 +322,7 @@ const FullImageModal = memo(() => {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [open, fullSizeImage, handlePrevious, handleNext, clearJobUrl]);
-
-  // Keep the job route in sync with the currently focused image
-  useEffect(() => {
-    if (!open || !fullSizeImage) {
-      return;
-    }
-    syncJobUrlForImage(fullSizeImage);
-  }, [open, fullSizeImage, syncJobUrlForImage]);
+  }, [open, fullSizeImage, handlePrevious, handleNext, closeFullSize]);
 
   // Close modal after successful deletion (item removed from gallery)
   useEffect(() => {
@@ -363,9 +339,9 @@ const FullImageModal = memo(() => {
     
     // If item no longer exists in gallery, close the modal
     if (!stillExists) {
-      clearJobUrl();
+      closeFullSize();
     }
-  }, [filteredItems, fullSizeImage, open, clearJobUrl]);
+  }, [filteredItems, fullSizeImage, open, closeFullSize]);
   
   // Load avatars and products from storage
   useEffect(() => {
@@ -586,23 +562,23 @@ const FullImageModal = memo(() => {
     e.stopPropagation();
     if (fullSizeImage) {
       handleUseAsReference(fullSizeImage);
-      clearJobUrl();
+      closeFullSize();
     }
-  }, [fullSizeImage, handleUseAsReference, clearJobUrl]);
+  }, [fullSizeImage, handleUseAsReference, closeFullSize]);
   
   const handleReusePromptClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     if (fullSizeImage) {
       handleReusePrompt(fullSizeImage);
-      clearJobUrl();
+      closeFullSize();
     }
-  }, [fullSizeImage, handleReusePrompt, clearJobUrl]);
+  }, [fullSizeImage, handleReusePrompt, closeFullSize]);
   
   const handleMakeVideoClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     handleMakeVideo();
-    clearJobUrl();
-  }, [handleMakeVideo, clearJobUrl]);
+    closeFullSize();
+  }, [handleMakeVideo, closeFullSize]);
   
   // Handle toggle edit menu
   const handleToggleEditMenu = useCallback((menuId: string, anchor: HTMLElement) => {
@@ -637,18 +613,18 @@ const FullImageModal = memo(() => {
   const handleUseReference = useCallback(() => {
     if (fullSizeImage) {
       handleUseAsReference(fullSizeImage);
-      clearJobUrl();
+      closeFullSize();
     }
     handleCloseEditMenu();
-  }, [fullSizeImage, handleUseAsReference, clearJobUrl, handleCloseEditMenu]);
+  }, [fullSizeImage, handleUseAsReference, closeFullSize, handleCloseEditMenu]);
   
   const handleReuse = useCallback(() => {
     if (fullSizeImage) {
       handleReusePrompt(fullSizeImage);
-      clearJobUrl();
+      closeFullSize();
     }
     handleCloseEditMenu();
-  }, [fullSizeImage, handleReusePrompt, clearJobUrl, handleCloseEditMenu]);
+  }, [fullSizeImage, handleReusePrompt, closeFullSize, handleCloseEditMenu]);
   
   const handleVideo = useCallback(() => {
     handleMakeVideo();
@@ -879,7 +855,7 @@ const FullImageModal = memo(() => {
           const sidebarEl = sidebarRef.current;
           const target = e.target as Node;
           if (!modalEl?.contains(target) && !sidebarEl?.contains(target)) {
-            clearJobUrl();
+            closeFullSize();
           }
         }}
       >
@@ -1142,7 +1118,7 @@ const FullImageModal = memo(() => {
 
             {/* Close button - positioned on right side of image */}
             <button
-              onClick={clearJobUrl}
+              onClick={closeFullSize}
               className="absolute -top-3 -right-3 p-1.5 rounded-full bg-[color:var(--glass-dark-bg)] text-theme-white hover:text-theme-text backdrop-blur-sm transition-colors duration-200"
               aria-label="Close"
             >
@@ -1546,8 +1522,7 @@ const FullImageModal = memo(() => {
             onNavigate={(index) => {
               const next = filteredItems[index];
               if (next) {
-                setFullSizeImage(next, index);
-                syncJobUrlForImage(next);
+                openFullSize(next, index);
               }
             }}
             className="z-[130]"

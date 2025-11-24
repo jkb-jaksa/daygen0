@@ -1,12 +1,12 @@
 import React, { memo, useCallback, useMemo } from 'react';
-import { Download, Share2, FolderPlus, Globe, Lock } from 'lucide-react';
+import { Download, FolderPlus, Globe, Lock, Copy } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
 import { MenuPortal } from './shared/MenuPortal';
 import { useToast } from '../../hooks/useToast';
 import { debugLog, debugError } from '../../utils/debug';
 import type { GalleryImageLike, GalleryVideoLike } from './types';
-import { makeRemixUrl, withUtm, copyLink } from '../../lib/shareUtils';
+
 
 // Helper to match gallery item by identifier
 const matchGalleryItemId = (
@@ -37,43 +37,50 @@ const ImageActionMenu = memo<ImageActionMenuProps>(({ open, onClose }) => {
     handleAddToFolder,
   } = useGalleryActions();
   const { showToast } = useToast();
-  
+
   const { imageActionMenu } = state;
-  
+
   // Get current image
   const currentImage = useMemo(() => {
     if (!imageActionMenu?.id) return null;
-    
+
     const allItems = [...state.images, ...state.videos];
     return allItems.find(item => matchGalleryItemId(item, imageActionMenu.id)) || null;
   }, [state.images, state.videos, imageActionMenu]);
-  
-  // Handle copy link / share
-  const handleCopyLink = useCallback(async (event: React.MouseEvent) => {
+
+  // Handle copy image to clipboard
+  const handleCopyImage = useCallback(async (event: React.MouseEvent) => {
     event.stopPropagation();
     if (!currentImage) return;
 
     try {
-      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-      let urlToShare: string;
+      // Use backend proxy to avoid CORS issues
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+      const proxyUrl = `${apiBaseUrl}/r2files/proxy?url=${encodeURIComponent(currentImage.url)}`;
 
-      if (currentImage.jobId) {
-        const normalizedBase = baseUrl.replace(/\/$/, '');
-        urlToShare = `${normalizedBase}/job/${encodeURIComponent(currentImage.jobId)}`;
-      } else {
-        const remixUrl = makeRemixUrl(baseUrl, currentImage.prompt || '');
-        urlToShare = withUtm(remixUrl, 'copy');
-      }
+      const response = await fetch(proxyUrl, {
+        credentials: 'include',
+      });
 
-      await copyLink(urlToShare);
-      debugLog('Link copied!');
-      showToast('Link copied!');
+      if (!response.ok) throw new Error('Failed to fetch image');
+
+      const blob = await response.blob();
+
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          [blob.type]: blob,
+        }),
+      ]);
+
+      debugLog('Image copied to clipboard!');
+      showToast('Image copied to clipboard!');
       onClose();
     } catch (error) {
-      debugError('Failed to copy link:', error);
+      debugError('Failed to copy image:', error);
+      showToast('Failed to copy image. Please try again.');
     }
   }, [currentImage, onClose, showToast]);
-  
+
   // Handle download
   const handleDownload = useCallback(async (event: React.MouseEvent) => {
     event.stopPropagation();
@@ -82,7 +89,7 @@ const ImageActionMenu = memo<ImageActionMenuProps>(({ open, onClose }) => {
       onClose();
     }
   }, [currentImage, handleDownloadImage, onClose]);
-  
+
   // Handle toggle public
   const handleTogglePublicClick = useCallback(async (event: React.MouseEvent) => {
     event.stopPropagation();
@@ -100,26 +107,26 @@ const ImageActionMenu = memo<ImageActionMenuProps>(({ open, onClose }) => {
       onClose();
     }
   }, [currentImage, handleAddToFolder, onClose]);
-  
+
   if (!open || !imageActionMenu || !currentImage) return null;
-  
+
   return (
     <MenuPortal
       anchorEl={open ? imageActionMenu.anchor : null}
       open={open}
       onClose={onClose}
     >
-      {/* Copy Link / Share */}
+      {/* Copy Image */}
       <button
         type="button"
         className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-        onClick={handleCopyLink}
+        onClick={handleCopyImage}
       >
         <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-        <Share2 className="h-4 w-4 text-theme-text relative z-10" />
-        <span className="relative z-10">Copy link</span>
+        <Copy className="h-4 w-4 text-theme-text relative z-10" />
+        <span className="relative z-10">Copy</span>
       </button>
-      
+
       {/* Download */}
       <button
         type="button"
@@ -130,7 +137,7 @@ const ImageActionMenu = memo<ImageActionMenuProps>(({ open, onClose }) => {
         <Download className="h-4 w-4 text-theme-text relative z-10" />
         <span className="relative z-10">Download</span>
       </button>
-      
+
       {/* Manage Folders */}
       <button
         type="button"
@@ -141,7 +148,7 @@ const ImageActionMenu = memo<ImageActionMenuProps>(({ open, onClose }) => {
         <FolderPlus className="h-4 w-4 text-theme-text relative z-10" />
         <span className="relative z-10">Manage folders</span>
       </button>
-      
+
       {/* Toggle Public/Private */}
       <button
         type="button"

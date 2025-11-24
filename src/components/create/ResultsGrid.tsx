@@ -97,10 +97,9 @@ const renderPlaceholderGrid = (
 const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, onFocusPrompt }) => {
   const { user, storagePrefix } = useAuth();
   const { showToast } = useToast();
-  const { state, toggleItemSelection, isLoading, filteredItems: contextFilteredItems, addImage } = useGallery();
+  const { state, toggleItemSelection, isLoading, filteredItems: contextFilteredItems, addImage, openFullSize } = useGallery();
   const { variateImage: variateImageHook } = useRecraftImageGeneration();
   const {
-    handleImageClick,
     handleImageActionMenu,
     handleBulkActionsMenu,
     handleToggleLike,
@@ -120,6 +119,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const [hoveredPromptButton, setHoveredPromptButton] = useState<string | null>(null);
   const [savePromptModalState, setSavePromptModalState] = useState<{ prompt: string; originalPrompt: string } | null>(null);
   const savePromptModalRef = useRef<HTMLDivElement>(null);
+  const lastOpenRef = useRef<{ id: string | null; ts: number }>({ id: null, ts: 0 });
   const {
     goToAvatarProfile,
     goToProductProfile,
@@ -388,23 +388,32 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     );
   }
   
+  const guardedOpenFullSize = useCallback((item: GalleryImageLike | GalleryVideoLike, index: number) => {
+    const identifier = getItemIdentifier(item);
+    const now = Date.now();
+
+    if (identifier) {
+      const { id, ts } = lastOpenRef.current;
+      if (id === identifier && now - ts < 200) {
+        return;
+      }
+      lastOpenRef.current = { id: identifier, ts: now };
+    }
+
+    openFullSize(item, index);
+  }, [openFullSize]);
+
   // Handle item click
   const handleItemClick = useCallback((item: GalleryImageLike | GalleryVideoLike, index: number) => {
-    console.log('[ResultsGrid] handleItemClick called', { 
-      item: { url: item.url, jobId: item.jobId, prompt: item.prompt?.substring(0, 50) }, 
-      index, 
-      isBulkMode 
-    });
     if (isBulkMode) {
       const itemId = getItemIdentifier(item);
       if (itemId) {
         toggleItemSelection(itemId);
       }
     } else {
-      console.log('[ResultsGrid] Calling handleImageClick');
-      handleImageClick(item, index);
+      guardedOpenFullSize(item, index);
     }
-  }, [isBulkMode, toggleItemSelection, handleImageClick]);
+  }, [guardedOpenFullSize, isBulkMode, toggleItemSelection]);
   
   // Handle item right click
   const handleItemRightClick = useCallback((event: React.MouseEvent, item: GalleryImageLike | GalleryVideoLike) => {

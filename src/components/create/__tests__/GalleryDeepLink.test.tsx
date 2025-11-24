@@ -22,8 +22,23 @@ const mockNavigate = vi.fn((path: unknown, options?: { replace?: boolean; state?
     const url = new URL(path, 'http://localhost');
     mockLocation.pathname = url.pathname;
     mockLocation.search = url.search ?? '';
-    mockLocation.state = options?.state ?? null;
+  } else if (path && typeof path === 'object') {
+    const target = path as { pathname?: string; search?: string };
+    if (typeof target.pathname === 'string') {
+      mockLocation.pathname = target.pathname;
+    }
+    if (typeof target.search === 'string') {
+      const trimmed = target.search.trim();
+      if (!trimmed) {
+        mockLocation.search = '';
+      } else if (trimmed.startsWith('?')) {
+        mockLocation.search = trimmed;
+      } else {
+        mockLocation.search = `?${trimmed}`;
+      }
+    }
   }
+  mockLocation.state = options?.state ?? null;
   return null;
 });
 
@@ -138,8 +153,9 @@ beforeEach(() => {
 });
 
 describe('Gallery deep link hydration', () => {
-  it('opens full-size modal for /job/:jobId', async () => {
-    mockLocation.pathname = '/job/abc';
+  it('opens full-size modal when jobId query param targets a jobId', async () => {
+    mockLocation.pathname = '/app/image';
+    mockLocation.search = '?jobId=abc';
 
     render(
       <GenerationProvider>
@@ -156,8 +172,9 @@ describe('Gallery deep link hydration', () => {
     expect(screen.getByTestId('identifier').textContent).toBe('abc');
   });
 
-  it('hydrates modal when /job identifier matches r2FileId', async () => {
-    mockLocation.pathname = '/job/r2-fallback';
+  it('hydrates modal when query param matches r2FileId', async () => {
+    mockLocation.pathname = '/app/image';
+    mockLocation.search = '?jobId=r2-fallback';
 
     render(
       <GenerationProvider>
@@ -174,9 +191,10 @@ describe('Gallery deep link hydration', () => {
     expect(screen.getByTestId('identifier').textContent).toBe('r2-fallback');
   });
 
-  it('hydrates modal when /job identifier encodes image URL', async () => {
+  it('hydrates modal when query param encodes image URL', async () => {
     const targetUrl = mockGalleryImages[2]!.url;
-    mockLocation.pathname = `/job/${encodeURIComponent(targetUrl)}`;
+    mockLocation.pathname = '/app/image';
+    mockLocation.search = `?jobId=${encodeURIComponent(targetUrl)}`;
 
     render(
       <GenerationProvider>
@@ -191,6 +209,25 @@ describe('Gallery deep link hydration', () => {
     });
     expect(screen.getByTestId('identifier').textContent).toBe(targetUrl);
   });
+
+  it('still hydrates for legacy /job/:jobId routes', async () => {
+    mockLocation.pathname = '/job/abc';
+    mockLocation.search = '';
+
+    render(
+      <GenerationProvider>
+        <GalleryProvider>
+          <Probe />
+        </GalleryProvider>
+      </GenerationProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('open').textContent).toBe('open');
+    });
+    expect(screen.getByTestId('job').textContent).toBe('abc');
+    expect(screen.getByTestId('identifier').textContent).toBe('abc');
+  });
 });
 
 describe('Gallery action navigation fallbacks', () => {
@@ -199,10 +236,18 @@ describe('Gallery action navigation fallbacks', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /open/i }));
 
-    expect(mockNavigate).toHaveBeenCalledWith('/job/r2-fallback', expect.objectContaining({
-      replace: false,
-      state: { jobOrigin: '/app/image' },
-    }));
+    expect(mockNavigate).toHaveBeenCalledWith(
+      {
+        pathname: '/app/image',
+        search: 'jobId=r2-fallback',
+      },
+      expect.objectContaining({
+        replace: false,
+        state: null,
+      }),
+    );
+    expect(mockLocation.pathname).toBe('/app/image');
+    expect(mockLocation.search).toBe('?jobId=r2-fallback');
   });
 
   it('encodes URL when neither jobId nor r2FileId exist', () => {
@@ -213,12 +258,38 @@ describe('Gallery action navigation fallbacks', () => {
     fireEvent.click(screen.getByRole('button', { name: /open/i }));
 
     expect(mockNavigate).toHaveBeenCalledWith(
-      `/job/${encodeURIComponent(image.url)}`,
+      {
+        pathname: '/app/image',
+        search: `jobId=${encodeURIComponent(image.url)}`,
+      },
       expect.objectContaining({
         replace: false,
-        state: { jobOrigin: '/app/image' },
+        state: null,
       }),
     );
+    expect(mockLocation.pathname).toBe('/app/image');
+    expect(mockLocation.search).toBe(`?jobId=${encodeURIComponent(image.url)}`);
+  });
+});
+
+describe('Immediate modal open behavior', () => {
+  it('keeps the modal open while jobId query param is still pending', async () => {
+    mockNavigate.mockImplementationOnce(() => null);
+
+    renderWithProviders(
+      <>
+        <ClickTester image={mockGalleryImages[0]!} />
+        <Probe />
+      </>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /open/i }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('open').textContent).toBe('open');
+      expect(screen.getByTestId('identifier').textContent).toBe('abc');
+    });
+    expect(mockLocation.search).toBe('');
   });
 });
 
@@ -245,14 +316,17 @@ describe('FullImageModal navigation sync', () => {
 
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith(
-        '/job/r2-fallback',
+        {
+          pathname: '/app/image',
+          search: 'jobId=r2-fallback',
+        },
         expect.objectContaining({
           replace: false,
-          state: expect.objectContaining({
-            jobOrigin: expect.any(String),
-          }),
+          state: null,
         }),
       );
     });
+    expect(mockLocation.pathname).toBe('/app/image');
+    expect(mockLocation.search).toBe('?jobId=r2-fallback');
   });
 });
