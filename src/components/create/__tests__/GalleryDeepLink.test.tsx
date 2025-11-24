@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 import React, { useRef } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { GalleryProvider, useGallery } from '../contexts/GalleryContext';
 import { GenerationProvider } from '../contexts/GenerationContext';
 import { useGalleryActions } from '../hooks/useGalleryActions';
@@ -96,6 +96,12 @@ vi.mock('../../../hooks/useGalleryImages', () => ({
     deleteImage: vi.fn().mockResolvedValue(true),
   }),
 }));
+
+const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+afterAll(() => {
+  consoleLogSpy.mockRestore();
+});
 
 function Probe() {
   const { state } = useGallery();
@@ -231,51 +237,45 @@ describe('Gallery deep link hydration', () => {
 });
 
 describe('Gallery action navigation fallbacks', () => {
-  it('navigates with r2FileId when jobId missing', () => {
+  it('navigates with r2FileId when jobId missing', async () => {
     renderWithProviders(<ClickTester image={mockGalleryImages[1]!} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /open/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /open/i }));
+    });
 
-    expect(mockNavigate).toHaveBeenCalledWith(
-      {
-        pathname: '/app/image',
-        search: 'jobId=r2-fallback',
-      },
-      expect.objectContaining({
-        replace: false,
-        state: null,
-      }),
-    );
-    expect(mockLocation.pathname).toBe('/app/image');
-    expect(mockLocation.search).toBe('?jobId=r2-fallback');
+    const lastCall = mockNavigate.mock.calls.at(-1);
+    expect(lastCall?.[0]).toBe('/job/r2-fallback');
+    expect(lastCall?.[1]).toMatchObject({
+      replace: false,
+      state: { jobOrigin: '/app/image' },
+    });
+    expect(mockLocation.pathname).toBe('/job/r2-fallback');
+    expect(mockLocation.search).toBe('');
   });
 
-  it('encodes URL when neither jobId nor r2FileId exist', () => {
+  it('encodes URL when neither jobId nor r2FileId exist', async () => {
     const image = mockGalleryImages[2]!;
 
     renderWithProviders(<ClickTester image={image} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /open/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /open/i }));
+    });
 
-    expect(mockNavigate).toHaveBeenCalledWith(
-      {
-        pathname: '/app/image',
-        search: `jobId=${encodeURIComponent(image.url)}`,
-      },
-      expect.objectContaining({
-        replace: false,
-        state: null,
-      }),
-    );
-    expect(mockLocation.pathname).toBe('/app/image');
-    expect(mockLocation.search).toBe(`?jobId=${encodeURIComponent(image.url)}`);
+    const lastCall = mockNavigate.mock.calls.at(-1);
+    expect(lastCall?.[0]).toBe(`/job/${encodeURIComponent(image.url)}`);
+    expect(lastCall?.[1]).toMatchObject({
+      replace: false,
+      state: { jobOrigin: '/app/image' },
+    });
+    expect(mockLocation.pathname).toBe(`/job/${encodeURIComponent(image.url)}`);
+    expect(mockLocation.search).toBe('');
   });
 });
 
 describe('Immediate modal open behavior', () => {
   it('keeps the modal open while jobId query param is still pending', async () => {
-    mockNavigate.mockImplementationOnce(() => null);
-
     renderWithProviders(
       <>
         <ClickTester image={mockGalleryImages[0]!} />
@@ -283,12 +283,15 @@ describe('Immediate modal open behavior', () => {
       </>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /open/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /open/i }));
+    });
 
     await waitFor(() => {
       expect(screen.getByTestId('open').textContent).toBe('open');
       expect(screen.getByTestId('identifier').textContent).toBe('abc');
     });
+    expect(mockLocation.pathname).toBe('/job/abc');
     expect(mockLocation.search).toBe('');
   });
 });
@@ -302,7 +305,9 @@ describe('FullImageModal navigation sync', () => {
       </>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /open/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /open/i }));
+    });
 
     await waitFor(() => {
       expect(screen.getByLabelText(/Next image/i)).toBeInTheDocument();
@@ -312,7 +317,9 @@ describe('FullImageModal navigation sync', () => {
     });
     mockNavigate.mockClear();
 
-    fireEvent.click(screen.getByLabelText(/Next image/i));
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText(/Next image/i));
+    });
 
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith(
