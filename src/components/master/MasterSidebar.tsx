@@ -42,7 +42,7 @@ function MasterSidebarComponent({
     <div className={responsiveClass} style={{ width: SIDEBAR_WIDTH }}>
       <nav
         data-master-sidebar="true"
-        aria-label="Master navigation"
+        aria-label="Create navigation"
         className={navClasses}
         style={{ height: sidebarHeight, maxHeight: sidebarHeight, top: sidebarTop, width: SIDEBAR_WIDTH }}
       >
@@ -54,7 +54,7 @@ function MasterSidebarComponent({
             to="/app" 
             className="flex items-center px-2 text-[12px] text-theme-text font-raleway uppercase tracking-wider mb-1 sidebar-section-header hover:opacity-80 transition-opacity cursor-pointer"
           >
-            master
+            create
           </Link>
 
           {CREATE_CATEGORIES.map(({ key, label, Icon, gradient, iconColor }) => {
