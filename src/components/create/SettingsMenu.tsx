@@ -6,7 +6,7 @@ import { useDropdownScrollLock } from "../../hooks/useDropdownScrollLock";
 import { Minus, Plus } from "lucide-react";
 import type { GeminiAspectRatio } from "../../types/aspectRatio";
 
-type FluxModelOption = "flux-pro-1.1" | "flux-pro-1.1-ultra" | "flux-kontext-pro" | "flux-kontext-max";
+type FluxModelOption = "flux-2-pro" | "flux-2-flex";
 
 
 interface FluxSettingsProps {
@@ -347,7 +347,7 @@ export function SettingsMenu({
   if (flux.enabled) {
     sections.push(
       <div key="flux" className="space-y-4">
-        <div className="text-base font-raleway text-theme-text mb-3">Flux 1.1 Settings</div>
+        <div className="text-base font-raleway text-theme-text mb-3">FLUX.2 Settings</div>
         <div className="space-y-3">
           <div>
             <label className="block text-xs font-raleway text-theme-white/80 mb-1">Model Type</label>
@@ -356,10 +356,8 @@ export function SettingsMenu({
               onChange={event => flux.onModelChange(event.target.value as FluxModelOption)}
               className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white focus:ring-2 focus:ring-theme-text focus:border-transparent outline-none"
             >
-              <option value="flux-pro-1.1">Flux Pro 1.1 (Standard)</option>
-              <option value="flux-pro-1.1-ultra">Flux Pro 1.1 Ultra (4MP+)</option>
-              <option value="flux-kontext-pro">Flux Kontext Pro (Image Editing)</option>
-              <option value="flux-kontext-max">Flux Kontext Max (Highest Quality)</option>
+              <option value="flux-2-pro">FLUX.2 Pro (fast)</option>
+              <option value="flux-2-flex">FLUX.2 Flex (highest quality)</option>
             </select>
           </div>
         </div>

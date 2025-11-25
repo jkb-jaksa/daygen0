@@ -99,9 +99,9 @@ const IMAGE_MODEL_OPTIONS: ReadonlyArray<ImageModelOption> = [
     Icon: Sparkles,
   },
   {
-    id: "flux-1.1",
-    name: "Flux 1.1",
-    desc: "High-quality text-to-image generation and editing.",
+    id: "flux-2",
+    name: "FLUX.2",
+    desc: "Latest FLUX.2 Pro & Flex for generation + editing.",
     Icon: Wand2,
   },
   {
@@ -247,8 +247,8 @@ const ChatMode: React.FC = () => {
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAspectRatioMenuOpen, setIsAspectRatioMenuOpen] = useState(false);
-  const [fluxModel, setFluxModel] = useState<"flux-pro-1.1" | "flux-pro-1.1-ultra" | "flux-kontext-pro" | "flux-kontext-max">(
-    "flux-pro-1.1",
+  const [fluxModel, setFluxModel] = useState<"flux-2-pro" | "flux-2-flex">(
+    "flux-2-pro",
   );
   const [recraftModel, setRecraftModel] = useState<"recraft-v3" | "recraft-v2">("recraft-v3");
   const [runwayModel, setRunwayModel] = useState<"runway-gen4" | "runway-gen4-turbo">("runway-gen4");
@@ -276,7 +276,7 @@ const ChatMode: React.FC = () => {
   }, [selectedModel]);
 
   const isGeminiModel = selectedModel === "gemini-3.0-pro-image";
-  const isFluxModel = selectedModel === "flux-1.1";
+  const isFluxModel = selectedModel === "flux-2";
   const isRunwayImageModel = selectedModel === "runway-gen4";
   const isRecraftModel = selectedModel === "recraft";
   const isGrokModel = selectedModel === "grok-2-image";
