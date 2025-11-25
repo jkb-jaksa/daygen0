@@ -3631,7 +3631,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                   closeAvatarFullSizeView();
                 }}
                 onOpenMyFolders={() => {
-                  navigate('/app/folders');
+                  navigate('/gallery/folders');
                   closeAvatarFullSizeView();
                 }}
                 isFullSizeOpen={true}

@@ -104,7 +104,7 @@ const TOOL_LOGO_GROUPS: readonly ToolLogoGroup[] = [
   },
   {
     logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/deepmind logo.jpeg',
-    names: ['Veo 3.1', 'Veo 3'],
+    names: ['Veo 3'],
   },
   {
     logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/pika logo.png',

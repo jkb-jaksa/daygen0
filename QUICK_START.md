@@ -66,7 +66,7 @@ Open http://localhost:5173 in your browser.
 - **Luma AI** - Dream Shaper, Realistic Vision, and Photon models for various styles
 
 ### Video Generation
-- **Veo 3.1** - Google's latest cinematic video generation with advanced prompting
+- **Veo 3** - Google's latest cinematic video generation with advanced prompting
 - **Runway Gen-4 Video** - Professional video generation with style consistency
 - **Wan 2.2** - Alibaba's text-to-video generation with high quality output
 - **Hailuo 02** - MiniMax video generation with frame control and editing

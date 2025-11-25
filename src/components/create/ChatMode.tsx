@@ -1617,7 +1617,7 @@ const ChatMode: React.FC = () => {
                               enabled: false,
                               aspectRatio: "16:9",
                               onAspectRatioChange: () => {},
-                              model: "veo-3.1-generate-preview",
+                              model: "veo-3.0-generate-001",
                               onModelChange: () => {},
                               negativePrompt: "",
                               onNegativePromptChange: () => {},

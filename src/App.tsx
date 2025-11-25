@@ -22,12 +22,14 @@ const KnowledgeBase = lazy(() => import("./components/KnowledgeBase"));
 const LearnToolPage = lazy(() => import("./components/LearnToolPage"));
 const CreateRoutes = lazy(() => import("./routes/CreateRoutes"));
 const MasterRoutes = lazy(() => import("./routes/MasterRoutes"));
+const CreateRefactored = lazy(() => import("./components/create/Create-refactored"));
 const Edit = lazy(() => import("./components/Edit"));
 const Account = lazy(() => import("./components/Account"));
 const AuthErrorBoundary = lazy(() => import("./components/AuthErrorBoundary"));
 const Upgrade = lazy(() => import("./components/Upgrade"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Courses = lazy(() => import("./components/Courses"));
+const GalleryRoutes = lazy(() => import("./routes/GalleryRoutes"));
 const LearnLayout = lazy(() => import("./routes/LearnLayout"));
 const Navbar = lazy(() => import("./components/Navbar"));
 const FAQSection = lazy(() => import("./components/Faq"));
@@ -749,6 +751,18 @@ function AppContent() {
                 <Route path="/app/*" element={<MasterRoutes />} />
                 <Route path="/job/:jobId/*" element={<JobRedirect />} />
               </Route>
+              <Route
+                path="/gallery/*"
+                element={
+                  <RequireAuth>
+                    <Suspense fallback={<RouteFallback />}>
+                      <AuthErrorBoundary fallbackRoute="/gallery" context="gallery">
+                        <GalleryRoutes />
+                      </AuthErrorBoundary>
+                    </Suspense>
+                  </RequireAuth>
+                }
+              />
               <Route path="/upgrade" element={<Upgrade />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route

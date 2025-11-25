@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 import React, { useRef } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { GalleryProvider, useGallery } from '../contexts/GalleryContext';
 import { GenerationProvider } from '../contexts/GenerationContext';
 import { useGalleryActions } from '../hooks/useGalleryActions';
@@ -83,8 +83,6 @@ const mockGalleryImages: GalleryImageLike[] = [
   },
 ];
 
-const mockFetchGalleryImages = vi.fn().mockResolvedValue(undefined);
-
 vi.mock('../../../hooks/useGalleryImages', () => ({
   useGalleryImages: () => ({
     images: mockGalleryImages,
@@ -92,34 +90,12 @@ vi.mock('../../../hooks/useGalleryImages', () => ({
     error: null,
     hasBase64Images: false,
     needsMigration: false,
-    fetchGalleryImages: mockFetchGalleryImages,
-    updateImages: vi.fn().mockResolvedValue(undefined),
-    removeImages: vi.fn().mockResolvedValue(undefined),
+    fetchGalleryImages: vi.fn(),
+    updateImages: vi.fn(),
+    removeImages: vi.fn(),
     deleteImage: vi.fn().mockResolvedValue(true),
   }),
 }));
-
-// Mock clientStorage to prevent IndexedDB hangs
-vi.mock('../../../lib/clientStorage', () => ({
-  getPersistedValue: vi.fn().mockResolvedValue(null),
-  setPersistedValue: vi.fn().mockResolvedValue(undefined),
-  removePersistedValue: vi.fn().mockResolvedValue(undefined),
-}));
-
-// Mock API module to prevent actual API calls
-vi.mock('../../../utils/api', () => ({
-  apiFetch: vi.fn(),
-  getApiUrl: vi.fn((path: string) => path),
-  API_BASE_URL: '',
-}));
-
-const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
-const consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
-
-afterAll(() => {
-  consoleLogSpy.mockRestore();
-  consoleInfoSpy.mockRestore();
-});
 
 function Probe() {
   const { state } = useGallery();
@@ -171,7 +147,6 @@ function renderWithProviders(children: React.ReactNode) {
 
 beforeEach(() => {
   mockNavigate.mockClear();
-  mockFetchGalleryImages.mockClear();
   mockLocation.pathname = '/app/image';
   mockLocation.search = '';
   mockLocation.state = null;
@@ -190,12 +165,9 @@ describe('Gallery deep link hydration', () => {
       </GenerationProvider>,
     );
 
-    await waitFor(
-      () => {
-        expect(screen.getByTestId('open').textContent).toBe('open');
-      },
-      { timeout: 5000 },
-    );
+    await waitFor(() => {
+      expect(screen.getByTestId('open').textContent).toBe('open');
+    });
     expect(screen.getByTestId('job').textContent).toBe('abc');
     expect(screen.getByTestId('identifier').textContent).toBe('abc');
   });
@@ -212,12 +184,9 @@ describe('Gallery deep link hydration', () => {
       </GenerationProvider>,
     );
 
-    await waitFor(
-      () => {
-        expect(screen.getByTestId('open').textContent).toBe('open');
-      },
-      { timeout: 5000 },
-    );
+    await waitFor(() => {
+      expect(screen.getByTestId('open').textContent).toBe('open');
+    });
     expect(screen.getByTestId('job').textContent).toBe('');
     expect(screen.getByTestId('identifier').textContent).toBe('r2-fallback');
   });
@@ -235,12 +204,9 @@ describe('Gallery deep link hydration', () => {
       </GenerationProvider>,
     );
 
-    await waitFor(
-      () => {
-        expect(screen.getByTestId('open').textContent).toBe('open');
-      },
-      { timeout: 5000 },
-    );
+    await waitFor(() => {
+      expect(screen.getByTestId('open').textContent).toBe('open');
+    });
     expect(screen.getByTestId('identifier').textContent).toBe(targetUrl);
   });
 
@@ -256,57 +222,60 @@ describe('Gallery deep link hydration', () => {
       </GenerationProvider>,
     );
 
-    await waitFor(
-      () => {
-        expect(screen.getByTestId('open').textContent).toBe('open');
-      },
-      { timeout: 5000 },
-    );
+    await waitFor(() => {
+      expect(screen.getByTestId('open').textContent).toBe('open');
+    });
     expect(screen.getByTestId('job').textContent).toBe('abc');
     expect(screen.getByTestId('identifier').textContent).toBe('abc');
   });
 });
 
 describe('Gallery action navigation fallbacks', () => {
-  it('navigates with r2FileId when jobId missing', async () => {
+  it('navigates with r2FileId when jobId missing', () => {
     renderWithProviders(<ClickTester image={mockGalleryImages[1]!} />);
 
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /open/i }));
-    });
+    fireEvent.click(screen.getByRole('button', { name: /open/i }));
 
-    const lastCall = mockNavigate.mock.calls.at(-1);
-    expect(lastCall?.[0]).toBe('/job/r2-fallback');
-    expect(lastCall?.[1]).toMatchObject({
-      replace: false,
-      state: { jobOrigin: '/app/image' },
-    });
-    expect(mockLocation.pathname).toBe('/job/r2-fallback');
-    expect(mockLocation.search).toBe('');
+    expect(mockNavigate).toHaveBeenCalledWith(
+      {
+        pathname: '/app/image',
+        search: 'jobId=r2-fallback',
+      },
+      expect.objectContaining({
+        replace: false,
+        state: null,
+      }),
+    );
+    expect(mockLocation.pathname).toBe('/app/image');
+    expect(mockLocation.search).toBe('?jobId=r2-fallback');
   });
 
-  it('encodes URL when neither jobId nor r2FileId exist', async () => {
+  it('encodes URL when neither jobId nor r2FileId exist', () => {
     const image = mockGalleryImages[2]!;
 
     renderWithProviders(<ClickTester image={image} />);
 
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /open/i }));
-    });
+    fireEvent.click(screen.getByRole('button', { name: /open/i }));
 
-    const lastCall = mockNavigate.mock.calls.at(-1);
-    expect(lastCall?.[0]).toBe(`/job/${encodeURIComponent(image.url)}`);
-    expect(lastCall?.[1]).toMatchObject({
-      replace: false,
-      state: { jobOrigin: '/app/image' },
-    });
-    expect(mockLocation.pathname).toBe(`/job/${encodeURIComponent(image.url)}`);
-    expect(mockLocation.search).toBe('');
+    expect(mockNavigate).toHaveBeenCalledWith(
+      {
+        pathname: '/app/image',
+        search: `jobId=${encodeURIComponent(image.url)}`,
+      },
+      expect.objectContaining({
+        replace: false,
+        state: null,
+      }),
+    );
+    expect(mockLocation.pathname).toBe('/app/image');
+    expect(mockLocation.search).toBe(`?jobId=${encodeURIComponent(image.url)}`);
   });
 });
 
 describe('Immediate modal open behavior', () => {
   it('keeps the modal open while jobId query param is still pending', async () => {
+    mockNavigate.mockImplementationOnce(() => null);
+
     renderWithProviders(
       <>
         <ClickTester image={mockGalleryImages[0]!} />
@@ -314,18 +283,12 @@ describe('Immediate modal open behavior', () => {
       </>,
     );
 
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /open/i }));
-    });
+    fireEvent.click(screen.getByRole('button', { name: /open/i }));
 
-    await waitFor(
-      () => {
-        expect(screen.getByTestId('open').textContent).toBe('open');
-        expect(screen.getByTestId('identifier').textContent).toBe('abc');
-      },
-      { timeout: 5000 },
-    );
-    expect(mockLocation.pathname).toBe('/job/abc');
+    await waitFor(() => {
+      expect(screen.getByTestId('open').textContent).toBe('open');
+      expect(screen.getByTestId('identifier').textContent).toBe('abc');
+    });
     expect(mockLocation.search).toBe('');
   });
 });
@@ -339,44 +302,31 @@ describe('FullImageModal navigation sync', () => {
       </>,
     );
 
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /open/i }));
-    });
+    fireEvent.click(screen.getByRole('button', { name: /open/i }));
 
-    await waitFor(
-      () => {
-        expect(screen.getByLabelText(/Next image/i)).toBeInTheDocument();
-      },
-      { timeout: 5000 },
-    );
-    await waitFor(
-      () => {
-        expect(mockNavigate).toHaveBeenCalled();
-      },
-      { timeout: 5000 },
-    );
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Next image/i)).toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalled();
+    });
     mockNavigate.mockClear();
 
-    await act(async () => {
-      fireEvent.click(screen.getByLabelText(/Next image/i));
-    });
+    fireEvent.click(screen.getByLabelText(/Next image/i));
 
-    await waitFor(
-      () => {
-        expect(mockNavigate).toHaveBeenCalled();
-      },
-      { timeout: 5000 },
-    );
-
-    const lastCall = mockNavigate.mock.calls.at(-1);
-    expect(lastCall?.[0]).toBe('/job/r2-fallback');
-    expect(lastCall?.[1]).toMatchObject({
-      replace: false,
-      state: expect.objectContaining({
-        jobOrigin: expect.any(String),
-      }),
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith(
+        {
+          pathname: '/app/image',
+          search: 'jobId=r2-fallback',
+        },
+        expect.objectContaining({
+          replace: false,
+          state: null,
+        }),
+      );
     });
-    expect(mockLocation.pathname).toBe('/job/r2-fallback');
-    expect(mockLocation.search).toBe('');
+    expect(mockLocation.pathname).toBe('/app/image');
+    expect(mockLocation.search).toBe('?jobId=r2-fallback');
   });
 });

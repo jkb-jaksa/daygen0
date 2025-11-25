@@ -2747,7 +2747,7 @@ export default function Products() {
               closeFullSizeView();
             }}
             onOpenMyFolders={() => {
-              navigate('/app/gallery');
+              navigate('/gallery');
               closeFullSizeView();
             }}
             isFullSizeOpen={true}

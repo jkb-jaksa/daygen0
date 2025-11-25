@@ -13,7 +13,7 @@ const ALLOWED_DESTINATIONS = [
   STUDIO_BASE_PATH,
   "/job",
   "/edit", 
-  "/app/gallery",
+  "/gallery",
   "/learn",
   "/upgrade",
   ACCOUNT_ROUTE,
@@ -25,7 +25,7 @@ const DESTINATION_LABELS: Record<AllowedDestination, string> = {
   [STUDIO_BASE_PATH]: "the DayGen app",
   "/job": "your job view",
   "/edit": "the Edit workspace",
-  "/app/gallery": "your gallery",
+  "/gallery": "your gallery",
   "/learn": "the Learn hub",
   "/upgrade": "the Upgrade page",
   [ACCOUNT_ROUTE]: "your account",
@@ -282,8 +282,8 @@ const CATEGORY_TO_PATH: Record<string, string> = {
   avatars: `${STUDIO_BASE_PATH}/avatars`,
   products: `${STUDIO_BASE_PATH}/products`,
   audio: `${STUDIO_BASE_PATH}/audio`,
-  gallery: "/app/gallery",
-  uploads: "/app/gallery/uploads",
+  gallery: "/gallery",
+  uploads: "/gallery/uploads",
   "my-folders": "/app/folders",
   inspirations: "/app/inspirations",
 };
@@ -304,12 +304,10 @@ const GALLERY_SEGMENT_TO_CATEGORY: Record<string, string> = {
  */
 export function deriveCategoryFromPath(pathname: string): string {
   const normalized = pathname.toLowerCase();
-  if (normalized.startsWith("/app/gallery") || normalized.startsWith("/gallery")) {
+  if (normalized.startsWith("/gallery")) {
     const parts = normalized.split("/").filter(Boolean);
-    // Skip "app" if present to get the gallery segment
-    const galleryIndex = parts.findIndex(part => part === "gallery");
-    if (galleryIndex !== -1 && galleryIndex + 1 < parts.length) {
-      const segment = parts[galleryIndex + 1];
+    const segment = parts[1];
+    if (segment) {
       return GALLERY_SEGMENT_TO_CATEGORY[segment] ?? "gallery";
     }
     return "gallery";
@@ -318,9 +316,6 @@ export function deriveCategoryFromPath(pathname: string): string {
   if (normalized.startsWith(STUDIO_BASE_PATH) || normalized.startsWith(LEGACY_CREATE_PREFIX)) {
     const parts = normalized.split("/").filter(Boolean);
     const segment = parts[1];
-    if (segment === "gallery") {
-      return "gallery";
-    }
     if (segment === "folders") {
       return "my-folders";
     }

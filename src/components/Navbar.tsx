@@ -29,7 +29,7 @@ const NAV_ITEMS: ReadonlyArray<NavItem> = [
   { label: "edit", path: "/edit" },
   { label: "learn", path: "/learn/use-cases" },
   { label: "explore", path: "/explore" },
-  { label: "my works", path: "/app/gallery" },
+  { label: "my works", path: "/gallery" },
 ];
 
 const MENU_DROPDOWN_LABELS: ReadonlySet<MenuId> = new Set(["create", "learn", "my works"]);
@@ -50,7 +50,7 @@ const LEARN_MENU_LINKS: ReadonlyArray<{ to: string; label: string; Icon: LucideI
 ];
 
 const MY_WORKS_MENU_LINKS: ReadonlyArray<{ to: string; label: string; Icon: LucideIcon }> = [
-  { to: "/app/gallery", label: "gallery", Icon: LayoutGrid },
+  { to: "/gallery", label: "gallery", Icon: LayoutGrid },
   { to: "/app/avatars", label: "avatars", Icon: User },
   { to: "/app/products", label: "products", Icon: Package },
 ];
@@ -845,7 +845,7 @@ export default function Navbar() {
               onClick={() => {
                 setActiveMenu(null);
                 setMenuOpen(false);
-                navigate("/app/gallery");
+                navigate("/gallery");
                 emitNavigateToCategory("gallery");
               }}
               className="relative overflow-hidden group block w-[9rem] text-left pl-2 pr-4 py-1.5 text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-colors font-raleway font-normal rounded-full"

@@ -29,13 +29,12 @@ export interface VideoGenerationState {
 
 export interface VideoGenerationOptions {
   prompt: string;
-  model?: 'veo-3.1-generate-preview' | 'veo-3.1-fast-generate-preview';
+  model?: 'veo-3.0-generate-001' | 'veo-3.0-fast-generate-001';
   aspectRatio?: '16:9' | '9:16';
   negativePrompt?: string;
   seed?: number;
   imageBase64?: string;
   imageMimeType?: string;
-  references?: string[];
   signal?: AbortSignal;
   requestTimeoutMs?: number;
   pollTimeoutMs?: number;
@@ -121,11 +120,10 @@ const parseVeoVideoJobResult = (
   return {
     url,
     prompt: options.prompt,
-    model: options.model ?? 'veo-3.1-generate-preview',
+    model: options.model ?? 'veo-3.0-generate-001',
     timestamp: new Date().toISOString(),
     jobId: response.jobId ?? snapshot.job.id ?? undefined,
     type: 'video',
-    references: options.references,
   };
 };
 
@@ -146,11 +144,10 @@ const parseImmediateVeoVideoResult = (
   return {
     url,
     prompt: options.prompt,
-    model: options.model ?? 'veo-3.1-generate-preview',
+    model: options.model ?? 'veo-3.0-generate-001',
     timestamp: new Date().toISOString(),
     jobId: pickString(payload.jobId),
     type: 'video',
-    references: options.references,
   };
 };
 
@@ -185,13 +182,12 @@ export const useVeoVideoGeneration = () => {
         mediaType: 'video',
         body: {
           prompt: options.prompt,
-          model: options.model ?? 'veo-3.1-generate-preview',
+          model: options.model ?? 'veo-3.0-generate-001',
           providerOptions,
-          references: options.references,
         },
         tracker,
         prompt: options.prompt,
-        model: options.model ?? 'veo-3.1-generate-preview',
+        model: options.model ?? 'veo-3.0-generate-001',
         signal: options.signal,
         timeoutMs: options.requestTimeoutMs,
         pollTimeoutMs: options.pollTimeoutMs,

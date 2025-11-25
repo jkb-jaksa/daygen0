@@ -41,12 +41,12 @@ export function useBadgeNavigation() {
 
       applyGalleryFilters(nextFilters);
 
-      const isAlreadyOnGalleryRoute = location.pathname.startsWith('/app/gallery') || location.pathname.startsWith('/gallery');
+      const isAlreadyOnGalleryRoute = location.pathname.startsWith('/gallery');
       if (!isAlreadyOnGalleryRoute) {
         savePendingBadgeFilters(nextFilters);
       }
 
-      navigate('/app/gallery');
+      navigate('/gallery');
     },
     [applyGalleryFilters, navigate, location.pathname],
   );

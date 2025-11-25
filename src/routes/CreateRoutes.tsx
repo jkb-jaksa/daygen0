@@ -10,7 +10,7 @@ export default function CreateRoutes() {
   const rawPath = `${location.pathname}${location.search}${location.hash}`;
   const normalized = normalizeLegacyStudioPath(rawPath);
   const destination =
-    normalized.startsWith(STUDIO_BASE_PATH) || normalized.startsWith("/app/gallery") || normalized.startsWith("/gallery") || normalized.startsWith("/job")
+    normalized.startsWith(STUDIO_BASE_PATH) || normalized.startsWith("/gallery") || normalized.startsWith("/job")
       ? normalized
       : `${STUDIO_BASE_PATH}/image`;
 

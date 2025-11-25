@@ -16,7 +16,6 @@ import { debugError, debugWarn } from '../../../utils/debug';
 import { consumePendingBadgeFilters } from '../hooks/badgeNavigationStorage';
 import { normalizeAspectRatio } from '../../../utils/aspectRatioUtils';
 import { useJobIdSearch } from '../hooks/useJobIdSearch';
-import { hydrateStoredGalleryVideos, serializeGalleryVideos } from '../../../utils/galleryStorage';
 import type {
   GalleryImageLike,
   GalleryVideoLike,
@@ -27,7 +26,6 @@ import type {
   UnpublishConfirmationState,
   DownloadConfirmationState,
   SerializedFolder,
-  StoredGalleryVideo,
 } from '../types';
 
 type GalleryState = {
@@ -120,6 +118,8 @@ const initialState: GalleryState = {
   newFolderDialog: false,
   addToFolderDialog: false,
 };
+
+const JOB_ROUTE_PREFIX = '/job/';
 
 const getGalleryItemKey = (item: GalleryImageLike | GalleryVideoLike): string | null => {
   const normalizedUrl = item.url?.trim();
@@ -435,22 +435,13 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
   const stateRef = useRef(state);
   const hasInitialLoadCompletedRef = useRef(false);
   const deepLinkRetryRef = useRef<{ jobId: string; retryCount: number } | null>(null);
-  const routeSyncRef = useRef<{ target: string | null; pending: boolean }>({
-    target: null,
-    pending: false,
-  });
   const previousActiveJobsRef = useRef<typeof generation.state.activeJobs>([]);
   const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const hasLoadedStoredVideosRef = useRef(false);
   const hasFoldersLoadedRef = useRef(false);
 
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
-
-  useEffect(() => {
-    hasLoadedStoredVideosRef.current = false;
-  }, [storagePrefix]);
 
   const findImageById = useCallback((identifier: string) => {
     if (!identifier) {
@@ -564,33 +555,6 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!storagePrefix || hasLoadedStoredVideosRef.current) return;
-
-    let isMounted = true;
-
-    const loadStoredVideos = async () => {
-      try {
-        const stored = await getPersistedValue<StoredGalleryVideo[]>(storagePrefix, 'galleryVideos');
-        if (!isMounted || !stored || !Array.isArray(stored)) {
-          return;
-        }
-        const hydratedVideos = hydrateStoredGalleryVideos(stored);
-        const mergedVideos = mergeGalleryCollections(stateRef.current.videos, hydratedVideos);
-        setVideos(mergedVideos);
-        hasLoadedStoredVideosRef.current = true;
-      } catch (error) {
-        debugError('Failed to load videos from storage', error);
-      }
-    };
-
-    void loadStoredVideos();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [setVideos, storagePrefix]);
-
-  useEffect(() => {
     const sourceItems = galleryItems ?? [];
     const currentState = stateRef.current;
     const { images: incomingImages, videos: incomingVideos } = partitionGalleryItems(sourceItems);
@@ -608,20 +572,6 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
       hasInitialLoadCompletedRef.current = true;
     }
   }, [isGalleryLoading, galleryItems.length]);
-
-  useEffect(() => {
-    if (!storagePrefix) return;
-
-    const persistVideos = async () => {
-      try {
-        await setPersistedValue(storagePrefix, 'galleryVideos', serializeGalleryVideos(state.videos));
-      } catch (error) {
-        debugWarn('Failed to persist videos to storage', error);
-      }
-    };
-
-    void persistVideos();
-  }, [state.videos, storagePrefix]);
 
   // Load folders from storage on mount
   useEffect(() => {
@@ -1108,10 +1058,7 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
 
     const identifier = getGalleryItemIdentifier(item);
     if (identifier) {
-      routeSyncRef.current = { target: identifier, pending: true };
       setJobIdParam(identifier);
-    } else {
-      routeSyncRef.current = { target: null, pending: false };
     }
   }, [filteredItems, resolveItemIndex, setFullSizeImage, setFullSizeOpen, setJobIdParam]);
 
@@ -1136,7 +1083,6 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
 
   const closeFullSize = useCallback(() => {
     setFullSizeOpen(false);
-    routeSyncRef.current = { target: null, pending: false };
     setFullSizeImage(null, 0);
     clearJobIdParam();
   }, [clearJobIdParam, setFullSizeImage, setFullSizeOpen]);
@@ -1166,29 +1112,15 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
 
     const identifier = getGalleryItemIdentifier(nextItem);
     if (identifier) {
-      routeSyncRef.current = { target: identifier, pending: true };
-      setJobIdParam(identifier, { replace: false });
-    } else {
-      routeSyncRef.current = { target: null, pending: false };
+      setJobIdParam(identifier, { replace: true });
     }
   }, [filteredItems, setFullSizeImage, setFullSizeOpen, setJobIdParam]);
 
   useEffect(() => {
     const targetIdentifier = jobIdParam?.trim() ?? '';
 
-    if (targetIdentifier) {
-      if (routeSyncRef.current.pending && routeSyncRef.current.target === targetIdentifier) {
-        routeSyncRef.current.pending = false;
-      } else if (routeSyncRef.current.target !== targetIdentifier) {
-        routeSyncRef.current = { target: targetIdentifier, pending: false };
-      }
-    }
-
     if (!targetIdentifier) {
       deepLinkRetryRef.current = null;
-      if (routeSyncRef.current.pending) {
-        return;
-      }
       if (stateRef.current.isFullSizeOpen) {
         setFullSizeImage(null, 0);
         setFullSizeOpen(false);
@@ -1235,7 +1167,7 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
   }, [jobIdParam, filteredItems, isGalleryLoading, fetchGalleryImages, openFullSize, setFullSizeImage, setFullSizeOpen]);
 
   useEffect(() => {
-    if (!location.pathname.startsWith('/app/gallery') && !location.pathname.startsWith('/gallery')) {
+    if (!location.pathname.startsWith('/gallery')) {
       return;
     }
 
