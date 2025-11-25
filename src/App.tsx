@@ -22,7 +22,6 @@ const KnowledgeBase = lazy(() => import("./components/KnowledgeBase"));
 const LearnToolPage = lazy(() => import("./components/LearnToolPage"));
 const CreateRoutes = lazy(() => import("./routes/CreateRoutes"));
 const MasterRoutes = lazy(() => import("./routes/MasterRoutes"));
-const CreateRefactored = lazy(() => import("./components/create/Create-refactored"));
 const Edit = lazy(() => import("./components/Edit"));
 const Account = lazy(() => import("./components/Account"));
 const AuthErrorBoundary = lazy(() => import("./components/AuthErrorBoundary"));
