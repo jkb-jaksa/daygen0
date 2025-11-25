@@ -6,6 +6,25 @@ type SetJobIdOptions = {
 };
 
 const JOB_ID_PARAM = 'jobId';
+const LEGACY_JOB_ROUTE_PREFIX = '/job/';
+
+const extractLegacyJobId = (pathname: string | undefined): string | null => {
+  if (!pathname || !pathname.startsWith(LEGACY_JOB_ROUTE_PREFIX)) {
+    return null;
+  }
+
+  const suffix = pathname.slice(LEGACY_JOB_ROUTE_PREFIX.length);
+  const segment = suffix.split('/')[0]?.trim();
+  if (!segment) {
+    return null;
+  }
+
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
+};
 
 export function useJobIdSearch(paramKey: string = JOB_ID_PARAM) {
   const navigate = useNavigate();
@@ -15,8 +34,12 @@ export function useJobIdSearch(paramKey: string = JOB_ID_PARAM) {
   const currentJobId = useMemo(() => {
     const params = new URLSearchParams(location.search ?? '');
     const value = params.get(paramKey)?.trim();
-    return value && value.length > 0 ? value : null;
-  }, [location.search, paramKey]);
+    if (value && value.length > 0) {
+      return value;
+    }
+
+    return extractLegacyJobId(location.pathname);
+  }, [location.pathname, location.search, paramKey]);
 
   useEffect(() => {
     lastJobIdRef.current = currentJobId;

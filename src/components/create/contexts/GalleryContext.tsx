@@ -119,8 +119,6 @@ const initialState: GalleryState = {
   addToFolderDialog: false,
 };
 
-const JOB_ROUTE_PREFIX = '/job/';
-
 const getGalleryItemKey = (item: GalleryImageLike | GalleryVideoLike): string | null => {
   const normalizedUrl = item.url?.trim();
   if (normalizedUrl) {
@@ -435,6 +433,7 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
   const stateRef = useRef(state);
   const hasInitialLoadCompletedRef = useRef(false);
   const deepLinkRetryRef = useRef<{ jobId: string; retryCount: number } | null>(null);
+  const lastHydratedJobIdRef = useRef<string | null>(null);
   const previousActiveJobsRef = useRef<typeof generation.state.activeJobs>([]);
   const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasFoldersLoadedRef = useRef(false);
@@ -1082,6 +1081,7 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
   }, [filteredItems, openFullSize]);
 
   const closeFullSize = useCallback(() => {
+    lastHydratedJobIdRef.current = null;
     setFullSizeOpen(false);
     setFullSizeImage(null, 0);
     clearJobIdParam();
@@ -1112,7 +1112,7 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
 
     const identifier = getGalleryItemIdentifier(nextItem);
     if (identifier) {
-      setJobIdParam(identifier, { replace: true });
+      setJobIdParam(identifier);
     }
   }, [filteredItems, setFullSizeImage, setFullSizeOpen, setJobIdParam]);
 
@@ -1121,10 +1121,11 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
 
     if (!targetIdentifier) {
       deepLinkRetryRef.current = null;
-      if (stateRef.current.isFullSizeOpen) {
+      if (lastHydratedJobIdRef.current && stateRef.current.isFullSizeOpen) {
         setFullSizeImage(null, 0);
         setFullSizeOpen(false);
       }
+      lastHydratedJobIdRef.current = null;
       return;
     }
 
@@ -1164,6 +1165,7 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     if (!alreadySelected) {
       openFullSize(targetItem, targetIndex);
     }
+    lastHydratedJobIdRef.current = targetIdentifier;
   }, [jobIdParam, filteredItems, isGalleryLoading, fetchGalleryImages, openFullSize, setFullSizeImage, setFullSizeOpen]);
 
   useEffect(() => {
