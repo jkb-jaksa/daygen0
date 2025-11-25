@@ -29,6 +29,100 @@ interface ImageActionMenuProps {
   onClose: () => void;
 }
 
+const clipboardCanWriteImages = (): boolean => {
+  if (typeof navigator === 'undefined' || typeof window === 'undefined') {
+    return false;
+  }
+
+  return Boolean(
+    navigator.clipboard &&
+      typeof navigator.clipboard.write === 'function' &&
+      'ClipboardItem' in window,
+  );
+};
+
+const copyUrlToClipboard = async (url: string): Promise<boolean> => {
+  if (
+    typeof navigator === 'undefined' ||
+    !navigator.clipboard ||
+    typeof navigator.clipboard.writeText !== 'function'
+  ) {
+    return false;
+  }
+
+  try {
+    await navigator.clipboard.writeText(url);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const canvasToPngBlob = (canvas: HTMLCanvasElement): Promise<Blob> =>
+  new Promise((resolve, reject) => {
+    canvas.toBlob(blob => {
+      if (blob) {
+        resolve(blob);
+      } else {
+        reject(new Error('Canvas toBlob returned null'));
+      }
+    }, 'image/png');
+  });
+
+const blobToImageElement = (blob: Blob): Promise<HTMLImageElement> =>
+  new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(blob);
+    const image = new Image();
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(image);
+    };
+    image.onerror = event => {
+      URL.revokeObjectURL(objectUrl);
+      reject(event);
+    };
+    image.src = objectUrl;
+  });
+
+const convertBlobToPng = async (blob: Blob): Promise<Blob> => {
+  if (blob.type === 'image/png') {
+    return blob;
+  }
+
+  if (typeof document === 'undefined') {
+    return blob;
+  }
+
+  const canvas = document.createElement('canvas');
+  const drawImageOnCanvas = (width: number, height: number, draw: CanvasRenderingContext2D) => {
+    canvas.width = width;
+    canvas.height = height;
+    return draw;
+  };
+
+  if (typeof createImageBitmap === 'function') {
+    const bitmap = await createImageBitmap(blob);
+    const context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error('Failed to get canvas context');
+    }
+    drawImageOnCanvas(bitmap.width, bitmap.height, context).drawImage(bitmap, 0, 0);
+    return canvasToPngBlob(canvas);
+  }
+
+  const imageElement = await blobToImageElement(blob);
+  const context = canvas.getContext('2d');
+  if (!context) {
+    throw new Error('Failed to get canvas context');
+  }
+  drawImageOnCanvas(imageElement.naturalWidth, imageElement.naturalHeight, context).drawImage(
+    imageElement,
+    0,
+    0,
+  );
+  return canvasToPngBlob(canvas);
+};
+
 const ImageActionMenu = memo<ImageActionMenuProps>(({ open, onClose }) => {
   const { state } = useGallery();
   const {
@@ -54,6 +148,18 @@ const ImageActionMenu = memo<ImageActionMenuProps>(({ open, onClose }) => {
     if (!currentImage) return;
 
     try {
+      if (!clipboardCanWriteImages()) {
+        debugLog('Clipboard image copy unsupported. Falling back to URL copy.');
+        const copiedUrl = await copyUrlToClipboard(currentImage.url);
+        if (copiedUrl) {
+          showToast('Copied image link instead (browser limitation).');
+        } else {
+          showToast('Copy not supported in this browser. Please download the image.');
+        }
+        onClose();
+        return;
+      }
+
       // Use backend proxy to avoid CORS issues
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
       const proxyUrl = `${apiBaseUrl}/api/r2files/proxy?url=${encodeURIComponent(currentImage.url)}`;
@@ -62,11 +168,18 @@ const ImageActionMenu = memo<ImageActionMenuProps>(({ open, onClose }) => {
 
       if (!response.ok) throw new Error('Failed to fetch image');
 
-      const blob = await response.blob();
+      let blob = await response.blob();
+      try {
+        blob = await convertBlobToPng(blob);
+      } catch (conversionError) {
+        debugError('Failed to convert blob to PNG for clipboard:', conversionError);
+        // Continue with original blob if conversion fails
+      }
 
+      const mimeType = blob.type || 'image/png';
       await navigator.clipboard.write([
         new ClipboardItem({
-          [blob.type]: blob,
+          [mimeType]: blob,
         }),
       ]);
 
@@ -74,8 +187,24 @@ const ImageActionMenu = memo<ImageActionMenuProps>(({ open, onClose }) => {
       showToast('Image copied to clipboard!');
       onClose();
     } catch (error) {
-      debugError('Failed to copy image:', error);
-      showToast('Failed to copy image. Please try again.');
+      let message = 'Failed to copy image. Please try again.';
+      if (error instanceof DOMException && error.name === 'NotAllowedError') {
+        debugError('Clipboard write blocked by browser:', error);
+        message = 'Clipboard blocked image copy. Copied link instead.';
+      } else if (error instanceof Error && error.message === 'Failed to fetch image') {
+        debugError('Unable to fetch image before copying:', error);
+        message = 'Failed to fetch image for copying. Please try again.';
+      } else {
+        debugError('Failed to copy image:', error);
+      }
+
+      const copiedUrl = await copyUrlToClipboard(currentImage.url);
+      if (copiedUrl) {
+        showToast(message);
+      } else {
+        showToast('Failed to copy image or link. Please download the image.');
+      }
+      onClose();
     }
   }, [currentImage, onClose, showToast]);
 
