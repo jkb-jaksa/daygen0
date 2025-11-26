@@ -7,7 +7,7 @@ A modern AI-powered content generation platform featuring comprehensive image an
 ### Image Generation
 - **Grok 2 Image**: xAI's Grok image generator with revised prompt feedback
 - **Gemini 3 Pro**: Google's latest text-to-image model with experimental preview support
-- **FLUX Models**: High-quality image generation with multiple variants (Pro 1.1, Ultra, Kontext Pro/Max)
+- **FLUX.2 Models**: Latest FLUX.2 Pro & Flex image generation/editing via BFL API
 - **Ideogram V3**: Advanced text-to-image with turbo mode and style presets
 - **Recraft v2/v3**: Professional image generation with multiple styles and editing capabilities
 - **Reve**: Fast image generation, editing, and remixing with advanced controls

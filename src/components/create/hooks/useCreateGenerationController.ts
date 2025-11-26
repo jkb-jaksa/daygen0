@@ -344,9 +344,7 @@ export function useCreateGenerationController(): CreateGenerationController {
     wanSize,
   ]);
 
-  const [fluxModel, setFluxModel] = useState<
-    'flux-pro-1.1' | 'flux-pro-1.1-ultra' | 'flux-kontext-pro' | 'flux-kontext-max'
-  >('flux-pro-1.1');
+  const [fluxModel, setFluxModel] = useState<'flux-2-pro' | 'flux-2-flex'>('flux-2-pro');
   const [recraftModel, setRecraftModel] = useState<'recraft-v3' | 'recraft-v2'>('recraft-v3');
   const [runwayModel, setRunwayModel] = useState<'runway-gen4' | 'runway-gen4-turbo'>('runway-gen4');
   const [grokModel, setGrokModel] = useState<'grok-2-image' | 'grok-2-image-1212' | 'grok-2-image-latest'>('grok-2-image');
@@ -361,7 +359,7 @@ export function useCreateGenerationController(): CreateGenerationController {
     const isQwenModel = selectedModel === 'qwen-image';
     const isWanVideo = selectedModel === 'wan-video-2.2';
     const isKlingVideo = selectedModel === 'kling-video';
-    const isFluxModel = selectedModel === 'flux-1.1';
+    const isFluxModel = selectedModel === 'flux-2';
     const isRunwayImageModel =
       selectedModel === 'runway-gen4' || selectedModel === 'runway-gen4-turbo';
     const isGrokModel =
@@ -386,7 +384,7 @@ export function useCreateGenerationController(): CreateGenerationController {
         enabled: isFluxModel,
         model: fluxModel,
         onModelChange: value =>
-          setFluxModel(value as 'flux-pro-1.1' | 'flux-pro-1.1-ultra' | 'flux-kontext-pro' | 'flux-kontext-max'),
+          setFluxModel(value as 'flux-2-pro' | 'flux-2-flex'),
       },
       veo: {
         enabled: isVeoModel,
@@ -859,7 +857,7 @@ export function useCreateGenerationController(): CreateGenerationController {
       switch (selectedModel) {
         case 'gemini-3.0-pro-image':
           return runGeminiGeneration();
-        case 'flux-1.1': {
+        case 'flux-2': {
           const fluxImage = await generateFluxImage({
             prompt: finalPrompt,
             model: fluxModel,

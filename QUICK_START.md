@@ -54,9 +54,7 @@ Open http://localhost:5173 in your browser.
 
 ### Image Generation
 - **Gemini 3 Pro** - Google's latest, fast and versatile with experimental preview support
-- **FLUX Pro 1.1** - Black Forest Labs, highest quality image generation
-- **FLUX Ultra** - Premium quality with advanced features
-- **FLUX Kontext Pro/Max** - Context-aware generation with multiple variants
+- **FLUX.2 Pro / Flex** - Black Forest Labs' latest generation + editing models
 - **DALL·E 3** - OpenAI's popular model with multiple variants
 - **Runway Gen-4** - Professional image generation with cinematic quality
 - **Ideogram V3** - Advanced text-to-image with turbo mode and style presets

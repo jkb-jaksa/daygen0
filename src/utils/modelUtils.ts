@@ -17,12 +17,19 @@ export const MODEL_INFO: Record<string, ModelInfo> = {
     description: 'Google Gemini 3 Pro image generation',
     isAvailable: true
   },
-  'flux-pro': {
-    id: 'flux-pro',
-    name: 'FLUX.1 Kontext Pro / Max',
-    shortName: 'FLUX Pro',
-    description: 'FLUX.1 Kontext Pro / Max',
-    isAvailable: false
+  'flux-2-pro': {
+    id: 'flux-2-pro',
+    name: 'FLUX.2 Pro',
+    shortName: 'FLUX.2 Pro',
+    description: 'FLUX.2 Pro text-to-image and editing',
+    isAvailable: true
+  },
+  'flux-2-flex': {
+    id: 'flux-2-flex',
+    name: 'FLUX.2 Flex',
+    shortName: 'FLUX.2 Flex',
+    description: 'FLUX.2 Flex with adjustable guidance and steps',
+    isAvailable: true
   },
   'runway-gen4': {
     id: 'runway-gen4',
@@ -173,10 +180,16 @@ export const normalizeModelId = (modelId: string): string => {
     'act_two': 'runway-gen4',
     
     // Flux models
-    'flux-pro-1.1': 'flux-pro-1.1',
-    'flux-pro-1.1-ultra': 'flux-pro-1.1-ultra',
-    'flux-kontext-pro': 'flux-kontext-pro',
-    'flux-kontext-max': 'flux-kontext-max',
+    'flux-2-pro': 'flux-2-pro',
+    'flux-2-flex': 'flux-2-flex',
+    'flux-2': 'flux-2-pro',
+    'flux-pro': 'flux-2-pro',
+    'flux-dev': 'flux-2-pro',
+    // Legacy → FLUX.2 mapping for historical records
+    'flux-pro-1.1': 'flux-2-pro',
+    'flux-pro-1.1-ultra': 'flux-2-flex',
+    'flux-kontext-pro': 'flux-2-pro',
+    'flux-kontext-max': 'flux-2-flex',
     
     // Reve models
     'reve-image-1.0': 'reve-image-1.0',

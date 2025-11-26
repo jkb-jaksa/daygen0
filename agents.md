@@ -55,8 +55,8 @@ await apiFetch(getApiUrl('/api/image/flux'), {
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
     prompt: 'cinematic portrait',
-    model: 'flux-pro',                    // provider‑appropriate id
-    providerOptions: { aspectRatio: '1:1' }, // optional
+    model: 'flux-2-pro',                    // provider‑appropriate id
+    providerOptions: { width: 1024, height: 1024, safety_tolerance: 2 }, // optional
     references: []                        // optional
   })
 });
@@ -68,7 +68,7 @@ await apiFetch(getApiUrl('/api/image/flux'), {
 
 | Provider  | Required fields          | Common `providerOptions`                         | Response shape (on success)        |
 |----------|---------------------------|--------------------------------------------------|------------------------------------|
-| flux     | `prompt`, `model`         | `aspectRatio`, `seed`, `steps`, `cfgScale`       | `{ jobId }` → poll → `{ images[] }` |
+| flux     | `prompt`, `model`         | `width`, `height`, `safety_tolerance`, `prompt_upsampling`, `guidance`, `steps`, `input_image[_2..8]` | `{ jobId }` → poll → `{ images[] }` |
 | gemini   | `prompt`, `model`         | `aspectRatio`, `safety`, `style`                 | `{ jobId }` → poll → `{ images[] }` |
 | luma     | `prompt`, `model`         | `aspectRatio`, `quality`                         | `{ jobId }` → poll → `{ images[]|videos[] }` |
 | runway   | `prompt`, `model`         | `aspectRatio`, `motion`, `duration` (video)      | `{ jobId }` → poll → `{ images[]|videos[] }` |

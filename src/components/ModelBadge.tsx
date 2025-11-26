@@ -19,29 +19,17 @@ const MODEL_CONFIG = {
     icon: '🤖',
     description: 'Google Gemini 3 Pro - Best for image generation and editing'
   },
-  'flux-pro-1.1': {
-    name: 'FLUX Pro 1.1',
-    shortName: 'F1.1',
+  'flux-2-pro': {
+    name: 'FLUX.2 Pro',
+    shortName: 'F2P',
     icon: '⚡',
-    description: 'FLUX Pro 1.1 - High-quality text-to-image generation'
+    description: 'FLUX.2 Pro - Fast, production-ready generation & editing'
   },
-  'flux-pro-1.1-ultra': {
-    name: 'FLUX Pro 1.1 Ultra',
-    shortName: 'F1.1U',
-    icon: '⚡',
-    description: 'FLUX Pro 1.1 Ultra - Ultra-high quality 4MP+ generation'
-  },
-  'flux-kontext-pro': {
-    name: 'FLUX Kontext Pro',
-    shortName: 'FKP',
-    icon: '🎨',
-    description: 'FLUX Kontext Pro - Image editing with text prompts'
-  },
-  'flux-kontext-max': {
-    name: 'FLUX Kontext Max',
-    shortName: 'FKM',
-    icon: '🎨',
-    description: 'FLUX Kontext Max - Highest quality image editing'
+  'flux-2-flex': {
+    name: 'FLUX.2 Flex',
+    shortName: 'F2F',
+    icon: '✨',
+    description: 'FLUX.2 Flex - Highest fidelity with adjustable guidance/steps'
   },
   'luma-photon-1': {
     name: 'Luma Photon',
@@ -66,12 +54,6 @@ const MODEL_CONFIG = {
     shortName: 'Ray ⚡',
     icon: '⚡',
     description: 'Luma Ray Flash 2 - Fast Ray 2 video generation'
-  },
-  'flux-pro': {
-    name: 'FLUX.1 Kontext Pro / Max',
-    shortName: 'FLUX',
-    icon: '⚡',
-    description: 'FLUX.1 Kontext Pro / Max'
   },
   'runway-gen4': {
     name: 'Runway Gen-4',

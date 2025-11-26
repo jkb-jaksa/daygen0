@@ -1,7 +1,7 @@
 import React, { memo, useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
-import { Heart, MoreHorizontal, Check, Image as ImageIcon, Video as VideoIcon, Copy, BookmarkPlus, Bookmark, Square, Trash2, FileText } from 'lucide-react';
+import { Heart, MoreHorizontal, Check, Image as ImageIcon, Video as VideoIcon, Copy, BookmarkPlus, Bookmark, Square, Trash2, FileText, Info } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
@@ -120,6 +120,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const [savePromptModalState, setSavePromptModalState] = useState<{ prompt: string; originalPrompt: string } | null>(null);
   const savePromptModalRef = useRef<HTMLDivElement>(null);
   const lastOpenRef = useRef<{ id: string | null; ts: number }>({ id: null, ts: 0 });
+  const [expandedVideoPrompts, setExpandedVideoPrompts] = useState<Set<string>>(() => new Set());
   const {
     goToAvatarProfile,
     goToProductProfile,
@@ -514,6 +515,18 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     return 'type' in item && item.type === 'video';
   }, []);
 
+  const toggleVideoPrompt = useCallback((identifier: string) => {
+    setExpandedVideoPrompts(prev => {
+      const next = new Set(prev);
+      if (next.has(identifier)) {
+        next.delete(identifier);
+      } else {
+        next.add(identifier);
+      }
+      return next;
+    });
+  }, []);
+
   const startVariateJob = useCallback((item: GalleryImageLike) => {
     const syntheticId = buildSyntheticJobId(item);
     const timestamp = Date.now();
@@ -789,6 +802,16 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
               : '';
           const promptForActions = hasPromptContent ? rawPrompt : null;
           const shouldShowPromptDetails = Boolean(promptForDisplay);
+          const isPromptExpanded = !isVideoItem || expandedVideoPrompts.has(baseActionTooltipId);
+          const promptBarVisibilityClass = isVideoItem
+            ? `transition-transform ${
+                isPromptExpanded
+                  ? 'translate-y-0 opacity-100 pointer-events-auto'
+                  : 'translate-y-full opacity-0 pointer-events-none'
+              }`
+            : isMenuActive
+              ? 'opacity-100 pointer-events-auto'
+              : 'opacity-0 group-hover:opacity-100 pointer-events-auto';
           
           return (
           <div
@@ -913,7 +936,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                         </Suspense>
                       )}
                       
-                      {/* Delete, Like, More - Always shown (glass tooltip only, no native title) */}
+                      {/* Delete, Like, Info, More - Always shown (glass tooltip only, no native title) */}
                       <button
                         type="button"
                         onClick={(e) => onDelete(e, item)}
@@ -962,6 +985,34 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                           }`}
                         />
                       </button>
+                      {isVideoItem && shouldShowPromptDetails && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleVideoPrompt(baseActionTooltipId);
+                          }}
+                          className={`image-action-btn ${activeCategory === 'gallery' ? 'image-action-btn--gallery' : ''} parallax-large transition-opacity duration-100 ${
+                            isMenuActive
+                              ? 'opacity-100 pointer-events-auto'
+                              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                          } ${isPromptExpanded ? 'text-theme-text' : ''}`}
+                          onMouseEnter={(e) => {
+                            showHoverTooltip(
+                              e.currentTarget,
+                              `info-${baseActionTooltipId}`,
+                              { placement: 'below', offset: 2 },
+                            );
+                          }}
+                          onMouseLeave={() => {
+                            hideHoverTooltip(`info-${baseActionTooltipId}`);
+                          }}
+                          aria-label={isPromptExpanded ? 'Hide prompt details' : 'Show prompt details'}
+                          aria-pressed={isPromptExpanded}
+                        >
+                          <Info className="w-3 h-3" />
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={(e) => handleItemRightClick(e, item)}
@@ -993,7 +1044,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
               </div>
 
               {/* Image/Video */}
-              {isVideo(item) ? (
+              {isVideoItem ? (
                 <video
                   src={item.url}
                   className="relative z-[1] h-full w-full object-cover"
@@ -1010,10 +1061,11 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
 
               {/* Prompt Description Bar - Non-gallery views */}
               {shouldShowPromptDetails && !isGalleryView && (
-                <div className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto hidden sm:flex items-end z-10 ${
-                  isMenuActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                }`}
-                onClick={(e) => e.stopPropagation()}
+                <div
+                  className={`PromptDescriptionBar absolute left-0 right-0 transition-all duration-150 ease-in-out hidden sm:flex items-end z-10 ${
+                    isVideoItem ? 'bottom-16' : 'bottom-0'
+                  } ${promptBarVisibilityClass}`}
+                  onClick={(e) => e.stopPropagation()}
                 >
                   {/* Content layer */}
                   <div className="relative z-10 w-full p-4">

@@ -2,7 +2,7 @@ import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from '
 import { lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { X, Download, Heart, ChevronLeft, ChevronRight, Copy, Globe, Lock, FolderPlus, Trash2, Edit as EditIcon, User, RefreshCw, Camera, Bookmark, BookmarkPlus, MoreHorizontal } from 'lucide-react';
+import { X, Download, Heart, ChevronLeft, ChevronRight, Copy, Globe, Lock, FolderPlus, Trash2, Edit as EditIcon, User, RefreshCw, Camera, Bookmark, BookmarkPlus, MoreHorizontal, Info } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
@@ -120,6 +120,7 @@ const FullImageModal = memo(() => {
   const sidebarRef = useRef<HTMLElement | null>(null);
   const [storedAvatars, setStoredAvatars] = useState<StoredAvatar[]>([]);
   const [storedProducts, setStoredProducts] = useState<StoredProduct[]>([]);
+  const [isVideoPromptExpanded, setIsVideoPromptExpanded] = useState(false);
   
   // Save prompt functionality
   const { user, storagePrefix } = useAuth();
@@ -175,6 +176,10 @@ const FullImageModal = memo(() => {
     !!currentItemId && state.imageActionMenu?.id === currentItemId;
   
   useGlobalScrollLock(open && !!fullSizeImage);
+
+  useEffect(() => {
+    setIsVideoPromptExpanded(false);
+  }, [fullSizeImage?.jobId, fullSizeImage?.r2FileId, fullSizeImage?.url]);
 
   console.log('[FullImageModal] Render', { 
     open, 
@@ -776,6 +781,10 @@ const FullImageModal = memo(() => {
   const isVideo = 'type' in fullSizeImage && fullSizeImage.type === 'video';
   const hasMultipleItems = filteredItems.length > 1;
   const fullSizeActionTooltipId = fullSizeImage.jobId || fullSizeImage.r2FileId || fullSizeImage.url || 'fullsize';
+  const promptText = fullSizeImage.prompt?.trim() ?? '';
+  const hasPromptContent = promptText.length > 0;
+  const shouldRenderPromptBar = isVideo ? hasPromptContent : true;
+  const showPublicBadge = Boolean(fullSizeImage.isPublic) && !('savedFrom' in fullSizeImage && fullSizeImage.savedFrom);
   
   return (
     <>
@@ -1013,6 +1022,34 @@ const FullImageModal = memo(() => {
                     }`}
                   />
                 </button>
+                {isVideo && hasPromptContent && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsVideoPromptExpanded(prev => !prev);
+                    }}
+                    className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${
+                      editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || isImageActionMenuOpen
+                        ? 'opacity-100 pointer-events-auto'
+                        : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                    } ${isVideoPromptExpanded ? 'text-theme-text' : ''}`}
+                    onMouseEnter={(e) => {
+                      showHoverTooltip(
+                        e.currentTarget,
+                        `info-${fullSizeActionTooltipId}`,
+                        { placement: 'below', offset: 2 },
+                      );
+                    }}
+                    onMouseLeave={() => {
+                      hideHoverTooltip(`info-${fullSizeActionTooltipId}`);
+                    }}
+                    aria-label={isVideoPromptExpanded ? 'Hide prompt details' : 'Show prompt details'}
+                    aria-pressed={isVideoPromptExpanded}
+                  >
+                    <Info className="w-4 h-4" />
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={handleMoreActionsClick}
@@ -1125,91 +1162,97 @@ const FullImageModal = memo(() => {
               <X className="w-4 h-4" />
             </button>
 
-            {/* PromptDescriptionBar overlay at bottom */}
-            <div
-              className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 opacity-0 group-hover:opacity-100`}
-            >
-              <div className="flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-sm font-raleway leading-relaxed relative">
-                    {fullSizeImage.prompt || 'Generated Image'}
-                    {fullSizeImage.prompt && (() => {
-                      const tooltipId = `copy-fullsize-${fullSizeImage.jobId || fullSizeImage.r2FileId || 'modal'}`;
-                      return (
-                        <>
-                          <button
-                            onClick={handleCopyPrompt}
-                            onMouseEnter={(e) => {
-                              showHoverTooltip(e.currentTarget, tooltipId);
-                            }}
-                            onMouseLeave={() => {
-                              hideHoverTooltip(tooltipId);
-                            }}
-                            className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
-                          >
-                            <Copy className="w-3 h-3" />
-                          </button>
-                          <button
-                            onClick={handleSavePrompt}
-                            onMouseEnter={(e) => {
-                              showHoverTooltip(e.currentTarget, `save-${tooltipId}`);
-                            }}
-                            onMouseLeave={() => {
-                              hideHoverTooltip(`save-${tooltipId}`);
-                            }}
-                            className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
-                          >
-                            {isPromptSaved(fullSizeImage.prompt) ? (
-                              <Bookmark className="w-3 h-3 fill-current" />
-                            ) : (
-                              <BookmarkPlus className="w-3 h-3" />
-                            )}
-                          </button>
-                        </>
-                      );
-                    })()}
-                  </div>
-                  <div className="mt-2 flex justify-center items-center">
-                    <ImageBadgeRow
-                      align="center"
-                      model={{
-                        name: fullSizeImage.model || 'unknown',
-                        size: 'md',
-                        onClick: () => goToModelGallery(fullSizeImage.model, fullSizeItemType)
-                      }}
-                      avatars={
-                        fullSizeImage.avatarId
-                          ? (() => {
-                              const avatarForImage = avatarMap.get(fullSizeImage.avatarId!);
-                              return avatarForImage ? [{ data: avatarForImage, onClick: () => goToAvatarProfile(avatarForImage) }] : [];
-                            })()
-                          : []
-                      }
-                      products={
-                        fullSizeImage.productId
-                          ? (() => {
-                              const productForImage = productMap.get(fullSizeImage.productId!);
-                              return productForImage ? [{ data: productForImage, onClick: () => goToProductProfile(productForImage) }] : [];
-                            })()
-                          : []
-                      }
-                      styles={
-                        fullSizeImage.styleId
-                          ? (() => {
-                              const styleForImage = styleIdToStoredStyle(fullSizeImage.styleId!);
-                              return styleForImage ? [{ data: styleForImage }] : [];
-                            })()
-                          : []
-                      }
-                      isPublic={!!fullSizeImage.isPublic && !('savedFrom' in fullSizeImage && fullSizeImage.savedFrom)}
-                      onPublicClick={goToPublicGallery}
-                      aspectRatio={fullSizeImage.aspectRatio}
-                      compact={false}
-                    />
+            {/* PromptDescriptionBar overlay */}
+            {shouldRenderPromptBar && (
+              <div
+                className={`PromptDescriptionBar absolute left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-150 ${
+                  isVideo
+                    ? `bottom-16 ${isVideoPromptExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`
+                    : 'bottom-4 opacity-0 group-hover:opacity-100'
+                }`}
+              >
+                <div className="flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-sm font-raleway leading-relaxed relative">
+                      {promptText || 'Generated Image'}
+                      {fullSizeImage.prompt && (() => {
+                        const tooltipId = `copy-fullsize-${fullSizeImage.jobId || fullSizeImage.r2FileId || 'modal'}`;
+                        return (
+                          <>
+                            <button
+                              onClick={handleCopyPrompt}
+                              onMouseEnter={(e) => {
+                                showHoverTooltip(e.currentTarget, tooltipId);
+                              }}
+                              onMouseLeave={() => {
+                                hideHoverTooltip(tooltipId);
+                              }}
+                              className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
+                            >
+                              <Copy className="w-3 h-3" />
+                            </button>
+                            <button
+                              onClick={handleSavePrompt}
+                              onMouseEnter={(e) => {
+                                showHoverTooltip(e.currentTarget, `save-${tooltipId}`);
+                              }}
+                              onMouseLeave={() => {
+                                hideHoverTooltip(`save-${tooltipId}`);
+                              }}
+                              className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
+                            >
+                              {isPromptSaved(fullSizeImage.prompt) ? (
+                                <Bookmark className="w-3 h-3 fill-current" />
+                              ) : (
+                                <BookmarkPlus className="w-3 h-3" />
+                              )}
+                            </button>
+                          </>
+                        );
+                      })()}
+                    </div>
+                    <div className="mt-2 flex justify-center items-center">
+                      <ImageBadgeRow
+                        align="center"
+                        model={{
+                          name: fullSizeImage.model || 'unknown',
+                          size: 'md',
+                          onClick: () => goToModelGallery(fullSizeImage.model, fullSizeItemType)
+                        }}
+                        avatars={
+                          fullSizeImage.avatarId
+                            ? (() => {
+                                const avatarForImage = avatarMap.get(fullSizeImage.avatarId!);
+                                return avatarForImage ? [{ data: avatarForImage, onClick: () => goToAvatarProfile(avatarForImage) }] : [];
+                              })()
+                            : []
+                        }
+                        products={
+                          fullSizeImage.productId
+                            ? (() => {
+                                const productForImage = productMap.get(fullSizeImage.productId!);
+                                return productForImage ? [{ data: productForImage, onClick: () => goToProductProfile(productForImage) }] : [];
+                              })()
+                            : []
+                        }
+                        styles={
+                          fullSizeImage.styleId
+                            ? (() => {
+                                const styleForImage = styleIdToStoredStyle(fullSizeImage.styleId!);
+                                return styleForImage ? [{ data: styleForImage }] : [];
+                              })()
+                            : []
+                        }
+                        aspectRatio={fullSizeImage.aspectRatio}
+                        isPublic={showPublicBadge}
+                        onPublicClick={showPublicBadge ? () => goToPublicGallery() : undefined}
+                        compact={false}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Tooltips rendered via portal to avoid clipping */}
             {fullSizeImage.prompt && (() => {

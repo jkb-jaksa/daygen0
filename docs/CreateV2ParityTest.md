@@ -125,8 +125,8 @@ Record results side-by-side and note any differences.
 - [ ] **Notes**: 
 
 ### 4.2 Image Providers - Flux
-- [ ] **V1**: Select `Flux 1.1` → generate → verify success
-- [ ] **V2**: Select `Flux 1.1` → generate → verify success
+- [ ] **V1**: Select `FLUX.2` → generate → verify success
+- [ ] **V2**: Select `FLUX.2` → generate → verify success
 - [ ] **Result**: ✅ Pass / ❌ Fail / ⚠️ Partial
 - [ ] **Notes**: 
 

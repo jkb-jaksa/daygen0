@@ -152,52 +152,55 @@ const tools: readonly LearnToolPage[] = [
   },
   {
     slug: "flux",
-    name: "Flux",
-    tagline: "Great for image editing with text prompts.",
+    name: "FLUX.2",
+    tagline: "Latest FLUX.2 Pro & Flex for generation and editing.",
     overview:
-      "Flux from Black Forest Labs blends powerful text-to-image generation with context-aware editing. Its professional tier unlocks high-resolution outputs and regional editing tools ideal for marketing workflows.",
+      "FLUX.2 from Black Forest Labs pairs fast Pro generations with Flex for maximum quality. Both support inpainting and multi-reference editing, making it great for production assets and creative iterations.",
     categories: ["image"],
     pricing:
-      "Free community access with watermarked previews, plus Pro and Ultra subscriptions for commercial rights and 4K+ renders.",
+      "API pricing: FLUX.2 Pro ~$0.03 / image, FLUX.2 Flex ~$0.06 / image. Community UI available with usage caps.",
     useCases: [
       "Product hero shots with precise lighting and reflections",
       "Creative campaign concepts mixing photography and illustration",
-      "Inpainting and outpainting to refresh catalog imagery",
+      "Inpainting, outpainting, and style transfer with reference images",
     ],
     features: [
       {
-        title: "Kontext editing",
+        title: "Pro & Flex modes",
         description:
-          "Select regions of an image and rewrite them with natural language instructions without disrupting the full frame.",
+          "Pro balances quality and speed; Flex unlocks adjustable guidance/steps for the highest fidelity renders.",
       },
       {
-        title: "High-resolution diffusion",
+        title: "4MP output + safety controls",
         description:
-          "Generate ultra-sharp renders through the Ultra tier, capable of 4MP+ outputs and extended aspect ratios.",
+          "Generate up to ~4MP outputs with safety_tolerance controls and optional prompt upsampling.",
       },
       {
-        title: "Reference image conditioning",
+        title: "Multi-reference editing",
         description:
-          "Guide generations with product references, colour palettes, and layout sketches to maintain brand alignment.",
+          "Upload up to 8 reference images for editing or style transfer in a single request.",
       },
     ],
     gettingStarted: [
-      "Sign up for a Flux account and choose a community or pro plan.",
-      "Upload references or describe the scene you want to create in the prompt editor.",
-      "Use Kontext editing to fine-tune specific areas and export final renders.",
+      "Add your BFL API key to the Daygen settings or environment.",
+      "Pick FLUX.2 Pro or Flex on the create page and describe the scene you need.",
+      "Optionally attach reference images or masks for edits, then iterate with new prompts.",
     ],
     resources: [
-      { label: "Flux by Black Forest Labs", href: "https://www.blackforestlabs.ai" },
-      { label: "Flux documentation", href: "https://docs.blackforestlabs.ai" },
+      { label: "Black Forest Labs", href: "https://www.blackforestlabs.ai" },
+      { label: "FLUX.2 Text to Image", href: "https://docs.bfl.ai/flux_2/flux2_text_to_image" },
+      { label: "FLUX.2 Image Editing", href: "https://docs.bfl.ai/flux_2/flux2_image_editing" },
     ],
     aliases: [
-      "FLUX",
-      "Flux 1.1",
-      "FLUX Pro 1.1",
-      "FLUX Pro 1.1 Ultra",
-      "FLUX Kontext Pro",
-      "FLUX Kontext Max",
-      "FLUX Kontext Pro/Max",
+      "FLUX.2",
+      "Flux 2",
+      "FLUX.2 Pro",
+      "FLUX.2 Flex",
+      "Flux.2 Pro",
+      "Flux.2 Flex",
+      "flux-2",
+      "flux-2-pro",
+      "flux-2-flex",
     ],
   },
   {
