@@ -114,7 +114,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         if (!sliderElement) return;
 
         const rect = sliderElement.getBoundingClientRect();
-        const clientY = 'touches' in e ? (e as any).touches[0].clientY : (e as MouseEvent).clientY;
+        const clientY = 'touches' in e ? (e as unknown as TouchEvent).touches[0].clientY : (e as MouseEvent | React.MouseEvent).clientY;
 
         // Calculate volume based on vertical position (bottom is 0, top is 1)
         const y = rect.bottom - clientY;
@@ -129,7 +129,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const handleVolumeMouseDown = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
         setIsDraggingVolume(true);
-        handleVolumeChange(e as any);
+        handleVolumeChange(e as React.MouseEvent<HTMLDivElement>);
     }, [handleVolumeChange]);
 
     useEffect(() => {
