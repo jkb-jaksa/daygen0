@@ -31,6 +31,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     onExpand,
     layout = 'fill',
     onClick,
+    objectFit = 'contain',
 }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -41,9 +42,31 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const [volume, setVolume] = useState(1);
     const [isDraggingVolume, setIsDraggingVolume] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [showControls, setShowControls] = useState(false);
+    const [showCenterControls, setShowCenterControls] = useState(false);
+    const [showBottomControls, setShowBottomControls] = useState(false);
     const [duration, setDuration] = useState(0);
-    const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const centerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const bottomTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    const resetCenterTimeout = useCallback((delay = 1000) => {
+        setShowCenterControls(true);
+        if (centerTimeoutRef.current) {
+            clearTimeout(centerTimeoutRef.current);
+        }
+        centerTimeoutRef.current = setTimeout(() => {
+            setShowCenterControls(false);
+        }, delay);
+    }, []);
+
+    const resetBottomTimeout = useCallback((delay = 2000) => {
+        setShowBottomControls(true);
+        if (bottomTimeoutRef.current) {
+            clearTimeout(bottomTimeoutRef.current);
+        }
+        bottomTimeoutRef.current = setTimeout(() => {
+            setShowBottomControls(false);
+        }, delay);
+    }, []);
 
     useEffect(() => {
         const video = videoRef.current;
@@ -87,11 +110,13 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 videoRef.current.play();
             }
             setIsPlaying(!isPlaying);
+            resetCenterTimeout(1000);
+            resetBottomTimeout(2000);
         }
-    }, [isPlaying]);
+    }, [isPlaying, resetCenterTimeout, resetBottomTimeout]);
 
-    const toggleMute = useCallback((e: React.MouseEvent) => {
-        e.stopPropagation();
+    const toggleMute = useCallback((e?: React.SyntheticEvent) => {
+        e?.stopPropagation();
         if (videoRef.current) {
             videoRef.current.muted = !isMuted;
             setIsMuted(!isMuted);
@@ -153,8 +178,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         }
     }, [isDraggingVolume, handleVolumeChange]);
 
-    const toggleFullscreen = useCallback(async (e: React.MouseEvent) => {
-        e.stopPropagation();
+    const toggleFullscreen = useCallback(async (e?: React.SyntheticEvent) => {
+        e?.stopPropagation();
 
         if (onExpand) {
             onExpand();
@@ -178,6 +203,67 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         }
     }, [onExpand]);
 
+    const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+        // Only handle keys if the container is focused or we're in fullscreen
+        // We don't want to capture keys if the user is typing elsewhere, but tabIndex on container should handle that
+
+        switch (e.key) {
+            case ' ':
+            case 'k':
+            case 'K':
+                e.preventDefault();
+                e.stopPropagation();
+                togglePlay();
+                break;
+            case 'ArrowLeft':
+                e.preventDefault();
+                e.stopPropagation();
+                if (videoRef.current) {
+                    videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 5);
+                }
+                break;
+            case 'ArrowRight':
+                e.preventDefault();
+                e.stopPropagation();
+                if (videoRef.current) {
+                    videoRef.current.currentTime = Math.min(duration, videoRef.current.currentTime + 5);
+                }
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                e.stopPropagation();
+                if (videoRef.current) {
+                    const newVol = Math.min(1, volume + 0.1);
+                    setVolume(newVol);
+                    videoRef.current.volume = newVol;
+                    setIsMuted(newVol === 0);
+                }
+                break;
+            case 'ArrowDown':
+                e.preventDefault();
+                e.stopPropagation();
+                if (videoRef.current) {
+                    const newVol = Math.max(0, volume - 0.1);
+                    setVolume(newVol);
+                    videoRef.current.volume = newVol;
+                    setIsMuted(newVol === 0);
+                }
+                break;
+            case 'm':
+            case 'M':
+                e.preventDefault();
+                e.stopPropagation();
+                toggleMute();
+                break;
+            case 'f':
+            case 'F':
+                e.preventDefault();
+                e.stopPropagation();
+                toggleFullscreen();
+                break;
+        }
+    }, [togglePlay, duration, volume, toggleMute, toggleFullscreen]);
+
     const handleSeek = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
         e.stopPropagation();
         if (!videoRef.current || !duration) return;
@@ -192,20 +278,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }, [duration]);
 
     const handleMouseMove = useCallback(() => {
-        setShowControls(true);
-        if (controlsTimeoutRef.current) {
-            clearTimeout(controlsTimeoutRef.current);
-        }
-        controlsTimeoutRef.current = setTimeout(() => {
-            if (isPlaying) {
-                setShowControls(false);
-            }
-        }, 2000);
-    }, [isPlaying]);
+        resetCenterTimeout(1000);
+        resetBottomTimeout(2000);
+    }, [resetCenterTimeout, resetBottomTimeout]);
 
     const handleMouseLeave = useCallback(() => {
         if (isPlaying) {
-            setShowControls(false);
+            setShowCenterControls(false);
+            setShowBottomControls(false);
         }
     }, [isPlaying]);
 
@@ -220,15 +300,18 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     // In fullscreen, we MUST force w-full h-full to fill the screen
     const videoBaseClass = isFullscreen
         ? 'w-full h-full object-contain'
-        : (layout === 'intrinsic' ? `block max-w-full max-h-full object-contain` : `w-full h-full object-contain`);
+        : (layout === 'intrinsic' ? `block max-w-full max-h-full object-${objectFit}` : `w-full h-full object-${objectFit}`);
 
     return (
         <div
             ref={containerRef}
-            className={`${containerBaseClass} ${className}`}
+            className={`${containerBaseClass} ${className} outline-none`}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             onClick={onClick || togglePlay}
+            onDoubleClick={toggleFullscreen}
+            onKeyDown={handleKeyDown}
+            tabIndex={0}
         >
             <video
                 ref={videoRef}
@@ -241,27 +324,35 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 playsInline
             />
 
-            {/* Center Play Button (only when paused) */}
-            {!isPlaying && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[2px] transition-opacity duration-300">
-                    <button
-                        onClick={togglePlay}
-                        className={`w-16 h-16 rounded-full ${glass.promptDark} border border-white/20 flex items-center justify-center hover:scale-105 transition-transform duration-200 group/play`}
-                    >
-                        <Play className="w-6 h-6 text-n-white fill-n-white ml-1 transition-colors duration-200 group-hover/play:text-theme-text group-hover/play:fill-theme-text" />
-                    </button>
-                </div>
-            )}
+            {/* Center Pause Button (only when paused) */}
+            <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 z-10 ${!isPlaying && showCenterControls ? 'opacity-100' : 'opacity-0'} pointer-events-none`}>
+                <button
+                    onClick={togglePlay}
+                    className={`w-16 h-16 rounded-full ${glass.promptDark} border border-white/20 flex items-center justify-center hover:scale-105 transition-transform duration-200 group/play pointer-events-auto`}
+                >
+                    <Pause className="w-6 h-6 text-n-white fill-n-white ml-1 transition-colors duration-200 group-hover/play:text-theme-text group-hover/play:fill-theme-text" />
+                </button>
+            </div>
+
+            {/* Center Play Button (only when playing and controls shown) */}
+            <div className={`absolute inset-0 flex items-center justify-center z-10 pointer-events-none transition-opacity duration-300 ${isPlaying && showCenterControls ? 'opacity-100' : 'opacity-0'}`}>
+                <button
+                    onClick={togglePlay}
+                    className={`w-16 h-16 rounded-full ${glass.promptDark} border border-white/20 flex items-center justify-center hover:scale-105 transition-transform duration-200 group/play pointer-events-auto`}
+                >
+                    <Play className="w-6 h-6 text-n-white fill-n-white transition-colors duration-200 group-hover/play:text-theme-text group-hover/play:fill-theme-text" />
+                </button>
+            </div>
 
             {/* Controls Bar */}
             <div
                 className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent transition-opacity duration-300 ${layout === 'intrinsic' ? 'px-6 pb-4 pt-16' : 'px-3 pb-1 pt-12'
-                    } ${showControls || !isPlaying ? 'opacity-100' : 'opacity-0'}`}
+                    } ${showBottomControls ? 'opacity-100' : 'opacity-0'}`}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Progress Bar */}
                 <div
-                    className="relative h-1 bg-white/20 rounded-full mb-4 cursor-pointer group/progress"
+                    className={`relative h-1 bg-white/20 rounded-full ${layout === 'intrinsic' ? 'mb-4' : 'mb-2'} cursor-pointer group/progress`}
                     onClick={handleSeek}
                 >
                     <div

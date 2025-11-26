@@ -82,7 +82,7 @@ export default function Navbar() {
           refresh_token: response.accessToken,
         });
       }
-      
+
       // Reload to refresh auth state
       window.location.reload();
     } catch (err) {
@@ -308,7 +308,7 @@ export default function Navbar() {
         className={`relative ${glass.promptDark} border-t-0`}
       >
         <div
-          className={`${layout.container} flex items-center justify-between text-base min-h-[var(--nav-h)] py-1`}
+          className={`${layout.container} flex items-center justify-between text-base min-h-[var(--nav-h)]`}
         >
           <div className="flex h-full items-center gap-6 md:gap-8">
             <img
@@ -387,7 +387,7 @@ export default function Navbar() {
                   </button>
                 </div>
                 <div className="hidden sm:block h-6 w-px bg-theme-white/20"></div>
-                <button 
+                <button
                   className="hidden sm:flex relative overflow-hidden group parallax-large text-theme-white hover:text-theme-text transition-colors duration-200 px-4 h-9 items-center rounded-full font-raleway font-normal"
                   onClick={() => {
                     setActiveMenu(null);
@@ -400,7 +400,7 @@ export default function Navbar() {
                   <span className="relative z-10">Pricing</span>
                 </button>
                 {mockSignIn && (
-                  <button 
+                  <button
                     className={`${buttons.ghost} btn-compact font-raleway text-base font-medium`}
                     onClick={mockSignIn}
                   >
@@ -408,7 +408,7 @@ export default function Navbar() {
                   </button>
                 )}
                 {import.meta.env.DEV && (
-                  <button 
+                  <button
                     className="hidden lg:flex btn-compact items-center gap-1.5 rounded-lg border border-yellow-500/50 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 hover:border-yellow-500 transition-all font-raleway text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5"
                     onClick={handleDevLogin}
                     disabled={isDevLoginLoading}
@@ -433,7 +433,7 @@ export default function Navbar() {
                     <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
                     <DiscordIcon className="size-4 relative z-10" />
                   </button>
-                  
+
                   {/* X Button */}
                   <button
                     className={`relative overflow-hidden group ${iconButtons.xl} sm:${iconButtons.sm}`}
@@ -443,7 +443,7 @@ export default function Navbar() {
                     <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
                     <XIcon className="size-4 relative z-10" />
                   </button>
-                  
+
                   {/* Instagram Button */}
                   <button
                     className={`relative overflow-hidden group ${iconButtons.xl} sm:${iconButtons.sm}`}
@@ -454,11 +454,11 @@ export default function Navbar() {
                     <InstagramIcon className="size-4 relative z-10" />
                   </button>
                 </div>
-                
+
                 <div className="hidden lg:block h-6 w-px bg-theme-white/20"></div>
-                
+
                 {/* Credit Usage Button */}
-                <button 
+                <button
                   onClick={() => {
                     setActiveMenu(null);
                     setMenuOpen(false);
@@ -473,9 +473,9 @@ export default function Navbar() {
                   </span>
                   <span className="lg:inline xl:hidden font-normal">{currentUser.credits}</span>
                 </button>
-                
+
                 {/* Upgrade Button */}
-                <button 
+                <button
                   className="hidden lg:flex btn btn-white btn-compact items-center gap-1.5 font-raleway text-base font-medium parallax-large"
                   onClick={() => {
                     setActiveMenu(null);
@@ -514,7 +514,7 @@ export default function Navbar() {
                 </div>
               </>
             )}
-            
+
             <button
               type="button"
               className={`lg:hidden ${iconButtons.xl} sm:${iconButtons.sm}`}
@@ -638,8 +638,7 @@ export default function Navbar() {
                     key={`mobile-${item.label}`}
                     to={item.path}
                     className={({ isActive }) =>
-                      `relative overflow-hidden group block rounded-full px-4 py-2 text-base font-raleway font-normal transition-colors duration-200 ${
-                        isActive ? "bg-theme-white/10 text-theme-text" : "text-theme-white hover:text-theme-text hover:bg-theme-white/10"
+                      `relative overflow-hidden group block rounded-full px-4 py-2 text-base font-raleway font-normal transition-colors duration-200 ${isActive ? "bg-theme-white/10 text-theme-text" : "text-theme-white hover:text-theme-text hover:bg-theme-white/10"
                       }`
                     }
                     onClick={() => {

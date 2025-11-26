@@ -1039,7 +1039,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                       src={item.url}
                       className="relative z-[1] h-full w-full"
                       objectFit="cover"
-                      onExpand={() => handleItemClick(item, index)}
                       onClick={() => handleItemClick(item, index)}
                       onInfoClick={() => toggleVideoPrompt(baseActionTooltipId)}
                       showInfoButton={shouldShowPromptDetails}
