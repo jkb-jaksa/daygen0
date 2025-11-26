@@ -283,11 +283,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }, [resetCenterTimeout, resetBottomTimeout]);
 
     const handleMouseLeave = useCallback(() => {
-        if (isPlaying) {
-            setShowCenterControls(false);
-            setShowBottomControls(false);
-        }
-    }, [isPlaying]);
+        setShowCenterControls(false);
+        setShowBottomControls(false);
+    }, []);
 
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
