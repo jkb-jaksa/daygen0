@@ -2370,3 +2370,8 @@ input[type="range"]::-moz-range-thumb {
   white-space: nowrap;
   z-index: 99999;
 }
+
+/* Global focus reset - remove default blue ring */
+*:focus {
+  outline: none;
+}

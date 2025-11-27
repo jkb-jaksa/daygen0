@@ -99,6 +99,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
     const togglePlay = useCallback((e?: React.MouseEvent) => {
         e?.stopPropagation();
+        const wasInitial = !hasInteracted;
         setHasInteracted(true);
         if (videoRef.current) {
             if (isPlaying) {
@@ -121,10 +122,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 // just started playing, schedule clearing of play icon
                 momentaryTimeoutRef.current = setTimeout(() => {
                     setMomentaryIcon(null);
-                }, 700);
+                }, (wasInitial || hasEnded) ? 100 : 700);
             }
         }
-    }, [isPlaying, resetBottomTimeout]);
+    }, [isPlaying, resetBottomTimeout, hasInteracted, hasEnded]);
 
     const toggleMute = useCallback((e?: React.SyntheticEvent) => {
         e?.stopPropagation();
@@ -349,7 +350,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 z-20 ${isCenterVisible ? 'opacity-100' : 'opacity-0'} pointer-events-none`}>
                 <button
                     onClick={togglePlay}
-                    className={`w-16 h-16 rounded-full ${glass.promptDark} border border-white/20 flex items-center justify-center parallax-large hover:scale-105 transition-all duration-200 group pointer-events-auto`}
+                    className={`w-16 h-16 rounded-full ${glass.promptDark} border border-white/20 flex items-center justify-center parallax-large hover:scale-105 transition-all duration-200 group pointer-events-auto outline-none`}
                 >
                     {CenterIcon && (
                         <CenterIcon className={`w-6 h-6 text-n-white fill-n-white transition-colors duration-200 group-hover:text-theme-text group-hover:fill-theme-text ${CenterIcon === Play ? 'ml-1' : ''}`} />
@@ -382,7 +383,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                     <div className={`flex items-center ${layout === 'intrinsic' ? 'gap-4' : 'gap-2'}`}>
                         <button
                             onClick={togglePlay}
-                            className="text-white/70 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full"
+                            className="text-white/70 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full outline-none"
                         >
                             {isPlaying ? (
                                 <Pause className={`${layout === 'intrinsic' ? 'w-5 h-5' : 'w-4 h-4'} fill-current`} />
@@ -394,7 +395,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                         <div className="flex items-center gap-2 group/volume relative">
                             <button
                                 onClick={toggleMute}
-                                className="text-white/70 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full"
+                                className="text-white/70 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full outline-none"
                             >
                                 {isMuted || volume === 0 ? (
                                     <VolumeX className={layout === 'intrinsic' ? 'w-5 h-5' : 'w-4 h-4'} />
@@ -418,6 +419,13 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                                             className="absolute bottom-0 left-0 w-full bg-white rounded-full"
                                             style={{ height: `${volume * 100}%` }}
                                         />
+                                        <div
+                                            className="absolute left-1/2 w-3 h-3 bg-white rounded-full shadow-sm"
+                                            style={{
+                                                bottom: `${volume * 100}%`,
+                                                transform: 'translate(-50%, 50%)'
+                                            }}
+                                        />
                                     </div>
                                 </div>
                             </div>
@@ -435,7 +443,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                                     e.stopPropagation();
                                     onInfoClick();
                                 }}
-                                className={`p-2 rounded-full transition-all duration-200 ${isInfoActive
+                                className={`p-2 rounded-full transition-all duration-200 outline-none ${isInfoActive
                                     ? 'bg-white/20 text-white'
                                     : 'text-white/70 hover:text-white hover:bg-white/10'
                                     }`}
@@ -447,7 +455,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
                         <button
                             onClick={toggleFullscreen}
-                            className="text-white/90 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full"
+                            className="text-white/90 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full outline-none"
                         >
                             {isFullscreen ? (
                                 <Minimize className={layout === 'intrinsic' ? 'w-5 h-5' : 'w-4 h-4'} />
