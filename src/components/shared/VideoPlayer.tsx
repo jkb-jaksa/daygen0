@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, Info } from 'lucide-react';
-import { glass } from '../../styles/designSystem';
+import { glass, buttons } from '../../styles/designSystem';
 
 interface VideoPlayerProps {
     src: string;
@@ -350,10 +350,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 z-20 ${isCenterVisible ? 'opacity-100' : 'opacity-0'} pointer-events-none`}>
                 <button
                     onClick={togglePlay}
-                    className={`w-16 h-16 rounded-full ${glass.promptDark} border border-white/20 flex items-center justify-center parallax-large hover:scale-105 transition-all duration-200 group pointer-events-auto outline-none`}
+                    className={`w-16 h-16 rounded-full ${glass.promptDark} border border-white/20 flex items-center justify-center parallax-large hover:scale-105 transition-all duration-200 group/playbutton pointer-events-auto outline-none`}
                 >
                     {CenterIcon && (
-                        <CenterIcon className={`w-6 h-6 text-n-white fill-n-white transition-colors duration-200 group-hover:text-theme-text group-hover:fill-theme-text ${CenterIcon === Play ? 'ml-1' : ''}`} />
+                        <CenterIcon className={`w-6 h-6 text-n-white fill-n-white transition-colors duration-200 group-hover/playbutton:text-theme-text group-hover/playbutton:fill-theme-text ${CenterIcon === Play ? 'ml-1' : ''}`} />
                     )}
                 </button>
             </div>
@@ -383,24 +383,24 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                     <div className={`flex items-center ${layout === 'intrinsic' ? 'gap-4' : 'gap-2'}`}>
                         <button
                             onClick={togglePlay}
-                            className="text-white/70 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full outline-none"
+                            className="image-action-btn image-action-btn--fullsize parallax-large outline-none"
                         >
                             {isPlaying ? (
-                                <Pause className={`${layout === 'intrinsic' ? 'w-5 h-5' : 'w-4 h-4'} fill-current`} />
+                                <Pause className="w-4 h-4 fill-current" />
                             ) : (
-                                <Play className={`${layout === 'intrinsic' ? 'w-5 h-5' : 'w-4 h-4'} fill-current`} />
+                                <Play className="w-4 h-4 fill-current" />
                             )}
                         </button>
 
                         <div className="flex items-center gap-2 group/volume relative">
                             <button
                                 onClick={toggleMute}
-                                className="text-white/70 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full outline-none"
+                                className="image-action-btn image-action-btn--fullsize parallax-large outline-none"
                             >
                                 {isMuted || volume === 0 ? (
-                                    <VolumeX className={layout === 'intrinsic' ? 'w-5 h-5' : 'w-4 h-4'} />
+                                    <VolumeX className="w-4 h-4" />
                                 ) : (
-                                    <Volume2 className={layout === 'intrinsic' ? 'w-5 h-5' : 'w-4 h-4'} />
+                                    <Volume2 className="w-4 h-4" />
                                 )}
                             </button>
 
@@ -431,7 +431,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                             </div>
                         </div>
 
-                        <span className="text-xs font-raleway text-white/70">
+                        <span className="inline-flex items-center justify-center h-[28px] px-3 rounded-full border border-[var(--glass-border)] bg-[var(--glass-dark-bg)] backdrop-blur-[32px] text-xs font-raleway font-medium text-[var(--theme-white)] parallax-large">
                             {videoRef.current ? formatTime(videoRef.current.currentTime) : '0:00'} / {formatTime(duration)}
                         </span>
                     </div>
@@ -443,24 +443,24 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                                     e.stopPropagation();
                                     onInfoClick();
                                 }}
-                                className={`p-2 rounded-full transition-all duration-200 outline-none ${isInfoActive
-                                    ? 'bg-white/20 text-white'
-                                    : 'text-white/70 hover:text-white hover:bg-white/10'
+                                className={`image-action-btn image-action-btn--fullsize parallax-large outline-none ${isInfoActive
+                                    ? 'border-theme-text text-theme-text'
+                                    : ''
                                     }`}
                                 title="Show info"
                             >
-                                <Info className={layout === 'intrinsic' ? 'w-5 h-5' : 'w-4 h-4'} />
+                                <Info className="w-4 h-4" />
                             </button>
                         )}
 
                         <button
                             onClick={toggleFullscreen}
-                            className="text-white/90 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full outline-none"
+                            className="image-action-btn image-action-btn--fullsize parallax-large outline-none"
                         >
                             {isFullscreen ? (
-                                <Minimize className={layout === 'intrinsic' ? 'w-5 h-5' : 'w-4 h-4'} />
+                                <Minimize className="w-4 h-4" />
                             ) : (
-                                <Maximize className={layout === 'intrinsic' ? 'w-5 h-5' : 'w-4 h-4'} />
+                                <Maximize className="w-4 h-4" />
                             )}
                         </button>
                     </div>
