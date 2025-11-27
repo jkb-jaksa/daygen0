@@ -2,7 +2,7 @@ import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from '
 import { lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { X, Download, Heart, ChevronLeft, ChevronRight, Copy, Globe, Lock, FolderPlus, Trash2, Edit as EditIcon, User, RefreshCw, Camera, Bookmark, BookmarkPlus, MoreHorizontal, Info } from 'lucide-react';
+import { X, Download, Heart, ChevronLeft, ChevronRight, Copy, Globe, Lock, FolderPlus, Trash2, Edit as EditIcon, User, RefreshCw, Camera, Bookmark, BookmarkPlus, MoreHorizontal } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
@@ -1017,33 +1017,7 @@ const FullImageModal = memo(() => {
                       }`}
                   />
                 </button>
-                {isVideo && hasPromptContent && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsVideoPromptExpanded(prev => !prev);
-                    }}
-                    className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || isImageActionMenuOpen
-                      ? 'opacity-100 pointer-events-auto'
-                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                      } ${isVideoPromptExpanded ? 'text-theme-text' : ''}`}
-                    onMouseEnter={(e) => {
-                      showHoverTooltip(
-                        e.currentTarget,
-                        `info-${fullSizeActionTooltipId}`,
-                        { placement: 'below', offset: 2 },
-                      );
-                    }}
-                    onMouseLeave={() => {
-                      hideHoverTooltip(`info-${fullSizeActionTooltipId}`);
-                    }}
-                    aria-label={isVideoPromptExpanded ? 'Hide prompt details' : 'Show prompt details'}
-                    aria-pressed={isVideoPromptExpanded}
-                  >
-                    <Info className="w-4 h-4" />
-                  </button>
-                )}
+
                 <button
                   type="button"
                   onClick={handleMoreActionsClick}

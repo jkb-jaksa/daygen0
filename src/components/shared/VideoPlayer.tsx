@@ -46,6 +46,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const [duration, setDuration] = useState(0);
     const [momentaryIcon, setMomentaryIcon] = useState<'play' | 'pause' | null>(null);
     const [hasInteracted, setHasInteracted] = useState(autoPlay);
+    const [hasEnded, setHasEnded] = useState(false);
     const bottomTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const momentaryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -80,6 +81,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             if (loop) {
                 video.play();
                 setIsPlaying(true);
+            } else {
+                setHasEnded(true);
             }
         };
 
@@ -105,6 +108,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             } else {
                 videoRef.current.play();
                 setMomentaryIcon('play');
+                setHasEnded(false);
             }
             setIsPlaying(!isPlaying);
             resetBottomTimeout(2000);
@@ -282,6 +286,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
         videoRef.current.currentTime = newTime;
         setProgress(percentage);
+        setHasEnded(false);
     }, [duration]);
 
     const handleMouseMove = useCallback(() => {
@@ -310,12 +315,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         CenterIcon = Play;
     } else if (momentaryIcon === 'pause') {
         CenterIcon = Pause;
-    } else if (!isPlaying && !hasInteracted) {
+    } else if ((!isPlaying && !hasInteracted) || hasEnded) {
         CenterIcon = Play;
     }
 
     // Determine if center controls should be visible
-    const isCenterVisible = momentaryIcon || (!isPlaying && !hasInteracted);
+    const isCenterVisible = momentaryIcon || (!isPlaying && !hasInteracted) || hasEnded;
 
     return (
         <div

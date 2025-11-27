@@ -1,7 +1,7 @@
 import React, { memo, useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
-import { Heart, MoreHorizontal, Check, Image as ImageIcon, Video as VideoIcon, Copy, BookmarkPlus, Bookmark, Square, Trash2, FileText, Info } from 'lucide-react';
+import { Heart, MoreHorizontal, Check, Image as ImageIcon, Video as VideoIcon, Copy, BookmarkPlus, Bookmark, Square, Trash2, FileText } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
@@ -977,33 +977,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                 }`}
                             />
                           </button>
-                          {isVideoItem && shouldShowPromptDetails && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleVideoPrompt(baseActionTooltipId);
-                              }}
-                              className={`image-action-btn ${activeCategory === 'gallery' ? 'image-action-btn--gallery' : ''} parallax-large transition-opacity duration-100 ${isMenuActive
-                                ? 'opacity-100 pointer-events-auto'
-                                : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                                } ${isPromptExpanded ? 'text-theme-text' : ''}`}
-                              onMouseEnter={(e) => {
-                                showHoverTooltip(
-                                  e.currentTarget,
-                                  `info-${baseActionTooltipId}`,
-                                  { placement: 'below', offset: 2 },
-                                );
-                              }}
-                              onMouseLeave={() => {
-                                hideHoverTooltip(`info-${baseActionTooltipId}`);
-                              }}
-                              aria-label={isPromptExpanded ? 'Hide prompt details' : 'Show prompt details'}
-                              aria-pressed={isPromptExpanded}
-                            >
-                              <Info className="w-3 h-3" />
-                            </button>
-                          )}
+
                           <button
                             type="button"
                             onClick={(e) => handleItemRightClick(e, item)}
