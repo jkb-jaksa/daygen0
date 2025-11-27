@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, Info } from 'lucide-react';
-import { glass, buttons } from '../../styles/designSystem';
+import { glass } from '../../styles/designSystem';
 
 interface VideoPlayerProps {
     src: string;
