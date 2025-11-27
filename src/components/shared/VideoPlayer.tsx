@@ -353,7 +353,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                     className={`w-16 h-16 rounded-full ${glass.promptDark} border border-white/20 flex items-center justify-center parallax-large hover:scale-105 transition-all duration-200 group/playbutton pointer-events-auto outline-none`}
                 >
                     {CenterIcon && (
-                        <CenterIcon className={`w-6 h-6 text-n-white fill-n-white transition-colors duration-200 group-hover/playbutton:text-theme-text group-hover/playbutton:fill-theme-text ${CenterIcon === Play ? 'ml-1' : ''}`} />
+                        <CenterIcon className={`w-6 h-6 text-theme-white fill-theme-white transition-colors duration-200 group-hover/playbutton:text-theme-text group-hover/playbutton:fill-theme-text ${CenterIcon === Play ? 'ml-1' : ''}`} />
                     )}
                 </button>
             </div>
@@ -383,24 +383,24 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                     <div className={`flex items-center ${layout === 'intrinsic' ? 'gap-4' : 'gap-2'}`}>
                         <button
                             onClick={togglePlay}
-                            className="image-action-btn image-action-btn--fullsize parallax-large outline-none"
+                            className="image-action-btn image-action-btn--fullsize parallax-large outline-none shrink-0"
                         >
                             {isPlaying ? (
-                                <Pause className="w-4 h-4 fill-current" />
+                                <Pause className="w-5 h-5 fill-current" />
                             ) : (
-                                <Play className="w-4 h-4 fill-current" />
+                                <Play className="w-5 h-5 fill-current" />
                             )}
                         </button>
 
                         <div className="flex items-center gap-2 group/volume relative">
                             <button
                                 onClick={toggleMute}
-                                className="image-action-btn image-action-btn--fullsize parallax-large outline-none"
+                                className="image-action-btn image-action-btn--fullsize parallax-large outline-none shrink-0"
                             >
                                 {isMuted || volume === 0 ? (
-                                    <VolumeX className="w-4 h-4" />
+                                    <VolumeX className="w-5 h-5" />
                                 ) : (
-                                    <Volume2 className="w-4 h-4" />
+                                    <Volume2 className="w-5 h-5" />
                                 )}
                             </button>
 
@@ -431,7 +431,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                             </div>
                         </div>
 
-                        <span className="inline-flex items-center justify-center h-[28px] px-3 rounded-full border border-[var(--glass-border)] bg-[var(--glass-dark-bg)] backdrop-blur-[32px] text-xs font-raleway font-medium text-[var(--theme-white)] parallax-large">
+                        <span className="inline-flex items-center justify-center h-[28px] px-3 rounded-full border border-[var(--glass-border)] bg-[var(--glass-dark-bg)] backdrop-blur-[32px] text-xs font-raleway font-medium text-[var(--theme-white)] parallax-large leading-none shrink-0">
                             {videoRef.current ? formatTime(videoRef.current.currentTime) : '0:00'} / {formatTime(duration)}
                         </span>
                     </div>
@@ -443,29 +443,29 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                                     e.stopPropagation();
                                     onInfoClick();
                                 }}
-                                className={`image-action-btn image-action-btn--fullsize parallax-large outline-none ${isInfoActive
+                                className={`image-action-btn image-action-btn--fullsize parallax-large outline-none shrink-0 ${isInfoActive
                                     ? 'border-theme-text text-theme-text'
                                     : ''
                                     }`}
                                 title="Show info"
                             >
-                                <Info className="w-4 h-4" />
+                                <Info className="w-5 h-5" />
                             </button>
                         )}
 
                         <button
                             onClick={toggleFullscreen}
-                            className="image-action-btn image-action-btn--fullsize parallax-large outline-none"
+                            className="image-action-btn image-action-btn--fullsize parallax-large outline-none shrink-0"
                         >
                             {isFullscreen ? (
-                                <Minimize className="w-4 h-4" />
+                                <Minimize className="w-5 h-5" />
                             ) : (
-                                <Maximize className="w-4 h-4" />
+                                <Maximize className="w-5 h-5" />
                             )}
                         </button>
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
