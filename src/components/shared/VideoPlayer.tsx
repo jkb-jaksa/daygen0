@@ -42,24 +42,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const [volume, setVolume] = useState(1);
     const [isDraggingVolume, setIsDraggingVolume] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [showCenterControls, setShowCenterControls] = useState(false);
     const [showBottomControls, setShowBottomControls] = useState(false);
     const [duration, setDuration] = useState(0);
     const [momentaryIcon, setMomentaryIcon] = useState<'play' | 'pause' | null>(null);
     const [hasInteracted, setHasInteracted] = useState(autoPlay);
-    const centerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const bottomTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const momentaryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-    const resetCenterTimeout = useCallback((delay = 1000) => {
-        setShowCenterControls(true);
-        if (centerTimeoutRef.current) {
-            clearTimeout(centerTimeoutRef.current);
-        }
-        centerTimeoutRef.current = setTimeout(() => {
-            setShowCenterControls(false);
-        }, delay);
-    }, []);
 
     const resetBottomTimeout = useCallback((delay = 2000) => {
         setShowBottomControls(true);
@@ -119,7 +107,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 setMomentaryIcon('play');
             }
             setIsPlaying(!isPlaying);
-            resetCenterTimeout(1000);
             resetBottomTimeout(2000);
 
             // Clear momentary icon after animation for play only
@@ -133,7 +120,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 }, 700);
             }
         }
-    }, [isPlaying, resetCenterTimeout, resetBottomTimeout]);
+    }, [isPlaying, resetBottomTimeout]);
 
     const toggleMute = useCallback((e?: React.SyntheticEvent) => {
         e?.stopPropagation();
@@ -298,15 +285,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }, [duration]);
 
     const handleMouseMove = useCallback(() => {
-        resetCenterTimeout(1000);
         resetBottomTimeout(2000);
-    }, [resetCenterTimeout, resetBottomTimeout]);
+    }, [resetBottomTimeout]);
 
     const handleMouseLeave = useCallback(() => {
-        setShowCenterControls(false);
         setShowBottomControls(false);
     }, []);
-
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
