@@ -45,8 +45,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const [showCenterControls, setShowCenterControls] = useState(false);
     const [showBottomControls, setShowBottomControls] = useState(false);
     const [duration, setDuration] = useState(0);
+    const [momentaryIcon, setMomentaryIcon] = useState<'play' | 'pause' | null>(null);
+    const [hasInteracted, setHasInteracted] = useState(autoPlay);
     const centerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const bottomTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const momentaryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const resetCenterTimeout = useCallback((delay = 1000) => {
         setShowCenterControls(true);
@@ -63,10 +66,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         if (bottomTimeoutRef.current) {
             clearTimeout(bottomTimeoutRef.current);
         }
-        bottomTimeoutRef.current = setTimeout(() => {
-            setShowBottomControls(false);
-        }, delay);
-    }, []);
+        if (isFullscreen) {
+            bottomTimeoutRef.current = setTimeout(() => {
+                setShowBottomControls(false);
+            }, delay);
+        }
+    }, [isFullscreen]);
 
     useEffect(() => {
         const video = videoRef.current;
@@ -103,15 +108,30 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
     const togglePlay = useCallback((e?: React.MouseEvent) => {
         e?.stopPropagation();
+        setHasInteracted(true);
         if (videoRef.current) {
             if (isPlaying) {
                 videoRef.current.pause();
+                setMomentaryIcon('pause');
+                // Pause icon stays until play is resumed
             } else {
                 videoRef.current.play();
+                setMomentaryIcon('play');
             }
             setIsPlaying(!isPlaying);
             resetCenterTimeout(1000);
             resetBottomTimeout(2000);
+
+            // Clear momentary icon after animation for play only
+            if (momentaryTimeoutRef.current) {
+                clearTimeout(momentaryTimeoutRef.current);
+            }
+            if (!isPlaying) {
+                // just started playing, schedule clearing of play icon
+                momentaryTimeoutRef.current = setTimeout(() => {
+                    setMomentaryIcon(null);
+                }, 700);
+            }
         }
     }, [isPlaying, resetCenterTimeout, resetBottomTimeout]);
 
@@ -300,10 +320,24 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         ? 'w-full h-full object-contain'
         : (layout === 'intrinsic' ? `block max-w-full max-h-full object-${objectFit}` : `w-full h-full object-${objectFit}`);
 
+    // Determine which icon to show in the center
+    let CenterIcon = null;
+    if (momentaryIcon === 'play') {
+        CenterIcon = Play;
+    } else if (momentaryIcon === 'pause') {
+        CenterIcon = Pause;
+    } else if (!isPlaying && !hasInteracted) {
+        CenterIcon = Play;
+    }
+
+    // Determine if center controls should be visible
+    const isCenterVisible = momentaryIcon || (!isPlaying && !hasInteracted);
+
     return (
         <div
             ref={containerRef}
             className={`${containerBaseClass} ${className} outline-none`}
+            onMouseEnter={() => setShowBottomControls(true)}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             onClick={onClick || togglePlay}
@@ -322,23 +356,15 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 playsInline
             />
 
-            {/* Center Pause Button (only when paused) */}
-            <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 z-10 ${!isPlaying && showCenterControls ? 'opacity-100' : 'opacity-0'} pointer-events-none`}>
+            {/* Unified Center Button */}
+            <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 z-20 ${isCenterVisible ? 'opacity-100' : 'opacity-0'} pointer-events-none`}>
                 <button
                     onClick={togglePlay}
-                    className={`w-16 h-16 rounded-full ${glass.promptDark} border border-white/20 flex items-center justify-center hover:scale-105 transition-transform duration-200 group/play pointer-events-auto`}
+                    className={`w-16 h-16 rounded-full ${glass.promptDark} border border-white/20 flex items-center justify-center parallax-large hover:scale-105 transition-all duration-200 group pointer-events-auto`}
                 >
-                    <Pause className="w-6 h-6 text-n-white fill-n-white ml-1 transition-colors duration-200 group-hover/play:text-theme-text group-hover/play:fill-theme-text" />
-                </button>
-            </div>
-
-            {/* Center Play Button (only when playing and controls shown) */}
-            <div className={`absolute inset-0 flex items-center justify-center z-10 pointer-events-none transition-opacity duration-300 ${isPlaying && showCenterControls ? 'opacity-100' : 'opacity-0'}`}>
-                <button
-                    onClick={togglePlay}
-                    className={`w-16 h-16 rounded-full ${glass.promptDark} border border-white/20 flex items-center justify-center hover:scale-105 transition-transform duration-200 group/play pointer-events-auto`}
-                >
-                    <Play className="w-6 h-6 text-n-white fill-n-white transition-colors duration-200 group-hover/play:text-theme-text group-hover/play:fill-theme-text" />
+                    {CenterIcon && (
+                        <CenterIcon className={`w-6 h-6 text-n-white fill-n-white transition-colors duration-200 group-hover:text-theme-text group-hover:fill-theme-text ${CenterIcon === Play ? 'ml-1' : ''}`} />
+                    )}
                 </button>
             </div>
 
