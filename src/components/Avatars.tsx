@@ -399,8 +399,8 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   } | null>(null);
   const [imageToDelete, setImageToDelete] = useState<GalleryImageLike | null>(null);
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
-  const [publishConfirmation, setPublishConfirmation] = useState<{show: boolean, count: number, imageUrl?: string}>({show: false, count: 0});
-  const [unpublishConfirmation, setUnpublishConfirmation] = useState<{show: boolean, count: number, imageUrl?: string}>({show: false, count: 0});
+  const [publishConfirmation, setPublishConfirmation] = useState<{ show: boolean, count: number, imageUrl?: string }>({ show: false, count: 0 });
+  const [unpublishConfirmation, setUnpublishConfirmation] = useState<{ show: boolean, count: number, imageUrl?: string }>({ show: false, count: 0 });
   const [addToFolderDialog, setAddToFolderDialog] = useState<boolean>(false);
   const [selectedImageForFolder, setSelectedImageForFolder] = useState<string | null>(null);
   const [pendingFolderSelections, setPendingFolderSelections] = useState<Set<string>>(new Set());
@@ -525,10 +525,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     async (records: StoredAvatar[]) => {
       // Always update ref first, regardless of cache/storage success
       avatarsRef.current = records;
-      
+
       // Try to write to cache (may fail due to quota)
       writeCachedAvatars(records);
-      
+
       // Try to persist to remote storage
       if (!storagePrefix) return;
       try {
@@ -713,7 +713,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
 
         // Use commitAvatarUpdate which now properly synchronizes all state
         const result = commitAvatarUpdate(avatarId, images => [...images, ...newImages]);
-        
+
         if (!result) {
           throw new Error("Failed to update avatar");
         }
@@ -855,7 +855,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
 
       // Remove the dragged image from its current position
       const filteredImages = currentImages.filter(image => image.id !== draggedImageId);
-      
+
       // Insert the dragged image at the target position
       const reorderedImages = [
         ...filteredImages.slice(0, targetIndex),
@@ -925,7 +925,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     const isDuplicate = avatars.some(
       avatar => avatar.name.toLowerCase() === normalizedName.toLowerCase()
     );
-    
+
     if (isDuplicate) {
       setUploadError("An avatar with this name already exists");
       return;
@@ -1082,7 +1082,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   );
 
   const toggleAvatarEditMenu = useCallback((avatarId: string, anchor: HTMLElement) => {
-    setAvatarEditMenu(prev => 
+    setAvatarEditMenu(prev =>
       prev?.avatarId === avatarId ? null : { avatarId, anchor }
     );
     setAvatarMoreMenu(null); // Close the other menu
@@ -1092,7 +1092,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   }, []);
 
   const toggleAvatarMoreMenu = useCallback((avatarId: string, anchor: HTMLElement) => {
-    setAvatarMoreMenu(prev => 
+    setAvatarMoreMenu(prev =>
       prev?.avatarId === avatarId ? null : { avatarId, anchor }
     );
     setAvatarEditMenu(null); // Close the other menu
@@ -1109,7 +1109,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   }, []);
 
   const toggleCreationMoreMenu = useCallback((imageUrl: string, anchor: HTMLElement) => {
-    setCreationMoreMenu(prev => 
+    setCreationMoreMenu(prev =>
       prev?.imageUrl === imageUrl ? null : { imageUrl, anchor }
     );
     setGalleryEditMenu(null); // Close the gallery edit menu
@@ -1121,7 +1121,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   }, []);
 
   const toggleGalleryEditMenu = useCallback((imageUrl: string, anchor: HTMLElement) => {
-    setGalleryEditMenu(prev => 
+    setGalleryEditMenu(prev =>
       prev?.imageUrl === imageUrl ? null : { imageUrl, anchor }
     );
     setAvatarEditMenu(null); // Close the avatar edit menu
@@ -1134,7 +1134,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   }, []);
 
   const toggleModalAvatarEditMenu = useCallback((avatarId: string, anchor: HTMLElement) => {
-    setModalAvatarEditMenu(prev => 
+    setModalAvatarEditMenu(prev =>
       prev?.avatarId === avatarId ? null : { avatarId, anchor }
     );
     setAvatarEditMenu(null); // Close the main avatar edit menu
@@ -1153,9 +1153,9 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
 
   const handleDeleteImageConfirmed = useCallback(() => {
     if (!imageToDelete) return;
-    
+
     // Gallery images are now managed by the centralized useGalleryImages hook
-    
+
     setImageToDelete(null);
   }, [imageToDelete]);
 
@@ -1225,7 +1225,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const handleToggleImageInFolder = useCallback((imageUrl: string, folderId: string) => {
     // Only update if this is the selected image for folder management
     if (selectedImageForFolder !== imageUrl) return;
-    
+
     // Update pending selections (temporary state)
     setPendingFolderSelections(prev => {
       const next = new Set(prev);
@@ -1258,7 +1258,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
 
     setFolders(updatedFolders);
     void persistFolders(updatedFolders);
-    
+
     // Close dialog and reset state
     setAddToFolderDialog(false);
     setSelectedImageForFolder(null);
@@ -1381,15 +1381,15 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       setCopyNotification('Image unpublished!');
       setTimeout(() => setCopyNotification(null), 2000);
     }
-    setUnpublishConfirmation({show: false, count: 0});
+    setUnpublishConfirmation({ show: false, count: 0 });
   }, [unpublishConfirmation.imageUrl]);
 
   const cancelPublish = useCallback(() => {
-    setPublishConfirmation({show: false, count: 0});
+    setPublishConfirmation({ show: false, count: 0 });
   }, []);
 
   const cancelUnpublish = useCallback(() => {
-    setUnpublishConfirmation({show: false, count: 0});
+    setUnpublishConfirmation({ show: false, count: 0 });
   }, []);
 
   const openCreationsModal = useCallback(
@@ -1438,11 +1438,11 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     (imageUrl: string) => {
       const image = galleryImages.find(img => img.url === imageUrl);
       if (!image) return;
-      
+
       if (image.isPublic) {
-        setUnpublishConfirmation({show: true, count: 1, imageUrl});
+        setUnpublishConfirmation({ show: true, count: 1, imageUrl });
       } else {
-        setPublishConfirmation({show: true, count: 1, imageUrl});
+        setPublishConfirmation({ show: true, count: 1, imageUrl });
       }
     },
     [galleryImages],
@@ -1475,29 +1475,27 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     return (
       <div
         key={`${keyPrefix}-${avatar.id}`}
-        className={`group flex flex-col overflow-hidden rounded-[28px] border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small${
-          isMasterSection ? " max-w-[200px] w-full" : ""
-        }${
-          isInteractive ? " cursor-pointer" : ""
-        }`}
+        className={`group flex flex-col overflow-hidden rounded-[28px] border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small${isMasterSection ? " max-w-[200px] w-full" : ""
+          }${isInteractive ? " cursor-pointer" : ""
+          }`}
         role={isInteractive ? "button" : undefined}
         tabIndex={isInteractive ? 0 : undefined}
         aria-label={cardAriaLabel}
         onClick={
           isInteractive
             ? () => {
-                handleAvatarCardClick(avatar);
-              }
+              handleAvatarCardClick(avatar);
+            }
             : undefined
         }
         onKeyDown={
           isInteractive
             ? event => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  handleAvatarCardClick(avatar);
-                }
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                handleAvatarCardClick(avatar);
               }
+            }
             : undefined
         }
       >
@@ -1515,11 +1513,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                     event.stopPropagation();
                     handleNavigateToImage(avatar);
                   }}
-                  className={`group/master-action master-action-create-image image-action-btn parallax-large transition-opacity duration-100 text-theme-white ${
-                    anyMenuOpen
-                      ? 'opacity-100 pointer-events-auto'
-                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                  }`}
+                  className={`group/master-action master-action-create-image image-action-btn parallax-large transition-opacity duration-100 text-theme-white ${anyMenuOpen
+                    ? 'opacity-100 pointer-events-auto'
+                    : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                    }`}
                   onMouseEnter={(e) => {
                     showHoverTooltip(
                       e.currentTarget,
@@ -1540,11 +1537,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                     event.stopPropagation();
                     handleNavigateToVideo(avatar);
                   }}
-                  className={`group/master-action master-action-make-video image-action-btn parallax-large transition-opacity duration-100 text-theme-white ${
-                    anyMenuOpen
-                      ? 'opacity-100 pointer-events-auto'
-                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                  }`}
+                  className={`group/master-action master-action-make-video image-action-btn parallax-large transition-opacity duration-100 text-theme-white ${anyMenuOpen
+                    ? 'opacity-100 pointer-events-auto'
+                    : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                    }`}
                   onMouseEnter={(e) => {
                     showHoverTooltip(
                       e.currentTarget,
@@ -1572,24 +1568,23 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                       toggleAvatarEditMenu(avatar.id, event.currentTarget);
                     }
                   }}
-                  className={`image-action-btn parallax-large transition-opacity duration-100 ${
-                    anyMenuOpen || (disableModalTrigger 
-                      ? (modalAvatarEditMenu?.avatarId === avatar.id)
-                      : (avatarEditMenu?.avatarId === avatar.id))
-                      ? 'opacity-100 pointer-events-auto'
-                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                  }`}
+                  className={`image-action-btn parallax-large transition-opacity duration-100 ${anyMenuOpen || (disableModalTrigger
+                    ? (modalAvatarEditMenu?.avatarId === avatar.id)
+                    : (avatarEditMenu?.avatarId === avatar.id))
+                    ? 'opacity-100 pointer-events-auto'
+                    : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                    }`}
                   title="Edit Avatar"
                   aria-label="Edit Avatar"
                 >
                   <Edit className="w-3 h-3" />
                 </button>
                 <ImageActionMenuPortal
-                  anchorEl={disableModalTrigger 
+                  anchorEl={disableModalTrigger
                     ? (modalAvatarEditMenu?.avatarId === avatar.id ? modalAvatarEditMenu?.anchor ?? null : null)
                     : (avatarEditMenu?.avatarId === avatar.id ? avatarEditMenu?.anchor ?? null : null)
                   }
-                  open={disableModalTrigger 
+                  open={disableModalTrigger
                     ? (modalAvatarEditMenu?.avatarId === avatar.id)
                     : (avatarEditMenu?.avatarId === avatar.id)
                   }
@@ -1641,11 +1636,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 event.stopPropagation();
                 setAvatarToDelete(avatar);
               }}
-              className={`image-action-btn parallax-large transition-opacity duration-100 ${
-                anyMenuOpen
-                  ? 'opacity-100 pointer-events-auto'
-                  : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-              }`}
+              className={`image-action-btn parallax-large transition-opacity duration-100 ${anyMenuOpen
+                ? 'opacity-100 pointer-events-auto'
+                : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                }`}
               onMouseEnter={(e) => {
                 showHoverTooltip(
                   e.currentTarget,
@@ -1666,11 +1660,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 event.stopPropagation();
                 toggleAvatarMoreMenu(avatar.id, event.currentTarget);
               }}
-              className={`image-action-btn parallax-large transition-opacity duration-100 ${
-                anyMenuOpen || avatarMoreMenu?.avatarId === avatar.id
-                  ? 'opacity-100 pointer-events-auto'
-                  : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-              }`}
+              className={`image-action-btn parallax-large transition-opacity duration-100 ${anyMenuOpen || avatarMoreMenu?.avatarId === avatar.id
+                ? 'opacity-100 pointer-events-auto'
+                : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                }`}
               onMouseEnter={(e) => {
                 showHoverTooltip(
                   e.currentTarget,
@@ -1766,11 +1759,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                           event.stopPropagation();
                           openAvatarFullSizeView(image.id);
                         }}
-                        className={`flex-shrink-0 h-10 w-10 sm:h-12 sm:w-12 rounded-lg overflow-hidden border transition-colors duration-200 cursor-pointer ${
-                          isPrimary 
-                            ? 'border-2 border-theme-text' 
-                            : 'border border-theme-mid hover:border-theme-text'
-                        }`}
+                        className={`flex-shrink-0 h-10 w-10 sm:h-12 sm:w-12 rounded-lg overflow-hidden border transition-colors duration-200 cursor-pointer ${isPrimary
+                          ? 'border-2 border-theme-text'
+                          : 'border border-theme-mid hover:border-theme-text'
+                          }`}
                         title={`Version ${index + 1}${isPrimary ? ' (Primary)' : ''}`}
                       >
                         <img
@@ -1796,7 +1788,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                     onClick={event => event.stopPropagation()}
                   >
                     <input
-                      className={isMasterSection 
+                      className={isMasterSection
                         ? "flex-1 h-[32px] rounded-lg border border-theme-mid bg-theme-black/60 px-3 max-w-[140px] text-base font-raleway font-normal text-theme-text placeholder:text-theme-white focus:border-theme-text focus:outline-none"
                         : "flex h-full flex-1 bg-transparent px-3 text-base font-raleway font-normal text-theme-text placeholder:text-theme-white focus:outline-none"}
                       placeholder={isMasterSection ? "Enter your name..." : "Enter name..."}
@@ -1825,11 +1817,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                     {!disableModalTrigger && (
                       <button
                         type="button"
-                        className={`relative z-10 flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-lg text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-100 pointer-events-auto ${
-                          isMasterSection
-                            ? 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                            : ''
-                        }`}
+                        className={`relative z-10 flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-lg text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-100 pointer-events-auto ${isMasterSection
+                          ? 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                          : ''
+                          }`}
                         onClick={(event) => {
                           event.stopPropagation();
                           startRenaming(avatar);
@@ -1859,7 +1850,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               onClick={(event) => event.stopPropagation()}
             >
               <input
-                className={isMasterSection 
+                className={isMasterSection
                   ? "flex-1 h-[32px] rounded-lg border border-theme-mid bg-theme-black/60 px-3 max-w-[140px] text-base font-raleway font-normal text-theme-text placeholder:text-theme-white focus:border-theme-text focus:outline-none"
                   : "flex h-full flex-1 bg-transparent px-3 text-base font-raleway font-normal text-theme-text placeholder:text-theme-white focus:outline-none"}
                 placeholder={isMasterSection ? "Enter your name..." : "Enter name..."}
@@ -1882,17 +1873,16 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
             </form>
           ) : (
             <div className="PromptDescriptionBar mx-auto flex h-[32px] w-full max-w-xs items-center gap-2 rounded-2xl px-4 py-2.5">
-                <p className="flex h-full flex-1 items-center px-3 text-base font-raleway font-normal text-theme-text">
-                  {displayName}
+              <p className="flex h-full flex-1 items-center px-3 text-base font-raleway font-normal text-theme-text">
+                {displayName}
               </p>
               {!disableModalTrigger && (
                 <button
                   type="button"
-                  className={`relative z-10 flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-lg text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-100 pointer-events-auto ${
-                    isMasterSection
-                      ? 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                      : ''
-                  }`}
+                  className={`relative z-10 flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-lg text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-100 pointer-events-auto ${isMasterSection
+                    ? 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                    : ''
+                    }`}
                   onClick={(event) => {
                     event.stopPropagation();
                     startRenaming(avatar);
@@ -2007,11 +1997,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 event.stopPropagation();
                 toggleGalleryEditMenu(image.url, event.currentTarget);
               }}
-              className={`image-action-btn parallax-large transition-opacity duration-100 ${
-                anyMenuOpen || galleryEditMenu?.imageUrl === image.url
-                  ? 'opacity-100 pointer-events-auto'
-                  : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-              }`}
+              className={`image-action-btn parallax-large transition-opacity duration-100 ${anyMenuOpen || galleryEditMenu?.imageUrl === image.url
+                ? 'opacity-100 pointer-events-auto'
+                : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                }`}
               title="Edit image"
               aria-label="Edit image"
             >
@@ -2064,11 +2053,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               event.stopPropagation();
               confirmDeleteImage(image);
             }}
-            className={`image-action-btn parallax-large transition-opacity duration-100 ${
-              anyMenuOpen
-                ? 'opacity-100 pointer-events-auto'
-                : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-            }`}
+            className={`image-action-btn parallax-large transition-opacity duration-100 ${anyMenuOpen
+              ? 'opacity-100 pointer-events-auto'
+              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+              }`}
             title="Delete image"
             aria-label="Delete image"
           >
@@ -2080,15 +2068,14 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               event.stopPropagation();
               toggleCreationMoreMenu(image.url, event.currentTarget);
             }}
-            className={`image-action-btn parallax-large transition-opacity duration-100 ${
-              anyMenuOpen || creationMoreMenu?.imageUrl === image.url
-                ? 'opacity-100 pointer-events-auto'
-                : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-            }`}
+            className={`image-action-btn parallax-large transition-opacity duration-100 ${anyMenuOpen || creationMoreMenu?.imageUrl === image.url
+              ? 'opacity-100 pointer-events-auto'
+              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+              }`}
             title="More options"
             aria-label="More options"
           >
-                  <MoreHorizontal className="w-3 h-3" />
+            <MoreHorizontal className="w-3 h-3" />
           </button>
           <ImageActionMenuPortal
             anchorEl={creationMoreMenu?.imageUrl === image.url ? creationMoreMenu?.anchor ?? null : null}
@@ -2199,7 +2186,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
 
   const renderHeader = () => {
     if (!(showSidebar || !hasAvatars)) return null;
-    
+
     return (
       <header className={`max-w-3xl ${showSidebar ? 'text-left' : 'text-center mx-auto'}`}>
         <div className={`${headings.tripleHeading.container} ${showSidebar ? 'text-left' : 'text-center'}`}>
@@ -2235,7 +2222,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
 
   const renderDragDropFields = () => {
     if (hasAvatars) return null;
-    
+
     return (
       <div className="w-full">
         <Suspense fallback={null}>
@@ -2309,65 +2296,52 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 </h2>
               </div>
               <div className="w-full">
-              <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                <UseCaseCard
-                  title="lifestyle images"
-                  imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/lifestyle images.png"
-                  imageAlt="Lifestyle images example"
-                  onClick={openStyleModal}
-                  imageHeight="h-32 sm:h-36 md:h-40"
-                />
-                <UseCaseCard
-                  title="formal images"
-                  imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/3b632ef0-3d13-4359-a2ba-5dec11fc3eab.png"
-                  imageAlt="Business woman in a suit"
-                  onClick={openStyleModal}
-                  imageHeight="h-32 sm:h-36 md:h-40"
-                />
-                <UseCaseCard
-                  title="artistic images"
-                  imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/artistic images.png"
-                  imageAlt="Artistic images example"
-                  onClick={openStyleModal}
-                  imageHeight="h-32 sm:h-36 md:h-40"
-                />
-                <UseCaseCard
-                  title="product placement"
-                  imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/product visualizations.png"
-                  imageAlt="Product placement example"
-                  onClick={openStyleModal}
-                  imageHeight="h-32 sm:h-36 md:h-40"
-                />
-                <UseCaseCard
-                  title="virtual try-on"
-                  imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/virtual try-on.png"
-                  imageAlt="Virtual try-on example"
-                  onClick={openStyleModal}
-                  imageHeight="h-32 sm:h-36 md:h-40"
-                />
-                <UseCaseCard
-                  title="brand identity kits"
-                  imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/brand identity.png"
-                  imageAlt="Brand identity example"
-                  onClick={openStyleModal}
-                  imageHeight="h-32 sm:h-36 md:h-40"
-                />
-                <UseCaseCard
-                  title="infographics"
-                  imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/infographics.png"
-                  imageAlt="Infographics example"
-                  onClick={openStyleModal}
-                  imageHeight="h-32 sm:h-36 md:h-40"
-                />
-                <UseCaseCard
-                  title="upscaling"
-                  imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/upscaling.png"
-                  imageAlt="Upscaling example"
-                  onClick={openStyleModal}
-                  imageHeight="h-32 sm:h-36 md:h-40"
-                />
+                <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                  <UseCaseCard
+                    title="use presets"
+                    imageUrl="/deepdream1.png"
+                    imageAlt="Your image plus preset example"
+                    onClick={openStyleModal}
+                    imageHeight="h-32 sm:h-36 md:h-40"
+                  />
+                  <UseCaseCard
+                    title="style transfer"
+                    imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/artistic images.png"
+                    imageAlt="Style transfer example"
+                    onClick={openStyleModal}
+                    imageHeight="h-32 sm:h-36 md:h-40"
+                  />
+                  <UseCaseCard
+                    title="product placement"
+                    imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/product visualizations.png"
+                    imageAlt="Product placement example"
+                    onClick={openStyleModal}
+                    imageHeight="h-32 sm:h-36 md:h-40"
+                  />
+                  <UseCaseCard
+                    title="virtual try-on"
+                    imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/virtual try-on.png"
+                    imageAlt="Virtual try-on example"
+                    onClick={openStyleModal}
+                    imageHeight="h-32 sm:h-36 md:h-40"
+                  />
+
+                  <UseCaseCard
+                    title="person swap"
+                    imageUrl="/person swap.png"
+                    imageAlt="Infographics example"
+                    onClick={openStyleModal}
+                    imageHeight="h-32 sm:h-36 md:h-40"
+                  />
+                  <UseCaseCard
+                    title="upscaling"
+                    imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/upscaling.png"
+                    imageAlt="Upscaling example"
+                    onClick={openStyleModal}
+                    imageHeight="h-32 sm:h-36 md:h-40"
+                  />
+                </div>
               </div>
-            </div>
             </>
           )}
         </>
@@ -2509,31 +2483,31 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                       onClose={closeModalAvatarEditMenu}
                       zIndex={1200}
                     >
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    handleNavigateToImage(creationsModalAvatar);
-                    closeModalAvatarEditMenu();
-                  }}
-                >
-                  <ImageIcon className="h-4 w-4" />
-                  Create image
-                </button>
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    handleNavigateToVideo(creationsModalAvatar);
-                    closeModalAvatarEditMenu();
-                  }}
-                >
-                  <Camera className="h-4 w-4" />
-                  Make video
-                </button>
-              </ImageActionMenuPortal>
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleNavigateToImage(creationsModalAvatar);
+                          closeModalAvatarEditMenu();
+                        }}
+                      >
+                        <ImageIcon className="h-4 w-4" />
+                        Create image
+                      </button>
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleNavigateToVideo(creationsModalAvatar);
+                          closeModalAvatarEditMenu();
+                        }}
+                      >
+                        <Camera className="h-4 w-4" />
+                        Make video
+                      </button>
+                    </ImageActionMenuPortal>
                     <button
                       type="button"
                       onClick={(event) => toggleAvatarMoreMenu(creationsModalAvatar.id, event.currentTarget)}
@@ -2635,11 +2609,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 return (
                   <div
                     key={`placeholder-${index}`}
-                    className={`flex aspect-square w-60 h-60 items-center justify-center rounded-2xl border-2 border-dashed bg-theme-black/40 text-theme-white/70 transition-colors duration-200 cursor-pointer ${
-                      draggingOverSlot === index
-                        ? "border-theme-text drag-active"
-                        : "border-theme-white/30 hover:border-theme-text/60 hover:text-theme-text"
-                    }`}
+                    className={`flex aspect-square w-60 h-60 items-center justify-center rounded-2xl border-2 border-dashed bg-theme-black/40 text-theme-white/70 transition-colors duration-200 cursor-pointer ${draggingOverSlot === index
+                      ? "border-theme-text drag-active"
+                      : "border-theme-white/30 hover:border-theme-text/60 hover:text-theme-text"
+                      }`}
                     onClick={openAvatarImageUploader}
                     onDragEnter={(event) => {
                       event.preventDefault();
@@ -2676,11 +2649,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               return (
                 <div key={image.id} className="flex flex-col items-center gap-2">
                   <div
-                    className={`relative aspect-square w-60 h-60 overflow-hidden rounded-2xl border transition-colors duration-200 ${
-                      dragOverSlotIndex === index && draggedImageId !== image.id
-                        ? "border-theme-text bg-theme-text/10"
-                        : "border-theme-dark bg-theme-black/60"
-                    }`}
+                    className={`relative aspect-square w-60 h-60 overflow-hidden rounded-2xl border transition-colors duration-200 ${dragOverSlotIndex === index && draggedImageId !== image.id
+                      ? "border-theme-text bg-theme-text/10"
+                      : "border-theme-dark bg-theme-black/60"
+                      }`}
                     draggable={true}
                     onDragStart={(event) => {
                       event.stopPropagation();
@@ -2718,7 +2690,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                     onDrop={(event) => {
                       event.preventDefault();
                       event.stopPropagation();
-                      
+
                       // Check if files are being dropped (new upload)
                       const droppedFiles = event.dataTransfer?.files;
                       if (droppedFiles && droppedFiles.length > 0) {
@@ -2729,13 +2701,13 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                         setDragOverSlotIndex(null);
                         return;
                       }
-                      
+
                       // Otherwise, check if reordering existing image
                       const droppedImageId = event.dataTransfer.getData("text/plain");
                       if (droppedImageId && droppedImageId !== image.id) {
                         handleReorderAvatarImages(creationsModalAvatar.id, droppedImageId, index);
                       }
-                      
+
                       setDraggedImageId(null);
                       setDragOverSlotIndex(null);
                     }}
@@ -2872,7 +2844,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                       // Check if category is a library category
                       const libraryCategories = ['gallery', 'avatars', 'products', 'inspirations', 'my-folders'];
                       const isLibraryCategory = libraryCategories.includes(category);
-                      
+
                       if (isLibraryCategory) {
                         const path = pathForCategory(category);
                         if (path) {
@@ -2880,7 +2852,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                           return;
                         }
                       }
-                      
+
                       // For non-library categories, use /app/{category}
                       navigate(`/app/${category}`);
                     }}
@@ -2994,11 +2966,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 {/* Action buttons overlay - left side */}
                 <div className="image-gallery-actions absolute top-4 left-4 flex items-start gap-1 z-[40]">
                   <div
-                    className={`flex items-center gap-1 ${
-                      anyMenuOpen
-                        ? 'opacity-100'
-                        : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
-                    } transition-opacity duration-100`}
+                    className={`flex items-center gap-1 ${anyMenuOpen
+                      ? 'opacity-100'
+                      : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
+                      } transition-opacity duration-100`}
                   >
                     {isMasterSection ? (
                       <>
@@ -3009,11 +2980,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                             handleNavigateToImage(creationsModalAvatar);
                             closeAvatarFullSizeView();
                           }}
-                          className={`group/master-action master-action-create-image image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 text-theme-white ${
-                            anyMenuOpen
-                              ? 'opacity-100 pointer-events-auto'
-                              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                          }`}
+                          className={`group/master-action master-action-create-image image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 text-theme-white ${anyMenuOpen
+                            ? 'opacity-100 pointer-events-auto'
+                            : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                            }`}
                           aria-label="Create image"
                         >
                           <ImageIcon className="w-4 h-4 text-theme-white transition-colors duration-100 group-hover/master-action:text-red-500" />
@@ -3026,11 +2996,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                             handleNavigateToVideo(creationsModalAvatar);
                             closeAvatarFullSizeView();
                           }}
-                          className={`group/master-action master-action-make-video image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 text-theme-white ${
-                            anyMenuOpen
-                              ? 'opacity-100 pointer-events-auto'
-                              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                          }`}
+                          className={`group/master-action master-action-make-video image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 text-theme-white ${anyMenuOpen
+                            ? 'opacity-100 pointer-events-auto'
+                            : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                            }`}
                           aria-label="Make video"
                         >
                           <Camera className="w-4 h-4 text-theme-white transition-colors duration-100 group-hover/master-action:text-blue-500" />
@@ -3045,11 +3014,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                             event.stopPropagation();
                             toggleAvatarEditMenu(creationsModalAvatar.id, event.currentTarget);
                           }}
-                          className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${
-                            anyMenuOpen || avatarEditMenu?.avatarId === creationsModalAvatar.id
-                              ? 'opacity-100 pointer-events-auto'
-                              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                          }`}
+                          className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${anyMenuOpen || avatarEditMenu?.avatarId === creationsModalAvatar.id
+                            ? 'opacity-100 pointer-events-auto'
+                            : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                            }`}
                           title="Edit"
                           aria-haspopup="menu"
                           aria-expanded={avatarEditMenu?.avatarId === creationsModalAvatar.id}
@@ -3099,11 +3067,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 {/* Action buttons overlay - right side */}
                 <div className="image-gallery-actions absolute top-4 right-4 flex items-start gap-1 z-[40]">
                   <div
-                    className={`flex items-center gap-1 ${
-                      anyMenuOpen || avatarMoreMenu?.avatarId === creationsModalAvatar.id
-                        ? 'opacity-100'
-                        : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
-                    } transition-opacity duration-100`}
+                    className={`flex items-center gap-1 ${anyMenuOpen || avatarMoreMenu?.avatarId === creationsModalAvatar.id
+                      ? 'opacity-100'
+                      : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
+                      } transition-opacity duration-100`}
                   >
                     <button
                       type="button"
@@ -3112,11 +3079,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                         setAvatarToDelete(creationsModalAvatar);
                         closeAvatarFullSizeView();
                       }}
-                      className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${
-                        anyMenuOpen
-                          ? 'opacity-100 pointer-events-auto'
-                          : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                      }`}
+                      className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${anyMenuOpen
+                        ? 'opacity-100 pointer-events-auto'
+                        : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                        }`}
                       onMouseEnter={(e) => {
                         showHoverTooltip(
                           e.currentTarget,
@@ -3137,11 +3103,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                         event.stopPropagation();
                         toggleAvatarMoreMenu(creationsModalAvatar.id, event.currentTarget);
                       }}
-                      className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${
-                        anyMenuOpen || avatarMoreMenu?.avatarId === creationsModalAvatar.id
-                          ? 'opacity-100 pointer-events-auto'
-                          : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                      }`}
+                      className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${anyMenuOpen || avatarMoreMenu?.avatarId === creationsModalAvatar.id
+                        ? 'opacity-100 pointer-events-auto'
+                        : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                        }`}
                       onMouseEnter={(e) => {
                         showHoverTooltip(
                           e.currentTarget,
@@ -3371,89 +3336,89 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 </button>
               </div>
 
-            {/* Edit actions */}
-            <div className="flex flex-col gap-0 mt-2">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // Navigate to edit page with avatar image
-                  navigate(`${studioBasePath}/image`, {
-                    state: {
-                      avatarId: creationsModalAvatar.id,
-                      referenceImageUrl: activeAvatarImage.url,
-                      focusPromptBar: true,
-                    },
-                  });
-                  closeAvatarFullSizeView();
-                }}
-                className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
-              >
-                <Edit className="w-4 h-4 flex-shrink-0 text-theme-text" />
-                Edit image
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // Create new avatar from this image
-                  navigate("/avatars", {
-                    state: {
-                      openAvatarCreator: true,
-                      selectedImageUrl: activeAvatarImage.url,
-                    },
-                  });
-                  closeAvatarFullSizeView();
-                }}
-                className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
-              >
-                <User className="w-4 h-4 flex-shrink-0 text-theme-text" />
-                Create Avatar
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // Use as reference in create page
-                  navigate(`${studioBasePath}/image`, {
-                    state: {
-                      referenceImageUrl: activeAvatarImage.url,
-                      focusPromptBar: true,
-                    },
-                  });
-                  closeAvatarFullSizeView();
-                }}
-                className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
-              >
-                <Copy className="w-4 h-4 flex-shrink-0 text-theme-text" />
-                Use as reference
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // Navigate to create with avatar selected
-                  handleNavigateToImage(creationsModalAvatar);
-                  closeAvatarFullSizeView();
-                }}
-                className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
-              >
-                <RefreshCw className="w-4 h-4 flex-shrink-0 text-theme-text" />
-                Reuse prompt
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleNavigateToVideo(creationsModalAvatar);
-                  closeAvatarFullSizeView();
-                }}
-                className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
-              >
-                <Camera className="w-4 h-4 flex-shrink-0 text-theme-text" />
-                Make video
-              </button>
-            </div>
+              {/* Edit actions */}
+              <div className="flex flex-col gap-0 mt-2">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Navigate to edit page with avatar image
+                    navigate(`${studioBasePath}/image`, {
+                      state: {
+                        avatarId: creationsModalAvatar.id,
+                        referenceImageUrl: activeAvatarImage.url,
+                        focusPromptBar: true,
+                      },
+                    });
+                    closeAvatarFullSizeView();
+                  }}
+                  className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
+                >
+                  <Edit className="w-4 h-4 flex-shrink-0 text-theme-text" />
+                  Edit image
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Create new avatar from this image
+                    navigate("/avatars", {
+                      state: {
+                        openAvatarCreator: true,
+                        selectedImageUrl: activeAvatarImage.url,
+                      },
+                    });
+                    closeAvatarFullSizeView();
+                  }}
+                  className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
+                >
+                  <User className="w-4 h-4 flex-shrink-0 text-theme-text" />
+                  Create Avatar
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Use as reference in create page
+                    navigate(`${studioBasePath}/image`, {
+                      state: {
+                        referenceImageUrl: activeAvatarImage.url,
+                        focusPromptBar: true,
+                      },
+                    });
+                    closeAvatarFullSizeView();
+                  }}
+                  className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
+                >
+                  <Copy className="w-4 h-4 flex-shrink-0 text-theme-text" />
+                  Use as reference
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Navigate to create with avatar selected
+                    handleNavigateToImage(creationsModalAvatar);
+                    closeAvatarFullSizeView();
+                  }}
+                  className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
+                >
+                  <RefreshCw className="w-4 h-4 flex-shrink-0 text-theme-text" />
+                  Reuse prompt
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleNavigateToVideo(creationsModalAvatar);
+                    closeAvatarFullSizeView();
+                  }}
+                  className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
+                >
+                  <Camera className="w-4 h-4 flex-shrink-0 text-theme-text" />
+                  Make video
+                </button>
+              </div>
             </aside>
 
             {/* Portaled tooltips for avatar full-size sidebar actions */}
@@ -3568,11 +3533,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                           setActiveAvatarImageId(creationsModalAvatar.images[index]?.id ?? null);
                         }
                       }}
-                      className={`relative overflow-hidden rounded-lg transition-none focus:outline-none ${
-                        isActive
-                          ? "ring-1 ring-theme-text scale-110"
-                          : "ring-1 ring-theme-mid/30 hover:ring-theme-mid/60 scale-100"
-                      }`}
+                      className={`relative overflow-hidden rounded-lg transition-none focus:outline-none ${isActive
+                        ? "ring-1 ring-theme-text scale-110"
+                        : "ring-1 ring-theme-mid/30 hover:ring-theme-mid/60 scale-100"
+                        }`}
                       style={{ width: "48px", height: "48px", flexShrink: 0 }}
                       aria-label={`View image ${index + 1}${isActive ? " (current)" : ""}`}
                     >
@@ -3599,7 +3563,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 // Check if category is a library category
                 const libraryCategories = ['gallery', 'avatars', 'products', 'inspirations', 'my-folders'];
                 const isLibraryCategory = libraryCategories.includes(category);
-                
+
                 if (isLibraryCategory) {
                   const path = pathForCategory(category);
                   if (path) {
@@ -3608,7 +3572,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                     return;
                   }
                 }
-                
+
                 // For non-library categories, use /app/{category}
                 navigate(`/app/${category}`);
                 closeAvatarFullSizeView();
@@ -3672,30 +3636,28 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 </>
               );
             })()}
-            
-            <img 
-              src={selectedFullImage.url} 
-              alt={selectedFullImage.prompt || "Avatar creation"} 
-              className="max-w-full max-h-[90vh] object-contain rounded-lg" 
+
+            <img
+              src={selectedFullImage.url}
+              alt={selectedFullImage.prompt || "Avatar creation"}
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
               style={{ objectPosition: 'top' }}
             />
-            
+
             {/* Action buttons - only show on hover */}
             <div className="absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-4 pointer-events-none">
-              <div className={`pointer-events-auto ${
-                anyMenuOpen || galleryEditMenu?.imageUrl === selectedFullImage.url ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-              } transition-opacity duration-100`}>
+              <div className={`pointer-events-auto ${anyMenuOpen || galleryEditMenu?.imageUrl === selectedFullImage.url ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                } transition-opacity duration-100`}>
                 <button
                   type="button"
                   onClick={(event) => {
                     event.stopPropagation();
                     toggleGalleryEditMenu(selectedFullImage.url, event.currentTarget);
                   }}
-                  className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${
-                    anyMenuOpen || galleryEditMenu?.imageUrl === selectedFullImage.url
-                      ? 'opacity-100 pointer-events-auto'
-                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                  }`}
+                  className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${anyMenuOpen || galleryEditMenu?.imageUrl === selectedFullImage.url
+                    ? 'opacity-100 pointer-events-auto'
+                    : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                    }`}
                   title="Edit image"
                   aria-label="Edit image"
                 >
@@ -3722,14 +3684,14 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                   </button>
                   <button
                     type="button"
-                  className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    navigate(`${studioBasePath}/video`, {
-                      state: {
-                        avatarId: selectedFullImage.avatarId,
-                        focusPromptBar: true,
-                      },
+                    className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      navigate(`${studioBasePath}/video`, {
+                        state: {
+                          avatarId: selectedFullImage.avatarId,
+                          focusPromptBar: true,
+                        },
                       });
                       closeGalleryEditMenu();
                     }}
@@ -3740,37 +3702,34 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                   </button>
                 </ImageActionMenuPortal>
               </div>
-              <div className={`flex items-center gap-0.5 pointer-events-auto ${
-                anyMenuOpen || galleryEditMenu?.imageUrl === selectedFullImage.url || creationMoreMenu?.imageUrl === selectedFullImage.url ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-              } transition-opacity duration-100`}>
+              <div className={`flex items-center gap-0.5 pointer-events-auto ${anyMenuOpen || galleryEditMenu?.imageUrl === selectedFullImage.url || creationMoreMenu?.imageUrl === selectedFullImage.url ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                } transition-opacity duration-100`}>
                 <button
                   type="button"
                   onClick={(event) => {
                     event.stopPropagation();
                     confirmDeleteImage(selectedFullImage);
                   }}
-                  className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${
-                    anyMenuOpen
-                      ? 'opacity-100 pointer-events-auto'
-                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                  }`}
-                  title="Delete image" 
+                  className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${anyMenuOpen
+                    ? 'opacity-100 pointer-events-auto'
+                    : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                    }`}
+                  title="Delete image"
                   aria-label="Delete image"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={(event) => {
                     event.stopPropagation();
                     toggleCreationMoreMenu(selectedFullImage.url, event.currentTarget);
                   }}
-                  className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${
-                    anyMenuOpen || creationMoreMenu?.imageUrl === selectedFullImage.url
-                      ? 'opacity-100 pointer-events-auto'
-                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                  }`}
-                  title="More options" 
+                  className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${anyMenuOpen || creationMoreMenu?.imageUrl === selectedFullImage.url
+                    ? 'opacity-100 pointer-events-auto'
+                    : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                    }`}
+                  title="More options"
                   aria-label="More options"
                 >
                   <MoreHorizontal className="w-3 h-3" />
@@ -3836,11 +3795,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 </ImageActionMenuPortal>
               </div>
             </div>
-            
+
             {/* Prompt and metadata info - only on hover */}
-            <div className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 ${
-              galleryEditMenu?.imageUrl === selectedFullImage.url || creationMoreMenu?.imageUrl === selectedFullImage.url ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-            }`}>
+            <div className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 ${galleryEditMenu?.imageUrl === selectedFullImage.url || creationMoreMenu?.imageUrl === selectedFullImage.url ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+              }`}>
               <div className="flex items-center justify-center">
                 <div className="text-center">
                   <div className="text-sm font-raleway leading-relaxed">
@@ -3866,9 +3824,9 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                   <div className="mt-2 flex justify-center items-center gap-2">
                     <div className="flex items-center gap-2">
                       <Suspense fallback={null}>
-                        <ModelBadge 
-                          model={selectedFullImage.model || 'unknown'} 
-                          size="md" 
+                        <ModelBadge
+                          model={selectedFullImage.model || 'unknown'}
+                          size="md"
                         />
                       </Suspense>
                     </div>
@@ -3881,16 +3839,16 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                       </div>
                     )}
                     <Suspense fallback={null}>
-                      <AspectRatioBadge 
-                        aspectRatio={selectedFullImage.aspectRatio || '1:1'} 
-                        size="md" 
+                      <AspectRatioBadge
+                        aspectRatio={selectedFullImage.aspectRatio || '1:1'}
+                        size="md"
                       />
                     </Suspense>
                   </div>
                 </div>
               </div>
             </div>
-            
+
             <button
               onClick={closeFullSizeView}
               className="absolute -top-3 -right-3 bg-[color:var(--glass-dark-bg)] text-theme-white hover:text-theme-text rounded-full p-1.5 backdrop-strong transition-colors duration-200"
@@ -3899,12 +3857,12 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               <X className="w-4 h-4" />
             </button>
           </div>
-          
+
           {/* Vertical Gallery Navigation */}
           {(() => {
             const avatarImages = galleryImages.filter(img => img.avatarId === creationsModalAvatar.id);
             const currentIdx = avatarImages.findIndex(img => img.url === selectedFullImage.url);
-            
+
             return (
               <VerticalGalleryNav
                 images={avatarImages}
@@ -4028,11 +3986,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                       return (
                         <div
                           key={folder.id}
-                          className={`w-full p-2 rounded-lg border transition-all duration-200 text-left flex items-center gap-3 ${
-                            isInFolder
-                              ? "bg-theme-white/10 border-theme-white shadow-lg shadow-theme-white/20"
-                              : "bg-transparent border-theme-dark hover:bg-theme-dark/40 hover:border-theme-mid"
-                          }`}
+                          className={`w-full p-2 rounded-lg border transition-all duration-200 text-left flex items-center gap-3 ${isInFolder
+                            ? "bg-theme-white/10 border-theme-white shadow-lg shadow-theme-white/20"
+                            : "bg-transparent border-theme-dark hover:bg-theme-dark/40 hover:border-theme-mid"
+                            }`}
                         >
                           <label className="flex items-center gap-3 cursor-pointer flex-1 min-w-0">
                             <input
@@ -4041,11 +3998,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                               onChange={() => handleToggleImageInFolder(selectedImageForFolder, folder.id)}
                               className="sr-only"
                             />
-                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${
-                              isInFolder
-                                ? "border-theme-white bg-theme-white"
-                                : "border-theme-mid hover:border-theme-text/50"
-                            }`}>
+                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${isInFolder
+                              ? "border-theme-white bg-theme-white"
+                              : "border-theme-mid hover:border-theme-text/50"
+                              }`}>
                               {isInFolder ? (
                                 <svg className="w-3 h-3 text-theme-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
@@ -4057,8 +4013,8 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                             <div className="flex-shrink-0">
                               {folder.customThumbnail ? (
                                 <div className="w-5 h-5 rounded-lg overflow-hidden">
-                                  <img 
-                                    src={folder.customThumbnail} 
+                                  <img
+                                    src={folder.customThumbnail}
                                     alt={`${folder.name} thumbnail`}
                                     className="w-full h-full object-cover"
                                   />
@@ -4072,14 +4028,12 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className={`text-sm font-raleway truncate ${
-                                isInFolder ? 'text-theme-text' : 'text-theme-text/80'
-                              }`}>
+                              <div className={`text-sm font-raleway truncate ${isInFolder ? 'text-theme-text' : 'text-theme-text/80'
+                                }`}>
                                 {folder.name}
                               </div>
-                              <div className={`text-xs ${
-                                isInFolder ? 'text-theme-text/70' : 'text-theme-white/50'
-                              }`}>
+                              <div className={`text-xs ${isInFolder ? 'text-theme-text/70' : 'text-theme-white/50'
+                                }`}>
                                 {folder.imageIds.length} images
                                 {isInFolder && " (added)"}
                               </div>
@@ -4211,7 +4165,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                   {avatarToPublish.published ? 'Unpublish avatar' : 'Publish avatar'}
                 </h3>
                 <p className="text-base font-raleway font-normal text-theme-white">
-                  {avatarToPublish.published 
+                  {avatarToPublish.published
                     ? `Are you sure you want to unpublish "${avatarToPublish.name}"? It will no longer be visible to other users.`
                     : `Are you sure you want to publish "${avatarToPublish.name}"? It will be visible to other users.`
                   }
