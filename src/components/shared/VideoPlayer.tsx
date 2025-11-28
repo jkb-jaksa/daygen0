@@ -10,6 +10,8 @@ interface VideoPlayerProps {
     loop?: boolean;
     muted?: boolean;
     onInfoClick?: () => void;
+    onInfoMouseEnter?: () => void;
+    onInfoMouseLeave?: () => void;
     showInfoButton?: boolean;
     isInfoActive?: boolean;
     onExpand?: () => void;
@@ -26,6 +28,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     loop = false,
     muted = false,
     onInfoClick,
+    onInfoMouseEnter,
+    onInfoMouseLeave,
     showInfoButton = false,
     isInfoActive = false,
     onExpand,
@@ -276,6 +280,19 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         }
     }, [togglePlay, duration, volume, toggleMute, toggleFullscreen]);
 
+    const [hoverProgress, setHoverProgress] = useState<number | null>(null);
+
+    const handleProgressBarMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
+        setHoverProgress(percentage);
+    }, []);
+
+    const handleProgressBarMouseLeave = useCallback(() => {
+        setHoverProgress(null);
+    }, []);
+
     const handleSeek = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
         e.stopPropagation();
         if (!videoRef.current || !duration) return;
@@ -360,23 +377,40 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
             {/* Controls Bar */}
             <div
-                className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent transition-opacity duration-300 ${layout === 'intrinsic' ? 'px-6 pb-4 pt-16' : 'px-3 pb-1 pt-12'
+                className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent transition-opacity duration-200 ${layout === 'intrinsic' ? 'px-6 pb-4 pt-16' : 'px-3 pb-1 pt-12'
                     } ${showBottomControls ? 'opacity-100' : 'opacity-0'}`}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Progress Bar */}
                 <div
-                    className={`relative h-1 bg-white/20 rounded-full ${layout === 'intrinsic' ? 'mb-4' : 'mb-2'} cursor-pointer group/progress`}
+                    className={`relative w-full h-1.5 ${layout === 'intrinsic' ? 'mb-4' : 'mb-2'} cursor-pointer group/progress-wrapper`}
                     onClick={handleSeek}
+                    onMouseMove={handleProgressBarMouseMove}
+                    onMouseLeave={handleProgressBarMouseLeave}
                 >
                     <div
-                        className="absolute top-0 left-0 h-full bg-white rounded-full transition-all duration-100"
-                        style={{ width: `${progress}%` }}
-                    />
-                    <div
-                        className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 bg-white rounded-full shadow-lg transition-transform duration-200 hover:scale-125"
-                        style={{ left: `${progress}%` }}
-                    />
+                        className={`absolute bottom-0 left-0 right-0 h-full group-hover/progress-wrapper:h-2 transition-all duration-200 ease-out ${glass.promptBorderless} rounded-full !overflow-visible`}
+                        style={{
+                            '--glass-prompt-bg': 'rgb(var(--n-mid-rgb) / 0.80)',
+                            '--glass-prompt-text': 'var(--n-text)'
+                        } as React.CSSProperties}
+                    >
+                        {/* Hover Highlight Bar */}
+                        {hoverProgress !== null && (
+                            <div
+                                className="absolute top-0 left-0 h-full bg-white/20 rounded-full pointer-events-none"
+                                style={{ width: `${hoverProgress}%` }}
+                            />
+                        )}
+                        <div
+                            className="absolute top-0 left-0 h-full bg-white rounded-full transition-all duration-75 ease-linear"
+                            style={{ width: `${progress}%` }}
+                        />
+                        <div
+                            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 bg-white rounded-full shadow-sm ring-1 ring-black/10 z-10 transition-transform duration-200 group-hover/progress-wrapper:scale-125"
+                            style={{ left: `${progress}%` }}
+                        />
+                    </div>
                 </div>
 
                 <div className={`flex items-center justify-between ${layout === 'intrinsic' ? 'gap-4' : 'gap-2'}`}>
@@ -437,17 +471,18 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                     </div>
 
                     <div className="flex items-center gap-2">
-                        {showInfoButton && onInfoClick && (
+                        {showInfoButton && onInfoClick && !isFullscreen && (
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onInfoClick();
                                 }}
+                                onMouseEnter={onInfoMouseEnter}
+                                onMouseLeave={onInfoMouseLeave}
                                 className={`image-action-btn image-action-btn--fullsize parallax-large outline-none shrink-0 ${isInfoActive
                                     ? 'border-theme-text text-theme-text'
                                     : ''
                                     }`}
-                                title="Show info"
                             >
                                 <Info className="w-5 h-5" />
                             </button>

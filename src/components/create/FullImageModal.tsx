@@ -1063,6 +1063,8 @@ const FullImageModal = memo(() => {
                       objectFit="contain"
                       layout="intrinsic"
                       onInfoClick={() => setIsVideoPromptExpanded(prev => !prev)}
+                      onInfoMouseEnter={() => setIsVideoPromptExpanded(true)}
+                      onInfoMouseLeave={() => setIsVideoPromptExpanded(false)}
                       showInfoButton={hasPromptContent}
                       isInfoActive={isVideoPromptExpanded}
                     />
@@ -1135,9 +1137,15 @@ const FullImageModal = memo(() => {
             {shouldRenderPromptBar && (
               <div
                 className={`PromptDescriptionBar absolute left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-150 ${isVideo
-                  ? `bottom-16 ${isVideoPromptExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`
+                  ? `bottom-4 z-30 ${isVideoPromptExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`
                   : 'bottom-4 opacity-0 group-hover:opacity-100'
                   }`}
+                onMouseEnter={() => {
+                  if (isVideo) setIsVideoPromptExpanded(true);
+                }}
+                onMouseLeave={() => {
+                  if (isVideo) setIsVideoPromptExpanded(false);
+                }}
               >
                 <div className="flex items-center justify-center">
                   <div className="text-center">

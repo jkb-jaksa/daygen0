@@ -1015,6 +1015,16 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                       objectFit="cover"
                       onClick={() => handleItemClick(item, index)}
                       onInfoClick={() => toggleVideoPrompt(baseActionTooltipId)}
+                      onInfoMouseEnter={() => setExpandedVideoPrompts(prev => {
+                        const next = new Set(prev);
+                        next.add(baseActionTooltipId);
+                        return next;
+                      })}
+                      onInfoMouseLeave={() => setExpandedVideoPrompts(prev => {
+                        const next = new Set(prev);
+                        next.delete(baseActionTooltipId);
+                        return next;
+                      })}
                       showInfoButton={shouldShowPromptDetails}
                       isInfoActive={isPromptExpanded}
                     />
@@ -1030,9 +1040,26 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                   {/* Prompt Description Bar - Non-gallery views */}
                   {shouldShowPromptDetails && !isGalleryView && (
                     <div
-                      className={`PromptDescriptionBar absolute left-0 right-0 transition-all duration-150 ease-in-out hidden sm:flex items-end z-10 ${isVideoItem ? 'bottom-16' : 'bottom-0'
-                        } ${promptBarVisibilityClass}`}
+                      className={`PromptDescriptionBar absolute left-0 right-0 transition-all duration-150 ease-in-out hidden sm:flex items-end z-30 bottom-0 ${promptBarVisibilityClass}`}
                       onClick={(e) => e.stopPropagation()}
+                      onMouseEnter={() => {
+                        if (isVideoItem) {
+                          setExpandedVideoPrompts(prev => {
+                            const next = new Set(prev);
+                            next.add(baseActionTooltipId);
+                            return next;
+                          });
+                        }
+                      }}
+                      onMouseLeave={() => {
+                        if (isVideoItem) {
+                          setExpandedVideoPrompts(prev => {
+                            const next = new Set(prev);
+                            next.delete(baseActionTooltipId);
+                            return next;
+                          });
+                        }
+                      }}
                     >
                       {/* Content layer */}
                       <div className="relative z-10 w-full p-4">
