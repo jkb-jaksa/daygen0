@@ -45,9 +45,7 @@ interface ModelSelectorProps {
 }
 
 const REFERENCE_SUPPORTED_MODELS = [
-  "gemini-3.0-pro-image",
-  "ideogram",
-  "recraft"
+  "gemini-3.0-pro-image"
 ];
 
 const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, isGenerating, activeCategory, hasReferences }) => {
@@ -56,7 +54,7 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0, transform: 'translateY(0)' });
-  
+
   const {
     setScrollableRef,
     handleWheel,
@@ -64,16 +62,16 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
     handleTouchMove,
     handleTouchEnd,
   } = useDropdownScrollLock<HTMLDivElement>(isOpen);
-  
+
   // Parallax hover effect
   const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLButtonElement>();
-  
+
   // Infer activeCategory from selectedModel if not provided
   const inferredCategory = useMemo(() => {
     if (activeCategory) return activeCategory;
     return isVideoModelId(selectedModel) ? "video" : "image";
   }, [activeCategory, selectedModel]);
-  
+
   // Get current model info
   const getCurrentModel = useCallback(() => {
     if (inferredCategory === "video") {
@@ -105,7 +103,7 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
     }
     return AI_MODELS.find(model => model.id === selectedModel) || AI_MODELS[0];
   }, [selectedModel, inferredCategory]);
-  
+
   // Handle model selection (matching V1's handleModelSelect signature)
   const handleModelSelect = useCallback((modelName: string) => {
     const model = AI_MODELS.find(m => m.name === modelName);
@@ -115,14 +113,14 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
     onModelChange(model.id);
     setIsOpen(false);
   }, [setSelectedModel, onModelChange]);
-  
+
   // Handle toggle
   const handleToggle = useCallback(() => {
     if (!isGenerating) {
       setIsOpen(prev => !prev);
     }
   }, [isGenerating]);
-  
+
   // Handle close
   const handleClose = useCallback(() => {
     setIsOpen(false);
@@ -131,7 +129,7 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
       buttonRef.current.focus();
     }
   }, []);
-  
+
   // Portal positioning logic (matching V1's ModelMenuPortal exactly)
   useEffect(() => {
     if (!isOpen) return;
@@ -159,9 +157,9 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
       });
     };
 
-      updatePosition();
-      window.addEventListener('resize', updatePosition);
-      window.addEventListener('scroll', updatePosition, true);
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
 
     return () => {
       window.removeEventListener('resize', updatePosition);
@@ -172,19 +170,19 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
   // Handle click outside and escape key (matching V1)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (isOpen && menuRef.current && 
+      if (isOpen && menuRef.current &&
         !menuRef.current.contains(event.target as Node) &&
-          !buttonRef.current?.contains(event.target as Node)) {
+        !buttonRef.current?.contains(event.target as Node)) {
         handleClose();
       }
     };
-    
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && isOpen) {
         handleClose();
       }
     };
-    
+
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
       document.addEventListener('keydown', handleKeyDown);
@@ -193,13 +191,13 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
         menuRef.current.focus();
       }
     }
-    
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, handleClose]);
-  
+
   // Tooltip helper functions
   const showHoverTooltip = useCallback((target: HTMLElement, tooltipId: string) => {
     if (typeof document === 'undefined') return;
@@ -226,7 +224,7 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
     tooltip.classList.remove('opacity-100');
     tooltip.classList.add('opacity-0');
   }, []);
-  
+
   return (
     <div className="relative model-selector flex-shrink-0">
       {/* Model selector button - matches V1 exactly */}
@@ -235,9 +233,8 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
         type="button"
         onClick={handleToggle}
         disabled={isGenerating}
-        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2 parallax-small ${
-          isGenerating ? 'opacity-50 cursor-not-allowed' : ''
-        }`}
+        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2 parallax-small ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
         onMouseEnter={(e) => {
           showHoverTooltip(e.currentTarget, 'model-selector-tooltip');
         }}
@@ -273,7 +270,7 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
       >
         Select model
       </div>
-      
+
       {/* Model Dropdown Portal - matches V1's ModelMenuPortal exactly */}
       {isOpen && createPortal(
         <div
@@ -281,8 +278,8 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
             menuRef.current = node;
             setScrollableRef(node);
           }}
-            tabIndex={-1}
-            style={{
+          tabIndex={-1}
+          style={{
             position: "fixed",
             top: pos.top,
             left: pos.left,
@@ -293,9 +290,8 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
             overflowY: 'auto',
             overflowX: 'hidden'
           }}
-          className={`${glass.prompt} rounded-lg focus:outline-none shadow-lg max-h-96 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-n-mid/30 scrollbar-track-transparent hover:scrollbar-thumb-n-mid/50 ${
-            inferredCategory === "video" ? "p-1" : "p-2"
-          }`}
+          className={`${glass.prompt} rounded-lg focus:outline-none shadow-lg max-h-96 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-n-mid/30 scrollbar-track-transparent hover:scrollbar-thumb-n-mid/50 ${inferredCategory === "video" ? "p-1" : "p-2"
+            }`}
           onWheel={handleWheel}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
@@ -315,11 +311,10 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                   handleModelSelect("Veo 3");
                   setIsOpen(false);
                 }}
-                className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
-                  selectedModel === "veo-3"
-                    ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5' 
+                className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${selectedModel === "veo-3"
+                    ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
                     : 'bg-transparent hover:bg-theme-text/20 border-0'
-                }`}
+                  }`}
               >
                 {hasToolLogo("Veo 3") ? (
                   <img
@@ -329,19 +324,16 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                     className="w-5 h-5 flex-shrink-0 object-contain rounded"
                   />
                 ) : (
-                  <Film className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                    selectedModel === "veo-3" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                  }`} />
+                  <Film className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${selectedModel === "veo-3" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
+                    }`} />
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
-                    selectedModel === "veo-3" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                  }`}>
+                  <div className={`text-sm font-raleway truncate transition-colors duration-100 ${selectedModel === "veo-3" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
+                    }`}>
                     Veo 3
                   </div>
-                  <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                    selectedModel === "veo-3" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
-                  }`}>
+                  <div className={`text-xs font-raleway truncate transition-colors duration-100 ${selectedModel === "veo-3" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
+                    }`}>
                     Best video model. Great cinematic quality with sound output.
                   </div>
                 </div>
@@ -354,11 +346,10 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                   handleModelSelect("Sora 2");
                   setIsOpen(false);
                 }}
-                className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
-                  selectedModel === "sora-2"
+                className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${selectedModel === "sora-2"
                     ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
                     : 'bg-transparent hover:bg-theme-text/20 border-0'
-                }`}
+                  }`}
               >
                 {hasToolLogo("Sora 2") ? (
                   <img
@@ -369,23 +360,20 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                   />
                 ) : (
                   <VideoIcon
-                    className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                      selectedModel === "sora-2" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                    }`}
+                    className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${selectedModel === "sora-2" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
+                      }`}
                   />
                 )}
                 <div className="flex-1 min-w-0">
                   <div
-                    className={`text-sm font-raleway truncate transition-colors duration-100 ${
-                      selectedModel === "sora-2" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                    }`}
+                    className={`text-sm font-raleway truncate transition-colors duration-100 ${selectedModel === "sora-2" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
+                      }`}
                   >
                     Sora 2
                   </div>
                   <div
-                    className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                      selectedModel === "sora-2" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
-                    }`}
+                    className={`text-xs font-raleway truncate transition-colors duration-100 ${selectedModel === "sora-2" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
+                      }`}
                   >
                     OpenAI’s Sora 2 with long-form video and audio support.
                   </div>
@@ -400,11 +388,10 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                   handleModelSelect("Runway Gen-4 (Video)");
                   setIsOpen(false);
                 }}
-                className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
-                  selectedModel === "runway-video-gen4"
-                    ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5' 
+                className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${selectedModel === "runway-video-gen4"
+                    ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
                     : 'bg-transparent hover:bg-theme-text/20 border-0'
-                }`}
+                  }`}
               >
                 {hasToolLogo("Runway Gen-4") ? (
                   <img
@@ -414,19 +401,16 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                     className="w-5 h-5 flex-shrink-0 object-contain rounded"
                   />
                 ) : (
-                  <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                    selectedModel === "runway-video-gen4" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                  }`} />
+                  <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${selectedModel === "runway-video-gen4" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
+                    }`} />
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
-                    selectedModel === "runway-video-gen4" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                  }`}>
+                  <div className={`text-sm font-raleway truncate transition-colors duration-100 ${selectedModel === "runway-video-gen4" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
+                    }`}>
                     Runway Gen-4
                   </div>
-                  <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                    selectedModel === "runway-video-gen4" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
-                  }`}>
+                  <div className={`text-xs font-raleway truncate transition-colors duration-100 ${selectedModel === "runway-video-gen4" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
+                    }`}>
                     Good video model. Great editing with Runway Aleph.
                   </div>
                 </div>
@@ -440,11 +424,10 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                   handleModelSelect("Hailuo 02");
                   setIsOpen(false);
                 }}
-                className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
-                  selectedModel === "hailuo-02"
-                    ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5' 
+                className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${selectedModel === "hailuo-02"
+                    ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
                     : 'bg-transparent hover:bg-theme-text/20 border-0'
-                }`}
+                  }`}
               >
                 {hasToolLogo("Hailuo 02") ? (
                   <img
@@ -454,19 +437,16 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                     className="w-5 h-5 flex-shrink-0 object-contain rounded"
                   />
                 ) : (
-                  <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                    selectedModel === "hailuo-02" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                  }`} />
+                  <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${selectedModel === "hailuo-02" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
+                    }`} />
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
-                    selectedModel === "hailuo-02" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                  }`}>
+                  <div className={`text-sm font-raleway truncate transition-colors duration-100 ${selectedModel === "hailuo-02" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
+                    }`}>
                     Hailuo 02
                   </div>
-                  <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                    selectedModel === "hailuo-02" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
-                  }`}>
+                  <div className={`text-xs font-raleway truncate transition-colors duration-100 ${selectedModel === "hailuo-02" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
+                    }`}>
                     MiniMax video with start & end frame control.
                   </div>
                 </div>
@@ -479,11 +459,10 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                   handleModelSelect("Seedance 1.0 Pro (Video)");
                   setIsOpen(false);
                 }}
-                className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
-                  selectedModel === "seedance-1.0-pro"
-                    ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5' 
+                className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${selectedModel === "seedance-1.0-pro"
+                    ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
                     : 'bg-transparent hover:bg-theme-text/20 border-0'
-                }`}
+                  }`}
               >
                 {hasToolLogo("Seedance 1.0 Pro (Video)") ? (
                   <img
@@ -493,19 +472,16 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                     className="w-5 h-5 flex-shrink-0 object-contain rounded"
                   />
                 ) : (
-                  <Film className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                    selectedModel === "seedance-1.0-pro" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                  }`} />
+                  <Film className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${selectedModel === "seedance-1.0-pro" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
+                    }`} />
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
-                    selectedModel === "seedance-1.0-pro" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                  }`}>
+                  <div className={`text-sm font-raleway truncate transition-colors duration-100 ${selectedModel === "seedance-1.0-pro" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
+                    }`}>
                     Seedance 1.0 Pro
                   </div>
-                  <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                    selectedModel === "seedance-1.0-pro" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
-                  }`}>
+                  <div className={`text-xs font-raleway truncate transition-colors duration-100 ${selectedModel === "seedance-1.0-pro" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
+                    }`}>
                     Great quality text-to-image.
                   </div>
                 </div>
@@ -518,11 +494,10 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                   handleModelSelect("Kling");
                   setIsOpen(false);
                 }}
-                className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
-                  selectedModel === "kling-video"
-                    ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5' 
+                className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${selectedModel === "kling-video"
+                    ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
                     : 'bg-transparent hover:bg-theme-text/20 border-0'
-                }`}
+                  }`}
               >
                 {hasToolLogo("Kling") ? (
                   <img
@@ -532,36 +507,32 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                     className="w-5 h-5 flex-shrink-0 object-contain rounded"
                   />
                 ) : (
-                  <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                    selectedModel === "kling-video" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                  }`} />
+                  <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${selectedModel === "kling-video" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
+                    }`} />
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
-                    selectedModel === "kling-video" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                  }`}>
+                  <div className={`text-sm font-raleway truncate transition-colors duration-100 ${selectedModel === "kling-video" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
+                    }`}>
                     Kling
                   </div>
-                  <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                    selectedModel === "kling-video" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
-                  }`}>
+                  <div className={`text-xs font-raleway truncate transition-colors duration-100 ${selectedModel === "kling-video" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
+                    }`}>
                     ByteDance's Kling V2.1 Master with hyper-realistic motion and advanced physics.
                   </div>
-              </div>
+                </div>
                 {selectedModel === "kling-video" && (
                   <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>
                 )}
               </button>
-                  <button
+              <button
                 onClick={() => {
                   handleModelSelect("Wan 2.2 Video");
                   setIsOpen(false);
                 }}
-                className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
-                  selectedModel === "wan-video-2.2"
-                    ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5' 
+                className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${selectedModel === "wan-video-2.2"
+                    ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
                     : 'bg-transparent hover:bg-theme-text/20 border-0'
-                }`}
+                  }`}
               >
                 {hasToolLogo("Wan 2.2 Video") ? (
                   <img
@@ -571,36 +542,32 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                     className="w-5 h-5 flex-shrink-0 object-contain rounded"
                   />
                 ) : (
-                  <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                    selectedModel === "wan-video-2.2" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                  }`} />
+                  <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${selectedModel === "wan-video-2.2" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
+                    }`} />
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
-                    selectedModel === "wan-video-2.2" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                  }`}>
+                  <div className={`text-sm font-raleway truncate transition-colors duration-100 ${selectedModel === "wan-video-2.2" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
+                    }`}>
                     Wan 2.2 Video
                   </div>
-                  <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                    selectedModel === "wan-video-2.2" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
-                  }`}>
+                  <div className={`text-xs font-raleway truncate transition-colors duration-100 ${selectedModel === "wan-video-2.2" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
+                    }`}>
                     Alibaba's Wan 2.2 text-to-video model.
                   </div>
-                    </div>
+                </div>
                 {selectedModel === "wan-video-2.2" && (
                   <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>
-                    )}
-                  </button>
+                )}
+              </button>
               <button
                 onClick={() => {
                   handleModelSelect("Luma Ray 2");
                   setIsOpen(false);
                 }}
-                className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
-                  selectedModel === "luma-ray-2"
-                    ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5' 
+                className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${selectedModel === "luma-ray-2"
+                    ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
                     : 'bg-transparent hover:bg-theme-text/20 border-0'
-                }`}
+                  }`}
               >
                 {hasToolLogo("Luma Ray 2") ? (
                   <img
@@ -610,21 +577,18 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                     className="w-5 h-5 flex-shrink-0 object-contain rounded"
                   />
                 ) : (
-                  <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                    selectedModel === "luma-ray-2" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                  }`} />
+                  <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${selectedModel === "luma-ray-2" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
+                    }`} />
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className={`text-sm font-raleway truncate transition-colors duration-100 ${
-                    selectedModel === "luma-ray-2" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                  }`}>
+                  <div className={`text-sm font-raleway truncate transition-colors duration-100 ${selectedModel === "luma-ray-2" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
+                    }`}>
                     Luma Ray 2
                   </div>
-                  <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                    selectedModel === "luma-ray-2" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
-                  }`}>
+                  <div className={`text-xs font-raleway truncate transition-colors duration-100 ${selectedModel === "luma-ray-2" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
+                    }`}>
                     Cinematic 4K video with detailed camera control.
-              </div>
+                  </div>
                 </div>
                 {selectedModel === "luma-ray-2" && (
                   <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>
@@ -650,7 +614,7 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
             }).map((model) => {
               const isSelected = selectedModel === model.id;
               const isComingSoon = model.id !== "flux-1.1" && model.id !== "gemini-3.0-pro-image" && model.id !== "grok-2-image" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "reve-image" && model.id !== "recraft" && model.id !== "luma-photon-1" && model.id !== "luma-ray-2" && model.id !== "wan-video-2.2" && model.id !== "hailuo-02" && model.id !== "kling-video" && model.id !== "sora-2";
-              
+
               return (
                 <button
                   key={model.name}
@@ -662,13 +626,12 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                     handleModelSelect(model.name);
                     setIsOpen(false);
                   }}
-                  className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
-                    isSelected 
-                      ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5' 
+                  className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${isSelected
+                      ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
                       : isComingSoon
-                      ? "bg-transparent border-theme-mid opacity-60 cursor-not-allowed"
-                      : 'bg-transparent hover:bg-theme-text/20 border-0'
-                  }`}
+                        ? "bg-transparent border-theme-mid opacity-60 cursor-not-allowed"
+                        : 'bg-transparent hover:bg-theme-text/20 border-0'
+                    }`}
                 >
                   {hasToolLogo(model.name) ? (
                     <img
@@ -678,14 +641,12 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                       className="w-5 h-5 flex-shrink-0 object-contain rounded"
                     />
                   ) : (
-                    <model.Icon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                      isSelected ? 'text-theme-text' : isComingSoon ? 'text-theme-light' : 'text-theme-text group-hover:text-theme-text'
-                    }`} />
+                    <model.Icon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${isSelected ? 'text-theme-text' : isComingSoon ? 'text-theme-light' : 'text-theme-text group-hover:text-theme-text'
+                      }`} />
                   )}
                   <div className="flex-1 min-w-0">
-                    <div className={`text-sm font-raleway truncate transition-colors duration-100 flex items-center gap-2 ${
-                      isSelected ? 'text-theme-text' : isComingSoon ? 'text-theme-light' : 'text-theme-text group-hover:text-theme-text'
-                    }`}>
+                    <div className={`text-sm font-raleway truncate transition-colors duration-100 flex items-center gap-2 ${isSelected ? 'text-theme-text' : isComingSoon ? 'text-theme-light' : 'text-theme-text group-hover:text-theme-text'
+                      }`}>
                       {model.name}
                       <ToolInfoHover
                         toolName={model.name}
@@ -693,12 +654,11 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                         iconClassName={isComingSoon ? undefined : 'group-hover:opacity-100'}
                       />
                     </div>
-                    <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                      isSelected ? 'text-theme-text' : isComingSoon ? 'text-theme-light' : 'text-theme-white group-hover:text-theme-text'
-                    }`}>
+                    <div className={`text-xs font-raleway truncate transition-colors duration-100 ${isSelected ? 'text-theme-text' : isComingSoon ? 'text-theme-light' : 'text-theme-white group-hover:text-theme-text'
+                      }`}>
                       {isComingSoon ? 'Coming soon.' : model.desc}
-            </div>
-          </div>
+                    </div>
+                  </div>
                   {isSelected && (
                     <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>
                   )}

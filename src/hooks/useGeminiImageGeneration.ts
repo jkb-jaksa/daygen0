@@ -262,6 +262,7 @@ export interface ImageGenerationOptions {
   prompt: string;
   model?: string;
   imageData?: string; // Base64 encoded image for image-to-image
+  imageUrl?: string; // URL for image-to-image (alternative to imageData)
   references?: string[]; // Base64 data URLs for reference images
   temperature?: number;
   outputLength?: number; // maps to maxOutputTokens
@@ -278,17 +279,18 @@ export interface ImageGenerationOptions {
   pollTimeoutMs?: number;
   pollIntervalMs?: number;
   pollRequestTimeoutMs?: number;
+  jobType?: string;
 }
 
 export const useGeminiImageGeneration = () => {
   const { user } = useAuth();
   const tracker = useGenerationJobTracker();
-  const { 
-    checkCredits, 
-    showInsufficientCreditsModal, 
-    creditCheckData, 
-    handleBuyCredits, 
-    handleCloseModal 
+  const {
+    checkCredits,
+    showInsufficientCreditsModal,
+    creditCheckData,
+    handleBuyCredits,
+    handleCloseModal
   } = useCreditCheck();
   const [state, setState] = useState<ImageGenerationState>({
     isLoading: false,
@@ -518,18 +520,20 @@ export const useGeminiImageGeneration = () => {
     const providerOptions = buildProviderOptions(options);
     const config = options.aspectRatio
       ? {
-          imageConfig: { aspectRatio: options.aspectRatio },
-        }
+        imageConfig: { aspectRatio: options.aspectRatio },
+      }
       : undefined;
 
     const baseBody: Record<string, unknown> = {
       prompt: options.prompt,
       imageBase64: options.imageData,
+      imageUrl: options.imageUrl,
       mimeType: 'image/png',
       references: options.references,
       temperature: options.temperature,
       outputLength: options.outputLength,
       topP: options.topP,
+      jobType: options.jobType,
     };
 
     if (options.avatarId) {

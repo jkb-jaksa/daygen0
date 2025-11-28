@@ -53,6 +53,8 @@ export interface IdeogramGenerateOptions {
   pollTimeoutMs?: number;
   pollIntervalMs?: number;
   pollRequestTimeoutMs?: number;
+  mask?: string;
+  references?: string[];
 }
 
 export interface IdeogramEditOptions {
@@ -145,6 +147,7 @@ const buildProviderOptions = (
   if (options.style_preset) providerOptions.style_preset = options.style_preset;
   if (options.style_type) providerOptions.style_type = options.style_type;
   if (options.negative_prompt) providerOptions.negative_prompt = options.negative_prompt;
+  if (options.mask) providerOptions.mask = options.mask;
   return providerOptions;
 };
 
@@ -254,8 +257,8 @@ const parseImmediateIdeogramResult = (
   const payload = response.payload;
   const dataUrls = Array.isArray(payload.dataUrls)
     ? payload.dataUrls
-        .map(pickString)
-        .filter((value): value is string => Boolean(value))
+      .map(pickString)
+      .filter((value): value is string => Boolean(value))
     : [];
 
   const directUrl = pickString(payload.dataUrl);
@@ -315,6 +318,7 @@ export const useIdeogramImageGeneration = () => {
             prompt: options.prompt,
             model: 'ideogram',
             providerOptions,
+            references: options.references,
           },
           tracker,
           prompt: options.prompt,

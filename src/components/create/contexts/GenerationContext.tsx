@@ -70,25 +70,25 @@ type GenerationAction =
   | { type: 'SET_BUTTON_SPINNING'; payload: boolean }
   | { type: 'ADD_ACTIVE_JOB'; payload: ActiveGenerationJob }
   | {
-      type: 'UPDATE_JOB_PROGRESS';
-      payload: {
-        id: string;
-        progress: number;
-        backendProgress?: number;
-        backendProgressUpdatedAt?: number;
-      };
-    }
+    type: 'UPDATE_JOB_PROGRESS';
+    payload: {
+      id: string;
+      progress: number;
+      backendProgress?: number;
+      backendProgressUpdatedAt?: number;
+    };
+  }
   | {
-      type: 'UPDATE_JOB_STATUS';
-      payload: {
-        id: string;
-        status: ActiveGenerationJob['status'];
-        progress?: number;
-        backendProgress?: number;
-        backendProgressUpdatedAt?: number;
-        jobId?: string | null;
-      };
-    }
+    type: 'UPDATE_JOB_STATUS';
+    payload: {
+      id: string;
+      status: ActiveGenerationJob['status'];
+      progress?: number;
+      backendProgress?: number;
+      backendProgressUpdatedAt?: number;
+      jobId?: string | null;
+    };
+  }
   | { type: 'REMOVE_ACTIVE_JOB'; payload: string }
   | { type: 'CLEAR_ALL_JOBS' };
 
@@ -162,12 +162,12 @@ function generationReducer(state: GenerationState, action: GenerationAction): Ge
       const exists = state.activeJobs.some(job => job.id === normalizedJob.id);
       return exists
         ? {
-            ...state,
-            activeJobs: state.activeJobs.map(job =>
-              job.id === normalizedJob.id ? normalizedJob : job,
-            ),
-          }
-        : { ...state, activeJobs: [...state.activeJobs, normalizedJob] };
+          ...state,
+          activeJobs: state.activeJobs.map(job =>
+            job.id === normalizedJob.id ? normalizedJob : job,
+          ),
+        }
+        : { ...state, activeJobs: [normalizedJob, ...state.activeJobs] };
     }
     case 'UPDATE_JOB_PROGRESS':
       return {
@@ -215,21 +215,21 @@ function generationReducer(state: GenerationState, action: GenerationAction): Ge
                 ? action.payload.jobId
                 : job.jobId;
 
-          return {
-            ...job,
-            status: action.payload.status,
-            jobId: nextJobId,
-            progress: hasProgressUpdate
-              ? Math.max(job.progress, Math.min(100, action.payload.progress!))
-              : job.progress,
-            backendProgress: hasBackendUpdate
-              ? Math.max(job.backendProgress ?? 0, Math.min(100, action.payload.backendProgress!))
-              : job.backendProgress,
-            backendProgressUpdatedAt: hasBackendUpdate
-              ? action.payload.backendProgressUpdatedAt ?? Date.now()
-              : job.backendProgressUpdatedAt,
-          };
-        }),
+            return {
+              ...job,
+              status: action.payload.status,
+              jobId: nextJobId,
+              progress: hasProgressUpdate
+                ? Math.max(job.progress, Math.min(100, action.payload.progress!))
+                : job.progress,
+              backendProgress: hasBackendUpdate
+                ? Math.max(job.backendProgress ?? 0, Math.min(100, action.payload.backendProgress!))
+                : job.backendProgress,
+              backendProgressUpdatedAt: hasBackendUpdate
+                ? action.payload.backendProgressUpdatedAt ?? Date.now()
+                : job.backendProgressUpdatedAt,
+            };
+          }),
       };
     case 'REMOVE_ACTIVE_JOB':
       return { ...state, activeJobs: state.activeJobs.filter(job => job.id !== action.payload) };

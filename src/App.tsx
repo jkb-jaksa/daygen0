@@ -771,7 +771,9 @@ function AppContent() {
                     <Suspense fallback={<RouteFallback />}>
                       <AuthErrorBoundary fallbackRoute="/app" context="editing">
                         <GenerationProvider>
-                          <Edit />
+                          <GalleryProvider>
+                            <Edit />
+                          </GalleryProvider>
                         </GenerationProvider>
                       </AuthErrorBoundary>
                     </Suspense>

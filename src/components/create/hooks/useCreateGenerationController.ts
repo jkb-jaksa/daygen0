@@ -225,7 +225,7 @@ export function useCreateGenerationController(): CreateGenerationController {
   const referenceHandlers = useReferenceHandlers(
     avatarHandlers.selectedAvatar,
     productHandlers.selectedProduct,
-    () => {},
+    () => { },
   );
 
   const { generateImage: generateGeminiImage } = useGeminiImageGeneration();
@@ -402,19 +402,19 @@ export function useCreateGenerationController(): CreateGenerationController {
       hailuo: {
         enabled: false,
         duration: 6,
-        onDurationChange: () => {},
+        onDurationChange: () => { },
         resolution: '1080P',
-        onResolutionChange: () => {},
+        onResolutionChange: () => { },
         promptOptimizer: true,
-        onPromptOptimizerChange: () => {},
+        onPromptOptimizerChange: () => { },
         fastPretreatment: false,
-        onFastPretreatmentChange: () => {},
+        onFastPretreatmentChange: () => { },
         watermark: false,
-        onWatermarkChange: () => {},
+        onWatermarkChange: () => { },
         firstFrame: null,
-        onFirstFrameChange: () => {},
+        onFirstFrameChange: () => { },
         lastFrame: null,
-        onLastFrameChange: () => {},
+        onLastFrameChange: () => { },
       },
       wan: {
         enabled: isWanVideo,
@@ -432,23 +432,23 @@ export function useCreateGenerationController(): CreateGenerationController {
       seedance: {
         enabled: false,
         mode: 't2v',
-        onModeChange: () => {},
+        onModeChange: () => { },
         ratio: '16:9',
-        onRatioChange: () => {},
+        onRatioChange: () => { },
         duration: 5,
-        onDurationChange: () => {},
+        onDurationChange: () => { },
         resolution: '1080p',
-        onResolutionChange: () => {},
+        onResolutionChange: () => { },
         fps: 24,
-        onFpsChange: () => {},
+        onFpsChange: () => { },
         cameraFixed: true,
-        onCameraFixedChange: () => {},
+        onCameraFixedChange: () => { },
         seed: '',
-        onSeedChange: () => {},
+        onSeedChange: () => { },
         firstFrame: null,
-        onFirstFrameChange: () => {},
+        onFirstFrameChange: () => { },
         lastFrame: null,
-        onLastFrameChange: () => {},
+        onLastFrameChange: () => { },
       },
       recraft: {
         enabled: isRecraftModel,
@@ -488,19 +488,19 @@ export function useCreateGenerationController(): CreateGenerationController {
       kling: {
         enabled: isKlingVideo,
         model: 'kling-v2.1-master',
-        onModelChange: () => {},
+        onModelChange: () => { },
         aspectRatio: (klingAspectRatio as '16:9' | '9:16' | '1:1'),
         onAspectRatioChange: value => setKlingAspectRatio(value as '16:9' | '9:16' | '1:1'),
         duration: 5,
-        onDurationChange: () => {},
+        onDurationChange: () => { },
         mode: 'standard',
-        onModeChange: () => {},
+        onModeChange: () => { },
         cfgScale: 0.8,
-        onCfgScaleChange: () => {},
+        onCfgScaleChange: () => { },
         negativePrompt: '',
-        onNegativePromptChange: () => {},
+        onNegativePromptChange: () => { },
         cameraType: 'none',
-        onCameraTypeChange: () => {},
+        onCameraTypeChange: () => { },
         cameraConfig: {
           horizontal: 0,
           vertical: 0,
@@ -509,7 +509,7 @@ export function useCreateGenerationController(): CreateGenerationController {
           roll: 0,
           zoom: 0,
         },
-        onCameraConfigChange: () => {},
+        onCameraConfigChange: () => { },
         statusMessage: null,
       },
       lumaPhoton: {
@@ -616,13 +616,13 @@ export function useCreateGenerationController(): CreateGenerationController {
 
     const referencesBase64 = referenceSources.length
       ? await Promise.all(
-          referenceSources.map(async (fileOrUrl) => {
-            if (typeof fileOrUrl === 'string') {
-              return urlToDataUrl(fileOrUrl);
-            }
-            return fileToDataUrl(fileOrUrl);
-          }),
-        )
+        referenceSources.map(async (fileOrUrl) => {
+          if (typeof fileOrUrl === 'string') {
+            return urlToDataUrl(fileOrUrl);
+          }
+          return fileToDataUrl(fileOrUrl);
+        }),
+      )
       : [];
 
     const normalizedReferences = referencesBase64
@@ -654,10 +654,10 @@ export function useCreateGenerationController(): CreateGenerationController {
     ) => {
       const images = toArray<Partial<GalleryImageLike> & { jobId?: string | null }>(
         result as
-          | (Partial<GalleryImageLike> & { jobId?: string | null })
-          | Array<Partial<GalleryImageLike> & { jobId?: string | null }>
-          | null
-          | undefined,
+        | (Partial<GalleryImageLike> & { jobId?: string | null })
+        | Array<Partial<GalleryImageLike> & { jobId?: string | null }>
+        | null
+        | undefined,
       );
 
       images.forEach((image) => {
@@ -704,15 +704,15 @@ export function useCreateGenerationController(): CreateGenerationController {
         Partial<GalleryVideoLike> & { jobId?: string | null; taskId?: string | null }
       >(
         result as
-          | (Partial<GalleryVideoLike> & { jobId?: string | null; taskId?: string | null })
-          | Array<
-              Partial<GalleryVideoLike> & {
-                jobId?: string | null;
-                taskId?: string | null;
-              }
-            >
-          | null
-          | undefined,
+        | (Partial<GalleryVideoLike> & { jobId?: string | null; taskId?: string | null })
+        | Array<
+          Partial<GalleryVideoLike> & {
+            jobId?: string | null;
+            taskId?: string | null;
+          }
+        >
+        | null
+        | undefined,
       );
 
       videos.forEach((video) => {
@@ -771,12 +771,12 @@ export function useCreateGenerationController(): CreateGenerationController {
       : undefined;
 
     const runwayVideoRatioMap: Record<string, '1280:720' | '720:1280' | '960:960' | '1584:672'> =
-      {
-        '16:9': '1280:720',
-        '9:16': '720:1280',
-        '1:1': '960:960',
-        '21:9': '1584:672',
-      };
+    {
+      '16:9': '1280:720',
+      '9:16': '720:1280',
+      '1:1': '960:960',
+      '21:9': '1584:672',
+    };
 
     const normalizedRunwayVideoRatio =
       runwayVideoRatioMap[videoAspectRatio as keyof typeof runwayVideoRatioMap] ?? '1280:720';
@@ -847,6 +847,7 @@ export function useCreateGenerationController(): CreateGenerationController {
 
         persistImageResults(geminiImage, {
           aspectRatio: geminiAspectRatio,
+          model: 'gemini-3.0-pro-image',
         });
       } finally {
         if (isClientJobActive && trackedJobId.startsWith('local-')) {
@@ -890,6 +891,10 @@ export function useCreateGenerationController(): CreateGenerationController {
           return;
         }
         case 'ideogram': {
+          if (references && references.length > 0) {
+            throw new Error('Ideogram does not support reference images.');
+          }
+
           const ideogramResult = await generateIdeogramImage({
             prompt: finalPrompt,
             aspect_ratio: geminiAspectRatio,
@@ -1111,6 +1116,10 @@ export function useCreateGenerationController(): CreateGenerationController {
           return;
         }
         case 'recraft': {
+          if (references && references.length > 0) {
+            throw new Error('Recraft does not support reference images.');
+          }
+
           const recraftApiModel = recraftModel === 'recraft-v2' ? 'recraftv2' : 'recraftv3';
           const recraftImages = await generateRecraftImage({
             prompt: finalPrompt,

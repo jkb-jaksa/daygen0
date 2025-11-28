@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Eraser, Undo2, Redo2, BookmarkIcon, Bookmark, Scan } from "lucide-react";
+import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Eraser, Undo2, Redo2, BookmarkIcon, Bookmark, Scan, Copy, ChevronDown } from "lucide-react";
 import { layout, glass, buttons, tooltips } from "../styles/designSystem";
 import { InsufficientCreditsModal } from "./modals/InsufficientCreditsModal";
 import { useLocation } from "react-router-dom";
@@ -12,20 +12,27 @@ import { useQwenImageGeneration } from "../hooks/useQwenImageGeneration";
 import { useRunwayImageGeneration } from "../hooks/useRunwayImageGeneration";
 import { useReveImageGeneration } from "../hooks/useReveImageGeneration";
 import { getToolLogo, hasToolLogo } from "../utils/toolLogos";
+import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
+import { useParallaxHover } from "../hooks/useParallaxHover";
+
 import { useGenerateShortcuts } from "../hooks/useGenerateShortcuts";
 import { debugError } from "../utils/debug";
-import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
 import type { FluxModel, FluxModelType } from "../lib/bfl";
 import type { GalleryImageLike } from "./create/types";
 import { useAuth } from "../auth/useAuth";
 import { usePromptHistory } from "../hooks/usePromptHistory";
 import { useSavedPrompts } from "../hooks/useSavedPrompts";
 import { PromptsDropdown } from "./PromptsDropdown";
-import { ToolInfoHover } from "./ToolInfoHover";
 import { AspectRatioDropdown } from "./AspectRatioDropdown";
 import type { AspectRatioOption, GeminiAspectRatio } from "../types/aspectRatio";
 import { GEMINI_ASPECT_RATIO_OPTIONS, QWEN_ASPECT_RATIO_OPTIONS } from "../data/aspectRatios";
 import { AI_MODELS } from './create/ModelSelector';
+import ImageBadgeRow from "./shared/ImageBadgeRow";
+import { useToast } from "../hooks/useToast";
+import { useBadgeNavigation } from "./create/hooks/useBadgeNavigation";
+import ResultsGrid from "./create/ResultsGrid";
+import { useGallery } from "./create/contexts/GalleryContext";
+import { CreateBridgeProvider, type GalleryBridgeActions } from "./create/contexts/CreateBridgeContext";
 
 type EditModel = (typeof AI_MODELS)[number];
 type EditModelId = EditModel["id"] | "runway-gen4-turbo";
@@ -45,130 +52,7 @@ const MAX_REFERENCE_IMAGES = 3;
 const ADDITIONAL_REFERENCE_LIMIT = MAX_REFERENCE_IMAGES - 1;
 
 
-// Portal component for model menu to avoid clipping by parent containers
-const ModelMenuPortal: React.FC<{ 
-  anchorRef: React.RefObject<HTMLElement | null>; 
-  open: boolean; 
-  onClose: () => void; 
-  children: React.ReactNode;
-  activeCategory: string;
-}> = ({ anchorRef, open, onClose, children, activeCategory }) => {
-  const menuRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 0, transform: 'translateY(0)' });
-  const {
-    setScrollableRef,
-    handleWheel,
-    handleTouchStart,
-    handleTouchMove,
-    handleTouchEnd,
-  } = useDropdownScrollLock<HTMLDivElement>(open);
 
-  useEffect(() => {
-    if (!open) return;
-
-    const updatePosition = () => {
-      if (!anchorRef.current) return;
-      const rect = anchorRef.current.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      const dropdownHeight = 384; // max-h-96 = 384px
-
-      // Check if there's enough space above the trigger
-      const spaceAbove = rect.top;
-      const spaceBelow = viewportHeight - rect.bottom;
-
-      // Position above if there's more space above, otherwise position below
-      const shouldPositionAbove = spaceAbove > spaceBelow && spaceAbove > dropdownHeight;
-
-      const verticalOffset = 2;
-
-      setPos({
-        top: shouldPositionAbove ? rect.top - verticalOffset : rect.bottom + verticalOffset,
-        left: rect.left,
-        width: Math.max(activeCategory === "video" ? 360 : 384, rect.width), // Minimum width based on category
-        transform: shouldPositionAbove ? 'translateY(-100%)' : 'translateY(0)' // Position above or below
-      });
-    };
-
-    updatePosition();
-    window.addEventListener('resize', updatePosition);
-    window.addEventListener('scroll', updatePosition, true);
-
-    return () => {
-      window.removeEventListener('resize', updatePosition);
-      window.removeEventListener('scroll', updatePosition, true);
-    };
-  }, [open, anchorRef, activeCategory]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (open && menuRef.current && 
-          !menuRef.current.contains(event.target as Node) && 
-          !anchorRef.current?.contains(event.target as Node)) {
-        onClose();
-      }
-    };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    if (open) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('keydown', handleKeyDown);
-      // Focus the dropdown when it opens for better keyboard navigation
-      if (menuRef.current) {
-        menuRef.current.focus();
-      }
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [open, onClose, anchorRef]);
-
-  if (!open) return null;
-
-  return createPortal(
-    <div
-      ref={(node) => {
-        menuRef.current = node;
-        setScrollableRef(node);
-      }}
-      tabIndex={-1}
-      style={{ 
-        position: "fixed", 
-        top: pos.top, 
-        left: pos.left, 
-        width: pos.width, 
-        zIndex: 9999,
-        transform: pos.transform,
-        maxHeight: '384px',
-        overflowY: 'auto',
-        overflowX: 'hidden'
-      }}
-      className={`${glass.prompt} rounded-lg focus:outline-none shadow-lg max-h-96 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-n-mid/30 scrollbar-track-transparent hover:scrollbar-thumb-n-mid/50 ${
-        activeCategory === "video" ? "p-1" : "p-2"
-      }`}
-      onWheel={handleWheel}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onTouchCancel={handleTouchEnd}
-      onFocus={() => {
-        // Ensure the dropdown can receive focus for keyboard navigation
-        if (menuRef.current) {
-          menuRef.current.focus();
-        }
-      }}
-    >
-      {children}
-    </div>,
-    document.body
-  );
-};
 
 // Main Component
 export default function Edit() {
@@ -188,7 +72,27 @@ export default function Edit() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [unsavePromptText, setUnsavePromptText] = useState<string | null>(null);
   const unsaveModalRef = useRef<HTMLDivElement>(null);
-  
+
+  // Initialize from navigation state
+  useEffect(() => {
+    const state = location.state as EditNavigationState;
+    if (state?.imageToEdit) {
+      const img = state.imageToEdit;
+      if (img.url) {
+        // Set preview URL directly
+        setPreviewUrl(img.url);
+
+        // If we have a prompt, set it
+        if (img.prompt) {
+          setPrompt(img.prompt);
+        }
+
+        // Note: We no longer fetch the image here to avoid CORS issues.
+        // Instead, we pass the URL directly to the backend if no new file is selected.
+      }
+    }
+  }, [location.state]);
+
   // Prompt bar state
   const [prompt, setPrompt] = useState<string>("");
   const [geminiAspectRatio, setGeminiAspectRatio] = useState<GeminiAspectRatio>("1:1");
@@ -198,6 +102,20 @@ export default function Edit() {
   const [referencePreviews, setReferencePreviews] = useState<string[]>([]);
   const [selectedModel, setSelectedModel] = useState<EditModelId>("gemini-3.0-pro-image");
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState<boolean>(false);
+  const modelSelectorButtonRef = useRef<HTMLButtonElement>(null);
+  const modelSelectorMenuRef = useRef<HTMLDivElement>(null);
+  const [modelSelectorPos, setModelSelectorPos] = useState({ top: 0, left: 0, width: 0, transform: 'translateY(0)' });
+  const [editedImageIds, setEditedImageIds] = useState<string[]>([]);
+
+  const {
+    setScrollableRef,
+    handleWheel,
+    handleTouchStart: handleDropdownTouchStart,
+    handleTouchMove: handleDropdownTouchMove,
+    handleTouchEnd: handleDropdownTouchEnd,
+  } = useDropdownScrollLock<HTMLDivElement>(isModelSelectorOpen);
+
+  const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLButtonElement>();
   const [isFullSizeOpen, setIsFullSizeOpen] = useState<boolean>(false);
   const [selectedFullImage, setSelectedFullImage] = useState<string | null>(null);
   const [imageSize, setImageSize] = useState<number>(100); // Percentage scale
@@ -208,8 +126,15 @@ export default function Edit() {
   const [isPreciseEditMode, setIsPreciseEditMode] = useState<boolean>(false);
   const [isDrawing, setIsDrawing] = useState<boolean>(false);
   const [maskData, setMaskData] = useState<string | null>(null);
-  const [brushSize, setBrushSize] = useState<number>(60);
-  const [isEraseMode, setIsEraseMode] = useState<boolean>(false);
+  const [brushSize, setBrushSize] = useState(20);
+  const [isEraseMode, setIsEraseMode] = useState(false);
+  const [imageToEditData, setImageToEditData] = useState<GalleryImageLike | undefined>(undefined);
+  const { showToast } = useToast();
+  const {
+    goToPublicGallery,
+    goToModelGallery,
+  } = useBadgeNavigation();
+  const { addImage } = useGallery();
   const [mousePosition, setMousePosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [showBrushPreview, setShowBrushPreview] = useState<boolean>(false);
   const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
@@ -220,6 +145,14 @@ export default function Edit() {
   const isFlux = isFluxModelId(selectedModel);
   const isChatGPT = selectedModel === "chatgpt-image";
   const isIdeogram = selectedModel === "ideogram";
+
+  // Force Ideogram when mask mode is active (precise edit mode)
+  useEffect(() => {
+    if (isPreciseEditMode && selectedModel !== "ideogram") {
+      setSelectedModel("ideogram");
+      showToast("Switched to Ideogram for masking/editing");
+    }
+  }, [isPreciseEditMode, selectedModel, showToast]);
   const isQwen = selectedModel === "qwen-image";
   const isRunway = selectedModel === "runway-gen4" || selectedModel === "runway-gen4-turbo";
   const isReve = selectedModel === "reve-image";
@@ -270,15 +203,33 @@ export default function Edit() {
   const [temperature, setTemperature] = useState(0.8);
   const [topP, setTopP] = useState(0.95);
   const [topK, setTopK] = useState(64);
-  
+
   // Refs
   const promptTextareaRef = useRef<HTMLTextAreaElement>(null);
   const promptsButtonRef = useRef<HTMLButtonElement>(null);
   const settingsRef = useRef<HTMLButtonElement>(null);
   const aspectRatioButtonRef = useRef<HTMLButtonElement>(null);
-  const modelSelectorRef = useRef<HTMLButtonElement>(null);
+  // const modelSelectorRef = useRef<HTMLButtonElement>(null);
   const refFileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Bridge for ResultsGrid interactions
+  const bridgeRef = useRef<GalleryBridgeActions>({
+    setPromptFromGallery: (text, options) => {
+      setPrompt(text);
+      if (options?.focus) {
+        promptTextareaRef.current?.focus();
+      }
+    },
+    setReferenceFromUrl: async (url) => {
+      // TODO: Implement fetching url and converting to File if needed for Edit
+      console.log("setReferenceFromUrl called in Edit", url);
+    },
+    focusPromptInput: () => {
+      promptTextareaRef.current?.focus();
+    },
+    isInitialized: true,
+  });
 
   // Use all image generation hooks
   const {
@@ -338,21 +289,21 @@ export default function Edit() {
   } = useReveImageGeneration();
 
   // Get the current error and generated image based on selected model
-  const currentError = isGemini ? geminiError : 
-                      isFlux ? fluxError :
-                      isChatGPT ? chatGPTError :
-                      isIdeogram ? ideogramError :
-                      isQwen ? qwenError :
-                      isRunway ? runwayError :
-                      isReve ? reveError : null;
+  const currentError = isGemini ? geminiError :
+    isFlux ? fluxError :
+      isChatGPT ? chatGPTError :
+        isIdeogram ? ideogramError :
+          isQwen ? qwenError :
+            isRunway ? runwayError :
+              isReve ? reveError : null;
 
   const currentGeneratedImage = isGemini ? geminiImage :
-                               isFlux ? fluxImage :
-                               isChatGPT ? chatGPTImage :
-                               isIdeogram ? (ideogramImages.length > 0 ? ideogramImages[0] : null) :
-                               isQwen ? (qwenImages.length > 0 ? qwenImages[0] : null) :
-                               isRunway ? runwayImage :
-                               isReve ? reveImage : null;
+    isFlux ? fluxImage :
+      isChatGPT ? chatGPTImage :
+        isIdeogram ? (ideogramImages.length > 0 ? ideogramImages[0] : null) :
+          isQwen ? (qwenImages.length > 0 ? qwenImages[0] : null) :
+            isRunway ? runwayImage :
+              isReve ? reveImage : null;
 
   const clearCurrentError = () => {
     if (isGemini) clearGeminiError();
@@ -405,7 +356,7 @@ export default function Edit() {
       setUnsavePromptText(promptText);
       return;
     }
-    
+
     // Otherwise, save it
     savePrompt(promptText);
   };
@@ -414,12 +365,12 @@ export default function Edit() {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith('image/')) {
       setSelectedFile(file);
-            const reader = new FileReader();
-            reader.onload = () => {
+      const reader = new FileReader();
+      reader.onload = () => {
         setPreviewUrl(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-          }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleDeleteImage = () => {
@@ -430,19 +381,170 @@ export default function Edit() {
     }
   };
 
+  // Helper to generate Ideogram-compatible mask (Black = Edit, White = Keep)
+  const generateIdeogramMask = async (): Promise<string | undefined> => {
+    if (!maskData || !previewUrl) {
+      console.log('[Edit] generateIdeogramMask: maskData or previewUrl missing, returning undefined.');
+      return undefined;
+    }
+
+    return new Promise(async (resolve, reject) => {
+      const originalImg = new Image();
+      // Only set crossOrigin if we are NOT using a blob URL (which means we fell back to original URL)
+      // For blob URLs, crossOrigin is not needed and can cause issues in some browsers/contexts
+
+      let srcUrl = previewUrl;
+      let objectUrlToRevoke: string | undefined;
+      let isBlob = false;
+
+      // Robustly handle image loading by fetching as blob first if needed
+      try {
+        if (previewUrl.startsWith('http') || previewUrl.startsWith('https')) {
+          const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+          // If apiBase is set, we use it. Otherwise we assume relative path (which relies on proxy)
+          // Note: apiBase usually doesn't include /api if it's just the host, but let's check.
+          // In .env it is http://localhost:3000. Backend prefix is /api.
+
+          const proxyEndpoint = `${apiBase}/api/r2files/proxy`;
+
+          const proxyUrl = previewUrl.includes('r2.dev')
+            ? `${proxyEndpoint}?url=${encodeURIComponent(previewUrl)}`
+            : previewUrl;
+
+          console.log('[Edit] Fetching image for mask via proxy:', proxyUrl);
+          const response = await fetch(proxyUrl);
+          if (!response.ok) throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+          const blob = await response.blob();
+
+          if (blob.type.includes('text/html')) {
+            throw new Error('Fetched blob is text/html, likely an error page or index.html fallback');
+          }
+
+          console.log('[Edit] Image fetched successfully, blob size:', blob.size, blob.type);
+          srcUrl = URL.createObjectURL(blob);
+          objectUrlToRevoke = srcUrl;
+          isBlob = true;
+        }
+      } catch (e) {
+        console.error('[Edit] Error fetching image for mask generation:', e);
+        // Fallback to original URL if fetch fails (might work if CORS allows)
+      }
+
+      if (!isBlob) {
+        originalImg.crossOrigin = "anonymous";
+      }
+
+      originalImg.onload = () => {
+        console.log('[Edit] Original image loaded for mask generation');
+        const width = originalImg.naturalWidth;
+        const height = originalImg.naturalHeight;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
+          console.error('[Edit] Could not get canvas context for mask generation.');
+          reject(new Error('Could not get canvas context'));
+          return;
+        }
+
+        // 1. Fill White (Keep area)
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, width, height);
+        console.log('[Edit] Canvas filled with white.');
+
+        // 2. Load Mask Image
+        const maskImg = new Image();
+        maskImg.onload = () => {
+          console.log('[Edit] Mask image loaded.');
+          // 3. Erase where mask is (turn to transparent)
+          // maskData has white strokes. destination-out will use alpha of strokes to erase.
+          ctx.globalCompositeOperation = 'destination-out';
+          ctx.drawImage(maskImg, 0, 0, width, height);
+          console.log('[Edit] Mask applied (destination-out).');
+
+          // 4. Fill Black behind (turning transparent to Black -> Edit area)
+          ctx.globalCompositeOperation = 'destination-over';
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(0, 0, width, height);
+          console.log('[Edit] Background filled with black (destination-over).');
+
+          if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
+          const dataUrl = canvas.toDataURL('image/png');
+          console.log('[Edit] Mask generation complete, returning data URL.');
+          resolve(dataUrl);
+        };
+        maskImg.onerror = (e) => {
+          console.error('[Edit] Error loading mask image:', e);
+          if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
+          reject(e);
+        };
+        maskImg.src = maskData;
+        console.log('[Edit] Attempting to load maskImg from maskData.');
+      };
+      originalImg.onerror = (e) => {
+        if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
+        console.error('[Edit] Error loading original image for mask:', e, 'src:', srcUrl);
+        reject(e);
+      };
+      originalImg.src = srcUrl;
+      console.log('[Edit] Attempting to load originalImg from srcUrl:', srcUrl);
+    });
+  };
+
   // Prompt bar handlers
   const handleGenerateImage = async () => {
     const trimmedPrompt = prompt.trim();
-    if (!trimmedPrompt || !selectedFile) return;
+    if (!trimmedPrompt || (!selectedFile && !previewUrl)) return;
     setIsButtonSpinning(true);
 
     try {
-      // Convert the selected file to base64
-      const imageData = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsDataURL(selectedFile);
-      });
+      // Convert the selected file to base64 if it exists
+      let imageData: string | undefined;
+      if (selectedFile) {
+        imageData = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(selectedFile);
+        });
+      } else if (previewUrl && isIdeogram) {
+        // For Ideogram, we fetch the image on frontend and send as base64 to avoid backend download issues
+        try {
+          const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+          const proxyEndpoint = `${apiBase}/api/r2files/proxy`;
+          // Use proxy for r2.dev or if it's a relative path (though previewUrl should be absolute usually)
+          const proxyUrl = previewUrl.includes('r2.dev')
+            ? `${proxyEndpoint}?url=${encodeURIComponent(previewUrl)}`
+            : previewUrl;
+
+          console.log('[Edit] Fetching image for Ideogram payload:', proxyUrl);
+          const response = await fetch(proxyUrl);
+          if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
+
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('text/html')) {
+            throw new Error('Fetched image is HTML, not an image file.');
+          }
+
+          const blob = await response.blob();
+          if (blob.type.includes('text/html')) {
+            throw new Error('Fetched blob is text/html, likely an error page.');
+          }
+
+          imageData = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+        } catch (e) {
+          console.error('[Edit] Failed to fetch/convert previewUrl for Ideogram:', e);
+          showToast("Could not process the image for editing. It may be invalid or inaccessible.");
+          setIsButtonSpinning(false);
+          return;
+        }
+      }
 
       // Convert reference files to base64
       const additionalReferences = await Promise.all(referenceFiles.map(f =>
@@ -453,20 +555,35 @@ export default function Edit() {
         })
       ));
 
-      const allReferences = [imageData, ...additionalReferences];
+      const primaryImage = imageData || (previewUrl ? previewUrl : undefined);
+      const allReferences = [primaryImage, ...additionalReferences].filter((ref): ref is string => !!ref);
 
       // Generate image based on selected model
       if (isGemini) {
-        await generateGeminiImage({
+        const generated = await generateGeminiImage({
           prompt: trimmedPrompt,
           imageData: imageData,
+          imageUrl: !imageData && previewUrl ? previewUrl : undefined,
           references: allReferences,
           model: selectedModel,
           temperature,
           topP,
           outputLength: topK,
           aspectRatio: geminiAspectRatio,
+          jobType: 'IMAGE_EDIT',
         });
+
+        // Add to gallery if successful
+        if (generated) {
+          await addImage(generated);
+          if (generated.jobId) {
+            setEditedImageIds(prev => [...prev, generated.jobId!]);
+          } else if (generated.r2FileId) {
+            setEditedImageIds(prev => [...prev, generated.r2FileId!]);
+          } else if (generated.url) {
+            setEditedImageIds(prev => [...prev, generated.url]);
+          }
+        }
       } else if (isFluxModelId(selectedModel)) {
         const fluxModel = FLUX_MODEL_LOOKUP[selectedModel];
         await generateFluxImage({
@@ -484,11 +601,18 @@ export default function Edit() {
           quality: 'high',
         });
       } else if (isIdeogram) {
+        let finalMask: string | undefined;
+        if (maskData) {
+          finalMask = await generateIdeogramMask();
+        }
+
         await generateIdeogramImage({
           prompt: trimmedPrompt,
           aspect_ratio: '1:1',
           rendering_speed: 'DEFAULT',
           num_images: 1,
+          mask: finalMask,
+          references: allReferences,
         });
       } else if (isQwen) {
         await generateQwenImage({
@@ -556,8 +680,65 @@ export default function Edit() {
   };
 
   const toggleModelSelector = () => {
-    setIsModelSelectorOpen(!isModelSelectorOpen);
+    if (!isButtonSpinning) {
+      setIsModelSelectorOpen(!isModelSelectorOpen);
+    }
   };
+
+  // Portal positioning logic
+  useEffect(() => {
+    if (!isModelSelectorOpen) return;
+
+    const updatePosition = () => {
+      if (!modelSelectorButtonRef.current) return;
+      const rect = modelSelectorButtonRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const dropdownHeight = 384; // max-h-96 = 384px
+
+      // Check if there's enough space above the trigger
+      const spaceAbove = rect.top;
+      const spaceBelow = viewportHeight - rect.bottom;
+
+      // Position above if there's more space above, otherwise position below
+      const shouldPositionAbove = spaceAbove > spaceBelow && spaceAbove > dropdownHeight;
+
+      const verticalOffset = 2;
+
+      setModelSelectorPos({
+        top: shouldPositionAbove ? rect.top - verticalOffset : rect.bottom + verticalOffset,
+        left: rect.left,
+        width: Math.max(288, rect.width), // Minimum width 288px (w-72)
+        transform: shouldPositionAbove ? 'translateY(-100%)' : 'translateY(0)'
+      });
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [isModelSelectorOpen]);
+
+  // Handle click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isModelSelectorOpen && modelSelectorMenuRef.current &&
+        !modelSelectorMenuRef.current.contains(event.target as Node) &&
+        !modelSelectorButtonRef.current?.contains(event.target as Node)) {
+        setIsModelSelectorOpen(false);
+      }
+    };
+
+    if (isModelSelectorOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isModelSelectorOpen]);
 
   // Get current model info
   const getCurrentModel = () => {
@@ -587,17 +768,17 @@ export default function Edit() {
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (!isPreciseEditMode) return;
     setIsDrawing(true);
-    
+
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     const rect = canvas.getBoundingClientRect();
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
     const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
-    
+
     // Start new path
     const newPath = [{ x, y }];
     setCurrentPath(newPath);
@@ -605,25 +786,25 @@ export default function Edit() {
 
   const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (!isDrawing || !isPreciseEditMode) return;
-    
+
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     const rect = canvas.getBoundingClientRect();
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
     const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
-    
+
     // Add point to current path
     const newPath = [...currentPath, { x, y }];
     setCurrentPath(newPath);
-    
+
     // Update mouse position for brush preview
     setMousePosition({ x, y });
     setShowBrushPreview(true);
-    
+
     // Redraw everything immediately
     redrawCanvas();
   };
@@ -632,20 +813,20 @@ export default function Edit() {
   const redrawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     // Clear the canvas completely
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
+
     // Draw all completed paths first
     ctx.strokeStyle = 'rgba(255, 255, 255, 1)';
     ctx.lineWidth = brushSize;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.globalCompositeOperation = 'source-over';
-    
+
     allPaths.forEach(pathData => {
       if (pathData.points.length > 0) {
         ctx.lineWidth = pathData.brushSize;
@@ -656,7 +837,7 @@ export default function Edit() {
           // For draw paths, use source-over to add pixels
           ctx.globalCompositeOperation = 'source-over';
         }
-        
+
         ctx.beginPath();
         ctx.moveTo(pathData.points[0].x, pathData.points[0].y);
         for (let i = 1; i < pathData.points.length; i++) {
@@ -665,7 +846,7 @@ export default function Edit() {
         ctx.stroke();
       }
     });
-    
+
     // Draw the current path being drawn
     if (currentPath.length > 0) {
       ctx.lineWidth = brushSize;
@@ -674,7 +855,7 @@ export default function Edit() {
       } else {
         ctx.globalCompositeOperation = 'source-over';
       }
-      
+
       ctx.beginPath();
       ctx.moveTo(currentPath[0].x, currentPath[0].y);
       for (let i = 1; i < currentPath.length; i++) {
@@ -682,7 +863,7 @@ export default function Edit() {
       }
       ctx.stroke();
     }
-    
+
     // Apply the mask color to all non-erased areas
     ctx.globalCompositeOperation = 'source-in';
     ctx.fillStyle = 'rgba(250, 250, 250, 0.75)';
@@ -692,25 +873,25 @@ export default function Edit() {
   const stopDrawing = () => {
     if (!isDrawing) return;
     setIsDrawing(false);
-    
+
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     // Add current path to all paths if it has content
     if (currentPath.length > 1) {
-      setAllPaths(prev => [...prev, { 
-        points: [...currentPath], 
-        brushSize: brushSize, 
-        isErase: isEraseMode 
+      setAllPaths(prev => [...prev, {
+        points: [...currentPath],
+        brushSize: brushSize,
+        isErase: isEraseMode
       }]);
-      
+
       // Clear redo stack when new action is performed
       setRedoStack([]);
     }
-    
+
     // Clear current path
     setCurrentPath([]);
-    
+
     // Immediately redraw the entire canvas with consistent opacity
     // This ensures all strokes have the same opacity regardless of overlap
     redrawCanvas();
@@ -722,10 +903,10 @@ export default function Edit() {
   const clearMask = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     setMaskData(null);
     setCurrentPath([]);
@@ -735,14 +916,14 @@ export default function Edit() {
 
   const undoStroke = useCallback(() => {
     if (allPaths.length === 0) return;
-    
+
     // Save current state to redo stack
     setRedoStack(prev => [...prev, allPaths]);
-    
+
     // Remove last stroke
     const newPaths = allPaths.slice(0, -1);
     setAllPaths(newPaths);
-    
+
     // Update mask data immediately without setTimeout
     const canvas = canvasRef.current;
     if (canvas) {
@@ -750,14 +931,14 @@ export default function Edit() {
       const ctx = canvas.getContext('2d');
       if (ctx) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
+
         // Draw all remaining paths
         ctx.strokeStyle = 'rgba(255, 255, 255, 1)';
         ctx.lineWidth = brushSize;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         ctx.globalCompositeOperation = 'source-over';
-        
+
         newPaths.forEach(pathData => {
           if (pathData.points.length > 0) {
             ctx.lineWidth = pathData.brushSize;
@@ -766,7 +947,7 @@ export default function Edit() {
             } else {
               ctx.globalCompositeOperation = 'source-over';
             }
-            
+
             ctx.beginPath();
             ctx.moveTo(pathData.points[0].x, pathData.points[0].y);
             for (let i = 1; i < pathData.points.length; i++) {
@@ -775,12 +956,12 @@ export default function Edit() {
             ctx.stroke();
           }
         });
-        
+
         // Apply the mask color
         ctx.globalCompositeOperation = 'source-in';
         ctx.fillStyle = 'rgba(250, 250, 250, 0.75)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
+
         const maskDataUrl = canvas.toDataURL();
         setMaskData(maskDataUrl);
       }
@@ -789,16 +970,16 @@ export default function Edit() {
 
   const redoStroke = useCallback(() => {
     if (redoStack.length === 0) return;
-    
+
     // Get the last state from redo stack
     const lastState = redoStack[redoStack.length - 1];
-    
+
     // Restore the state
     setAllPaths(lastState);
-    
+
     // Remove from redo stack
     setRedoStack(prev => prev.slice(0, -1));
-    
+
     // Update mask data immediately without setTimeout
     const canvas = canvasRef.current;
     if (canvas) {
@@ -806,14 +987,14 @@ export default function Edit() {
       const ctx = canvas.getContext('2d');
       if (ctx) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
+
         // Draw all paths
         ctx.strokeStyle = 'rgba(255, 255, 255, 1)';
         ctx.lineWidth = brushSize;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         ctx.globalCompositeOperation = 'source-over';
-        
+
         lastState.forEach(pathData => {
           if (pathData.points.length > 0) {
             ctx.lineWidth = pathData.brushSize;
@@ -822,7 +1003,7 @@ export default function Edit() {
             } else {
               ctx.globalCompositeOperation = 'source-over';
             }
-            
+
             ctx.beginPath();
             ctx.moveTo(pathData.points[0].x, pathData.points[0].y);
             for (let i = 1; i < pathData.points.length; i++) {
@@ -831,12 +1012,12 @@ export default function Edit() {
             ctx.stroke();
           }
         });
-        
+
         // Apply the mask color
         ctx.globalCompositeOperation = 'source-in';
         ctx.fillStyle = 'rgba(250, 250, 250, 0.75)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
+
         const maskDataUrl = canvas.toDataURL();
         setMaskData(maskDataUrl);
       }
@@ -850,12 +1031,12 @@ export default function Edit() {
   // Brush preview functions
   const handleBrushMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isPreciseEditMode || isMoveMode) return;
-    
+
     const target = e.currentTarget;
     const rect = target.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    
+
     setMousePosition({ x, y });
     setShowBrushPreview(true);
   };
@@ -981,13 +1162,13 @@ export default function Edit() {
   const handlePaste = async (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const items = Array.from(event.clipboardData.items);
     const imageItems = items.filter(item => item.type.startsWith('image/'));
-    
+
     // If no images, allow default text paste behavior
     if (imageItems.length === 0) return;
-    
+
     // Only prevent default when we're actually handling images
     event.preventDefault();
-    
+
     try {
       // Convert clipboard items to files
       const files: File[] = [];
@@ -997,9 +1178,9 @@ export default function Edit() {
           files.push(file);
         }
       }
-      
+
       if (files.length === 0) return;
-      
+
       // Add to reference files (same logic as handleRefsSelected)
       const combined = [...referenceFiles, ...files].slice(0, ADDITIONAL_REFERENCE_LIMIT); // Limit to extra references only
       setReferenceFiles(combined);
@@ -1007,7 +1188,7 @@ export default function Edit() {
       // Create previews
       const readers = combined.map(f => URL.createObjectURL(f));
       setReferencePreviews(readers);
-      
+
     } catch (error) {
       debugError('Error handling paste:', error);
     }
@@ -1063,16 +1244,27 @@ export default function Edit() {
     const state = location.state as EditNavigationState | null;
     if (state?.imageToEdit) {
       const imageData = state.imageToEdit;
+      setImageToEditData(imageData);
       // Create a mock File object from the image URL
-      fetch(imageData.url)
-        .then(response => response.blob())
+      // Use proxy to avoid CORS issues
+      const proxyUrl = `/api/r2files/proxy?url=${encodeURIComponent(imageData.url)}`;
+
+      fetch(proxyUrl)
+        .then(response => {
+          if (!response.ok) throw new Error(`Failed to fetch image: ${response.statusText}`);
+          return response.blob();
+        })
         .then(blob => {
           const file = new File([blob], `edit-${Date.now()}.png`, { type: blob.type });
           setSelectedFile(file);
+          // Use original URL for preview to avoid potential blob/CORS display issues
+          // The img tag handles cross-origin images fine for display
           setPreviewUrl(imageData.url);
         })
         .catch(error => {
           debugError('Error loading image for editing:', error);
+          // Fallback to original URL for preview even if proxy fails
+          setPreviewUrl(imageData.url);
         });
     }
   }, [location.state]);
@@ -1089,818 +1281,878 @@ export default function Edit() {
     </div>
   );
 
+  const handleCopyPrompt = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (imageToEditData?.prompt) {
+      try {
+        await navigator.clipboard.writeText(imageToEditData.prompt);
+        showToast('Prompt copied!');
+      } catch (error) {
+        debugError('Failed to copy prompt:', error);
+        showToast('Failed to copy prompt');
+      }
+    }
+  };
+
   return (
-    <div className={`${layout.page} edit-page`}>
-      {/* Background overlay to show gradient behind navbar */}
-      <div className={layout.backdrop} aria-hidden="true" />
-      
-      {/* PLATFORM HERO - Always centered */}
-      <header className={`relative z-10 min-h-screen flex items-center justify-center ${layout.container}`}>
-        {/* Centered content */}
-        <div className="flex flex-col items-center justify-center text-center">
+    <CreateBridgeProvider value={bridgeRef}>
+      <div className={`${layout.page} edit-page`}>
+        {/* Background overlay to show gradient behind navbar */}
+        <div className={layout.backdrop} aria-hidden="true" />
 
-          {/* Upload Interface - only show when no image is uploaded */}
-          {!previewUrl && (
-            <div className="w-full max-w-md mx-auto">
-              <div 
-                className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-colors duration-200 ${isDragging ? 'border-brand drag-active' : 'border-theme-white/30 hover:border-theme-text/50'}`}
-                onClick={() => fileInputRef.current?.click()}
-                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                onDragLeave={() => setIsDragging(false)}
-                onDrop={(e) => { 
-                  e.preventDefault(); 
-                  setIsDragging(false);
-                  const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/'));
-                  if (files.length > 0) {
-                    const file = files[0];
-                    setSelectedFile(file);
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                      setPreviewUrl(reader.result as string);
-                    };
-                    reader.readAsDataURL(file);
-                  }
-                }}
-                onPaste={handleUploadPaste}
-              >
-                <Upload className="default-orange-icon mx-auto mb-4" />
-                <p className="text-xl font-raleway text-theme-text mb-2">Upload your image</p>
-                <p className="text-base font-raleway text-theme-white mb-6">
-                  Click anywhere, drag and drop, or paste your image to get started
-                </p>
-                
-                {/* Upload Button */}
-                <div className={`${buttons.primary} inline-flex items-center gap-2`}>
-                  <Upload className="w-4 h-4" />
-                  Upload
-                </div>
-                
-                {/* Hidden file input */}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-                
-              </div>
-            </div>
-          )}
+        {/* PLATFORM HERO - Always centered */}
+        <header className={`relative z-10 min-h-screen flex items-center justify-center ${layout.container}`}>
+          {/* Centered content */}
+          <div className="flex flex-col items-center justify-center text-center">
 
-          {/* Uploaded Image Preview */}
-          {previewUrl && (
-            <div className="w-full max-w-4xl mx-auto -mt-32 relative">
-              <div className="relative transition-colors duration-200">
-                <div 
-                  className="w-full h-[400px] relative"
-                  style={{ 
-                    transform: `scale(${imageSize / 100}) translate(${imagePosition.x}px, ${imagePosition.y}px)`,
-                    transformOrigin: 'center center'
+            {/* Upload Interface - only show when no image is uploaded */}
+            {!previewUrl && (
+              <div className="w-full max-w-md mx-auto">
+                <div
+                  className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-colors duration-200 ${isDragging ? 'border-brand drag-active' : 'border-theme-white/30 hover:border-theme-text/50'}`}
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragging(false);
+                    const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/'));
+                    if (files.length > 0) {
+                      const file = files[0];
+                      setSelectedFile(file);
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        setPreviewUrl(reader.result as string);
+                      };
+                      reader.readAsDataURL(file);
+                    }
                   }}
-                  onMouseMove={handleBrushMouseMove}
-                  onMouseLeave={handleBrushMouseLeave}
+                  onPaste={handleUploadPaste}
                 >
-                  <img 
-                    src={previewUrl} 
-                    alt="Uploaded file preview" 
-                    className="w-full h-full object-cover select-none pointer-events-none rounded-lg"
-                    draggable={false}
-                  />
-                  
-                  {/* Draggable overlay - only visible in move mode */}
-                  {isMoveMode && (
-                    <div
-                      className="absolute inset-0 w-full h-full z-10"
-                      style={{ 
-                        cursor: isImageDragging ? 'grabbing' : 'grab'
-                      }}
-                      onWheel={(e) => {
-                        // Only resize with Ctrl+scroll (two-finger pinch gesture)
-                        if (e.ctrlKey) {
-                          e.preventDefault();
-                          if (e.deltaY < 0) {
-                            increaseImageSize();
-                          } else {
-                            decreaseImageSize();
-                          }
-                        }
-                      }}
-                      onMouseDown={handleMouseDown}
-                      onTouchStart={handleTouchStart}
-                      onTouchMove={handleTouchMove}
-                      onTouchEnd={handleTouchEnd}
-                    />
-                  )}
+                  <Upload className="default-orange-icon mx-auto mb-4" />
+                  <p className="text-xl font-raleway text-theme-text mb-2">Upload your image</p>
+                  <p className="text-base font-raleway text-theme-white mb-6">
+                    Click anywhere, drag and drop, or paste your image to get started
+                  </p>
 
-                  {/* Mask drawing canvas - visible when precise edit mode is active */}
-                  {isPreciseEditMode && (
-                    <canvas
-                      ref={canvasRef}
-                      className={`absolute inset-0 w-full h-full z-20 ${
-                        isMoveMode ? 'pointer-events-none' : 'cursor-crosshair'
-                      }`}
-                      onMouseDown={isMoveMode ? undefined : startDrawing}
-                      onMouseMove={isMoveMode ? undefined : (e) => {
-                        if (!isDrawing) {
-                          // Update brush preview position even when not drawing
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          const x = e.clientX - rect.left;
-                          const y = e.clientY - rect.top;
-                          setMousePosition({ x, y });
-                          setShowBrushPreview(true);
-                        } else {
-                          draw(e);
-                        }
-                      }}
-                      onMouseUp={isMoveMode ? undefined : stopDrawing}
-                      onMouseLeave={isMoveMode ? undefined : () => {
-                        setShowBrushPreview(false);
-                        stopDrawing();
-                      }}
-                      onTouchStart={isMoveMode ? undefined : startDrawing}
-                      onTouchMove={isMoveMode ? undefined : draw}
-                      onTouchEnd={isMoveMode ? undefined : stopDrawing}
-                    />
-                  )}
+                  {/* Upload Button */}
+                  <div className={`${buttons.primary} inline-flex items-center gap-2`}>
+                    <Upload className="w-4 h-4" />
+                    Upload
+                  </div>
 
-                  {/* Brush preview circle - only visible in precise edit mode and not in move mode */}
-                  {isPreciseEditMode && !isMoveMode && showBrushPreview && (
-                    <div
-                      className="absolute pointer-events-none z-30 border-2 border-theme-text rounded-full"
-                      style={{
-                        left: mousePosition.x - brushSize / 2,
-                        top: mousePosition.y - brushSize / 2,
-                        width: brushSize,
-                        height: brushSize,
-                        borderColor: 'rgba(var(--theme-text-rgb), 1)',
-                        opacity: 0.8
-                      }}
-                    />
-                  )}
-                  
-                  {/* Double-click handler for full-size view */}
-                  <div
-                    className="absolute inset-0 w-full h-full"
-                    onDoubleClick={() => {
-                      setSelectedFullImage(previewUrl);
-                      setIsFullSizeOpen(true);
-                    }}
-                    style={{ pointerEvents: isMoveMode ? 'none' : 'auto' }}
+                  {/* Hidden file input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
                   />
-                  <button
-                    onClick={handleDeleteImage}
-                    className="absolute top-2 right-2 bg-[color:var(--glass-dark-bg)] text-theme-white hover:text-theme-text transition-colors duration-200 rounded-full p-1.5 pointer-events-auto z-20"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
+
                 </div>
-                
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Image Size Controls - absolutely positioned to overlay over image */}
-          {previewUrl && isMoveMode && (
-            <div className="absolute z-50 flex justify-center gap-2" style={{ 
-              left: '50%',
-              transform: 'translateX(-50%)',
-              width: 'auto',
-              bottom: '12rem'
-            }}>
-              <div className={`flex justify-between items-center rounded-lg px-8 py-2 ${glass.promptDark}`} style={{ minWidth: '320px' }}>
-                <button
-                  onClick={decreaseImageSize}
-                  disabled={imageSize <= 1}
-                  className={`p-1.5 rounded-md border transition-colors duration-200 ${glass.prompt} text-theme-white hover:text-theme-text disabled:opacity-50 disabled:cursor-not-allowed border-theme-dark hover:border-theme-text`}
-                  title="Decrease size"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
-                
-                <div className="flex flex-col items-center gap-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-theme-white text-sm font-raleway min-w-[3rem] text-center">
-                      {imageSize}%
-                    </span>
+            {/* Uploaded Image Preview */}
+            {previewUrl && (
+              <div className="w-full max-w-4xl mx-auto -mt-32 relative">
+                <div className="relative transition-colors duration-200">
+                  <div
+                    className="w-full h-[calc(100vh-240px)] relative group"
+                    style={{
+                      transform: `scale(${imageSize / 100}) translate(${imagePosition.x}px, ${imagePosition.y}px)`,
+                      transformOrigin: 'center center'
+                    }}
+                    onMouseMove={handleBrushMouseMove}
+                    onMouseLeave={handleBrushMouseLeave}
+                  >
+                    <img
+                      src={previewUrl}
+                      alt="Uploaded file preview"
+                      className="w-full h-full object-contain select-none pointer-events-none rounded-lg"
+                      draggable={false}
+                    />
+
+                    {/* Metadata Overlay - similar to FullImageModal */}
+                    {imageToEditData && !isMoveMode && !isPreciseEditMode && (
+                      <div
+                        className={`absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 opacity-0 group-hover:opacity-100 pointer-events-none`}
+                      >
+                        <div className="flex items-center justify-center pointer-events-auto">
+                          <div className="text-center bg-theme-black/60 backdrop-blur-md rounded-2xl p-4 border border-theme-white/10">
+                            <div className="text-sm font-raleway leading-relaxed relative text-theme-white">
+                              {imageToEditData.prompt || 'Generated Image'}
+                              {imageToEditData.prompt && (
+                                <button
+                                  onClick={handleCopyPrompt}
+                                  className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle"
+                                  title="Copy prompt"
+                                >
+                                  <Copy className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
+                            <div className="mt-2 flex justify-center items-center">
+                              <ImageBadgeRow
+                                align="center"
+                                model={{
+                                  name: imageToEditData.model || 'unknown',
+                                  size: 'md',
+                                  onClick: () => imageToEditData.model && goToModelGallery(imageToEditData.model, 'image')
+                                }}
+                                isPublic={!!imageToEditData.isPublic}
+                                onPublicClick={goToPublicGallery}
+                                aspectRatio={imageToEditData.aspectRatio}
+                                compact={false}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Draggable overlay - only visible in move mode */}
+                    {isMoveMode && (
+                      <div
+                        className="absolute inset-0 w-full h-full z-10"
+                        style={{
+                          cursor: isImageDragging ? 'grabbing' : 'grab'
+                        }}
+                        onWheel={(e) => {
+                          // Only resize with Ctrl+scroll (two-finger pinch gesture)
+                          if (e.ctrlKey) {
+                            e.preventDefault();
+                            if (e.deltaY < 0) {
+                              increaseImageSize();
+                            } else {
+                              decreaseImageSize();
+                            }
+                          }
+                        }}
+                        onMouseDown={handleMouseDown}
+                        onTouchStart={handleTouchStart}
+                        onTouchMove={handleTouchMove}
+                        onTouchEnd={handleTouchEnd}
+                      />
+                    )}
+
+                    {/* Mask drawing canvas - visible when precise edit mode is active */}
+                    {isPreciseEditMode && (
+                      <canvas
+                        ref={canvasRef}
+                        className={`absolute inset-0 w-full h-full z-20 ${isMoveMode ? 'pointer-events-none' : 'cursor-crosshair'
+                          }`}
+                        onMouseDown={isMoveMode ? undefined : startDrawing}
+                        onMouseMove={isMoveMode ? undefined : (e) => {
+                          if (!isDrawing) {
+                            // Update brush preview position even when not drawing
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const x = e.clientX - rect.left;
+                            const y = e.clientY - rect.top;
+                            setMousePosition({ x, y });
+                            setShowBrushPreview(true);
+                          } else {
+                            draw(e);
+                          }
+                        }}
+                        onMouseUp={isMoveMode ? undefined : stopDrawing}
+                        onMouseLeave={isMoveMode ? undefined : () => {
+                          setShowBrushPreview(false);
+                          stopDrawing();
+                        }}
+                        onTouchStart={isMoveMode ? undefined : startDrawing}
+                        onTouchMove={isMoveMode ? undefined : draw}
+                        onTouchEnd={isMoveMode ? undefined : stopDrawing}
+                      />
+                    )}
+
+                    {/* Brush preview circle - only visible in precise edit mode and not in move mode */}
+                    {isPreciseEditMode && !isMoveMode && showBrushPreview && (
+                      <div
+                        className="absolute pointer-events-none z-30 border-2 border-theme-text rounded-full"
+                        style={{
+                          left: mousePosition.x - brushSize / 2,
+                          top: mousePosition.y - brushSize / 2,
+                          width: brushSize,
+                          height: brushSize,
+                          borderColor: 'rgba(var(--theme-text-rgb), 1)',
+                          opacity: 0.8
+                        }}
+                      />
+                    )}
+
+                    {/* Double-click handler for full-size view */}
+                    <div
+                      className="absolute inset-0 w-full h-full"
+                      onDoubleClick={() => {
+                        setSelectedFullImage(previewUrl);
+                        setIsFullSizeOpen(true);
+                      }}
+                      style={{ pointerEvents: isMoveMode ? 'none' : 'auto' }}
+                    />
                     <button
-                      onClick={resetImageToDefault}
-                      className="p-1 text-theme-white hover:text-theme-text transition-colors duration-200"
-                      title="Reset to default position and size"
+                      onClick={handleDeleteImage}
+                      className="absolute top-2 right-2 bg-[color:var(--glass-dark-bg)] text-theme-white hover:text-theme-text transition-colors duration-200 rounded-full p-1.5 pointer-events-auto z-20"
                     >
-                      <RotateCcw className="w-3 h-3" />
+                      <X className="w-4 h-4" />
                     </button>
                   </div>
-                  <input
-                    type="range"
-                    min="10"
-                    max="500"
-                    step="10"
-                    value={imageSize}
-                    onChange={(e) => setImageSize(Number(e.target.value))}
-                    className="w-40 h-1 bg-theme-white rounded-lg appearance-none cursor-pointer"
-                    style={{
-                      background: `linear-gradient(to right, rgba(184, 192, 192, 1) 0%, rgba(184, 192, 192, 1) ${(imageSize - 10) / 19.9 * 100}%, rgba(184, 192, 192, 0.3) ${(imageSize - 10) / 19.9 * 100}%, rgba(184, 192, 192, 0.3) 100%)`,
-                      WebkitAppearance: 'none',
-                      appearance: 'none',
-                      height: '4px',
-                      outline: 'none',
-                      borderRadius: '5px'
-                    }}
-                    title="Adjust image size"
-                  />
+
                 </div>
-                
-                <button
-                  onClick={increaseImageSize}
-                  disabled={imageSize >= 500}
-                  className={`p-1.5 rounded-md border transition-colors duration-200 ${glass.prompt} text-theme-white hover:text-theme-text disabled:opacity-50 disabled:cursor-not-allowed border-theme-dark hover:border-theme-text`}
-                  title="Increase size"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Mode Toggle Buttons - fixed positioned above prompt bar */}
-          {previewUrl && (
-            <div className="layout-inline-width fixed bottom-36 left-1/2 -translate-x-1/2 z-50 flex justify-center gap-2 px-4">
-              <button
-                onClick={toggleMoveMode}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} font-raleway text-sm ${
-                  isMoveMode
-                    ? 'text-theme-text border-theme-text'
-                    : 'text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text'
-                }`}
-                title="Toggle move mode"
-              >
-                <Move className="w-4 h-4" />
-              </button>
-              
-              <button
-                onClick={togglePreciseEditMode}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} font-raleway text-sm ${
-                  isPreciseEditMode 
-                    ? 'text-theme-text border-theme-text' 
-                    : 'text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text'
-                }`}
-                title="Draw a mask"
-              >
-                <Wand2 className="w-4 h-4" />
-                Draw a mask
-              </button>
+            {/* Image Size Controls - absolutely positioned to overlay over image */}
+            {previewUrl && isMoveMode && (
+              <div className="absolute z-50 flex justify-center gap-2" style={{
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: 'auto',
+                bottom: '12rem'
+              }}>
+                <div className={`flex justify-between items-center rounded-lg px-8 py-2 ${glass.promptDark}`} style={{ minWidth: '320px' }}>
+                  <button
+                    onClick={decreaseImageSize}
+                    disabled={imageSize <= 1}
+                    className={`p-1.5 rounded-md border transition-colors duration-200 ${glass.prompt} text-theme-white hover:text-theme-text disabled:opacity-50 disabled:cursor-not-allowed border-theme-dark hover:border-theme-text`}
+                    title="Decrease size"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
 
-              {/* Brush controls - only show when precise edit mode is active */}
-              {isPreciseEditMode && (
-                <>
-                  {/* Brush size control */}
-                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border border-theme-dark ${glass.prompt}`}>
-                    <span className="text-theme-white text-xs font-raleway">Size:</span>
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-theme-white text-sm font-raleway min-w-[3rem] text-center">
+                        {imageSize}%
+                      </span>
+                      <button
+                        onClick={resetImageToDefault}
+                        className="p-1 text-theme-white hover:text-theme-text transition-colors duration-200"
+                        title="Reset to default position and size"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                      </button>
+                    </div>
                     <input
                       type="range"
-                      min="2"
-                      max="200"
-                      value={brushSize}
-                      onChange={(e) => setBrushSize(Number(e.target.value))}
-                      className="w-16 h-1 bg-theme-white rounded-lg appearance-none cursor-pointer"
+                      min="10"
+                      max="500"
+                      step="10"
+                      value={imageSize}
+                      onChange={(e) => setImageSize(Number(e.target.value))}
+                      className="w-40 h-1 bg-theme-white rounded-lg appearance-none cursor-pointer"
                       style={{
-                        background: `linear-gradient(to right, rgba(184, 192, 192, 1) 0%, rgba(184, 192, 192, 1) ${(brushSize - 2) / 198 * 100}%, rgba(184, 192, 192, 0.3) ${(brushSize - 2) / 198 * 100}%, rgba(184, 192, 192, 0.3) 100%)`,
+                        background: `linear-gradient(to right, rgba(184, 192, 192, 1) 0%, rgba(184, 192, 192, 1) ${(imageSize - 10) / 19.9 * 100}%, rgba(184, 192, 192, 0.3) ${(imageSize - 10) / 19.9 * 100}%, rgba(184, 192, 192, 0.3) 100%)`,
                         WebkitAppearance: 'none',
                         appearance: 'none',
                         height: '4px',
                         outline: 'none',
                         borderRadius: '5px'
                       }}
-                      title="Adjust brush size"
+                      title="Adjust image size"
                     />
-                    <span className="text-theme-white text-xs font-mono font-normal min-w-[2rem] text-center">
-                      {brushSize}px
-                    </span>
                   </div>
-                </>
-              )}
 
-              {/* Undo button */}
-              <button
-                onClick={undoStroke}
-                disabled={allPaths.length === 0}
-                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} text-theme-white border-theme-dark hover:text-theme-text disabled:opacity-50 disabled:cursor-not-allowed`}
-                title="Undo last stroke"
-              >
-                <Undo2 className="w-4 h-4" />
-              </button>
-
-              {/* Redo button */}
-              <button
-                onClick={redoStroke}
-                disabled={redoStack.length === 0}
-                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} text-theme-white border-theme-dark hover:text-theme-text disabled:opacity-50 disabled:cursor-not-allowed`}
-                title="Redo last stroke"
-              >
-                <Redo2 className="w-4 h-4" />
-              </button>
-
-              {/* Erase toggle */}
-              <button
-                onClick={toggleEraseMode}
-                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} ${
-                  isEraseMode 
-                    ? 'text-theme-text border-theme-text bg-theme-text/20' 
-                    : 'text-theme-white border-theme-dark hover:text-theme-text'
-                }`}
-                title={isEraseMode ? "Switch to draw mode" : "Switch to erase mode"}
-              >
-                <Eraser className="w-3.5 h-3.5" />
-              </button>
-
-              {/* Reset mask button - only show when precise edit mode is active and mask exists */}
-              {isPreciseEditMode && maskData && (
-                <button
-                  onClick={clearMask}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text font-raleway text-sm`}
-                  title="Reset mask"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  Reset mask
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Generated Image Display */}
-          {currentGeneratedImage && (
-            <div className="w-full max-w-lg mx-auto mt-4">
-              <div className="relative rounded-2xl overflow-hidden bg-theme-black border border-theme-mid">
-                <img 
-                  src={currentGeneratedImage.url} 
-                  alt="Generated image" 
-                  className="w-full h-64 object-cover"
-                />
-                <button
-                  onClick={() => clearCurrentGeneratedImage()}
-                  className="absolute top-2 right-2 bg-theme-black/80 hover:bg-theme-black text-theme-white hover:text-theme-text transition-colors duration-200 rounded-full p-1.5"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-                <div className="px-4 py-3 bg-theme-black/80 text-theme-white text-base text-center">
-                  Generated with {getCurrentModel().name}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Error Display */}
-          {currentError && (
-            <div className="w-full max-w-lg mx-auto mt-4">
-              <div
-                className="relative rounded-2xl overflow-hidden bg-theme-black border border-red-500/50"
-                role="status"
-                aria-live="assertive"
-                aria-atomic="true"
-              >
-                <button
-                  onClick={() => clearCurrentError()}
-                  className="absolute top-2 right-2 bg-theme-black/80 hover:bg-theme-black text-theme-white hover:text-theme-text transition-colors duration-200 rounded-full p-1.5"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-                <div className="px-4 py-3 bg-red-500/20 text-red-400 text-sm text-center">
-                  {currentError}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </header>
-
-
-
-      {/* Prompt input with + for references and drag & drop (fixed at bottom) - only show when image is uploaded */}
-      {selectedFile && (
-          <div
-          className={`promptbar fixed z-40 rounded-[16px] transition-colors duration-200 ${glass.prompt} ${isDragging ? 'border-brand drag-active' : 'border-n-mid'} px-4 py-3`}
-          style={{ 
-            bottom: '0.75rem',
-            transform: 'translateX(-50%) translateZ(0)' 
-          }}
-          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={(e) => { 
-            e.preventDefault(); 
-            setIsDragging(false); 
-            const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/')); 
-            if (files.length) {
-              const combined = [...referenceFiles, ...files].slice(0, ADDITIONAL_REFERENCE_LIMIT);
-              setReferenceFiles(combined);
-              const readers = combined.map(f => URL.createObjectURL(f));
-              setReferencePreviews(readers);
-            } 
-          }}
-        >
-          {/* Textarea - first row */}
-          <div className="mb-1">
-            <textarea
-              ref={promptTextareaRef}
-              placeholder="Describe what you want to create..."
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={onKeyDown}
-              onPaste={handlePaste}
-              rows={1}
-              className={`w-full h-[36px] bg-transparent ${prompt.trim() ? 'text-n-text' : 'text-n-white'} placeholder-n-white border-0 focus:outline-none ring-0 focus:ring-0 focus:text-n-text font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-auto overflow-y-hidden text-left whitespace-nowrap rounded-lg`}
-            />
-          </div>
-          
-          {/* Buttons - second row */}
-          <div className="flex items-center justify-between gap-2 px-3">
-            {/* Left icons and controls */}
-            <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
-            <button
-              type="button"
-              onClick={handleRefsClick}
-              title="Reference Image"
-              aria-label="Reference Image"
-              disabled={referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT}
-              className={`${referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT ? 'bg-n-black/20 text-n-white/40 cursor-not-allowed' : `${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text`} flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
-            >
-              <Plus className="w-4 h-4 flex-shrink-0 text-n-text" />
-              <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Add Reference</span>
-            </button>
-
-            {/* Reference images display - right next to Add reference button */}
-            {referenceDisplayItems.length > 0 && (
-              <div className="flex items-center gap-2">
-                <div className="hidden lg:block text-sm text-n-text font-raleway">Reference ({referenceDisplayItems.length}/{MAX_REFERENCE_IMAGES}):</div>
-                <div className="flex items-center gap-1.5">
-                  {referenceDisplayItems.map((item, idx) => (
-                    <div key={item.isPrimary ? 'primary-reference' : `reference-${item.index ?? idx}`} className="relative group">
-                      <img
-                        src={item.url}
-                        alt={item.isPrimary ? 'Primary reference' : `Reference ${idx}`}
-                        className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-lg object-cover border border-n-mid cursor-pointer hover:bg-n-light transition-colors duration-200"
-                        onClick={() => {
-                          setSelectedFullImage(item.url);
-                          setIsFullSizeOpen(true);
-                        }}
-                      />
-                      {item.isPrimary ? (
-                        <>
-                          <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 text-[10px] font-raleway font-medium uppercase tracking-wider text-n-text">Base</span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteImage();
-                            }}
-                            className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-white hover:text-n-text rounded-full p-0.5 transition-all duration-200"
-                            title="Remove base reference"
-                          >
-                            <X className="w-2.5 h-2.5" />
-                          </button>
-                        </>
-                      ) : (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (typeof item.index === 'number') {
-                              clearReference(item.index);
-                            }
-                          }}
-                          className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-white hover:text-n-text rounded-full p-0.5 transition-all duration-200"
-                          title="Remove reference"
-                        >
-                          <X className="w-2.5 h-2.5" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                  <button
+                    onClick={increaseImageSize}
+                    disabled={imageSize >= 500}
+                    className={`p-1.5 rounded-md border transition-colors duration-200 ${glass.prompt} text-theme-white hover:text-theme-text disabled:opacity-50 disabled:cursor-not-allowed border-theme-dark hover:border-theme-text`}
+                    title="Increase size"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             )}
 
-            <button
-              type="button"
-              ref={promptsButtonRef}
-              onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
-              className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
-            >
-              <BookmarkIcon className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
-            </button>
+            {/* Mode Toggle Buttons - fixed positioned above prompt bar */}
+            {previewUrl && (
+              <div className="layout-inline-width fixed bottom-36 left-1/2 -translate-x-1/2 z-50 flex justify-center gap-2 px-4">
+                <button
+                  onClick={toggleMoveMode}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} font-raleway text-sm ${isMoveMode
+                    ? 'text-theme-text border-theme-text'
+                    : 'text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text'
+                    }`}
+                  title="Toggle move mode"
+                >
+                  <Move className="w-4 h-4" />
+                </button>
 
-            <PromptsDropdown
-              isOpen={isPromptsDropdownOpen}
-              onClose={() => setIsPromptsDropdownOpen(false)}
-              anchorEl={promptsButtonRef.current}
-              recentPrompts={history}
-              savedPrompts={savedPrompts}
-              onSelectPrompt={(text) => {
-                setPrompt(text);
-                promptTextareaRef.current?.focus();
-              }}
-              onRemoveSavedPrompt={removePrompt}
-              onUpdateSavedPrompt={updatePrompt}
-              onAddSavedPrompt={savePrompt}
-              onSaveRecentPrompt={savePromptToLibrary}
-            />
+                <button
+                  onClick={togglePreciseEditMode}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} font-raleway text-sm ${isPreciseEditMode
+                    ? 'text-theme-text border-theme-text'
+                    : 'text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text'
+                    }`}
+                  title="Draw a mask"
+                >
+                  <Wand2 className="w-4 h-4" />
+                  Draw a mask
+                </button>
 
-            {/* Model Selector */}
-            <div className="relative model-selector">
-              <button
-                ref={modelSelectorRef}
-                type="button"
-                onClick={toggleModelSelector}
-                className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
-              >
-                {(() => {
-                  const currentModel = getCurrentModel();
-                  if (hasToolLogo(currentModel.name)) {
-                    return (
-                      <img
-                        src={getToolLogo(currentModel.name)!}
-                        alt={`${currentModel.name} logo`}
-                        loading="lazy"
-                        decoding="async"
-                        className="w-4 h-4 object-contain rounded flex-shrink-0"
+                {/* Brush controls - only show when precise edit mode is active */}
+                {isPreciseEditMode && (
+                  <>
+                    {/* Brush size control */}
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border border-theme-dark ${glass.prompt}`}>
+                      <span className="text-theme-white text-xs font-raleway">Size:</span>
+                      <input
+                        type="range"
+                        min="2"
+                        max="200"
+                        value={brushSize}
+                        onChange={(e) => setBrushSize(Number(e.target.value))}
+                        className="w-16 h-1 bg-theme-white rounded-lg appearance-none cursor-pointer"
+                        style={{
+                          background: `linear-gradient(to right, rgba(184, 192, 192, 1) 0%, rgba(184, 192, 192, 1) ${(brushSize - 2) / 198 * 100}%, rgba(184, 192, 192, 0.3) ${(brushSize - 2) / 198 * 100}%, rgba(184, 192, 192, 0.3) 100%)`,
+                          WebkitAppearance: 'none',
+                          appearance: 'none',
+                          height: '4px',
+                          outline: 'none',
+                          borderRadius: '5px'
+                        }}
+                        title="Adjust brush size"
                       />
-                    );
-                  } else {
-                    const Icon = currentModel.Icon;
-                    return <Icon className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />;
-                  }
-                })()}
-                <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">{getCurrentModel().name}</span>
-              </button>
-              
-              {/* Model Dropdown Portal */}
-              <ModelMenuPortal 
-                anchorRef={modelSelectorRef}
-                open={isModelSelectorOpen}
-                onClose={() => setIsModelSelectorOpen(false)}
-                activeCategory="image"
-              >
-                {AI_MODELS.map((model) => {
-                  const isSelected = selectedModel === model.id;
-                  
-                  return (
+                      <span className="text-theme-white text-xs font-mono font-normal min-w-[2rem] text-center">
+                        {brushSize}px
+                      </span>
+                    </div>
+                  </>
+                )}
+
+                {/* Undo button */}
+                <button
+                  onClick={undoStroke}
+                  disabled={allPaths.length === 0}
+                  className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} text-theme-white border-theme-dark hover:text-theme-text disabled:opacity-50 disabled:cursor-not-allowed`}
+                  title="Undo last stroke"
+                >
+                  <Undo2 className="w-4 h-4" />
+                </button>
+
+                {/* Redo button */}
+                <button
+                  onClick={redoStroke}
+                  disabled={redoStack.length === 0}
+                  className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} text-theme-white border-theme-dark hover:text-theme-text disabled:opacity-50 disabled:cursor-not-allowed`}
+                  title="Redo last stroke"
+                >
+                  <Redo2 className="w-4 h-4" />
+                </button>
+
+                {/* Erase toggle */}
+                <button
+                  onClick={toggleEraseMode}
+                  className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} ${isEraseMode
+                    ? 'text-theme-text border-theme-text bg-theme-text/20'
+                    : 'text-theme-white border-theme-dark hover:text-theme-text'
+                    }`}
+                  title={isEraseMode ? "Switch to draw mode" : "Switch to erase mode"}
+                >
+                  <Eraser className="w-3.5 h-3.5" />
+                </button>
+
+                {/* Reset mask button - only show when precise edit mode is active and mask exists */}
+                {isPreciseEditMode && maskData && (
+                  <button
+                    onClick={clearMask}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text font-raleway text-sm`}
+                    title="Reset mask"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Reset mask
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Generated Image Display */}
+            {currentGeneratedImage && (
+              <div className="w-full max-w-lg mx-auto mt-4">
+                <div className="relative rounded-2xl overflow-hidden bg-theme-black border border-theme-mid">
+                  <img
+                    src={currentGeneratedImage.url}
+                    alt="Generated image"
+                    className="w-full h-64 object-cover"
+                  />
+                  <button
+                    onClick={() => clearCurrentGeneratedImage()}
+                    className="absolute top-2 right-2 bg-theme-black/80 hover:bg-theme-black text-theme-white hover:text-theme-text transition-colors duration-200 rounded-full p-1.5"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                  <div className="px-4 py-3 bg-theme-black/80 text-theme-white text-base text-center">
+                    Generated with {getCurrentModel().name}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Error Display */}
+            {currentError && (
+              <div className="w-full max-w-lg mx-auto mt-4">
+                <div
+                  className="relative rounded-2xl overflow-hidden bg-theme-black border border-red-500/50"
+                  role="status"
+                  aria-live="assertive"
+                  aria-atomic="true"
+                >
+                  <button
+                    onClick={() => clearCurrentError()}
+                    className="absolute top-2 right-2 bg-theme-black/80 hover:bg-theme-black text-theme-white hover:text-theme-text transition-colors duration-200 rounded-full p-1.5"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                  <div className="px-4 py-3 bg-red-500/20 text-red-400 text-sm text-center">
+                    {currentError}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </header>
+
+        {/* Results Grid */}
+        <div className={`${layout.container} pb-32`}>
+          <ResultsGrid activeCategory="image" filterIds={editedImageIds} />
+        </div>
+
+
+
+        {/* Prompt input with + for references and drag & drop (fixed at bottom) - only show when image is uploaded */}
+        {
+          selectedFile && (
+            <div
+              className={`promptbar fixed z-40 rounded-[16px] transition-colors duration-200 ${glass.prompt} ${isDragging ? 'border-brand drag-active' : 'border-n-mid'} px-4 py-3`}
+              style={{
+                bottom: '0.75rem',
+                transform: 'translateX(-50%) translateZ(0)'
+              }}
+              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setIsDragging(false);
+                const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/'));
+                if (files.length) {
+                  const combined = [...referenceFiles, ...files].slice(0, ADDITIONAL_REFERENCE_LIMIT);
+                  setReferenceFiles(combined);
+                  const readers = combined.map(f => URL.createObjectURL(f));
+                  setReferencePreviews(readers);
+                }
+              }}
+            >
+              {/* Textarea - first row */}
+              <div className="mb-1">
+                <textarea
+                  ref={promptTextareaRef}
+                  placeholder="Describe what you want to create..."
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  onKeyDown={onKeyDown}
+                  onPaste={handlePaste}
+                  rows={1}
+                  className={`w-full h-[36px] bg-transparent ${prompt.trim() ? 'text-n-text' : 'text-n-white'} placeholder-n-white border-0 focus:outline-none ring-0 focus:ring-0 focus:text-n-text font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-auto overflow-y-hidden text-left whitespace-nowrap rounded-lg`}
+                />
+              </div>
+
+              {/* Buttons - second row */}
+              <div className="flex items-center justify-between gap-2 px-3">
+                {/* Left icons and controls */}
+                <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
+                  <button
+                    type="button"
+                    onClick={handleRefsClick}
+                    title="Reference Image"
+                    aria-label="Reference Image"
+                    disabled={referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT}
+                    className={`${referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT ? 'bg-n-black/20 text-n-white/40 cursor-not-allowed' : `${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text`} flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
+                  >
+                    <Plus className="w-4 h-4 flex-shrink-0 text-n-text" />
+                    <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Add Reference</span>
+                  </button>
+
+                  {/* Reference images display - right next to Add reference button */}
+                  {referenceDisplayItems.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <div className="hidden lg:block text-sm text-n-text font-raleway">Reference ({referenceDisplayItems.length}/{MAX_REFERENCE_IMAGES}):</div>
+                      <div className="flex items-center gap-1.5">
+                        {referenceDisplayItems.map((item, idx) => (
+                          <div key={item.isPrimary ? 'primary-reference' : `reference-${item.index ?? idx}`} className="relative group">
+                            <img
+                              src={item.url}
+                              alt={item.isPrimary ? 'Primary reference' : `Reference ${idx}`}
+                              className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-lg object-cover border border-n-mid cursor-pointer hover:bg-n-light transition-colors duration-200"
+                              onClick={() => {
+                                setSelectedFullImage(item.url);
+                                setIsFullSizeOpen(true);
+                              }}
+                            />
+                            {item.isPrimary ? (
+                              <>
+                                <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 text-[10px] font-raleway font-medium uppercase tracking-wider text-n-text">Base</span>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteImage();
+                                  }}
+                                  className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-white hover:text-n-text rounded-full p-0.5 transition-all duration-200"
+                                  title="Remove base reference"
+                                >
+                                  <X className="w-2.5 h-2.5" />
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (typeof item.index === 'number') {
+                                    clearReference(item.index);
+                                  }
+                                }}
+                                className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-white hover:text-n-text rounded-full p-0.5 transition-all duration-200"
+                                title="Remove reference"
+                              >
+                                <X className="w-2.5 h-2.5" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    ref={promptsButtonRef}
+                    onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
+                    className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
+                  >
+                    <BookmarkIcon className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
+                  </button>
+                  {/* Model Selector */}
+                  <div className="relative">
                     <button
-                      key={model.name}
-                      onClick={() => {
-                        setSelectedModel(model.id);
-                        setIsModelSelectorOpen(false);
-                      }}
-                      className={`w-full px-2 py-1.5 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${
-                        isSelected 
-                          ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
-                          : "bg-transparent hover:bg-theme-text/20 border-0"
-                      }`}
+                      ref={modelSelectorButtonRef}
+                      onClick={toggleModelSelector}
+                      disabled={isButtonSpinning}
+                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2 parallax-small ${isButtonSpinning ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      onPointerMove={onPointerMove}
+                      onPointerEnter={onPointerEnter}
+                      onPointerLeave={onPointerLeave}
                     >
-                      {hasToolLogo(model.name) ? (
+                      {hasToolLogo(selectedModel) ? (
                         <img
-                          src={getToolLogo(model.name)!}
-                          alt={`${model.name} logo`}
-                          loading="lazy"
-                          decoding="async"
-                          className="w-5 h-5 flex-shrink-0 object-contain rounded"
+                          src={getToolLogo(getCurrentModel().name)!}
+                          alt={getCurrentModel().name}
+                          className="w-4 h-4 object-contain rounded flex-shrink-0"
                         />
                       ) : (
-                        <model.Icon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${
-                          isSelected ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                        }`} />
+                        <Sparkles className="w-4 h-4 flex-shrink-0" />
                       )}
-                      <div className="flex-1 min-w-0">
-                        <div className={`text-sm font-raleway truncate transition-colors duration-100 flex items-center gap-2 ${
-                          isSelected ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                        }`}>
-                          {model.name}
-                          <ToolInfoHover
-                            toolName={model.name}
-                            className="shrink-0"
-                            iconClassName="group-hover:opacity-100"
-                          />
-                        </div>
-                        <div className={`text-xs font-raleway truncate transition-colors duration-100 ${
-                          isSelected ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
-                        }`}>
-                          {model.desc}
-                        </div>
-                      </div>
-                      {isSelected && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>
-                      )}
+                      <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">{getCurrentModel().name}</span>
+                      <ChevronDown className="w-3 h-3 text-n-text/50" />
                     </button>
-                  );
-                })}
-              </ModelMenuPortal>
-            </div>
 
-            {/* Settings button */}
-            <div className="relative settings-dropdown">
-              <button
-                ref={settingsRef}
-                type="button"
-                onClick={toggleSettings}
-                title="Settings"
-                aria-label="Settings"
-                className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200`}
-              >
-                <Settings className="w-4 h-4 text-n-text" />
-              </button>
-            </div>
+                    {isModelSelectorOpen && createPortal(
+                      <div
+                        ref={(node) => {
+                          modelSelectorMenuRef.current = node;
+                          setScrollableRef(node);
+                        }}
+                        style={{
+                          position: "fixed",
+                          top: modelSelectorPos.top,
+                          left: modelSelectorPos.left,
+                          width: modelSelectorPos.width,
+                          zIndex: 9999,
+                          transform: modelSelectorPos.transform,
+                          maxHeight: '384px',
+                          overflowY: 'auto',
+                          overflowX: 'hidden'
+                        }}
+                        className={`${glass.prompt} rounded-lg focus:outline-none shadow-lg max-h-96 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-n-mid/30 scrollbar-track-transparent hover:scrollbar-thumb-n-mid/50 p-2`}
+                        onWheel={handleWheel}
+                        onTouchStart={handleDropdownTouchStart}
+                        onTouchMove={handleDropdownTouchMove}
+                        onTouchEnd={handleDropdownTouchEnd}
+                        onTouchCancel={handleDropdownTouchEnd}
+                      >
+                        {AI_MODELS.filter(m => {
+                          // If mask mode is active, only allow Ideogram
+                          if (isPreciseEditMode) {
+                            return m.id === 'ideogram';
+                          }
+                          // Otherwise allow both Gemini and Ideogram (as per previous logic)
+                          return m.id === 'gemini-3.0-pro-image' || m.id === 'ideogram';
+                        }).map(model => (
+                          <button
+                            key={model.id}
+                            onClick={() => {
+                              setSelectedModel(model.id as EditModelId);
+                              setIsModelSelectorOpen(false);
+                            }}
+                            className={`w-full px-3 py-2 rounded-lg text-left flex items-center gap-3 transition-colors ${selectedModel === model.id
+                              ? 'bg-theme-text/10 text-theme-text'
+                              : 'hover:bg-theme-text/5 text-theme-text'
+                              }`}
+                          >
+                            {hasToolLogo(model.name) ? (
+                              <img
+                                src={getToolLogo(model.name)!}
+                                alt={model.name}
+                                className="w-5 h-5 object-contain rounded flex-shrink-0"
+                              />
+                            ) : (
+                              <model.Icon className="w-5 h-5 flex-shrink-0" />
+                            )}
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-sm font-medium truncate">{model.name}</span>
+                              <span className="text-xs opacity-70 truncate">{model.desc}</span>
+                            </div>
+                            {selectedModel === model.id && (
+                              <div className="ml-auto w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0" />
+                            )}
+                          </button>
+                        ))}
+                      </div>,
+                      document.body
+                    )}
+                  </div>
+                  <PromptsDropdown
+                    isOpen={isPromptsDropdownOpen}
+                    onClose={() => setIsPromptsDropdownOpen(false)}
+                    anchorEl={promptsButtonRef.current}
+                    recentPrompts={history}
+                    savedPrompts={savedPrompts}
+                    onSelectPrompt={(text) => {
+                      setPrompt(text);
+                      promptTextareaRef.current?.focus();
+                    }}
+                    onRemoveSavedPrompt={removePrompt}
+                    onUpdateSavedPrompt={updatePrompt}
+                    onAddSavedPrompt={savePrompt}
+                    onSaveRecentPrompt={savePromptToLibrary}
+                  />
 
-            {aspectRatioConfig && (
-              <div className="relative">
-                <button
-                  ref={aspectRatioButtonRef}
-                  type="button"
-                  onClick={() => setIsAspectRatioMenuOpen(prev => !prev)}
-                  className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
-                  aria-label="Aspect ratio"
-                  title="Aspect ratio"
-                >
-                  <Scan className="w-4 h-4 flex-shrink-0" />
-                  <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">{aspectRatioConfig.selectedValue}</span>
-                </button>
-                <AspectRatioDropdown
-                  anchorRef={aspectRatioButtonRef}
-                  open={isAspectRatioMenuOpen}
-                  onClose={() => setIsAspectRatioMenuOpen(false)}
-                  options={aspectRatioConfig.options}
-                  selectedValue={aspectRatioConfig.selectedValue}
-                  onSelect={aspectRatioConfig.onSelect}
-                />
-              </div>
-            )}
-          </div>
-            
-            {/* Generate button on right */}
-            <Tooltip text={!prompt.trim() ? "Enter your prompt to generate" : (user?.credits ?? 0) <= 0 ? "You have 0 credits. Buy more credits to generate" : ""}>
-              <button
-                onClick={handleGenerateImage}
-                disabled={!prompt.trim() || (user?.credits ?? 0) <= 0}
-                className={`btn btn-white font-raleway text-base font-medium gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60 items-center`}
-                aria-label={`${isButtonSpinning ? "Generating..." : "Generate"} (uses 1 credit)`}
-              >
-                <span className="text-sm sm:text-base font-raleway font-medium">
-                  {isButtonSpinning ? "Generating..." : "Generate"}
-                </span>
-                <div className="flex items-center gap-1">
-                  {isButtonSpinning ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="w-4 h-4" />
+
+
+                  {/* Settings button */}
+                  <div className="relative settings-dropdown">
+                    <button
+                      ref={settingsRef}
+                      type="button"
+                      onClick={toggleSettings}
+                      title="Settings"
+                      aria-label="Settings"
+                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200`}
+                    >
+                      <Settings className="w-4 h-4 text-n-text" />
+                    </button>
+                  </div>
+
+                  {aspectRatioConfig && (
+                    <div className="relative">
+                      <button
+                        ref={aspectRatioButtonRef}
+                        type="button"
+                        onClick={() => setIsAspectRatioMenuOpen(prev => !prev)}
+                        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
+                        aria-label="Aspect ratio"
+                        title="Aspect ratio"
+                      >
+                        <Scan className="w-4 h-4 flex-shrink-0" />
+                        <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">{aspectRatioConfig.selectedValue}</span>
+                      </button>
+                      <AspectRatioDropdown
+                        anchorRef={aspectRatioButtonRef}
+                        open={isAspectRatioMenuOpen}
+                        onClose={() => setIsAspectRatioMenuOpen(false)}
+                        options={aspectRatioConfig.options}
+                        selectedValue={aspectRatioConfig.selectedValue}
+                        onSelect={aspectRatioConfig.onSelect}
+                      />
+                    </div>
                   )}
-                  <span className="text-sm font-raleway font-medium text-n-black">1</span>
                 </div>
-              </button>
-            </Tooltip>
-            {(user?.credits ?? 0) === 0 && !dismissedZeroCredits && (
-              <InsufficientCreditsModal
-                isOpen={true}
-                onClose={() => setDismissedZeroCredits(true)}
-                onBuyCredits={() => window.location.assign('/upgrade')}
-                currentCredits={user?.credits ?? 0}
-                requiredCredits={1}
-              />
-            )}
-          </div>
-          
-          {/* Settings Dropdown */}
-          {isSettingsOpen && (
-            <div className="absolute right-4 top-full mt-2 w-80 rounded-lg border border-theme-mid bg-theme-dark shadow-lg z-50 p-4">
-              <div className="space-y-4">
-                <div className="text-base font-raleway text-theme-text mb-3">Settings</div>
-                
-                {/* Temperature */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm text-theme-white font-raleway">Temperature</label>
-                    <span className="text-xs text-theme-text font-mono">{temperature}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0.1}
-                    max={1.0}
-                    step={0.1}
-                    value={temperature}
-                    onChange={(e) => setTemperature(Number(e.target.value))}
-                    className="w-full h-2 bg-theme-black rounded-lg appearance-none cursor-pointer"
+
+                {/* Generate button on right */}
+                <Tooltip text={!prompt.trim() ? "Enter your prompt to generate" : (user?.credits ?? 0) <= 0 ? "You have 0 credits. Buy more credits to generate" : ""}>
+                  <button
+                    onClick={handleGenerateImage}
+                    disabled={!prompt.trim() || (user?.credits ?? 0) <= 0}
+                    className={`btn btn-white font-raleway text-base font-medium gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60 items-center`}
+                    aria-label={`${isButtonSpinning ? "Generating..." : "Generate"} (uses 1 credit)`}
+                  >
+                    <span className="text-sm sm:text-base font-raleway font-medium">
+                      {isButtonSpinning ? "Generating..." : "Generate"}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      {isButtonSpinning ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-4 h-4" />
+                      )}
+                      <span className="text-sm font-raleway font-medium text-n-black">1</span>
+                    </div>
+                  </button>
+                </Tooltip>
+                {(user?.credits ?? 0) === 0 && !dismissedZeroCredits && (
+                  <InsufficientCreditsModal
+                    isOpen={true}
+                    onClose={() => setDismissedZeroCredits(true)}
+                    onBuyCredits={() => window.location.assign('/upgrade')}
+                    currentCredits={user?.credits ?? 0}
+                    requiredCredits={1}
                   />
-                </div>
-                
-                {/* Top P */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                      <label className="text-sm text-theme-white font-raleway">Top P</label>
-                    <span className="text-xs text-theme-text font-mono">{topP}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0.1}
-                    max={1.0}
-                    step={0.05}
-                    value={topP}
-                    onChange={(e) => setTopP(Number(e.target.value))}
-                    className="w-full h-2 bg-theme-black rounded-lg appearance-none cursor-pointer"
-                  />
-                </div>
-                
-                {/* Top K */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm text-theme-white font-raleway">Top K</label>
-                    <span className="text-xs text-theme-text font-mono">{topK}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={1}
-                    max={100}
-                    step={1}
-                    value={topK}
-                    onChange={(e) => setTopK(Number(e.target.value))}
-                    className="w-full h-2 bg-theme-black rounded-lg appearance-none cursor-pointer"
-                  />
-                </div>
+                )}
               </div>
+
+              {/* Settings Dropdown */}
+              {isSettingsOpen && (
+                <div className="absolute right-4 top-full mt-2 w-80 rounded-lg border border-theme-mid bg-theme-dark shadow-lg z-50 p-4">
+                  <div className="space-y-4">
+                    <div className="text-base font-raleway text-theme-text mb-3">Settings</div>
+
+                    {/* Temperature */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm text-theme-white font-raleway">Temperature</label>
+                        <span className="text-xs text-theme-text font-mono">{temperature}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0.1}
+                        max={1.0}
+                        step={0.1}
+                        value={temperature}
+                        onChange={(e) => setTemperature(Number(e.target.value))}
+                        className="w-full h-2 bg-theme-black rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+
+                    {/* Top P */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm text-theme-white font-raleway">Top P</label>
+                        <span className="text-xs text-theme-text font-mono">{topP}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0.1}
+                        max={1.0}
+                        step={0.05}
+                        value={topP}
+                        onChange={(e) => setTopP(Number(e.target.value))}
+                        className="w-full h-2 bg-theme-black rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+
+                    {/* Top K */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm text-theme-white font-raleway">Top K</label>
+                        <span className="text-xs text-theme-text font-mono">{topK}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={1}
+                        max={100}
+                        step={1}
+                        value={topK}
+                        onChange={(e) => setTopK(Number(e.target.value))}
+                        className="w-full h-2 bg-theme-black rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      )}
+          )
+        }
 
-      {/* Hidden file input for reference images */}
-      <input
-        ref={refFileInputRef}
-        type="file"
-        accept="image/*"
-        multiple
-        onChange={handleRefsSelected}
-        className="hidden"
-      />
+        {/* Hidden file input for reference images */}
+        <input
+          ref={refFileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleRefsSelected}
+          className="hidden"
+        />
 
 
-      {/* Full-size image modal */}
-      {isFullSizeOpen && selectedFullImage && (
-        <div
-          className="fixed inset-0 z-[60] bg-theme-black/80 flex items-start justify-center p-4"
-          onClick={() => { setIsFullSizeOpen(false); setSelectedFullImage(null); }}
-        >
-          <div className="relative max-w-[95vw] max-h-[90vh] group flex items-start justify-center mt-14" onClick={(e) => e.stopPropagation()}>
-            <img 
-              src={selectedFullImage} 
-              alt="Full size" 
-              className="max-w-full max-h-[90vh] object-contain" 
-              style={{ objectPosition: 'top' }}
-            />
-            
-            <button
+        {/* Full-size image modal */}
+        {
+          isFullSizeOpen && selectedFullImage && (
+            <div
+              className="fixed inset-0 z-[60] bg-theme-black/80 flex items-start justify-center p-4"
               onClick={() => { setIsFullSizeOpen(false); setSelectedFullImage(null); }}
-              className="absolute -top-3 -right-3 bg-[color:var(--glass-dark-bg)] text-theme-white hover:text-theme-text rounded-full p-1.5 backdrop-strong transition-colors duration-200"
-              aria-label="Close full size view"
             >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
+              <div className="relative max-w-[95vw] max-h-[90vh] group flex items-start justify-center mt-14" onClick={(e) => e.stopPropagation()}>
+                <img
+                  src={selectedFullImage}
+                  alt="Full size"
+                  className="max-w-full max-h-[90vh] object-contain"
+                  style={{ objectPosition: 'top' }}
+                />
 
-      {/* Unsave Prompt Confirmation Modal */}
-      {unsavePromptText && createPortal(
-        <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-theme-black/80 py-12">
-          <div ref={unsaveModalRef} className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
-            <div className="text-center space-y-4">
-              <div className="space-y-3">
-                <Bookmark className="w-10 h-10 mx-auto text-theme-text" />
-                <h3 className="text-xl font-raleway font-normal text-theme-text">
-                  Remove from Saved Prompts
-                </h3>
-                <p className="text-base font-raleway font-normal text-theme-white">
-                  Are you sure you want to remove this prompt from your saved prompts?
-                </p>
-              </div>
-              <div className="flex justify-center gap-3">
                 <button
-                  onClick={() => setUnsavePromptText(null)}
-                  className={`${buttons.ghost}`}
+                  onClick={() => { setIsFullSizeOpen(false); setSelectedFullImage(null); }}
+                  className="absolute -top-3 -right-3 bg-[color:var(--glass-dark-bg)] text-theme-white hover:text-theme-text rounded-full p-1.5 backdrop-strong transition-colors duration-200"
+                  aria-label="Close full size view"
                 >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    const promptToRemove = savedPrompts.find(p => p.text === unsavePromptText);
-                    if (promptToRemove) {
-                      removePrompt(promptToRemove.id);
-                    }
-                    setUnsavePromptText(null);
-                  }}
-                  className={buttons.primary}
-                >
-                  Remove
+                  <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
-          </div>
-        </div>,
-        document.body
-      )}
-    </div>
+          )
+        }
+
+        {/* Unsave Prompt Confirmation Modal */}
+        {
+          unsavePromptText && createPortal(
+            <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-theme-black/80 py-12">
+              <div ref={unsaveModalRef} className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+                <div className="text-center space-y-4">
+                  <div className="space-y-3">
+                    <Bookmark className="w-10 h-10 mx-auto text-theme-text" />
+                    <h3 className="text-xl font-raleway font-normal text-theme-text">
+                      Remove from Saved Prompts
+                    </h3>
+                    <p className="text-base font-raleway font-normal text-theme-white">
+                      Are you sure you want to remove this prompt from your saved prompts?
+                    </p>
+                  </div>
+                  <div className="flex justify-center gap-3">
+                    <button
+                      onClick={() => setUnsavePromptText(null)}
+                      className={`${buttons.ghost}`}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => {
+                        const promptToRemove = savedPrompts.find(p => p.text === unsavePromptText);
+                        if (promptToRemove) {
+                          removePrompt(promptToRemove.id);
+                        }
+                        setUnsavePromptText(null);
+                      }}
+                      className={buttons.primary}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )
+        }
+      </div>
+    </CreateBridgeProvider>
   );
 }
