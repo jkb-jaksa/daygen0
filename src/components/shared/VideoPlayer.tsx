@@ -66,15 +66,37 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         }
     }, [isFullscreen]);
 
+    const animationFrameRef = useRef<number | null>(null);
+
+    const updateProgress = useCallback(() => {
+        if (videoRef.current) {
+            const current = videoRef.current.currentTime;
+            const duration = videoRef.current.duration;
+            if (duration) {
+                setProgress((current / duration) * 100);
+            }
+        }
+        animationFrameRef.current = requestAnimationFrame(updateProgress);
+    }, []);
+
+    useEffect(() => {
+        if (isPlaying) {
+            updateProgress();
+        } else {
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
+            }
+        }
+        return () => {
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
+            }
+        };
+    }, [isPlaying, updateProgress]);
+
     useEffect(() => {
         const video = videoRef.current;
         if (!video) return;
-
-        const updateProgress = () => {
-            if (video.duration) {
-                setProgress((video.currentTime / video.duration) * 100);
-            }
-        };
 
         const handleLoadedMetadata = () => {
             setDuration(video.duration);
@@ -90,12 +112,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             }
         };
 
-        video.addEventListener('timeupdate', updateProgress);
         video.addEventListener('loadedmetadata', handleLoadedMetadata);
         video.addEventListener('ended', handleEnded);
 
         return () => {
-            video.removeEventListener('timeupdate', updateProgress);
             video.removeEventListener('loadedmetadata', handleLoadedMetadata);
             video.removeEventListener('ended', handleEnded);
         };
@@ -403,12 +423,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                             />
                         )}
                         <div
-                            className="absolute top-0 left-0 h-full bg-white rounded-full transition-all duration-75 ease-linear"
+                            className="absolute top-0 left-0 h-full bg-white rounded-full"
                             style={{ width: `${progress}%` }}
                         />
                         <div
-                            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 bg-white rounded-full shadow-sm ring-1 ring-black/10 z-10 transition-transform duration-200 group-hover/progress-wrapper:scale-125"
-                            style={{ left: `${progress}%` }}
+                            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 bg-white rounded-full shadow-sm ring-1 ring-black/10 z-10 group-hover/progress-wrapper:scale-125"
+                            style={{
+                                left: `${progress}%`
+                            }}
                         />
                     </div>
                 </div>
