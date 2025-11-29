@@ -227,6 +227,7 @@ const PromptForm = memo<PromptFormProps>(
     const [modeSwitcherWidth, setModeSwitcherWidth] = useState<number | null>(null);
 
     const promptBarRef = useRef<HTMLDivElement | null>(null);
+    const dragDepthRef = useRef(0); // Keeps drag hover state stable across nested controls
     const textareaRef = useRef<HTMLTextAreaElement | null>(null);
     const promptsButtonRef = useRef<HTMLButtonElement | null>(null);
     const focusPromptInput = useCallback(() => {
@@ -236,7 +237,9 @@ const PromptForm = memo<PromptFormProps>(
     const [isDragActive, setIsDragActive] = useState(false);
     const [isAvatarButtonHovered, setIsAvatarButtonHovered] = useState(false);
     const [isProductButtonHovered, setIsProductButtonHovered] = useState(false);
+    const [isImageHovered, setIsImageHovered] = useState(false);
     const [isVoiceButtonHovered, setIsVoiceButtonHovered] = useState(false);
+    const [isPromptFocused, setIsPromptFocused] = useState(false);
     const [isStyleButtonHovered, setIsStyleButtonHovered] = useState(false);
     const [isDraggingOverAvatarButton, setIsDraggingOverAvatarButton] = useState(false);
     const [isDraggingOverProductButton, setIsDraggingOverProductButton] = useState(false);
@@ -772,49 +775,156 @@ const PromptForm = memo<PromptFormProps>(
     }, []);
 
     const isGeminiModel = selectedModel === 'gemini-3.0-pro-image';
+    const promptBarBorderClass = useMemo(() => {
+      if (isDragActive) {
+        return 'border-brand drag-active';
+      }
+      if (isPromptFocused) {
+        return 'border-n-white';
+      }
+      if (isImageHovered || (selectedAvatar && isAvatarButtonHovered) || (selectedProduct && isProductButtonHovered)) {
+        return 'border-n-white';
+      }
+      return 'border-n-mid has-[img:hover]:border-n-white';
+    }, [
+      isDragActive,
+      isPromptFocused,
+      isImageHovered,
+      isAvatarButtonHovered,
+      isProductButtonHovered,
+      selectedAvatar,
+      selectedProduct,
+    ]);
+
+    const isFileDragEvent = useCallback((event: React.DragEvent) => {
+      const { dataTransfer } = event;
+      if (!dataTransfer) return false;
+      const types = Array.from(dataTransfer.types || []);
+      if (types.includes('Files')) return true;
+
+      if (types.includes('text/uri-list')) {
+        const uri = dataTransfer.getData('text/uri-list')?.toLowerCase();
+        if (uri && (uri.startsWith('data:image') || /\.(png|jpe?g|gif|webp|avif|bmp|svg)(\?.*)?$/.test(uri))) {
+          return true;
+        }
+      }
+
+      if (types.includes('text/html')) {
+        const html = dataTransfer.getData('text/html');
+        if (html && html.includes('<img')) {
+          return true;
+        }
+      }
+
+      const items = dataTransfer.items ? Array.from(dataTransfer.items) : [];
+      return items.some(item => item.kind === 'file' || item.type.startsWith('image/'));
+    }, []);
 
     const handleDragAreaEnter = useCallback(
       (event: React.DragEvent<HTMLDivElement>) => {
-        if (!isGeminiModel) {
+        if (!isFileDragEvent(event)) {
           return;
         }
         handleDragEnter(event);
+        dragDepthRef.current += 1;
         setIsDragActive(true);
       },
-      [handleDragEnter, isGeminiModel],
+      [handleDragEnter, isFileDragEvent],
     );
 
     const handleDragAreaLeave = useCallback(
       (event: React.DragEvent<HTMLDivElement>) => {
-        if (!isGeminiModel) {
+        if (!isFileDragEvent(event)) {
           return;
         }
         handleDragLeave(event);
-        setIsDragActive(false);
+        dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+        if (dragDepthRef.current === 0) {
+          setIsDragActive(false);
+        }
       },
-      [handleDragLeave, isGeminiModel],
+      [handleDragLeave, isFileDragEvent],
     );
 
     const handleDragAreaOver = useCallback(
       (event: React.DragEvent<HTMLDivElement>) => {
-        if (!isGeminiModel) {
+        if (!isFileDragEvent(event)) {
           return;
         }
         handleDragOver(event);
+        if (!isDragActive) {
+          setIsDragActive(true);
+        }
+        if (dragDepthRef.current === 0) {
+          dragDepthRef.current = 1;
+        }
       },
-      [handleDragOver, isGeminiModel],
+      [handleDragOver, isDragActive, isFileDragEvent],
     );
 
     const handleDragAreaDrop = useCallback(
       (event: React.DragEvent<HTMLDivElement>) => {
-        if (!isGeminiModel) {
+        if (!isFileDragEvent(event)) {
           return;
         }
-        handleDrop(event);
+        event.preventDefault();
+        if (isGeminiModel) {
+          handleDrop(event);
+        }
+        dragDepthRef.current = 0;
         setIsDragActive(false);
       },
-      [handleDrop, isGeminiModel],
+      [handleDrop, isFileDragEvent, isGeminiModel],
     );
+
+    useEffect(() => {
+      const handleWindowDragEnd = () => {
+        dragDepthRef.current = 0;
+        setIsDragActive(false);
+      };
+
+      window.addEventListener('dragend', handleWindowDragEnd);
+      window.addEventListener('drop', handleWindowDragEnd);
+
+      return () => {
+        window.removeEventListener('dragend', handleWindowDragEnd);
+        window.removeEventListener('drop', handleWindowDragEnd);
+      };
+    }, []);
+
+    useEffect(() => {
+      const handlePointerDown = (event: PointerEvent) => {
+        const target = event.target as Node | null;
+        const promptNode = promptBarRef.current;
+        if (!promptNode) return;
+        if (!promptNode.contains(target)) {
+          if (promptNode.contains(document.activeElement)) {
+            (document.activeElement as HTMLElement | null)?.blur?.();
+          }
+          setIsPromptFocused(false);
+        }
+      };
+
+      window.addEventListener('pointerdown', handlePointerDown, true);
+      return () => window.removeEventListener('pointerdown', handlePointerDown, true);
+    }, []);
+
+    useEffect(() => {
+      if (referencePreviews.length === 0) {
+        setIsImageHovered(false);
+      }
+    }, [referencePreviews.length]);
+
+    const handlePromptFocus = useCallback(() => {
+      setIsPromptFocused(true);
+    }, []);
+
+    const handlePromptBlur = useCallback((event: React.FocusEvent<HTMLDivElement>) => {
+      const nextTarget = event.relatedTarget as Node | null;
+      if (promptBarRef.current && !promptBarRef.current.contains(nextTarget)) {
+        setIsPromptFocused(false);
+      }
+    }, []);
 
     const applyPromptFromGallery = useCallback(
       (nextPrompt: string, options?: { focus?: boolean }) => {
@@ -1029,7 +1139,9 @@ const PromptForm = memo<PromptFormProps>(
       <>
       <div
         ref={promptBarRef}
-        className={`promptbar fixed z-40 rounded-[16px] transition-colors duration-200 ${glass.prompt} ${isGeminiModel && isDragActive ? 'border-brand drag-active' : 'border-n-mid'} px-4 py-2`}
+        className={`promptbar fixed z-40 rounded-[16px] transition-colors duration-200 ${glass.prompt} ${promptBarBorderClass} px-4 py-2`}
+        onFocusCapture={handlePromptFocus}
+        onBlurCapture={handlePromptBlur}
         style={{
           bottom: '0.75rem',
           transform: 'translateX(-50%) translateZ(0)',
@@ -1150,7 +1262,12 @@ const PromptForm = memo<PromptFormProps>(
                     </div>
                     <div className="flex items-center gap-1.5">
                       {referencePreviews.map((preview, index) => (
-                        <div key={`${preview}-${index}`} className="relative group">
+                        <div 
+                          key={`${preview}-${index}`} 
+                          className="relative group prompt-bar-image-container"
+                          onMouseEnter={() => setIsImageHovered(true)}
+                          onMouseLeave={() => setIsImageHovered(false)}
+                        >
                           <img
                             src={preview}
                             alt={`Reference ${index + 1}`}
@@ -1162,6 +1279,7 @@ const PromptForm = memo<PromptFormProps>(
                             type="button"
                             onClick={event => {
                               event.stopPropagation();
+                              setIsImageHovered(false);
                               clearReference(index);
                             }}
                             className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-text hover:text-n-text rounded-full p-0.5 transition-all duration-200"

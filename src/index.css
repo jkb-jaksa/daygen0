@@ -935,6 +935,19 @@ html[data-theme="day"] .prompt-surface {
   --glass-prompt-border: rgb(var(--n-dark-rgb) / 0.5);
 }
 
+/* Solid scrim on top of the blurred prompt bar so hover overlays behind it don't show through */
+.promptbar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(120deg,
+      rgb(var(--n-black-rgb) / 0.25),
+      rgb(var(--n-black-rgb) / 0.18));
+  pointer-events: none;
+  z-index: 0;
+}
+
 /* Solid orange primary button */
 .btn-orange {
   background:
@@ -1530,6 +1543,8 @@ html[data-theme="day"] .card-media-frame::before {
 
 /* Prompt bar hover/interaction styles */
 .promptbar {
+  border-width: 1px;
+  border-style: solid;
   transition: border-color 0.2s ease;
 }
 
