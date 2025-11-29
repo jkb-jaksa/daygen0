@@ -453,8 +453,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                     </div>
                 </div>
 
-                <div className={`flex items-center justify-between ${layout === 'intrinsic' ? 'gap-4' : 'gap-2'}`}>
-                    <div className={`flex items-center ${layout === 'intrinsic' ? 'gap-4' : 'gap-2'}`}>
+                <div className="flex items-center justify-between gap-0.5">
+                    <div className="flex items-center gap-0.5">
                         <button
                             onClick={togglePlay}
                             className="image-action-btn image-action-btn--fullsize parallax-large outline-none shrink-0"
@@ -510,7 +510,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                         </span>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-0.5">
                         {showInfoButton && onInfoClick && !isFullscreen && (
                             <button
                                 onClick={(e) => {
