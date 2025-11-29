@@ -39,9 +39,8 @@ function createToolResource(name: string, description: string): ToolResource {
 
 const IMAGE_TOOLS: readonly ToolResource[] = [
   createToolResource("Gemini 3 Pro", "Best for image editing and manipulation"),
-  createToolResource("FLUX Pro 1.1", "High-quality text-to-image generation"),
-  createToolResource("FLUX Pro 1.1 Ultra", "Ultra-high quality 4MP+ generation"),
-  createToolResource("FLUX Kontext Pro/Max", "Advanced image editing with text prompts"),
+  createToolResource("FLUX.2 Pro", "Fast FLUX.2 generation and editing"),
+  createToolResource("FLUX.2 Flex", "Highest-fidelity FLUX.2 with adjustable controls"),
   createToolResource("ChatGPT", "Popular image generation model"),
   createToolResource("Ideogram 3.0", "Advanced image generation, editing, and enhancement"),
   createToolResource("Qwen", "Alibaba Cloud's text-to-image and image editing model"),

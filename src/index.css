@@ -330,7 +330,7 @@ html[data-theme="day"] .animate-gradient-colors {
   --theme-orange-2-rgb: var(--n-orange-2-rgb);
 
   /* Glass surface tokens */
-  --glass-border: var(--theme-dark);
+  --glass-border: rgb(var(--theme-dark-rgb) / 0.5);
   --glass-base-bg: rgb(var(--n-light-rgb) / 0.5);
   --glass-surface-bg: rgb(var(--n-black-rgb) / 0.15);
   --glass-tight-bg: var(--glass-base-bg);
@@ -338,7 +338,7 @@ html[data-theme="day"] .animate-gradient-colors {
   --glass-prompt-bg: rgb(var(--n-mid-rgb) / 0.80);
   --glass-prompt-text: var(--n-text);
   --glass-prompt-text-rgb: var(--n-text-rgb);
-  --glass-prompt-border: var(--n-dark);
+  --glass-prompt-border: rgb(var(--n-dark-rgb) / 0.5);
 
   /* Back-compat mapping (can be removed once classes switched) */
   --color-text: var(--theme-text);
@@ -373,7 +373,7 @@ html[data-theme="day"] {
   --theme-orange-2: var(--d-orange-2);
   --theme-orange-2-rgb: var(--d-orange-2-rgb);
 
-  --glass-border: color-mix(in srgb, var(--theme-dark) 70%, var(--theme-mid) 30%);
+  --glass-border: rgb(var(--theme-dark-rgb) / 0.5);
   --glass-base-bg: rgb(var(--d-dark-rgb) / 0.5);
   --glass-surface-bg: rgb(var(--d-black-rgb) / 0.70);
   --glass-tight-bg: var(--glass-base-bg);
@@ -381,7 +381,7 @@ html[data-theme="day"] {
   --glass-prompt-bg: rgb(var(--n-mid-rgb) / 0.80);
   --glass-prompt-text: var(--n-text);
   --glass-prompt-text-rgb: var(--n-text-rgb);
-  --glass-prompt-border: var(--n-dark);
+  --glass-prompt-border: rgb(var(--n-dark-rgb) / 0.5);
 }
 
 body {
@@ -831,7 +831,7 @@ html[data-theme="day"] .footer-gradient-bg {
 
 .prompt-surface {
   color: var(--glass-prompt-text);
-  --glass-border: var(--theme-dark);
+  --glass-border: rgb(var(--theme-dark-rgb) / 0.5);
   --glass-base-bg: rgb(var(--theme-light-rgb) / 0.15);
   --glass-surface-bg: rgb(var(--theme-black-rgb) / 0.15);
   --glass-tight-bg: var(--glass-base-bg);
@@ -839,7 +839,7 @@ html[data-theme="day"] .footer-gradient-bg {
   --glass-prompt-bg: rgb(var(--theme-mid-rgb) / 0.80);
   --glass-prompt-text: var(--theme-text);
   --glass-prompt-text-rgb: var(--theme-text-rgb);
-  --glass-prompt-border: var(--theme-dark);
+  --glass-prompt-border: rgb(var(--theme-dark-rgb) / 0.5);
 }
 
 html[data-theme="day"] .prompt-surface {
@@ -860,7 +860,7 @@ html[data-theme="day"] .prompt-surface {
   --theme-orange-1-rgb: var(--n-orange-1-rgb);
   --theme-orange-2: var(--n-orange-2);
   --theme-orange-2-rgb: var(--n-orange-2-rgb);
-  --glass-border: var(--n-dark);
+  --glass-border: rgb(var(--n-dark-rgb) / 0.5);
   --glass-base-bg: rgb(var(--n-light-rgb) / 0.15);
   --glass-surface-bg: rgb(var(--n-black-rgb) / 0.15);
   --glass-tight-bg: var(--glass-base-bg);
@@ -868,7 +868,7 @@ html[data-theme="day"] .prompt-surface {
   --glass-prompt-bg: rgb(var(--n-mid-rgb) / 0.80);
   --glass-prompt-text: var(--n-text);
   --glass-prompt-text-rgb: var(--n-text-rgb);
-  --glass-prompt-border: var(--n-dark);
+  --glass-prompt-border: rgb(var(--n-dark-rgb) / 0.5);
 }
 
 .promptbar {
@@ -888,7 +888,7 @@ html[data-theme="day"] .prompt-surface {
   --theme-orange-1-rgb: var(--n-orange-1-rgb);
   --theme-orange-2: var(--n-orange-2);
   --theme-orange-2-rgb: var(--n-orange-2-rgb);
-  --glass-border: var(--n-dark);
+  --glass-border: rgb(var(--n-dark-rgb) / 0.5);
   --glass-base-bg: rgb(var(--n-light-rgb) / 0.15);
   --glass-surface-bg: rgb(var(--n-black-rgb) / 0.15);
   --glass-tight-bg: var(--glass-base-bg);
@@ -896,7 +896,7 @@ html[data-theme="day"] .prompt-surface {
   --glass-prompt-bg: rgb(var(--n-mid-rgb) / 0.80);
   --glass-prompt-text: var(--n-text);
   --glass-prompt-text-rgb: var(--n-text-rgb);
-  --glass-prompt-border: var(--n-dark);
+  --glass-prompt-border: rgb(var(--n-dark-rgb) / 0.5);
 }
 
 /* Solid orange primary button */
@@ -1555,6 +1555,7 @@ html[data-theme="day"] .card-media-frame::before {
   height: 0.875rem;
   width: 0.875rem;
 }
+
 .image-action-btn:hover {
   border-color: var(--theme-mid);
   color: var(--theme-text);
@@ -1638,11 +1639,11 @@ html[data-theme="day"] .card-media-frame::before {
 
 /* Day mode specific border colors for image gallery action buttons and dropdowns */
 html[data-theme="day"] .image-gallery-actions .image-action-btn {
-  border-color: var(--theme-mid);
+  border-color: rgb(var(--theme-dark-rgb) / 0.5);
 }
 
 html[data-theme="day"] .image-gallery-actions .nav-arrow-btn {
-  border-color: var(--theme-mid);
+  border-color: rgb(var(--theme-dark-rgb) / 0.5);
 }
 
 html[data-theme="day"] .image-gallery-actions-menu {

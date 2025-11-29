@@ -100,6 +100,7 @@ function CreateRefactoredView() {
     setImageActionMenu,
     setBulkActionsMenu,
     addImage,
+    addVideo,
     setNewFolderDialog,
     setAddToFolderDialog,
     setFolderThumbnailDialog,
@@ -144,7 +145,7 @@ function CreateRefactoredView() {
       {
         url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1024',
         prompt: 'A stunning mountain landscape at sunset with dramatic clouds',
-        model: 'flux-pro-1.1',
+        model: 'flux-2-pro',
         jobId: `dummy-${Date.now()}`,
         r2FileId: `r2-dummy-${Date.now()}`,
         isLiked: false,
@@ -176,6 +177,24 @@ function CreateRefactoredView() {
     await addImage(randomImage);
   }, [addImage]);
 
+  const addDummyVideo = useCallback(() => {
+    const timestamp = Date.now();
+    const dummyVideo: GalleryVideoLike = {
+      url: `/dev/mock-video.mp4?t=${timestamp}`,
+      prompt: 'Dev mock video placeholder',
+      model: selectedModel && isVideoModelId(selectedModel) ? selectedModel : DEFAULT_VIDEO_MODEL_ID,
+      timestamp: new Date().toISOString(),
+      jobId: `dummy-video-${timestamp}`,
+      r2FileId: `r2-dummy-video-${timestamp}`,
+      type: 'video',
+      isLiked: false,
+      isPublic: false,
+      aspectRatio: '16:9',
+    };
+
+    addVideo(dummyVideo);
+  }, [addVideo, selectedModel]);
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const addDummyImageWithAvatar = useCallback(async () => {
     // Create or reuse test avatar
@@ -206,7 +225,7 @@ function CreateRefactoredView() {
     const dummyImageWithAvatar = {
       url: `https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1024&t=${Date.now()}`,
       prompt: 'Test image with avatar badge - Mountain landscape',
-      model: 'flux-pro-1.1',
+      model: 'flux-2-pro',
       jobId: `dummy-avatar-${Date.now()}`,
       r2FileId: `r2-avatar-${Date.now()}`,
       avatarId: 'test-avatar-badge',
@@ -332,7 +351,7 @@ function CreateRefactoredView() {
     const dummyImageWithStyle = {
       url: `https://images.unsplash.com/photo-1517816743773-6e0fd518b4a6?w=1024&t=${Date.now()}`,
       prompt: 'Test image with style badge - City skyline at dusk',
-      model: 'flux-pro-1.1',
+      model: 'flux-2-pro',
       jobId: `dummy-style-${Date.now()}`,
       r2FileId: `r2-style-${Date.now()}`,
       styleId: 'female-lifestyle-black-suit-studio',
@@ -398,7 +417,7 @@ function CreateRefactoredView() {
     const dummyImageWithAll = {
       url: `https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1024&t=${Date.now()}`,
       prompt: 'Test image with all badges - Beach cliffs at golden hour',
-      model: 'flux-pro-1.1',
+      model: 'flux-2-pro',
       jobId: `dummy-all-${Date.now()}`,
       r2FileId: `r2-all-${Date.now()}`,
       avatarId: 'test-avatar-badge',
@@ -1015,6 +1034,14 @@ function CreateRefactoredView() {
                       >
                         🧩 Test All Badges
                       </button>
+                      {activeCategory === 'video' && (
+                        <button
+                          onClick={addDummyVideo}
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                        >
+                          🎬 Add Test Video (Dev Only)
+                        </button>
+                      )}
                     </div>
                   )}
                   <ResultsGrid
@@ -1065,6 +1092,14 @@ function CreateRefactoredView() {
                       >
                         🧩 Test All Badges
                       </button>
+                      {activeCategory === 'video' && (
+                        <button
+                          onClick={addDummyVideo}
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                        >
+                          🎬 Add Test Video (Dev Only)
+                        </button>
+                      )}
                     </div>
                   )}
                   <Suspense fallback={null}>
@@ -1152,6 +1187,14 @@ function CreateRefactoredView() {
                             >
                               🧩 Test All Badges
                             </button>
+                            {activeCategory === 'video' && (
+                              <button
+                                onClick={addDummyVideo}
+                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-raleway transition-colors duration-200"
+                              >
+                                🎬 Add Test Video (Dev Only)
+                              </button>
+                            )}
                           </div>
                         )}
                         <ResultsGrid activeCategory={activeCategory as 'inspirations'} />

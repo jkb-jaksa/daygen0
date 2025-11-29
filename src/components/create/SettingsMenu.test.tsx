@@ -41,7 +41,7 @@ function createBaseProps(anchor: HTMLElement): SettingsMenuProps {
     },
     flux: {
       enabled: false,
-      model: 'flux-pro-1.1',
+      model: 'flux-2-pro',
       onModelChange: vi.fn(),
     },
     veo: {
@@ -183,12 +183,12 @@ describe('SettingsMenu', () => {
 
     render(<SettingsMenu {...props} />);
 
-    expect(screen.getByText('Flux 1.1 Settings')).toBeInTheDocument();
+    expect(screen.getByText('FLUX.2 Settings')).toBeInTheDocument();
 
     const select = screen.getByRole('combobox');
-    await user.selectOptions(select, 'Flux Kontext Max (Highest Quality)');
+    await user.selectOptions(select, 'FLUX.2 Flex (highest quality)');
 
-    expect(onModelChange).toHaveBeenCalledWith('flux-kontext-max');
+    expect(onModelChange).toHaveBeenCalledWith('flux-2-flex');
 
     fireEvent.mouseDown(document.body);
     expect(props.onClose).toHaveBeenCalledTimes(1);

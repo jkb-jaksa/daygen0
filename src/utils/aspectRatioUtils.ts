@@ -135,7 +135,7 @@ export function getAspectRatiosForModels(modelIds: string[]): AspectRatioOption[
 export function getAllAvailableAspectRatios(): AspectRatioOption[] {
   const allModelIds = [
     'gemini-3.0-pro-image',
-    'flux-1.1',
+    'flux-2',
     'reve-image',
     'ideogram',
     'recraft',

@@ -37,15 +37,18 @@ export interface FluxImageGenerationOptions {
   model: FluxModel | FluxModelType;
   width?: number;
   height?: number;
-  aspect_ratio?: string;
-  raw?: boolean;
-  image_prompt?: string;
-  image_prompt_strength?: number;
   input_image?: string;
   input_image_2?: string;
   input_image_3?: string;
   input_image_4?: string;
+  input_image_5?: string;
+  input_image_6?: string;
+  input_image_7?: string;
+  input_image_8?: string;
+  input_image_blob_path?: string;
   seed?: number;
+  guidance?: number;
+  steps?: number;
   output_format?: 'jpeg' | 'png';
   prompt_upsampling?: boolean;
   safety_tolerance?: number;
@@ -89,17 +92,20 @@ const buildProviderOptions = (
   const providerOptions: Record<string, unknown> = {};
   if (options.width !== undefined) providerOptions.width = options.width;
   if (options.height !== undefined) providerOptions.height = options.height;
-  if (options.aspect_ratio !== undefined) providerOptions.aspect_ratio = options.aspect_ratio;
-  if (options.raw !== undefined) providerOptions.raw = options.raw;
-  if (options.image_prompt !== undefined) providerOptions.image_prompt = options.image_prompt;
-  if (options.image_prompt_strength !== undefined) {
-    providerOptions.image_prompt_strength = options.image_prompt_strength;
-  }
   if (options.input_image !== undefined) providerOptions.input_image = options.input_image;
   if (options.input_image_2 !== undefined) providerOptions.input_image_2 = options.input_image_2;
   if (options.input_image_3 !== undefined) providerOptions.input_image_3 = options.input_image_3;
   if (options.input_image_4 !== undefined) providerOptions.input_image_4 = options.input_image_4;
+  if (options.input_image_5 !== undefined) providerOptions.input_image_5 = options.input_image_5;
+  if (options.input_image_6 !== undefined) providerOptions.input_image_6 = options.input_image_6;
+  if (options.input_image_7 !== undefined) providerOptions.input_image_7 = options.input_image_7;
+  if (options.input_image_8 !== undefined) providerOptions.input_image_8 = options.input_image_8;
+  if (options.input_image_blob_path !== undefined) {
+    providerOptions.input_image_blob_path = options.input_image_blob_path;
+  }
   if (options.seed !== undefined) providerOptions.seed = options.seed;
+  if (options.guidance !== undefined) providerOptions.guidance = options.guidance;
+  if (options.steps !== undefined) providerOptions.steps = options.steps;
   if (options.output_format !== undefined) providerOptions.output_format = options.output_format;
   if (options.prompt_upsampling !== undefined) {
     providerOptions.prompt_upsampling = options.prompt_upsampling;

@@ -69,7 +69,7 @@ export function Grid() {
     },
     {
       slug: "virtual-try-on",
-      title: "virtual try-on",
+      title: "change outfit",
       subtitle: "simulate products on models or users",
       image: "/path-to-image-8.jpg",
     },
@@ -115,7 +115,7 @@ export function Grid() {
     },
     {
       slug: "person-swap",
-      title: "person swap",
+      title: "you as a meme",
       subtitle: "replace people while keeping composition",
       image: "/path-to-image-15.jpg",
     },
@@ -133,7 +133,7 @@ export function Grid() {
     },
     {
       slug: "upscaling",
-      title: "upscaling",
+      title: "upscale image",
       subtitle: "enhance resolution while preserving detail",
       image: "/path-to-image-18.jpg",
     },
@@ -166,7 +166,7 @@ export function Grid() {
     { slug: "edit-video-details", title: "edit video details", subtitle: "adjust lighting, color and timing", image: "/path-to-video-9.jpg" },
     { slug: "video-add-edit-text", title: "add/edit text", subtitle: "overlay or refine text in video", image: "/path-to-video-10.jpg" },
     { slug: "video-style-reference", title: "style reference", subtitle: "apply looks from reference videos/images", image: "/path-to-video-11.jpg" },
-    { slug: "video-person-swap", title: "person swap", subtitle: "replace subjects while keeping motion", image: "/path-to-video-12.jpg" },
+    { slug: "video-person-swap", title: "you as a meme", subtitle: "replace subjects while keeping motion", image: "/path-to-video-12.jpg" },
     { slug: "facial-animation", title: "facial animation", subtitle: "drive expressions and lip movement", image: "/path-to-video-13.jpg" },
     { slug: "extend-video", title: "extend video", subtitle: "continue scenes forward or backward", image: "/path-to-video-14.jpg" },
     { slug: "motion-control", title: "motion control", subtitle: "manipulate trajectories, speed and easing", image: "/path-to-video-15.jpg" },
@@ -175,7 +175,7 @@ export function Grid() {
     { slug: "aspect-ratio-video", title: "aspect ratio", subtitle: "reframe between formats cleanly", image: "/path-to-video-18.jpg" },
     { slug: "dubbing-lipsync", title: "dubbing/lip-sync", subtitle: "match voiceover to character lips", image: "/path-to-video-19.jpg" },
     { slug: "captions", title: "captions", subtitle: "auto-generate and style subtitles", image: "/path-to-video-20.jpg" },
-    { slug: "video-upscaling", title: "upscaling", subtitle: "enhance resolution and detail", image: "/path-to-video-21.jpg" },
+    { slug: "video-upscaling", title: "upscale image", subtitle: "enhance resolution and detail", image: "/path-to-video-21.jpg" },
   ];
 
   // VIDEO → personalize
@@ -187,7 +187,7 @@ export function Grid() {
   const avatarsCreateCards: CardItem[] = [
     { slug: "avatars-dubbing-lipsync", title: "dubbing/lip-sync", subtitle: "match voices to avatar lip movement", image: "/path-to-avatars-1.jpg" },
     { slug: "avatars-captions", title: "captions", subtitle: "auto-generate and style subtitles for avatars", image: "/path-to-avatars-2.jpg" },
-    { slug: "avatars-upscaling", title: "upscaling", subtitle: "enhance avatar video/image resolution", image: "/path-to-avatars-3.jpg" },
+    { slug: "avatars-upscaling", title: "upscale image", subtitle: "enhance avatar video/image resolution", image: "/path-to-avatars-3.jpg" },
   ];
 
   // AVATARS → edit/personalize (not specified; keep empty for now)

@@ -24,6 +24,7 @@ import { normalizeStoredProducts } from '../../utils/products';
 import { getPersistedValue } from '../../lib/clientStorage';
 import { STORAGE_CHANGE_EVENT } from '../../utils/storageEvents';
 import { CircularProgressRing } from '../CircularProgressRing';
+import { VideoPlayer } from '../shared/VideoPlayer';
 
 // Lazy load components
 const ModelBadge = lazy(() => import('../ModelBadge'));
@@ -121,6 +122,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const [savePromptModalState, setSavePromptModalState] = useState<{ prompt: string; originalPrompt: string } | null>(null);
   const savePromptModalRef = useRef<HTMLDivElement>(null);
   const lastOpenRef = useRef<{ id: string | null; ts: number }>({ id: null, ts: 0 });
+  const [expandedVideoPrompts, setExpandedVideoPrompts] = useState<Set<string>>(() => new Set());
   const {
     goToAvatarProfile,
     goToProductProfile,
@@ -523,6 +525,18 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     return 'type' in item && item.type === 'video';
   }, []);
 
+  const toggleVideoPrompt = useCallback((identifier: string) => {
+    setExpandedVideoPrompts(prev => {
+      const next = new Set(prev);
+      if (next.has(identifier)) {
+        next.delete(identifier);
+      } else {
+        next.add(identifier);
+      }
+      return next;
+    });
+  }, []);
+
   const startVariateJob = useCallback((item: GalleryImageLike) => {
     const syntheticId = buildSyntheticJobId(item);
     const timestamp = Date.now();
@@ -798,6 +812,15 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                 : '';
             const promptForActions = hasPromptContent ? rawPrompt : null;
             const shouldShowPromptDetails = Boolean(promptForDisplay);
+            const isPromptExpanded = !isVideoItem || expandedVideoPrompts.has(baseActionTooltipId);
+            const promptBarVisibilityClass = isVideoItem
+              ? `transition-transform ${isPromptExpanded
+                ? 'translate-y-0 opacity-100 pointer-events-auto'
+                : 'translate-y-full opacity-0 pointer-events-none'
+              }`
+              : isMenuActive
+                ? 'opacity-100 pointer-events-auto'
+                : 'opacity-0 group-hover:opacity-100 pointer-events-auto';
 
             return (
               <div
@@ -912,12 +935,11 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                 onUseAsReference={handleUseReference}
                                 onReusePrompt={handleReuse}
                                 onMakeVideo={handleVideo}
-                                onMakeVariation={!isVideo(item) ? (e) => handleVariateImage(e, item) : undefined}
                               />
                             </Suspense>
                           )}
 
-                          {/* Delete, Like, More - Always shown (glass tooltip only, no native title) */}
+                          {/* Delete, Like, Info, More - Always shown (glass tooltip only, no native title) */}
                           <button
                             type="button"
                             onClick={(e) => onDelete(e, item)}
@@ -963,6 +985,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                 }`}
                             />
                           </button>
+
                           <button
                             type="button"
                             onClick={(e) => handleItemRightClick(e, item)}
@@ -984,20 +1007,34 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                           >
                             <MoreHorizontal className="w-3 h-3" />
                           </button>
-                        </div>
+                        </div >
                         <Suspense fallback={null}>
                           <GenerationProgress />
                         </Suspense>
-                      </div>
+                      </div >
                     )}
-                  </div>
+                  </div >
 
                   {/* Image/Video */}
-                  {isVideo(item) ? (
-                    <video
+                  {isVideoItem ? (
+                    <VideoPlayer
                       src={item.url}
-                      className="relative z-[1] h-full w-full object-cover"
-                      controls
+                      className="relative z-[1] h-full w-full"
+                      objectFit="cover"
+                      onClick={() => handleItemClick(item, index)}
+                      onInfoClick={() => toggleVideoPrompt(baseActionTooltipId)}
+                      onInfoMouseEnter={() => setExpandedVideoPrompts(prev => {
+                        const next = new Set(prev);
+                        next.add(baseActionTooltipId);
+                        return next;
+                      })}
+                      onInfoMouseLeave={() => setExpandedVideoPrompts(prev => {
+                        const next = new Set(prev);
+                        next.delete(baseActionTooltipId);
+                        return next;
+                      })}
+                      showInfoButton={shouldShowPromptDetails}
+                      isInfoActive={isPromptExpanded}
                     />
                   ) : (
                     <img
@@ -1006,131 +1043,201 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                       loading="lazy"
                       className="relative z-[1] h-full w-full object-cover"
                     />
-                  )}
+                  )
+                  }
 
                   {/* Prompt Description Bar - Non-gallery views */}
-                  {shouldShowPromptDetails && !isGalleryView && (
-                    <div className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto hidden sm:flex items-end z-10 ${isMenuActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                      }`}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {/* Content layer */}
-                      <div className="relative z-10 w-full p-4">
-                        <div className="mb-2">
-                          <div className="relative">
-                            <p className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
-                              {promptForDisplay}
-                              {promptForActions && (() => {
-                                const tooltipId = `copy-${item.jobId || item.r2FileId || index}`;
-                                return (
-                                  <>
-                                    <button
-                                      onClick={(e) => void handleCopyPrompt(promptForActions, e)}
-                                      onMouseDown={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                      }}
-                                      onMouseEnter={(e) => {
-                                        showHoverTooltip(e.currentTarget, tooltipId);
-                                      }}
-                                      onMouseLeave={() => {
-                                        hideHoverTooltip(tooltipId);
-                                      }}
-                                      className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
-                                    >
-                                      <Copy className="w-3 h-3" />
-                                    </button>
-                                    <button
-                                      onClick={(e) => handleToggleSavePrompt(promptForActions, e)}
-                                      onMouseDown={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                      }}
-                                      onMouseEnter={(e) => {
-                                        showHoverTooltip(e.currentTarget, `save-${tooltipId}`);
-                                      }}
-                                      onMouseLeave={() => {
-                                        hideHoverTooltip(`save-${tooltipId}`);
-                                      }}
-                                      className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
-                                    >
-                                      {isPromptSaved(promptForActions) ? (
-                                        <Bookmark className="w-3 h-3 fill-current" />
-                                      ) : (
-                                        <BookmarkPlus className="w-3 h-3" />
-                                      )}
-                                    </button>
-                                  </>
-                                );
-                              })()}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Reference images thumbnails */}
-                        {item.references && item.references.length > 0 && (
-                          <div className="flex items-center gap-1.5 mb-2">
-                            <div className="flex gap-1">
-                              {item.references.map((ref, refIdx) => (
-                                <div key={refIdx} className="relative">
-                                  <img
-                                    src={ref}
-                                    alt={`Reference ${refIdx + 1}`}
-                                    loading="lazy"
-                                    className="w-6 h-6 rounded object-cover border border-theme-mid cursor-pointer hover:border-theme-text transition-colors duration-200"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      // Could open in modal if that functionality is added
-                                    }}
-                                  />
-                                  <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
-                                    {refIdx + 1}
-                                  </div>
-                                </div>
-                              ))}
+                  {
+                    shouldShowPromptDetails && !isGalleryView && (
+                      <div
+                        className={`PromptDescriptionBar absolute left-0 right-0 transition-all duration-150 ease-in-out hidden sm:flex items-end z-30 bottom-0 ${promptBarVisibilityClass}`}
+                        onClick={(e) => e.stopPropagation()}
+                        onMouseEnter={() => {
+                          if (isVideoItem) {
+                            setExpandedVideoPrompts(prev => {
+                              const next = new Set(prev);
+                              next.add(baseActionTooltipId);
+                              return next;
+                            });
+                          }
+                        }}
+                        onMouseLeave={() => {
+                          if (isVideoItem) {
+                            setExpandedVideoPrompts(prev => {
+                              const next = new Set(prev);
+                              next.delete(baseActionTooltipId);
+                              return next;
+                            });
+                          }
+                        }}
+                      >
+                        {/* Content layer */}
+                        <div className="relative z-10 w-full p-4">
+                          <div className="mb-2">
+                            <div className="relative">
+                              <p className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
+                                {promptForDisplay}
+                                {promptForActions && (() => {
+                                  const tooltipId = `copy-${item.jobId || item.r2FileId || index}`;
+                                  return (
+                                    <>
+                                      <button
+                                        onClick={(e) => void handleCopyPrompt(promptForActions, e)}
+                                        onMouseDown={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                        }}
+                                        onMouseEnter={(e) => {
+                                          showHoverTooltip(e.currentTarget, tooltipId);
+                                        }}
+                                        onMouseLeave={() => {
+                                          hideHoverTooltip(tooltipId);
+                                        }}
+                                        className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
+                                      >
+                                        <Copy className="w-3 h-3" />
+                                      </button>
+                                      <button
+                                        onClick={(e) => handleToggleSavePrompt(promptForActions, e)}
+                                        onMouseDown={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                        }}
+                                        onMouseEnter={(e) => {
+                                          showHoverTooltip(e.currentTarget, `save-${tooltipId}`);
+                                        }}
+                                        onMouseLeave={() => {
+                                          hideHoverTooltip(`save-${tooltipId}`);
+                                        }}
+                                        className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
+                                      >
+                                        {isPromptSaved(promptForActions) ? (
+                                          <Bookmark className="w-3 h-3 fill-current" />
+                                        ) : (
+                                          <BookmarkPlus className="w-3 h-3" />
+                                        )}
+                                      </button>
+                                    </>
+                                  );
+                                })()}
+                              </p>
                             </div>
-                            <span className="text-xs font-raleway text-theme-white/70">
-                              {item.references.length} ref{item.references.length > 1 ? 's' : ''}
-                            </span>
                           </div>
-                        )}
 
-                        {(() => {
-                          // Count total badges to determine layout
-                          const totalBadges =
-                            1 + // ModelBadge always present
-                            (item.isPublic ? 1 : 0) +
-                            (avatarForImage ? 1 : 0) +
-                            (productForImage ? 1 : 0) +
-                            (styleForImage ? 1 : 0) +
-                            (item.aspectRatio ? 1 : 0);
+                          {/* Reference images thumbnails */}
+                          {item.references && item.references.length > 0 && (
+                            <div className="flex items-center gap-1.5 mb-2">
+                              <div className="flex gap-1">
+                                {item.references.map((ref, refIdx) => (
+                                  <div key={refIdx} className="relative">
+                                    <img
+                                      src={ref}
+                                      alt={`Reference ${refIdx + 1}`}
+                                      loading="lazy"
+                                      className="w-6 h-6 rounded object-cover border border-theme-mid cursor-pointer hover:border-theme-text transition-colors duration-200"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        // Could open in modal if that functionality is added
+                                      }}
+                                    />
+                                    <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
+                                      {refIdx + 1}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                              <span className="text-xs font-raleway text-theme-white/70">
+                                {item.references.length} ref{item.references.length > 1 ? 's' : ''}
+                              </span>
+                            </div>
+                          )}
 
-                          const useTwoRowLayout = totalBadges >= 3;
+                          {(() => {
+                            // Count total badges to determine layout
+                            const totalBadges =
+                              1 + // ModelBadge always present
+                              (item.isPublic ? 1 : 0) +
+                              (avatarForImage ? 1 : 0) +
+                              (productForImage ? 1 : 0) +
+                              (styleForImage ? 1 : 0) +
+                              (item.aspectRatio ? 1 : 0);
 
-                          return useTwoRowLayout ? (
-                            /* Two-row layout for 3+ badges */
-                            <div className="mt-2 space-y-1.5">
-                              {/* Row 1: Model Badge + Public Badge */}
-                              <div className="flex items-center gap-1">
-                                <Suspense fallback={null}>
-                                  <ModelBadge
-                                    model={displayModelName}
-                                    size="md"
-                                    onClick={() => goToModelGallery(modelIdForFilter, filterType)}
-                                  />
-                                </Suspense>
+                            const useTwoRowLayout = totalBadges >= 3;
 
-                                {/* Public indicator */}
-                                {item.isPublic && (
+                            return useTwoRowLayout ? (
+                              /* Two-row layout for 3+ badges */
+                              <div className="mt-2 space-y-1.5">
+                                {/* Row 1: Model Badge + Public Badge */}
+                                <div className="flex items-center gap-1">
                                   <Suspense fallback={null}>
-                                    <PublicBadge onClick={goToPublicGallery} />
+                                    <ModelBadge
+                                      model={displayModelName}
+                                      size="md"
+                                      onClick={() => goToModelGallery(modelIdForFilter, filterType)}
+                                    />
                                   </Suspense>
+
+                                  {/* Public indicator */}
+                                  {item.isPublic && (
+                                    <Suspense fallback={null}>
+                                      <PublicBadge onClick={goToPublicGallery} />
+                                    </Suspense>
+                                  )}
+                                </div>
+
+                                {/* Row 2: Avatar, Product, Style, Aspect Ratio Badges */}
+                                {(avatarForImage || productForImage || styleForImage || item.aspectRatio) && (
+                                  <div className="flex items-center gap-1">
+                                    {avatarForImage && (
+                                      <Suspense fallback={null}>
+                                        <AvatarBadge
+                                          avatar={avatarForImage}
+                                          onClick={() => goToAvatarProfile(avatarForImage)}
+                                        />
+                                      </Suspense>
+                                    )}
+
+                                    {productForImage && (
+                                      <Suspense fallback={null}>
+                                        <ProductBadge
+                                          product={productForImage}
+                                          onClick={() => goToProductProfile(productForImage)}
+                                        />
+                                      </Suspense>
+                                    )}
+
+                                    {styleForImage && (
+                                      <Suspense fallback={null}>
+                                        <StyleBadge
+                                          style={styleForImage}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                          }}
+                                        />
+                                      </Suspense>
+                                    )}
+                                  </div>
                                 )}
                               </div>
-
-                              {/* Row 2: Avatar, Product, Style, Aspect Ratio Badges */}
-                              {(avatarForImage || productForImage || styleForImage || item.aspectRatio) && (
+                            ) : (
+                              /* Single-row layout for 1-2 badges */
+                              <div className="mt-2">
                                 <div className="flex items-center gap-1">
+                                  <Suspense fallback={null}>
+                                    <ModelBadge
+                                      model={displayModelName}
+                                      size="md"
+                                      onClick={() => goToModelGallery(modelIdForFilter, filterType)}
+                                    />
+                                  </Suspense>
+
+                                  {/* Public indicator */}
+                                  {item.isPublic && (
+                                    <Suspense fallback={null}>
+                                      <PublicBadge onClick={goToPublicGallery} />
+                                    </Suspense>
+                                  )}
+
                                   {avatarForImage && (
                                     <Suspense fallback={null}>
                                       <AvatarBadge
@@ -1159,68 +1266,190 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                       />
                                     </Suspense>
                                   )}
+
                                 </div>
-                              )}
-                            </div>
-                          ) : (
-                            /* Single-row layout for 1-2 badges */
-                            <div className="mt-2">
-                              <div className="flex items-center gap-1">
-                                <Suspense fallback={null}>
-                                  <ModelBadge
-                                    model={displayModelName}
-                                    size="md"
-                                    onClick={() => goToModelGallery(modelIdForFilter, filterType)}
-                                  />
-                                </Suspense>
-
-                                {/* Public indicator */}
-                                {item.isPublic && (
-                                  <Suspense fallback={null}>
-                                    <PublicBadge onClick={goToPublicGallery} />
-                                  </Suspense>
-                                )}
-
-                                {avatarForImage && (
-                                  <Suspense fallback={null}>
-                                    <AvatarBadge
-                                      avatar={avatarForImage}
-                                      onClick={() => goToAvatarProfile(avatarForImage)}
-                                    />
-                                  </Suspense>
-                                )}
-
-                                {productForImage && (
-                                  <Suspense fallback={null}>
-                                    <ProductBadge
-                                      product={productForImage}
-                                      onClick={() => goToProductProfile(productForImage)}
-                                    />
-                                  </Suspense>
-                                )}
-
-                                {styleForImage && (
-                                  <Suspense fallback={null}>
-                                    <StyleBadge
-                                      style={styleForImage}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                      }}
-                                    />
-                                  </Suspense>
-                                )}
-
                               </div>
-                            </div>
-                          );
-                        })()}
+                            );
+                          })()}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )
+                  }
 
                   {/* Tooltips rendered via portal to avoid clipping */}
-                  {promptForActions && shouldShowPromptDetails && !isGalleryView && (() => {
-                    const tooltipId = `copy-${item.jobId || item.r2FileId || index}`;
+                  {
+                    promptForActions && shouldShowPromptDetails && !isGalleryView && (() => {
+                      const tooltipId = `copy-${item.jobId || item.r2FileId || index}`;
+                      return (
+                        <>
+                          {createPortal(
+                            <div
+                              data-tooltip-for={tooltipId}
+                              className={`${tooltips.base} fixed`}
+                              style={{ zIndex: 9999 }}
+                            >
+                              Copy prompt
+                            </div>,
+                            document.body
+                          )}
+                          {createPortal(
+                            <div
+                              data-tooltip-for={`save-${tooltipId}`}
+                              className={`${tooltips.base} fixed`}
+                              style={{ zIndex: 9999 }}
+                            >
+                              {isPromptSaved(promptForActions) ? 'Prompt saved' : 'Save prompt'}
+                            </div>,
+                            document.body
+                          )}
+                        </>
+                      );
+                    })()
+                  }
+
+                  {
+                    (() => {
+                      const deleteId = `delete-${baseActionTooltipId}`;
+                      const likeId = `like-${baseActionTooltipId}`;
+                      const moreId = `more-${baseActionTooltipId}`;
+                      return (
+                        <>
+                          {createPortal(
+                            <div
+                              data-tooltip-for={deleteId}
+                              className={`${tooltips.base} fixed`}
+                              style={{ zIndex: 9999 }}
+                            >
+                              Delete
+                            </div>,
+                            document.body,
+                          )}
+                          {createPortal(
+                            <div
+                              data-tooltip-for={likeId}
+                              className={`${tooltips.base} fixed`}
+                              style={{ zIndex: 9999 }}
+                            >
+                              {item.isLiked ? 'Unlike' : 'Like'}
+                            </div>,
+                            document.body,
+                          )}
+                          {createPortal(
+                            <div
+                              data-tooltip-for={moreId}
+                              className={`${tooltips.base} fixed`}
+                              style={{ zIndex: 9999 }}
+                            >
+                              More
+                            </div>,
+                            document.body,
+                          )}
+                        </>
+                      );
+                    })()
+                  }
+
+                  {/* Gallery Prompt Hover Button */}
+                  {
+                    shouldShowPromptDetails && isGalleryView && (
+                      <div className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-center justify-center z-10 ${isMenuActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                        }`}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {/* Button content */}
+                        <div className="relative z-10 w-full p-3 flex items-center justify-center">
+                          <button
+                            type="button"
+                            className="flex items-center gap-2 text-theme-white hover:text-theme-text transition-colors duration-200"
+                            aria-label="Show prompt"
+                            onMouseEnter={() => {
+                              const itemId = item.jobId || item.r2FileId || item.url;
+                              setHoveredPromptButton(itemId);
+                            }}
+                            onMouseLeave={() => {
+                              setHoveredPromptButton(null);
+                            }}
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                            <span className="text-xs font-raleway font-medium">Show prompt</span>
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  }
+                </div >
+
+                {/* Gallery Prompt Popup - Outside card-media-frame to avoid clipping */}
+                {
+                  shouldShowPromptDetails && isGalleryView && (() => {
+                    const itemId = item.jobId || item.r2FileId || item.url;
+                    const isPopupVisible = hoveredPromptButton === itemId;
+                    return (
+                      <div
+                        className={`absolute bottom-0 left-0 right-0 transition-all duration-100 z-50 pointer-events-auto ${isPopupVisible ? 'opacity-100 visible' : 'opacity-0 invisible'
+                          }`}
+                        onMouseEnter={() => setHoveredPromptButton(itemId)}
+                        onMouseLeave={() => setHoveredPromptButton(null)}
+                      >
+                        <div className="PromptDescriptionBar rounded-lg text-theme-white px-4 py-3 mb-2 text-xs font-raleway shadow-xl">
+                          <div className="relative">
+                            <p className="leading-relaxed break-words whitespace-pre-wrap max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-theme-mid/40 scrollbar-track-transparent">
+                              {promptForDisplay}
+                              {promptForActions && (() => {
+                                const tooltipId = `copy-gallery-${item.jobId || item.r2FileId || index}`;
+                                return (
+                                  <>
+                                    <button
+                                      onClick={(e) => void handleCopyPrompt(promptForActions, e)}
+                                      onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        showHoverTooltip(e.currentTarget, tooltipId, { placement: 'above', offset: 2 });
+                                      }}
+                                      onMouseLeave={() => {
+                                        hideHoverTooltip(tooltipId);
+                                      }}
+                                      className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
+                                    >
+                                      <Copy className="w-3 h-3" />
+                                    </button>
+                                    <button
+                                      onClick={(e) => handleToggleSavePrompt(promptForActions, e)}
+                                      onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        showHoverTooltip(e.currentTarget, `save-${tooltipId}`, { placement: 'above', offset: 2 });
+                                      }}
+                                      onMouseLeave={() => {
+                                        hideHoverTooltip(`save-${tooltipId}`);
+                                      }}
+                                      className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
+                                    >
+                                      {isPromptSaved(promptForActions) ? (
+                                        <Bookmark className="w-3 h-3 fill-current" />
+                                      ) : (
+                                        <BookmarkPlus className="w-3 h-3" />
+                                      )}
+                                    </button>
+                                  </>
+                                );
+                              })()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()
+                }
+
+                {/* Tooltips rendered via portal to avoid clipping - Gallery view */}
+                {
+                  promptForActions && shouldShowPromptDetails && isGalleryView && (() => {
+                    const tooltipId = `copy-gallery-${item.jobId || item.r2FileId || index}`;
                     return (
                       <>
                         {createPortal(
@@ -1245,177 +1474,16 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                         )}
                       </>
                     );
-                  })()}
-
-                  {(() => {
-                    const deleteId = `delete-${baseActionTooltipId}`;
-                    const likeId = `like-${baseActionTooltipId}`;
-                    const moreId = `more-${baseActionTooltipId}`;
-                    return (
-                      <>
-                        {createPortal(
-                          <div
-                            data-tooltip-for={deleteId}
-                            className={`${tooltips.base} fixed`}
-                            style={{ zIndex: 9999 }}
-                          >
-                            Delete
-                          </div>,
-                          document.body,
-                        )}
-                        {createPortal(
-                          <div
-                            data-tooltip-for={likeId}
-                            className={`${tooltips.base} fixed`}
-                            style={{ zIndex: 9999 }}
-                          >
-                            {item.isLiked ? 'Unlike' : 'Like'}
-                          </div>,
-                          document.body,
-                        )}
-                        {createPortal(
-                          <div
-                            data-tooltip-for={moreId}
-                            className={`${tooltips.base} fixed`}
-                            style={{ zIndex: 9999 }}
-                          >
-                            More
-                          </div>,
-                          document.body,
-                        )}
-                      </>
-                    );
-                  })()}
-
-                  {/* Gallery Prompt Hover Button */}
-                  {shouldShowPromptDetails && isGalleryView && (
-                    <div className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-center justify-center z-10 ${isMenuActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                      }`}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {/* Button content */}
-                      <div className="relative z-10 w-full p-3 flex items-center justify-center">
-                        <button
-                          type="button"
-                          className="flex items-center gap-2 text-theme-white hover:text-theme-text transition-colors duration-200"
-                          aria-label="Show prompt"
-                          onMouseEnter={() => {
-                            const itemId = item.jobId || item.r2FileId || item.url;
-                            setHoveredPromptButton(itemId);
-                          }}
-                          onMouseLeave={() => {
-                            setHoveredPromptButton(null);
-                          }}
-                        >
-                          <FileText className="w-3.5 h-3.5" />
-                          <span className="text-xs font-raleway font-medium">Show prompt</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Gallery Prompt Popup - Outside card-media-frame to avoid clipping */}
-                {shouldShowPromptDetails && isGalleryView && (() => {
-                  const itemId = item.jobId || item.r2FileId || item.url;
-                  const isPopupVisible = hoveredPromptButton === itemId;
-                  return (
-                    <div
-                      className={`absolute bottom-0 left-0 right-0 transition-all duration-100 z-50 pointer-events-auto ${isPopupVisible ? 'opacity-100 visible' : 'opacity-0 invisible'
-                        }`}
-                      onMouseEnter={() => setHoveredPromptButton(itemId)}
-                      onMouseLeave={() => setHoveredPromptButton(null)}
-                    >
-                      <div className="PromptDescriptionBar rounded-lg text-theme-white px-4 py-3 mb-2 text-xs font-raleway shadow-xl">
-                        <div className="relative">
-                          <p className="leading-relaxed break-words whitespace-pre-wrap max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-theme-mid/40 scrollbar-track-transparent">
-                            {promptForDisplay}
-                            {promptForActions && (() => {
-                              const tooltipId = `copy-gallery-${item.jobId || item.r2FileId || index}`;
-                              return (
-                                <>
-                                  <button
-                                    onClick={(e) => void handleCopyPrompt(promptForActions, e)}
-                                    onMouseDown={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                    }}
-                                    onMouseEnter={(e) => {
-                                      showHoverTooltip(e.currentTarget, tooltipId, { placement: 'above', offset: 2 });
-                                    }}
-                                    onMouseLeave={() => {
-                                      hideHoverTooltip(tooltipId);
-                                    }}
-                                    className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
-                                  >
-                                    <Copy className="w-3 h-3" />
-                                  </button>
-                                  <button
-                                    onClick={(e) => handleToggleSavePrompt(promptForActions, e)}
-                                    onMouseDown={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                    }}
-                                    onMouseEnter={(e) => {
-                                      showHoverTooltip(e.currentTarget, `save-${tooltipId}`, { placement: 'above', offset: 2 });
-                                    }}
-                                    onMouseLeave={() => {
-                                      hideHoverTooltip(`save-${tooltipId}`);
-                                    }}
-                                    className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
-                                  >
-                                    {isPromptSaved(promptForActions) ? (
-                                      <Bookmark className="w-3 h-3 fill-current" />
-                                    ) : (
-                                      <BookmarkPlus className="w-3 h-3" />
-                                    )}
-                                  </button>
-                                </>
-                              );
-                            })()}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* Tooltips rendered via portal to avoid clipping - Gallery view */}
-                {promptForActions && shouldShowPromptDetails && isGalleryView && (() => {
-                  const tooltipId = `copy-gallery-${item.jobId || item.r2FileId || index}`;
-                  return (
-                    <>
-                      {createPortal(
-                        <div
-                          data-tooltip-for={tooltipId}
-                          className={`${tooltips.base} fixed`}
-                          style={{ zIndex: 9999 }}
-                        >
-                          Copy prompt
-                        </div>,
-                        document.body
-                      )}
-                      {createPortal(
-                        <div
-                          data-tooltip-for={`save-${tooltipId}`}
-                          className={`${tooltips.base} fixed`}
-                          style={{ zIndex: 9999 }}
-                        >
-                          {isPromptSaved(promptForActions) ? 'Prompt saved' : 'Save prompt'}
-                        </div>,
-                        document.body
-                      )}
-                    </>
-                  );
-                })()}
-              </div>
+                  })()
+                }
+              </div >
             );
           })}
-        </div>
+        </div >
         <Suspense fallback={null}>
           <GenerationProgress />
         </Suspense>
-      </div>
+      </div >
     </>
   );
 });

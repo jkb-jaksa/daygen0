@@ -42,7 +42,7 @@ describe('generationJobHelpers', () => {
       const response = await postProviderJob({
         provider: 'flux',
         mediaType: 'image',
-        body: { prompt: 'hello', model: 'flux-pro' },
+        body: { prompt: 'hello', model: 'flux-2-pro' },
       });
 
       expect(apiFetchMock).toHaveBeenCalledWith('/api/image/flux', expect.objectContaining({ method: 'POST' }));
@@ -122,14 +122,14 @@ describe('generationJobHelpers', () => {
       const result = await runGenerationJob({
         provider: 'flux',
         mediaType: 'image',
-        body: { prompt: 'hi', model: 'flux-pro' },
+        body: { prompt: 'hi', model: 'flux-2-pro' },
         tracker,
         prompt: 'hi',
-        model: 'flux-pro',
+        model: 'flux-2-pro',
         parseJobResult: () => ({
           url: 'https://cdn/result.png',
           prompt: 'hi',
-          model: 'flux-pro',
+          model: 'flux-2-pro',
           timestamp: 'now',
           jobId: 'job-xyz',
         }),
@@ -138,7 +138,7 @@ describe('generationJobHelpers', () => {
       });
 
       expect(result.jobId).toBe('job-xyz');
-      expect(tracker.enqueue).toHaveBeenCalledWith('job-xyz', 'hi', 'flux-pro');
+      expect(tracker.enqueue).toHaveBeenCalledWith('job-xyz', 'hi', 'flux-2-pro');
       expect(tracker.update).toHaveBeenCalled();
       expect(tracker.finalize).toHaveBeenCalledWith('job-xyz');
     });

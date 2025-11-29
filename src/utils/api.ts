@@ -328,7 +328,7 @@ export interface ApiFetchOptions {
  * // With timeout for long operations
  * const result = await apiFetch('/api/image/flux', {
  *   method: 'POST',
- *   body: { prompt: 'test', model: 'flux-pro' },
+ *   body: { prompt: 'test', model: 'flux-2-pro' },
  *   signal: withTimeout(undefined, 180000) // 3 minutes
  * });
  */

@@ -565,15 +565,15 @@ function Home() {
                           onClick={openStyleModal}
                         />
                         <UseCaseCard
-                          title="product placement"
+                          title="add object/product"
                           imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/product visualizations.png"
-                          imageAlt="Product placement example"
+                          imageAlt="Add object/product example"
                           onClick={openStyleModal}
                         />
                         <UseCaseCard
-                          title="virtual try-on"
+                          title="change outfit"
                           imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/virtual try-on.png"
-                          imageAlt="Virtual try-on example"
+                          imageAlt="Change outfit example"
                           onClick={openStyleModal}
                         />
                         <UseCaseCard
@@ -583,15 +583,21 @@ function Home() {
                           onClick={openStyleModal}
                         />
                         <UseCaseCard
+                          title="create your brand assets"
+                          imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/brand identity.png"
+                          imageAlt="Create your brand assets example"
+                          onClick={openStyleModal}
+                        />
+                        <UseCaseCard
                           title="infographics"
                           imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/infographics.png"
                           imageAlt="Infographics example"
                           onClick={openStyleModal}
                         />
                         <UseCaseCard
-                          title="upscaling"
+                          title="upscale image"
                           imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/upscaling.png"
-                          imageAlt="Upscaling example"
+                          imageAlt="Upscale image example"
                           onClick={openStyleModal}
                         />
                       </div>

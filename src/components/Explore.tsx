@@ -101,8 +101,8 @@ const galleryItems: GalleryItem[] = [
       avatarColor: "from-fuchsia-500/70 via-cyan-400/70 to-sky-500/70",
       location: "Tokyo, JP",
     },
-    modelId: "flux-1.1",
-    modelLabel: "Flux Pro",
+    modelId: "flux-2",
+    modelLabel: "FLUX.2 Pro",
     timeAgo: "2h ago",
     likes: 248,
     prompt:
@@ -244,8 +244,8 @@ const avatarGallery: AvatarGalleryItem[] = [
     likes: 982,
     publishedAgo: "3h ago",
     tags: ["futuristic", "music", "neon"],
-    modelId: "flux-1.1",
-    modelLabel: "Flux Portrait",
+    modelId: "flux-2",
+    modelLabel: "FLUX.2 Portrait",
     shareUrl: "https://www.daygen.ai/avatars/aurora-warden",
     accentGradient: "from-fuchsia-500/70 via-violet-500/60 to-sky-400/70",
     creator: {
@@ -349,8 +349,8 @@ const avatarGallery: AvatarGalleryItem[] = [
     likes: 668,
     publishedAgo: "5d ago",
     tags: ["gaming", "esports", "dynamic"],
-    modelId: "flux-pro-1.1",
-    modelLabel: "FLUX Pro 1.1",
+    modelId: "flux-2",
+    modelLabel: "FLUX.2 Pro",
     shareUrl: "https://www.daygen.ai/avatars/cobalt-runner",
     accentGradient: "from-cyan-500/70 via-blue-500/60 to-indigo-500/70",
     creator: {

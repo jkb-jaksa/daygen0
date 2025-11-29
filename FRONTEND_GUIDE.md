@@ -80,7 +80,7 @@ Payload sketch:
 ```jsonc
 {
   "prompt": "cinematic portrait",
-  "model": "flux-pro",
+  "model": "flux-2-pro",
   "providerOptions": {}
 }
 ```
@@ -184,5 +184,4 @@ import { buttons, cards, glass, inputs, iconButtons } from "../styles/designSyst
 - **Technical standards**: [docs/DESIGN_STANDARDS.md](./docs/DESIGN_STANDARDS.md)
 - Full frontend map: `./agents.md`
 - Backend guide: `../daygen-backend/docs/BACKEND_GUIDE.md`
-
 

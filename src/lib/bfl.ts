@@ -30,35 +30,21 @@ export type BFLJobResult = {
   error?: unknown;
 };
 
-export type FluxModel = 
-  | 'flux-t1' 
-  | 'flux-t2' 
-  | 'flux-e1' 
-  | 'flux-e2'
-  | 'flux-pro-1.1' 
-  | 'flux-pro-1.1-ultra' 
-  | 'flux-kontext-pro' 
-  | 'flux-kontext-max'
-  | 'flux-pro' 
-  | 'flux-dev';
+export type FluxModel = 'flux-2-pro' | 'flux-2-flex';
 
-// New simplified model types for the unified interface
-export type FluxModelType = 'flux-t1' | 'flux-t2' | 'flux-e1' | 'flux-e2';
+// Simplified model types for the unified interface (kept for compatibility)
+export type FluxModelType = FluxModel;
 
 // Model mapping for backward compatibility
 export const FLUX_MODEL_MAP: Record<FluxModelType, FluxModel> = {
-  'flux-t1': 'flux-pro-1.1',
-  'flux-t2': 'flux-pro-1.1-ultra', 
-  'flux-e1': 'flux-kontext-pro',
-  'flux-e2': 'flux-kontext-max'
+  'flux-2-pro': 'flux-2-pro',
+  'flux-2-flex': 'flux-2-flex',
 };
 
 // Model capabilities
 export const MODEL_CAPABILITIES = {
-  'flux-t1': { type: 'text-to-image', quality: 'high', speed: 'medium' },
-  'flux-t2': { type: 'text-to-image', quality: 'medium', speed: 'high' },
-  'flux-e1': { type: 'image-editing', quality: 'high', speed: 'medium' },
-  'flux-e2': { type: 'image-editing', quality: 'high', speed: 'high' }
+  'flux-2-pro': { type: 'text-to-image|image-editing', quality: 'production', speed: 'fast' },
+  'flux-2-flex': { type: 'text-to-image|image-editing', quality: 'max', speed: 'medium' }
 } as const;
 
 export type FluxJobParams = {
@@ -66,18 +52,20 @@ export type FluxJobParams = {
   // Sizing options
   width?: number;
   height?: number;
-  aspect_ratio?: string;
-  // Ultra-specific params
-  raw?: boolean;
-  image_prompt?: string;
-  image_prompt_strength?: number;
-  // Kontext (editing) params
+  // Editing / multi-reference params
   input_image?: string; // Base64 encoded image
   input_image_2?: string;
   input_image_3?: string;
   input_image_4?: string;
+  input_image_5?: string;
+  input_image_6?: string;
+  input_image_7?: string;
+  input_image_8?: string;
+  input_image_blob_path?: string;
   // Common params
   seed?: number;
+  guidance?: number; // flex only
+  steps?: number; // flex only
   output_format?: 'jpeg' | 'png';
   prompt_upsampling?: boolean;
   safety_tolerance?: number;
@@ -216,34 +204,61 @@ export function getModelPath(model: FluxModel): `/v1/${string}` {
 /**
  * Validate Flux job parameters based on model
  */
-export function validateFluxParams(model: FluxModel, params: FluxJobParams): void {
-  const { width, height, aspect_ratio, input_image } = params;
+export function validateFluxParams(_model: FluxModel, params: FluxJobParams): void {
+  const { width, height } = params;
 
   // Validate sizing parameters
-  if (width && height) {
-    if (width < 64 || width > 4096 || height < 64 || height > 4096) {
+  const checkDim = (value: number | undefined, label: string) => {
+    if (value === undefined) return;
+    if (value < 64 || value > 2048) {
       throw new BFLAPIError(
-        'Width and height must be between 64 and 4096 pixels',
+        `${label} must be between 64 and 2048 pixels for FLUX.2`,
+        400
+      );
+    }
+    if (value % 16 !== 0) {
+      throw new BFLAPIError(
+        `${label} must be a multiple of 16 for FLUX.2`,
+        400
+      );
+    }
+  };
+  checkDim(width, 'Width');
+  checkDim(height, 'Height');
+
+  const inputImages = [
+    params.input_image,
+    params.input_image_2,
+    params.input_image_3,
+    params.input_image_4,
+    params.input_image_5,
+    params.input_image_6,
+    params.input_image_7,
+    params.input_image_8,
+  ].filter(Boolean) as string[];
+
+  for (const img of inputImages) {
+    if (
+      !img.startsWith('data:image/') &&
+      !img.startsWith('/9j/') &&
+      !img.startsWith('iVBOR')
+    ) {
+      throw new BFLAPIError(
+        'Input images must be base64 encoded with a data URL prefix or raw base64',
         400
       );
     }
   }
 
-  // Validate aspect ratio format
-  if (aspect_ratio && !/^\d+:\d+$/.test(aspect_ratio)) {
-    throw new BFLAPIError(
-      'Aspect ratio must be in format "width:height" (e.g., "16:9")',
-      400
-    );
+  if (params.guidance !== undefined) {
+    if (params.guidance < 1.5 || params.guidance > 10) {
+      throw new BFLAPIError('Guidance must be between 1.5 and 10 for FLUX.2 flex', 400);
+    }
   }
 
-  // Validate input images for Kontext models
-  if ((model === 'flux-kontext-pro' || model === 'flux-kontext-max') && input_image) {
-    if (!input_image.startsWith('data:image/') && !input_image.startsWith('/9j/') && !input_image.startsWith('iVBOR')) {
-      throw new BFLAPIError(
-        'Input image must be base64 encoded with data URL prefix or raw base64',
-        400
-      );
+  if (params.steps !== undefined) {
+    if (params.steps < 1 || params.steps > 50) {
+      throw new BFLAPIError('Steps must be between 1 and 50 for FLUX.2 flex', 400);
     }
   }
 
@@ -286,17 +301,20 @@ export async function createFluxJob(
     prompt: params.prompt,
     width: params.width,
     height: params.height,
-    aspect_ratio: params.aspect_ratio,
-    raw: params.raw,
-    image_prompt: params.image_prompt,
-    image_prompt_strength: params.image_prompt_strength,
     input_image: params.input_image,
     input_image_2: params.input_image_2,
     input_image_3: params.input_image_3,
     input_image_4: params.input_image_4,
+    input_image_5: params.input_image_5,
+    input_image_6: params.input_image_6,
+    input_image_7: params.input_image_7,
+    input_image_8: params.input_image_8,
+    input_image_blob_path: params.input_image_blob_path,
     seed: params.seed,
     output_format: params.output_format || 'jpeg',
     prompt_upsampling: params.prompt_upsampling,
+    guidance: params.guidance,
+    steps: params.steps,
     safety_tolerance: params.safety_tolerance,
     ...webhookPayload,
   };

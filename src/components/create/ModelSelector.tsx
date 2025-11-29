@@ -15,7 +15,7 @@ import { isVideoModelId } from './constants';
 // eslint-disable-next-line react-refresh/only-export-components
 export const AI_MODELS = [
   { name: "Gemini 3 Pro (Nano Banana)", desc: "Best image generation.", Icon: Sparkles, id: "gemini-3.0-pro-image" },
-  { name: "Flux 1.1", desc: "High-quality text-to-image generation and editing.", Icon: Wand2, id: "flux-1.1" },
+  { name: "FLUX.2", desc: "High-quality text-to-image generation and editing.", Icon: Wand2, id: "flux-2" },
   { name: "Reve", desc: "Great text-to-image and image editing.", Icon: Sparkles, id: "reve-image" },
   { name: "Ideogram 3.0", desc: "Advanced image generation, editing, and enhancement.", Icon: Package, id: "ideogram" },
   { name: "Recraft", desc: "Great for text, icons and mockups.", Icon: Shapes, id: "recraft" },
@@ -312,8 +312,8 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                   setIsOpen(false);
                 }}
                 className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${selectedModel === "veo-3"
-                    ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
-                    : 'bg-transparent hover:bg-theme-text/20 border-0'
+                  ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
+                  : 'bg-transparent hover:bg-theme-text/20 border-0'
                   }`}
               >
                 {hasToolLogo("Veo 3") ? (
@@ -347,8 +347,8 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                   setIsOpen(false);
                 }}
                 className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${selectedModel === "sora-2"
-                    ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
-                    : 'bg-transparent hover:bg-theme-text/20 border-0'
+                  ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
+                  : 'bg-transparent hover:bg-theme-text/20 border-0'
                   }`}
               >
                 {hasToolLogo("Sora 2") ? (
@@ -389,8 +389,8 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                   setIsOpen(false);
                 }}
                 className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${selectedModel === "runway-video-gen4"
-                    ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
-                    : 'bg-transparent hover:bg-theme-text/20 border-0'
+                  ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
+                  : 'bg-transparent hover:bg-theme-text/20 border-0'
                   }`}
               >
                 {hasToolLogo("Runway Gen-4") ? (
@@ -425,8 +425,8 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                   setIsOpen(false);
                 }}
                 className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${selectedModel === "hailuo-02"
-                    ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
-                    : 'bg-transparent hover:bg-theme-text/20 border-0'
+                  ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
+                  : 'bg-transparent hover:bg-theme-text/20 border-0'
                   }`}
               >
                 {hasToolLogo("Hailuo 02") ? (
@@ -460,8 +460,8 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                   setIsOpen(false);
                 }}
                 className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${selectedModel === "seedance-1.0-pro"
-                    ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
-                    : 'bg-transparent hover:bg-theme-text/20 border-0'
+                  ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
+                  : 'bg-transparent hover:bg-theme-text/20 border-0'
                   }`}
               >
                 {hasToolLogo("Seedance 1.0 Pro (Video)") ? (
@@ -495,8 +495,8 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                   setIsOpen(false);
                 }}
                 className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${selectedModel === "kling-video"
-                    ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
-                    : 'bg-transparent hover:bg-theme-text/20 border-0'
+                  ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
+                  : 'bg-transparent hover:bg-theme-text/20 border-0'
                   }`}
               >
                 {hasToolLogo("Kling") ? (
@@ -530,8 +530,8 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                   setIsOpen(false);
                 }}
                 className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${selectedModel === "wan-video-2.2"
-                    ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
-                    : 'bg-transparent hover:bg-theme-text/20 border-0'
+                  ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
+                  : 'bg-transparent hover:bg-theme-text/20 border-0'
                   }`}
               >
                 {hasToolLogo("Wan 2.2 Video") ? (
@@ -565,8 +565,8 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                   setIsOpen(false);
                 }}
                 className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${selectedModel === "luma-ray-2"
-                    ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
-                    : 'bg-transparent hover:bg-theme-text/20 border-0'
+                  ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
+                  : 'bg-transparent hover:bg-theme-text/20 border-0'
                   }`}
               >
                 {hasToolLogo("Luma Ray 2") ? (
@@ -613,24 +613,23 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
               return true;
             }).map((model) => {
               const isSelected = selectedModel === model.id;
-              const isComingSoon = model.id !== "flux-1.1" && model.id !== "gemini-3.0-pro-image" && model.id !== "grok-2-image" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "reve-image" && model.id !== "recraft" && model.id !== "luma-photon-1" && model.id !== "luma-ray-2" && model.id !== "wan-video-2.2" && model.id !== "hailuo-02" && model.id !== "kling-video" && model.id !== "sora-2";
-
+              const isComingSoon = model.id !== "flux-2" && model.id !== "gemini-3.0-pro-image" && model.id !== "grok-2-image" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "reve-image" && model.id !== "recraft" && model.id !== "luma-photon-1" && model.id !== "luma-ray-2" && model.id !== "wan-video-2.2" && model.id !== "hailuo-02" && model.id !== "kling-video" && model.id !== "sora-2";
               return (
                 <button
                   key={model.name}
                   onClick={() => {
                     if (isComingSoon) {
-                      alert('This model is coming soon! Currently only Gemini 3 Pro, Flux 1.1, Grok 2 Image, ChatGPT, Ideogram, Qwen, Runway, Wan 2.2 Video, Hailuo 02, Reve, Recraft, and Luma models are available.');
+                      alert('This model is coming soon! Currently only Gemini 3 Pro, FLUX.2, Grok 2 Image, ChatGPT, Ideogram, Qwen, Runway, Wan 2.2 Video, Hailuo 02, Reve, Recraft, and Luma models are available.');
                       return;
                     }
                     handleModelSelect(model.name);
                     setIsOpen(false);
                   }}
                   className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${isSelected
-                      ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
-                      : isComingSoon
-                        ? "bg-transparent border-theme-mid opacity-60 cursor-not-allowed"
-                        : 'bg-transparent hover:bg-theme-text/20 border-0'
+                    ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
+                    : isComingSoon
+                      ? "bg-transparent border-theme-mid opacity-60 cursor-not-allowed"
+                      : 'bg-transparent hover:bg-theme-text/20 border-0'
                     }`}
                 >
                   {hasToolLogo(model.name) ? (

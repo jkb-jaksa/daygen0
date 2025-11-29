@@ -39,7 +39,7 @@ type EditModelId = EditModel["id"] | "runway-gen4-turbo";
 type FluxEditModelId = Extract<EditModelId, `flux-${string}`>;
 
 const FLUX_MODEL_LOOKUP: Record<FluxEditModelId, FluxModel | FluxModelType> = {
-  "flux-1.1": "flux-e1",
+  "flux-2": "flux-2-pro",
 };
 
 interface EditNavigationState {
