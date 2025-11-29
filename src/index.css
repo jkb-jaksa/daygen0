@@ -342,7 +342,7 @@ html[data-theme="day"] .animate-gradient-colors {
   --glass-base-bg: rgb(var(--n-light-rgb) / 0.5);
   --glass-surface-bg: rgb(var(--n-black-rgb) / 0.15);
   --glass-tight-bg: var(--glass-base-bg);
-  --glass-dark-bg: rgb(var(--n-black-rgb) / 0.60);
+  --glass-dark-bg: rgb(var(--n-black-rgb) / 0.70);
   --glass-prompt-bg: rgb(var(--n-mid-rgb) / 0.80);
   --glass-prompt-text: var(--n-text);
   --glass-prompt-text-rgb: var(--n-text-rgb);
@@ -1046,7 +1046,7 @@ html[data-theme="day"] .prompt-surface {
 .glassprompt2 {
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 1rem;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);

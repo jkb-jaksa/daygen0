@@ -26,8 +26,8 @@ function MasterSidebarComponent({
   const effectiveReservedSpace = Math.max(reservedBottomSpace, minimumReservedSpace);
 
   // When full-size view is open, match the right sidebar's height calculation
-  const sidebarHeight = isFullSizeOpen 
-    ? `calc(100vh - var(--nav-h) - 32px)` 
+  const sidebarHeight = isFullSizeOpen
+    ? `calc(100vh - var(--nav-h) - 32px)`
     : `calc(100vh - var(--nav-h) - ${topOffset}px - ${effectiveReservedSpace}px)`;
   const sidebarTop = isFullSizeOpen
     ? `calc(var(--nav-h) + 16px)`
@@ -35,8 +35,8 @@ function MasterSidebarComponent({
   const zIndex = isFullSizeOpen ? 'z-[120]' : 'lg:z-30';
   const responsiveClass = isFullSizeOpen ? '' : 'hidden lg:block';
   const navClasses = isFullSizeOpen
-    ? `${glass.promptDark} rounded-2xl flex flex-col fixed left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] w-[160px] ${zIndex} px-3 py-4`
-    : `${glass.promptDark} rounded-2xl lg:flex lg:flex-col lg:fixed lg:left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] lg:w-[160px] ${zIndex} px-3 py-4`;
+    ? `${glass.promptDark} border-theme-dark rounded-2xl flex flex-col fixed left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] w-[160px] ${zIndex} px-3 py-4`
+    : `${glass.promptDark} border-theme-dark rounded-2xl lg:flex lg:flex-col lg:fixed lg:left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] lg:w-[160px] ${zIndex} px-3 py-4`;
 
   return (
     <div className={responsiveClass} style={{ width: SIDEBAR_WIDTH }}>
@@ -50,8 +50,8 @@ function MasterSidebarComponent({
           className="flex flex-1 flex-col gap-0 overflow-y-auto pr-1"
           {...(isFullSizeOpen ? { [scrollLockExemptAttr]: "true" } : {})}
         >
-          <Link 
-            to="/app" 
+          <Link
+            to="/app"
             className="flex items-center px-2 text-[12px] text-theme-text font-raleway uppercase tracking-wider mb-1 sidebar-section-header hover:opacity-80 transition-opacity cursor-pointer"
           >
             create
@@ -60,7 +60,7 @@ function MasterSidebarComponent({
           {CREATE_CATEGORIES.map(({ key, label, Icon, gradient, iconColor }) => {
             const isActive = activeCategory === key;
             const isPressed = pressedCategory === key;
-            
+
             // Color-specific shadow mappings for each category
             const shadowColorMap: Record<string, string> = {
               text: "rgba(251, 191, 36, 0.15)",
@@ -68,7 +68,7 @@ function MasterSidebarComponent({
               video: "rgba(59, 130, 246, 0.15)",
               audio: "rgba(34, 211, 238, 0.15)",
             };
-            
+
             // Pressed state shadow colors (slightly higher opacity for subtle effect)
             const pressedShadowColorMap: Record<string, string> = {
               text: "rgba(251, 191, 36, 0.22)",
@@ -76,7 +76,7 @@ function MasterSidebarComponent({
               video: "rgba(59, 130, 246, 0.22)",
               audio: "rgba(34, 211, 238, 0.22)",
             };
-            
+
             // Color-specific border class mappings for each category
             const borderColorMap: Record<string, string> = {
               text: "border-amber-400/25",
@@ -84,17 +84,17 @@ function MasterSidebarComponent({
               video: "border-blue-500/25",
               audio: "border-cyan-400/25",
             };
-            
+
             // Enhanced shadow effect: slightly deeper when pressed (very subtle)
             // Active items get colored shadow, inactive items get neutral shadow
             const insetShadow = isPressed && isActive && gradient
               ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em ${pressedShadowColorMap[key]}` }
               : isPressed && !isActive
-              ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em rgba(255, 255, 255, 0.08)` }
-              : isActive && gradient
-              ? { boxShadow: `inset 0 -0.5em 1.2em -0.125em ${shadowColorMap[key]}` }
-              : {};
-            
+                ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em rgba(255, 255, 255, 0.08)` }
+                : isActive && gradient
+                  ? { boxShadow: `inset 0 -0.5em 1.2em -0.125em ${shadowColorMap[key]}` }
+                  : {};
+
             return (
               <button
                 key={key}
@@ -105,11 +105,10 @@ function MasterSidebarComponent({
                 onMouseLeave={() => setPressedCategory(null)}
                 onTouchStart={() => setPressedCategory(key)}
                 onTouchEnd={() => setPressedCategory(null)}
-                className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-4 py-2 flex-shrink-0 text-sm font-raleway transition-all duration-100 focus:outline-none group ${
-                  isActive
+                className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-4 py-2 flex-shrink-0 text-sm font-raleway transition-all duration-100 focus:outline-none group ${isActive
                     ? `border ${borderColorMap[key]} text-theme-text`
                     : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"
-                }`}
+                  }`}
                 style={insetShadow}
                 aria-pressed={isActive}
               >
@@ -131,17 +130,17 @@ function MasterSidebarComponent({
           {LIBRARY_CATEGORIES.map(({ key, label, Icon }) => {
             const isActive = activeCategory === key;
             const isPressed = pressedCategory === key;
-            
+
             // Enhanced shadow effect: slightly deeper when pressed (very subtle)
             // For library items, always use neutral shadow
             const insetShadow = isPressed && isActive
               ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em rgba(255, 255, 255, 0.12)` }
               : isPressed && !isActive
-              ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em rgba(255, 255, 255, 0.08)` }
-              : isActive
-              ? { boxShadow: `inset 0 -0.5em 1.2em -0.125em rgba(255, 255, 255, 0.08)` }
-              : {};
-            
+                ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em rgba(255, 255, 255, 0.08)` }
+                : isActive
+                  ? { boxShadow: `inset 0 -0.5em 1.2em -0.125em rgba(255, 255, 255, 0.08)` }
+                  : {};
+
             return (
               <button
                 key={key}
@@ -152,11 +151,10 @@ function MasterSidebarComponent({
                 onMouseLeave={() => setPressedCategory(null)}
                 onTouchStart={() => setPressedCategory(key)}
                 onTouchEnd={() => setPressedCategory(null)}
-                className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-4 py-2 flex-shrink-0 text-sm font-raleway transition-all duration-100 focus:outline-none group ${
-                  isActive
+                className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-4 py-2 flex-shrink-0 text-sm font-raleway transition-all duration-100 focus:outline-none group ${isActive
                     ? "border border-theme-dark text-theme-text"
                     : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"
-                }`}
+                  }`}
                 style={insetShadow}
                 aria-pressed={isActive}
               >
@@ -176,31 +174,29 @@ function MasterSidebarComponent({
               onMouseLeave={() => setPressedCategory(null)}
               onTouchStart={() => setPressedCategory(FOLDERS_ENTRY.key)}
               onTouchEnd={() => setPressedCategory(null)}
-              className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-4 py-2 flex-shrink-0 text-sm font-raleway transition-all duration-100 focus:outline-none group ${
-                activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"
+              className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-4 py-2 flex-shrink-0 text-sm font-raleway transition-all duration-100 focus:outline-none group ${activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"
                   ? "border border-theme-dark text-theme-text"
                   : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"
-              }`}
+                }`}
               style={(() => {
                 const isActive = activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view";
                 const isPressed = pressedCategory === FOLDERS_ENTRY.key;
-                
+
                 return isPressed && isActive
                   ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em rgba(255, 255, 255, 0.12)` }
                   : isPressed && !isActive
-                  ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em rgba(255, 255, 255, 0.08)` }
-                  : isActive
-                  ? { boxShadow: `inset 0 -0.5em 1.2em -0.125em rgba(255, 255, 255, 0.08)` }
-                  : {};
+                    ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em rgba(255, 255, 255, 0.08)` }
+                    : isActive
+                      ? { boxShadow: `inset 0 -0.5em 1.2em -0.125em rgba(255, 255, 255, 0.08)` }
+                      : {};
               })()}
               aria-pressed={activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"}
             >
               <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full blur-3xl bg-white transition-opacity duration-100 ${(activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view") ? 'opacity-60' : 'opacity-0 group-hover:opacity-20'}`} />
-              <FOLDERS_ENTRY.Icon className={`h-4 w-4 flex-shrink-0 relative z-10 transition-colors duration-100 ${
-                activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"
+              <FOLDERS_ENTRY.Icon className={`h-4 w-4 flex-shrink-0 relative z-10 transition-colors duration-100 ${activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"
                   ? 'text-theme-text'
                   : 'text-theme-text group-hover:text-theme-text'
-              }`} />
+                }`} />
               <span className="relative z-10 whitespace-nowrap">{FOLDERS_ENTRY.label}</span>
             </button>
           )}
