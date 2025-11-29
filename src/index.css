@@ -7,9 +7,12 @@
 
 /* Custom gradient animation for loading states */
 @keyframes gradient-x {
-  0%, 100% {
+
+  0%,
+  100% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
@@ -22,62 +25,61 @@
 /* Color cycling gradient animation for generation tiles */
 @keyframes gradient-colors {
   0% {
-    background: linear-gradient(135deg, 
-      #1f2937 0%, 
-      rgba(251, 191, 36, 0.8) 20%, 
-      rgba(239, 68, 68, 0.8) 40%, 
-      rgba(59, 130, 246, 0.8) 60%, 
-      rgba(34, 211, 238, 0.8) 80%, 
-      #1f2937 100%
-    );
+    background: linear-gradient(135deg,
+        #1f2937 0%,
+        rgba(251, 191, 36, 0.8) 20%,
+        rgba(239, 68, 68, 0.8) 40%,
+        rgba(59, 130, 246, 0.8) 60%,
+        rgba(34, 211, 238, 0.8) 80%,
+        #1f2937 100%);
     background-position: 0% 50%;
     background-size: 400% 400%;
   }
+
   25% {
-    background: linear-gradient(135deg, 
-      #1f2937 0%, 
-      rgba(251, 191, 36, 0.8) 20%, 
-      rgba(239, 68, 68, 0.8) 40%, 
-      rgba(59, 130, 246, 0.8) 60%, 
-      rgba(34, 211, 238, 0.8) 80%, 
-      #1f2937 100%
-    );
+    background: linear-gradient(135deg,
+        #1f2937 0%,
+        rgba(251, 191, 36, 0.8) 20%,
+        rgba(239, 68, 68, 0.8) 40%,
+        rgba(59, 130, 246, 0.8) 60%,
+        rgba(34, 211, 238, 0.8) 80%,
+        #1f2937 100%);
     background-position: 100% 50%;
     background-size: 400% 400%;
   }
+
   50% {
-    background: linear-gradient(135deg, 
-      #1f2937 0%, 
-      rgba(251, 191, 36, 0.8) 20%, 
-      rgba(239, 68, 68, 0.8) 40%, 
-      rgba(59, 130, 246, 0.8) 60%, 
-      rgba(34, 211, 238, 0.8) 80%, 
-      #1f2937 100%
-    );
+    background: linear-gradient(135deg,
+        #1f2937 0%,
+        rgba(251, 191, 36, 0.8) 20%,
+        rgba(239, 68, 68, 0.8) 40%,
+        rgba(59, 130, 246, 0.8) 60%,
+        rgba(34, 211, 238, 0.8) 80%,
+        #1f2937 100%);
     background-position: 0% 50%;
     background-size: 400% 400%;
   }
+
   75% {
-    background: linear-gradient(135deg, 
-      #1f2937 0%, 
-      rgba(251, 191, 36, 0.8) 20%, 
-      rgba(239, 68, 68, 0.8) 40%, 
-      rgba(59, 130, 246, 0.8) 60%, 
-      rgba(34, 211, 238, 0.8) 80%, 
-      #1f2937 100%
-    );
+    background: linear-gradient(135deg,
+        #1f2937 0%,
+        rgba(251, 191, 36, 0.8) 20%,
+        rgba(239, 68, 68, 0.8) 40%,
+        rgba(59, 130, 246, 0.8) 60%,
+        rgba(34, 211, 238, 0.8) 80%,
+        #1f2937 100%);
     background-position: 100% 50%;
     background-size: 400% 400%;
   }
+
   100% {
-    background: linear-gradient(135deg, 
-      #1f2937 0%, 
-      rgba(251, 191, 36, 0.8) 20%, 
-      rgba(239, 68, 68, 0.8) 40%, 
-      rgba(59, 130, 246, 0.8) 60%, 
-      rgba(34, 211, 238, 0.8) 80%, 
-      #1f2937 100%
-    );
+    background: linear-gradient(135deg,
+        #1f2937 0%,
+        rgba(251, 191, 36, 0.8) 20%,
+        rgba(239, 68, 68, 0.8) 40%,
+        rgba(59, 130, 246, 0.8) 60%,
+        rgba(34, 211, 238, 0.8) 80%,
+        #1f2937 100%);
     background-position: 0% 50%;
     background-size: 400% 400%;
   }
@@ -90,62 +92,61 @@
 /* Day mode keyframe for gradient-colors animation - ensure 100% opacity */
 @keyframes gradient-colors-day {
   0% {
-    background: linear-gradient(135deg, 
-      #1f2937 0%, 
-      rgba(251, 191, 36, 1) 20%, 
-      rgba(239, 68, 68, 1) 40%, 
-      rgba(59, 130, 246, 1) 60%, 
-      rgba(34, 211, 238, 1) 80%, 
-      #1f2937 100%
-    );
+    background: linear-gradient(135deg,
+        #1f2937 0%,
+        rgba(251, 191, 36, 1) 20%,
+        rgba(239, 68, 68, 1) 40%,
+        rgba(59, 130, 246, 1) 60%,
+        rgba(34, 211, 238, 1) 80%,
+        #1f2937 100%);
     background-position: 0% 50%;
     background-size: 400% 400%;
   }
+
   25% {
-    background: linear-gradient(135deg, 
-      #1f2937 0%, 
-      rgba(251, 191, 36, 1) 20%, 
-      rgba(239, 68, 68, 1) 40%, 
-      rgba(59, 130, 246, 1) 60%, 
-      rgba(34, 211, 238, 1) 80%, 
-      #1f2937 100%
-    );
+    background: linear-gradient(135deg,
+        #1f2937 0%,
+        rgba(251, 191, 36, 1) 20%,
+        rgba(239, 68, 68, 1) 40%,
+        rgba(59, 130, 246, 1) 60%,
+        rgba(34, 211, 238, 1) 80%,
+        #1f2937 100%);
     background-position: 100% 50%;
     background-size: 400% 400%;
   }
+
   50% {
-    background: linear-gradient(135deg, 
-      #1f2937 0%, 
-      rgba(251, 191, 36, 1) 20%, 
-      rgba(239, 68, 68, 1) 40%, 
-      rgba(59, 130, 246, 1) 60%, 
-      rgba(34, 211, 238, 1) 80%, 
-      #1f2937 100%
-    );
+    background: linear-gradient(135deg,
+        #1f2937 0%,
+        rgba(251, 191, 36, 1) 20%,
+        rgba(239, 68, 68, 1) 40%,
+        rgba(59, 130, 246, 1) 60%,
+        rgba(34, 211, 238, 1) 80%,
+        #1f2937 100%);
     background-position: 0% 50%;
     background-size: 400% 400%;
   }
+
   75% {
-    background: linear-gradient(135deg, 
-      #1f2937 0%, 
-      rgba(251, 191, 36, 1) 20%, 
-      rgba(239, 68, 68, 1) 40%, 
-      rgba(59, 130, 246, 1) 60%, 
-      rgba(34, 211, 238, 1) 80%, 
-      #1f2937 100%
-    );
+    background: linear-gradient(135deg,
+        #1f2937 0%,
+        rgba(251, 191, 36, 1) 20%,
+        rgba(239, 68, 68, 1) 40%,
+        rgba(59, 130, 246, 1) 60%,
+        rgba(34, 211, 238, 1) 80%,
+        #1f2937 100%);
     background-position: 100% 50%;
     background-size: 400% 400%;
   }
+
   100% {
-    background: linear-gradient(135deg, 
-      #1f2937 0%, 
-      rgba(251, 191, 36, 1) 20%, 
-      rgba(239, 68, 68, 1) 40%, 
-      rgba(59, 130, 246, 1) 60%, 
-      rgba(34, 211, 238, 1) 80%, 
-      #1f2937 100%
-    );
+    background: linear-gradient(135deg,
+        #1f2937 0%,
+        rgba(251, 191, 36, 1) 20%,
+        rgba(239, 68, 68, 1) 40%,
+        rgba(59, 130, 246, 1) 60%,
+        rgba(34, 211, 238, 1) 80%,
+        #1f2937 100%);
     background-position: 0% 50%;
     background-size: 400% 400%;
   }
@@ -181,17 +182,24 @@ html[data-theme="day"] .animate-gradient-colors {
 
 
 :root {
-  --nav-h: clamp(2.75rem, calc(2.6rem + 0.5vw), 3.25rem); /* Navbar height used for hero offset */
+  --nav-h: clamp(2.75rem, calc(2.6rem + 0.5vw), 3.25rem);
+  /* Navbar height used for hero offset */
   --container-inline-padding: clamp(0.5rem, 2vw, 3rem);
   --layout-inline-width: calc(100vw - 2 * var(--container-inline-padding, clamp(0.5rem, 2vw, 3rem)));
 
   /* Breakpoints */
-  --bp-xs: 22.5rem; /* 360px */
-  --bp-sm: 30rem; /* 480px */
-  --bp-md: 48rem; /* 768px */
-  --bp-lg: 64rem; /* 1024px */
-  --bp-xl: 80rem; /* 1280px */
-  --bp-2xl: 96rem; /* 1536px */
+  --bp-xs: 22.5rem;
+  /* 360px */
+  --bp-sm: 30rem;
+  /* 480px */
+  --bp-md: 48rem;
+  /* 768px */
+  --bp-lg: 64rem;
+  /* 1024px */
+  --bp-xl: 80rem;
+  /* 1280px */
+  --bp-2xl: 96rem;
+  /* 1536px */
 
   /* Fluid spacing scale */
   --space-1: clamp(0.25rem, 0.2rem + 0.4vw, 0.5rem);
@@ -255,12 +263,12 @@ html[data-theme="day"] .animate-gradient-colors {
   --d-orange-1-rgb: 255 140 0;
   --d-orange-2: #FF8C00;
   --d-orange-2-rgb: 255 140 0;
-  
+
   /* Brand cyan color */
-  --brand-cyan: rgb(3,188,189);
+  --brand-cyan: rgb(3, 188, 189);
 
   /* Brand red color */
-  --brand-red: rgb(243,36,54);
+  --brand-red: rgb(243, 36, 54);
 
   /* Accent tokens derived from the brand palette */
   --accent-emerald-bg: rgba(45, 212, 198, 0.16);
@@ -462,7 +470,7 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 17.5rem), 1fr));
 }
 
-.card-grid > * {
+.card-grid>* {
   min-width: 0;
 }
 
@@ -528,19 +536,19 @@ picture {
   max-width: 100%;
 }
 
-@container hero (width >= 48rem) {
+@container hero (width >=48rem) {
   .home-hero-copy {
     gap: var(--space-4);
   }
 }
 
-@container region (width >= 48rem) {
+@container region (width >=48rem) {
   .region-two-pane {
     grid-template-columns: minmax(0, 1fr);
   }
 }
 
-@container region (width >= 56rem) {
+@container region (width >=56rem) {
   .region-two-pane:not(.region-two-pane--simple) {
     grid-template-areas:
       "sidebar title"
@@ -578,34 +586,68 @@ picture {
   margin-inline-start: 0;
 }
 
-.range-brand { -webkit-appearance: none; appearance: none; background: transparent; }
-.range-brand:focus { outline: none; }
-.range-brand::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; background: var(--theme-text); border: none; border-radius: 50%; cursor: pointer; height: 14px; transform: translateY(-50%); width: 14px; }
-.range-brand::-moz-range-thumb { background: var(--theme-text); border: none; border-radius: 50%; cursor: pointer; height: 14px; transform: translateY(-50%); width: 14px; }
-.range-brand::-webkit-slider-runnable-track { background:
-  radial-gradient(circle at 0 50%, var(--theme-text) 2px, transparent 3px) repeat-x,
-  linear-gradient(90deg, var(--theme-text), rgba(184,192,192,0.5));
-  background-position: 0 0, 0 0;
-  background-size: 12px 4px, 100% 4px; border-radius: 999px; height: 4px;
+.range-brand {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
 }
-.range-brand::-moz-range-track { background:
-  radial-gradient(circle at 0 50%, var(--theme-text) 2px, transparent 3px) repeat-x,
-  linear-gradient(90deg, var(--theme-text), rgba(184,192,192,0.5));
+
+.range-brand:focus {
+  outline: none;
+}
+
+.range-brand::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--theme-text);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  height: 14px;
+  transform: translateY(-50%);
+  width: 14px;
+}
+
+.range-brand::-moz-range-thumb {
+  background: var(--theme-text);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  height: 14px;
+  transform: translateY(-50%);
+  width: 14px;
+}
+
+.range-brand::-webkit-slider-runnable-track {
+  background:
+    radial-gradient(circle at 0 50%, var(--theme-text) 2px, transparent 3px) repeat-x,
+    linear-gradient(90deg, var(--theme-text), rgba(184, 192, 192, 0.5));
   background-position: 0 0, 0 0;
-  background-size: 12px 4px, 100% 4px; border-radius: 999px; height: 4px;
+  background-size: 12px 4px, 100% 4px;
+  border-radius: 999px;
+  height: 4px;
+}
+
+.range-brand::-moz-range-track {
+  background:
+    radial-gradient(circle at 0 50%, var(--theme-text) 2px, transparent 3px) repeat-x,
+    linear-gradient(90deg, var(--theme-text), rgba(184, 192, 192, 0.5));
+  background-position: 0 0, 0 0;
+  background-size: 12px 4px, 100% 4px;
+  border-radius: 999px;
+  height: 4px;
 }
 
 /* Ensure page background behind transparent header uses gradient */
-html, body {
+html,
+body {
   background:
-    radial-gradient(
-      ellipse 1000px 750px at -5% -5%,
+    radial-gradient(ellipse 1000px 750px at -5% -5%,
       #0e0f10 0%,
       #101112 15%,
       #0e0f10 30%,
       #0c0d0e 50%,
-      var(--theme-black) 80%
-    ),
+      var(--theme-black) 80%),
     var(--theme-black);
   background-attachment: fixed, fixed;
   background-repeat: no-repeat;
@@ -614,14 +656,12 @@ html, body {
 html[data-theme="day"],
 html[data-theme="day"] body {
   background:
-    radial-gradient(
-      ellipse 1000px 750px at -5% -5%,
+    radial-gradient(ellipse 1000px 750px at -5% -5%,
       #dce5e5 0%,
       #e4ebeb 15%,
       #ebf1f1 30%,
       #f2f6f6 50%,
-      var(--theme-black) 80%
-    ),
+      var(--theme-black) 80%),
     var(--theme-black);
   background-attachment: fixed, fixed;
   background-repeat: no-repeat;
@@ -630,14 +670,12 @@ html[data-theme="day"] body {
 /* Subtle gradient for main page backgrounds */
 .bg-theme-black-subtle {
   background:
-    radial-gradient(
-      ellipse 1000px 750px at -5% -5%,
+    radial-gradient(ellipse 1000px 750px at -5% -5%,
       #0e0f10 0%,
       #101112 15%,
       #0e0f10 30%,
       #0c0d0e 50%,
-      var(--theme-black) 80%
-    ),
+      var(--theme-black) 80%),
     var(--theme-black);
   background-attachment: fixed;
   background-repeat: no-repeat;
@@ -647,14 +685,12 @@ html[data-theme="day"] body {
 
 html[data-theme="day"] .bg-theme-black-subtle {
   background:
-    radial-gradient(
-      ellipse 1000px 750px at -5% -5%,
+    radial-gradient(ellipse 1000px 750px at -5% -5%,
       #dce5e5 0%,
       #e4ebeb 15%,
       #ebf1f1 30%,
       #f2f6f6 50%,
-      var(--theme-black) 80%
-    ),
+      var(--theme-black) 80%),
     var(--theme-black);
   background-attachment: fixed;
   background-repeat: no-repeat;
@@ -669,7 +705,7 @@ html[data-theme="day"] .border-b.border-theme-black {
 
 /* Footer gradient background - jaksa gradient (overlapping radials) */
 .footer-gradient-bg {
-  background: 
+  background:
     radial-gradient(ellipse 800px 600px at 20% 80%, hsla(0, 84%, 60%, 0.44) 0%, transparent 50%),
     radial-gradient(ellipse 750px 550px at 40% 30%, hsla(43, 96%, 56%, 0.48) 0%, transparent 50%),
     radial-gradient(ellipse 600px 700px at 60% 90%, hsla(217, 91%, 60%, 0.44) 0%, transparent 50%),
@@ -678,7 +714,7 @@ html[data-theme="day"] .border-b.border-theme-black {
 }
 
 html[data-theme="day"] .footer-gradient-bg {
-  background: 
+  background:
     radial-gradient(ellipse 800px 600px at 20% 80%, hsla(0, 84%, 60%, 0.60) 0%, transparent 50%),
     radial-gradient(ellipse 750px 550px at 40% 30%, hsla(43, 96%, 56%, 0.65) 0%, transparent 50%),
     radial-gradient(ellipse 600px 700px at 60% 90%, hsla(217, 91%, 60%, 0.60) 0%, transparent 50%),
@@ -755,7 +791,7 @@ html[data-theme="day"] .footer-gradient-bg {
   transition: opacity 0.2s ease;
 }
 
-.btn-ghost > * {
+.btn-ghost>* {
   position: relative;
   z-index: 1;
 }
@@ -901,17 +937,16 @@ html[data-theme="day"] .prompt-surface {
 
 /* Solid orange primary button */
 .btn-orange {
-  background: 
-    linear-gradient(135deg, 
+  background:
+    linear-gradient(135deg,
       rgba(255, 255, 255, 0.25) 0%,
       rgba(255, 255, 255, 0.1) 25%,
       transparent 50%,
       rgba(0, 0, 0, 0.1) 75%,
-      rgba(0, 0, 0, 0.2) 100%
-    ),
+      rgba(0, 0, 0, 0.2) 100%),
     #FF8C00;
   border: none;
-  box-shadow: 
+  box-shadow:
     inset 0 1px 2px rgba(255, 255, 255, 0.15),
     inset 0 -1px 2px rgba(0, 0, 0, 0.1),
     0 1px 2px rgba(0, 0, 0, 0.06);
@@ -920,17 +955,16 @@ html[data-theme="day"] .prompt-surface {
 }
 
 .btn-orange:hover {
-  background: 
-    linear-gradient(135deg, 
+  background:
+    linear-gradient(135deg,
       rgba(255, 255, 255, 0.35) 0%,
       rgba(255, 255, 255, 0.15) 25%,
       transparent 50%,
       rgba(0, 0, 0, 0.15) 75%,
-      rgba(0, 0, 0, 0.25) 100%
-    ),
+      rgba(0, 0, 0, 0.25) 100%),
     color-mix(in srgb, #FF8C00 78%, white 22%);
   border: none;
-  box-shadow: 
+  box-shadow:
     inset 0 1px 2px rgba(255, 255, 255, 0.2),
     inset 0 -1px 2px rgba(0, 0, 0, 0.12),
     0 2px 4px rgba(0, 0, 0, 0.08);
@@ -938,17 +972,16 @@ html[data-theme="day"] .prompt-surface {
 }
 
 .btn-orange:active {
-  background: 
-    linear-gradient(135deg, 
+  background:
+    linear-gradient(135deg,
       rgba(255, 255, 255, 0.15) 0%,
       rgba(255, 255, 255, 0.05) 25%,
       transparent 50%,
       rgba(0, 0, 0, 0.2) 75%,
-      rgba(0, 0, 0, 0.3) 100%
-    ),
+      rgba(0, 0, 0, 0.3) 100%),
     color-mix(in srgb, #FF8C00 70%, black 30%);
   border: none;
-  box-shadow: 
+  box-shadow:
     inset 0 1px 2px rgba(255, 255, 255, 0.1),
     inset 0 -1px 2px rgba(0, 0, 0, 0.15),
     0 1px 1px rgba(0, 0, 0, 0.12);
@@ -959,7 +992,7 @@ html[data-theme="day"] .prompt-surface {
 /* Warm panel background - solid orange */
 .panel-warm-bg {
   background:
-    linear-gradient(0deg, rgba(255,255,255,0.08), rgba(255,255,255,0.08)),
+    linear-gradient(0deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08)),
     #FF8C00;
 }
 
@@ -982,8 +1015,13 @@ html[data-theme="day"] .prompt-surface {
 }
 
 @keyframes fade-in-200 {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* Fade in up animations removed */
@@ -1058,17 +1096,17 @@ html[data-theme="day"] .prompt-surface {
 
 
 /* Brand orange text utility */
-.text-theme-orange { 
+.text-theme-orange {
   color: #FF8C00;
 }
 
 /* Softer, lighter warm for active states */
-.text-theme-orange-soft { 
+.text-theme-orange-soft {
   color: color-mix(in srgb, #FF8C00 78%, white 22%);
 }
 
 /* Brand color - primary orange */
-.text-brand { 
+.text-brand {
   color: #FF8C00;
 }
 
@@ -1093,30 +1131,26 @@ html[data-theme="day"] .prompt-surface {
 
 .btn-cyan:hover::before {
   background:
-    linear-gradient(0deg, rgba(255,255,255,0.16), rgba(255,255,255,0.16)),
-    linear-gradient(
-      150deg,
+    linear-gradient(0deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.16)),
+    linear-gradient(150deg,
       var(--brand-cyan) 0%,
       var(--brand-cyan) 26%,
       color-mix(in srgb, var(--brand-cyan) 70%, white 30%) 88%,
-      color-mix(in srgb, var(--brand-cyan) 70%, white 30%) 100%
-    );
+      color-mix(in srgb, var(--brand-cyan) 70%, white 30%) 100%);
 }
 
 @supports (background: linear-gradient(in oklch, red, blue)) {
   .btn-cyan:hover::before {
     background:
-      linear-gradient(0deg, rgba(255,255,255,0.16), rgba(255,255,255,0.16)),
-      linear-gradient(
-        in oklch 150deg,
+      linear-gradient(0deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.16)),
+      linear-gradient(in oklch 150deg,
         var(--brand-cyan) 0%,
         var(--brand-cyan) 26%,
         color-mix(in oklch, var(--brand-cyan) 70%, white 30%) 34%,
         color-mix(in oklch, var(--brand-cyan) 50%, white 50%) 50%,
         color-mix(in oklch, var(--brand-cyan) 30%, white 70%) 66%,
         color-mix(in oklch, var(--brand-cyan) 70%, white 30%) 88%,
-        color-mix(in oklch, var(--brand-cyan) 70%, white 30%) 100%
-      );
+        color-mix(in oklch, var(--brand-cyan) 70%, white 30%) 100%);
   }
 }
 
@@ -1154,30 +1188,26 @@ html[data-theme="day"] .prompt-surface {
 
 .btn-red:hover::before {
   background:
-    linear-gradient(0deg, rgba(255,255,255,0.16), rgba(255,255,255,0.16)),
-    linear-gradient(
-      150deg,
+    linear-gradient(0deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.16)),
+    linear-gradient(150deg,
       var(--brand-red) 0%,
       var(--brand-red) 26%,
       color-mix(in srgb, var(--brand-red) 70%, white 30%) 88%,
-      color-mix(in srgb, var(--brand-red) 70%, white 30%) 100%
-    );
+      color-mix(in srgb, var(--brand-red) 70%, white 30%) 100%);
 }
 
 @supports (background: linear-gradient(in oklch, red, blue)) {
   .btn-red:hover::before {
     background:
-      linear-gradient(0deg, rgba(255,255,255,0.16), rgba(255,255,255,0.16)),
-      linear-gradient(
-        in oklch 150deg,
+      linear-gradient(0deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.16)),
+      linear-gradient(in oklch 150deg,
         var(--brand-red) 0%,
         var(--brand-red) 26%,
         color-mix(in oklch, var(--brand-red) 70%, white 30%) 34%,
         color-mix(in oklch, var(--brand-red) 50%, white 50%) 50%,
         color-mix(in oklch, var(--brand-red) 30%, white 70%) 66%,
         color-mix(in oklch, var(--brand-red) 70%, white 30%) 88%,
-        color-mix(in oklch, var(--brand-red) 70%, white 30%) 100%
-      );
+        color-mix(in oklch, var(--brand-red) 70%, white 30%) 100%);
   }
 }
 
@@ -1186,27 +1216,30 @@ html[data-theme="day"] .prompt-surface {
 /* Thin separator gradient line utility */
 .color-gradient {
   /* Boosted for clearer read on dark bg */
-  --cg-shine: 0.12; /* faint vertical sheen */
-  --cg-a1: 0.36; /* gold/cyan edges */
-  --cg-a2: 0.30; /* magenta/blue mids */
+  --cg-shine: 0.12;
+  /* faint vertical sheen */
+  --cg-a1: 0.36;
+  /* gold/cyan edges */
+  --cg-a2: 0.30;
+  /* magenta/blue mids */
   background-blend-mode: overlay, screen;
 
   background-color: var(--theme-black);
   background-image:
     linear-gradient(180deg,
-      rgba(255,255,255,var(--cg-shine)) 0%,
-      rgba(255,255,255,0) 35%
-    ),
+      rgba(255, 255, 255, var(--cg-shine)) 0%,
+      rgba(255, 255, 255, 0) 35%),
     linear-gradient(150deg,
       hsla(48, 95%, 70%, var(--cg-a1)) 0%,
       hsla(342, 92%, 72%, var(--cg-a2)) 33.333%,
       hsla(226, 95%, 72%, var(--cg-a2)) 66.666%,
-      hsla(182, 85%, 70%, var(--cg-a1)) 100%
-    );
+      hsla(182, 85%, 70%, var(--cg-a1)) 100%);
 }
 
 /* Alias utility for design token light */
-.text-theme-light { color: var(--theme-light); }
+.text-theme-light {
+  color: var(--theme-light);
+}
 
 /* Selected pricing card - maintain d-light border on hover */
 .pricing-selected:hover {
@@ -1241,12 +1274,12 @@ html[data-theme="day"] .card-overlay-gradient {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  
+
   /* Disable gallery blur transitions for users who prefer reduced motion */
   .group-hover\:opacity-100 {
     transition: none !important;
   }
-  
+
   /* Disable parallax effects for reduced motion */
   .parallax-small:hover,
   .parallax-small.parallax-active,
@@ -1269,10 +1302,14 @@ html[data-theme="day"] .card-overlay-gradient {
   --y: 50%;
   --tx: 0px;
   --ty: 0px;
-  --l: 0; /* glow strength toggled by JS */
-  --fade-ms: 200ms; /* default fade duration */
-  --li: 1; /* intensity multiplier */
-  --glow-rgb: 255, 255, 255; /* default white glow */
+  --l: 0;
+  /* glow strength toggled by JS */
+  --fade-ms: 200ms;
+  /* default fade duration */
+  --li: 1;
+  /* intensity multiplier */
+  --glow-rgb: 255, 255, 255;
+  /* default white glow */
 }
 
 .mouse-glow::after {
@@ -1288,8 +1325,8 @@ html[data-theme="day"] .card-overlay-gradient {
   pointer-events: none;
   position: absolute;
   transform: translate3d(var(--tx), var(--ty), 0);
-  transition: opacity var(--fade-ms) cubic-bezier(.22,.61,.36,1),
-              transform 200ms ease;
+  transition: opacity var(--fade-ms) cubic-bezier(.22, .61, .36, 1),
+    transform 200ms ease;
   will-change: opacity, transform;
   z-index: 3;
 }
@@ -1318,17 +1355,16 @@ html[data-theme="day"] .card-overlay-gradient {
 
 /* Night mode button - always uses night theme colors */
 .btn-night {
-  background: 
-    linear-gradient(135deg, 
+  background:
+    linear-gradient(135deg,
       rgba(255, 255, 255, 0.4) 0%,
       rgba(255, 255, 255, 0.2) 25%,
       transparent 50%,
       rgba(0, 0, 0, 0.05) 75%,
-      rgba(0, 0, 0, 0.1) 100%
-    ),
+      rgba(0, 0, 0, 0.1) 100%),
     var(--n-text);
   border: none;
-  box-shadow: 
+  box-shadow:
     inset 0 1px 2px rgba(255, 255, 255, 0.15),
     inset 0 -1px 2px rgba(0, 0, 0, 0.03),
     0 2px 4px rgba(0, 0, 0, 0.08);
@@ -1337,17 +1373,16 @@ html[data-theme="day"] .card-overlay-gradient {
 }
 
 .btn-night:hover {
-  background: 
-    linear-gradient(135deg, 
+  background:
+    linear-gradient(135deg,
       rgba(255, 255, 255, 0.48) 0%,
       rgba(255, 255, 255, 0.24) 25%,
       transparent 50%,
       rgba(0, 0, 0, 0.06) 75%,
-      rgba(0, 0, 0, 0.11) 100%
-    ),
+      rgba(0, 0, 0, 0.11) 100%),
     color-mix(in srgb, #ffffff 94%, black 6%);
   border: none;
-  box-shadow: 
+  box-shadow:
     inset 0 1px 2px rgba(255, 255, 255, 0.2),
     inset 0 -1px 2px rgba(0, 0, 0, 0.04),
     0 3px 6px rgba(0, 0, 0, 0.1);
@@ -1355,17 +1390,16 @@ html[data-theme="day"] .card-overlay-gradient {
 }
 
 .btn-night:active {
-  background: 
-    linear-gradient(135deg, 
+  background:
+    linear-gradient(135deg,
       rgba(255, 255, 255, 0.3) 0%,
       rgba(255, 255, 255, 0.1) 25%,
       transparent 50%,
       rgba(0, 0, 0, 0.1) 75%,
-      rgba(0, 0, 0, 0.15) 100%
-    ),
+      rgba(0, 0, 0, 0.15) 100%),
     color-mix(in srgb, #ffffff 85%, black 15%);
   border: none;
-  box-shadow: 
+  box-shadow:
     inset 0 1px 2px rgba(255, 255, 255, 0.12),
     inset 0 -1px 2px rgba(0, 0, 0, 0.05),
     0 1px 2px rgba(0, 0, 0, 0.1);
@@ -1387,15 +1421,13 @@ html[data-theme="day"] .card-overlay-gradient {
 }
 
 .white-gradient {
-  background: linear-gradient(
-    150deg,
-    hsla(210, 35%, 91%, 0.03) 0%,
-    hsla(195, 70%, 88%, 0.04) 20%,
-    hsla(230, 65%, 90%, 0.05) 40%,
-    hsla(265, 60%, 89%, 0.06) 60%,
-    hsla(180, 55%, 92%, 0.07) 80%,
-    hsla(210, 30%, 87%, 0.08) 100%
-  );
+  background: linear-gradient(150deg,
+      hsla(210, 35%, 91%, 0.03) 0%,
+      hsla(195, 70%, 88%, 0.04) 20%,
+      hsla(230, 65%, 90%, 0.05) 40%,
+      hsla(265, 60%, 89%, 0.06) 60%,
+      hsla(180, 55%, 92%, 0.07) 80%,
+      hsla(210, 30%, 87%, 0.08) 100%);
   filter: blur(24px);
 }
 
@@ -1480,7 +1512,7 @@ html[data-theme="day"] .card-overlay-gradient {
   display: none;
 }
 
-.card-media-frame > img {
+.card-media-frame>img {
   position: relative;
   z-index: 1;
 }
@@ -1500,10 +1532,12 @@ html[data-theme="day"] .card-media-frame::before {
 .promptbar {
   transition: border-color 0.2s ease;
 }
+
 .promptbar:hover,
 .promptbar:focus-within {
   border-color: var(--theme-light);
 }
+
 .promptbar.drag-active {
   border-color: var(--theme-text);
   border-width: 1px;
@@ -1515,21 +1549,25 @@ html[data-theme="day"] .card-media-frame::before {
   -webkit-backdrop-filter: blur(32px);
   backdrop-filter: blur(32px);
   background: var(--glass-dark-bg);
-  border: 1px solid var(--glass-border);
+  border: 1px solid rgb(var(--theme-dark-rgb) / 0.10);
   border-radius: 9999px;
   color: var(--theme-white);
   display: inline-grid;
-  height: 28px; /* compact size for grid/default view */
+  height: 28px;
+  /* compact size for grid/default view */
   justify-content: center;
-  padding: 0.25rem; /* aligns with Tailwind p-1 */
+  padding: 0.25rem;
+  /* aligns with Tailwind p-1 */
   perspective: 1000px;
   place-items: center;
   transition: background-color 0.1s ease, color 0.1s ease, border-color 0.1s ease, transform 0.1s;
-  width: 28px; /* compact size for grid/default view */
+  width: 28px;
+  /* compact size for grid/default view */
 }
 
 .image-action-btn svg {
-  height: 0.875rem; /* ensure icons render consistently */
+  height: 0.875rem;
+  /* ensure icons render consistently */
   width: 0.875rem;
 }
 
@@ -1546,7 +1584,8 @@ html[data-theme="day"] .card-media-frame::before {
 }
 
 .image-action-btn--fullsize {
-  height: 28px; /* consistent size across all views */
+  height: 28px;
+  /* consistent size across all views */
   padding: 0.25rem;
   width: 28px;
 }
@@ -1565,12 +1604,14 @@ html[data-theme="day"] .card-media-frame::before {
 /* Colored hover tint for master section action buttons */
 .image-action-btn.master-action-create-image:hover {
   background: color-mix(in srgb, rgba(239, 68, 68, 0.25) 30%, var(--glass-dark-bg) 70%);
-  border-color: rgba(239, 68, 68, 0.25); /* border-red-500/25 - matches create sidebar */
+  border-color: rgba(239, 68, 68, 0.25);
+  /* border-red-500/25 - matches create sidebar */
 }
 
 .image-action-btn.master-action-make-video:hover {
   background: color-mix(in srgb, rgba(59, 130, 246, 0.25) 30%, var(--glass-dark-bg) 70%);
-  border-color: rgba(59, 130, 246, 0.25); /* border-blue-500/25 - matches create sidebar */
+  border-color: rgba(59, 130, 246, 0.25);
+  /* border-blue-500/25 - matches create sidebar */
 }
 
 /* Override image-action-btn transform for parallax elements */
@@ -1639,7 +1680,7 @@ html[data-theme="day"] .card-media-frame::before {
 
 /* Day mode specific border colors for image gallery action buttons and dropdowns */
 html[data-theme="day"] .image-gallery-actions .image-action-btn {
-  border-color: rgb(var(--theme-dark-rgb) / 0.5);
+  border-color: rgb(var(--theme-dark-rgb) / 0.10);
 }
 
 html[data-theme="day"] .image-gallery-actions .nav-arrow-btn {
@@ -1666,11 +1707,13 @@ html[data-theme="day"] .image-gallery-actions .nav-arrow-btn:hover {
 
 /* Day mode colored hover borders for master section action buttons */
 html[data-theme="day"] .image-action-btn.master-action-create-image:hover {
-  border-color: rgba(239, 68, 68, 0.25); /* border-red-500/25 - matches create sidebar */
+  border-color: rgba(239, 68, 68, 0.25);
+  /* border-red-500/25 - matches create sidebar */
 }
 
 html[data-theme="day"] .image-action-btn.master-action-make-video:hover {
-  border-color: rgba(59, 130, 246, 0.25); /* border-blue-500/25 - matches create sidebar */
+  border-color: rgba(59, 130, 246, 0.25);
+  /* border-blue-500/25 - matches create sidebar */
 }
 
 /* Day mode border colors for gallery images */
@@ -1841,62 +1884,54 @@ select option::-webkit-scrollbar-thumb:hover {
 
 html[data-theme="night"] .PromptDescriptionBar {
   --prompt-bar-gradient-direction: to top;
-  background: linear-gradient(
-    var(--prompt-bar-gradient-direction),
-    rgb(var(--prompt-bar-color-rgb) / 0.85) 0%,
-    rgb(var(--prompt-bar-color-rgb) / 0.83) 10%,
-    rgb(var(--prompt-bar-color-rgb) / 0.81) 25%,
-    rgb(var(--prompt-bar-color-rgb) / 0.77) 40%,
-    rgb(var(--prompt-bar-color-rgb) / 0.71) 60%,
-    rgb(var(--prompt-bar-color-rgb) / 0.61) 80%,
-    rgb(var(--prompt-bar-color-rgb) / 0.47) 95%,
-    rgb(var(--prompt-bar-color-rgb) / 0.33) 100%
-  );
+  background: linear-gradient(var(--prompt-bar-gradient-direction),
+      rgb(var(--prompt-bar-color-rgb) / 0.85) 0%,
+      rgb(var(--prompt-bar-color-rgb) / 0.83) 10%,
+      rgb(var(--prompt-bar-color-rgb) / 0.81) 25%,
+      rgb(var(--prompt-bar-color-rgb) / 0.77) 40%,
+      rgb(var(--prompt-bar-color-rgb) / 0.71) 60%,
+      rgb(var(--prompt-bar-color-rgb) / 0.61) 80%,
+      rgb(var(--prompt-bar-color-rgb) / 0.47) 95%,
+      rgb(var(--prompt-bar-color-rgb) / 0.33) 100%);
 }
 
 html[data-theme="night"] .PromptDescriptionBarTop {
   --prompt-bar-gradient-direction: to top;
-  background: linear-gradient(
-    var(--prompt-bar-gradient-direction),
-    rgb(var(--prompt-bar-color-rgb) / 0.81) 0%,
-    rgb(var(--prompt-bar-color-rgb) / 0.77) 10%,
-    rgb(var(--prompt-bar-color-rgb) / 0.69) 25%,
-    rgb(var(--prompt-bar-color-rgb) / 0.59) 40%,
-    rgb(var(--prompt-bar-color-rgb) / 0.43) 60%,
-    rgb(var(--prompt-bar-color-rgb) / 0.27) 80%,
-    rgb(var(--prompt-bar-color-rgb) / 0.12) 95%,
-    rgb(var(--prompt-bar-color-rgb) / 0.00) 100%
-  );
+  background: linear-gradient(var(--prompt-bar-gradient-direction),
+      rgb(var(--prompt-bar-color-rgb) / 0.81) 0%,
+      rgb(var(--prompt-bar-color-rgb) / 0.77) 10%,
+      rgb(var(--prompt-bar-color-rgb) / 0.69) 25%,
+      rgb(var(--prompt-bar-color-rgb) / 0.59) 40%,
+      rgb(var(--prompt-bar-color-rgb) / 0.43) 60%,
+      rgb(var(--prompt-bar-color-rgb) / 0.27) 80%,
+      rgb(var(--prompt-bar-color-rgb) / 0.12) 95%,
+      rgb(var(--prompt-bar-color-rgb) / 0.00) 100%);
 }
 
 html[data-theme="day"] .PromptDescriptionBar {
   --prompt-bar-gradient-direction: to bottom;
-  background: linear-gradient(
-    var(--prompt-bar-gradient-direction),
-    rgb(var(--prompt-bar-color-rgb) / 0.83) 0%,
-    rgb(var(--prompt-bar-color-rgb) / 0.81) 10%,
-    rgb(var(--prompt-bar-color-rgb) / 0.77) 25%,
-    rgb(var(--prompt-bar-color-rgb) / 0.71) 40%,
-    rgb(var(--prompt-bar-color-rgb) / 0.63) 60%,
-    rgb(var(--prompt-bar-color-rgb) / 0.51) 80%,
-    rgb(var(--prompt-bar-color-rgb) / 0.37) 95%,
-    rgb(var(--prompt-bar-color-rgb) / 0.25) 100%
-  );
+  background: linear-gradient(var(--prompt-bar-gradient-direction),
+      rgb(var(--prompt-bar-color-rgb) / 0.83) 0%,
+      rgb(var(--prompt-bar-color-rgb) / 0.81) 10%,
+      rgb(var(--prompt-bar-color-rgb) / 0.77) 25%,
+      rgb(var(--prompt-bar-color-rgb) / 0.71) 40%,
+      rgb(var(--prompt-bar-color-rgb) / 0.63) 60%,
+      rgb(var(--prompt-bar-color-rgb) / 0.51) 80%,
+      rgb(var(--prompt-bar-color-rgb) / 0.37) 95%,
+      rgb(var(--prompt-bar-color-rgb) / 0.25) 100%);
 }
 
 html[data-theme="day"] .PromptDescriptionBarTop {
   --prompt-bar-gradient-direction: to bottom;
-  background: linear-gradient(
-    var(--prompt-bar-gradient-direction),
-    rgb(var(--prompt-bar-color-rgb) / 0.63) 0%,
-    rgb(var(--prompt-bar-color-rgb) / 0.58) 10%,
-    rgb(var(--prompt-bar-color-rgb) / 0.49) 25%,
-    rgb(var(--prompt-bar-color-rgb) / 0.39) 40%,
-    rgb(var(--prompt-bar-color-rgb) / 0.25) 60%,
-    rgb(var(--prompt-bar-color-rgb) / 0.18) 80%,
-    rgb(var(--prompt-bar-color-rgb) / 0.04) 95%,
-    rgb(var(--prompt-bar-color-rgb) / 0.00) 100%
-  );
+  background: linear-gradient(var(--prompt-bar-gradient-direction),
+      rgb(var(--prompt-bar-color-rgb) / 0.63) 0%,
+      rgb(var(--prompt-bar-color-rgb) / 0.58) 10%,
+      rgb(var(--prompt-bar-color-rgb) / 0.49) 25%,
+      rgb(var(--prompt-bar-color-rgb) / 0.39) 40%,
+      rgb(var(--prompt-bar-color-rgb) / 0.25) 60%,
+      rgb(var(--prompt-bar-color-rgb) / 0.18) 80%,
+      rgb(var(--prompt-bar-color-rgb) / 0.04) 95%,
+      rgb(var(--prompt-bar-color-rgb) / 0.00) 100%);
 }
 
 /* -------------------------------------------------------------
@@ -1904,14 +1939,12 @@ html[data-theme="day"] .PromptDescriptionBarTop {
    ------------------------------------------------------------- */
 .home-page {
   background:
-    radial-gradient(
-      ellipse 1000px 750px at -5% -5%,
+    radial-gradient(ellipse 1000px 750px at -5% -5%,
       #0e0f10 0%,
       #101112 15%,
       #0e0f10 30%,
       #0c0d0e 50%,
-      var(--theme-black) 80%
-    ),
+      var(--theme-black) 80%),
     var(--theme-black);
   background-repeat: no-repeat;
   background-size: cover;
@@ -1925,14 +1958,12 @@ html[data-theme="day"] .PromptDescriptionBarTop {
 /* Create page with same gradient effect */
 .create-page {
   background:
-    radial-gradient(
-      ellipse 1000px 750px at -5% -5%,
+    radial-gradient(ellipse 1000px 750px at -5% -5%,
       #0e0f10 0%,
       #101112 15%,
       #0e0f10 30%,
       #0c0d0e 50%,
-      var(--theme-black) 80%
-    ),
+      var(--theme-black) 80%),
     var(--theme-black);
   background-repeat: no-repeat;
   background-size: cover;
@@ -1957,14 +1988,12 @@ html[data-theme="day"] .PromptDescriptionBarTop {
 /* Edit page with same gradient effect as create */
 .edit-page {
   background:
-    radial-gradient(
-      ellipse 1000px 750px at -5% -5%,
+    radial-gradient(ellipse 1000px 750px at -5% -5%,
       #0e0f10 0%,
       #101112 15%,
       #0e0f10 30%,
       #0c0d0e 50%,
-      var(--theme-black) 80%
-    ),
+      var(--theme-black) 80%),
     var(--theme-black);
   background-repeat: no-repeat;
   background-size: cover;
@@ -1999,42 +2028,36 @@ html[data-theme="day"] .PromptDescriptionBarTop {
 
 html[data-theme="day"] .home-page {
   background:
-    radial-gradient(
-      ellipse 1000px 750px at -5% -5%,
+    radial-gradient(ellipse 1000px 750px at -5% -5%,
       #dce5e5 0%,
       #e4ebeb 15%,
       #ebf1f1 30%,
       #f2f6f6 50%,
-      var(--theme-black) 80%
-    ),
+      var(--theme-black) 80%),
     var(--theme-black);
 }
 
 
 html[data-theme="day"] .create-page {
   background:
-    radial-gradient(
-      ellipse 1000px 750px at -5% -5%,
+    radial-gradient(ellipse 1000px 750px at -5% -5%,
       #dce5e5 0%,
       #e4ebeb 15%,
       #ebf1f1 30%,
       #f2f6f6 50%,
-      var(--theme-black) 80%
-    ),
+      var(--theme-black) 80%),
     var(--theme-black);
 }
 
 
 html[data-theme="day"] .edit-page {
   background:
-    radial-gradient(
-      ellipse 1000px 750px at -5% -5%,
+    radial-gradient(ellipse 1000px 750px at -5% -5%,
       #dce5e5 0%,
       #e4ebeb 15%,
       #ebf1f1 30%,
       #f2f6f6 50%,
-      var(--theme-black) 80%
-    ),
+      var(--theme-black) 80%),
     var(--theme-black);
 }
 
@@ -2063,12 +2086,11 @@ html[data-theme="day"] .edit-page {
 
 .home-hero-card__spark {
   background: radial-gradient(120% 80% at 0% 0%, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 70%),
-    linear-gradient(140deg, 
-      rgba(34, 211, 238, 0.10) 0%, 
+    linear-gradient(140deg,
+      rgba(34, 211, 238, 0.10) 0%,
       rgba(59, 130, 246, 0.08) 33%,
       rgba(239, 68, 68, 0.07) 66%,
-      rgba(251, 191, 36, 0.06) 100%
-    );
+      rgba(251, 191, 36, 0.06) 100%);
   inset: 0;
   mix-blend-mode: screen;
   opacity: 0.6;
@@ -2116,12 +2138,11 @@ html[data-theme="day"] .edit-page {
 }
 
 .home-hero-line {
-  background: linear-gradient(90deg, 
-    rgba(0, 160, 190, 0.85) 0%, 
-    rgba(0, 70, 200, 0.85) 33%, 
-    rgba(200, 0, 0, 0.85) 66%, 
-    rgba(200, 150, 0, 0.85) 100%
-  );
+  background: linear-gradient(90deg,
+      rgba(0, 160, 190, 0.85) 0%,
+      rgba(0, 70, 200, 0.85) 33%,
+      rgba(200, 0, 0, 0.85) 66%,
+      rgba(200, 150, 0, 0.85) 100%);
   border-radius: 999px;
   height: 4px;
   left: 80px;
@@ -2162,14 +2183,12 @@ html[data-theme="day"] .edit-page {
    ------------------------------------------------------------- */
 .faq-section {
   background:
-    radial-gradient(
-      ellipse 1000px 750px at -5% -5%,
+    radial-gradient(ellipse 1000px 750px at -5% -5%,
       #0e0f10 0%,
       #101112 15%,
       #0e0f10 30%,
       #0c0d0e 50%,
-      var(--theme-black) 80%
-    ),
+      var(--theme-black) 80%),
     var(--theme-black);
   border-top: 1px solid var(--theme-dark);
   padding-bottom: 6rem;
@@ -2179,14 +2198,12 @@ html[data-theme="day"] .edit-page {
 
 html[data-theme="day"] .faq-section {
   background:
-    radial-gradient(
-      ellipse 1000px 750px at -5% -5%,
+    radial-gradient(ellipse 1000px 750px at -5% -5%,
       #dce5e5 0%,
       #e4ebeb 15%,
       #ebf1f1 30%,
       #f2f6f6 50%,
-      var(--theme-black) 80%
-    ),
+      var(--theme-black) 80%),
     var(--theme-black);
   border-top: 1px solid #e0e0e0;
 }
@@ -2334,7 +2351,7 @@ input[type="range"]::-webkit-slider-thumb {
   background: rgb(184, 192, 192);
   border: 2px solid rgb(184, 192, 192);
   border-radius: 50%;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   cursor: pointer;
   height: 16px;
   width: 16px;
@@ -2344,7 +2361,7 @@ input[type="range"]::-moz-range-thumb {
   background: rgb(184, 192, 192);
   border: 2px solid rgb(184, 192, 192);
   border-radius: 50%;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   cursor: pointer;
   height: 16px;
   width: 16px;

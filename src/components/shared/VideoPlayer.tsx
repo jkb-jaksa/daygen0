@@ -405,7 +405,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 z-20 ${isCenterVisible ? 'opacity-100' : 'opacity-0'} pointer-events-none`}>
                 <button
                     onClick={togglePlay}
-                    className={`w-16 h-16 rounded-full ${glass.promptDark} border border-white/20 flex items-center justify-center parallax-large hover:scale-105 transition-all duration-200 group/playbutton pointer-events-auto outline-none`}
+                    className={`w-16 h-16 rounded-full ${glass.promptDark} border border-[rgb(var(--theme-dark-rgb)/0.10)] flex items-center justify-center parallax-large hover:scale-105 transition-all duration-200 group/playbutton pointer-events-auto outline-none`}
                 >
                     {CenterIcon && (
                         <CenterIcon className={`w-6 h-6 text-theme-white fill-theme-white transition-colors duration-200 group-hover/playbutton:text-theme-text group-hover/playbutton:fill-theme-text ${CenterIcon === Play ? 'ml-1' : ''}`} />
@@ -441,7 +441,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                             />
                         )}
                         <div
-                            className="absolute top-0 left-0 h-full bg-white rounded-full"
+                            className="absolute top-0 left-0 h-full bg-white/80 rounded-full"
                             style={{ width: `${progress}%` }}
                         />
                         <div
@@ -505,7 +505,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                             </div>
                         </div>
 
-                        <span className="inline-flex items-center justify-center h-[28px] px-3 rounded-full border border-[var(--glass-border)] bg-[var(--glass-dark-bg)] backdrop-blur-[32px] text-xs font-raleway font-medium text-[var(--theme-white)] parallax-large leading-none shrink-0">
+                        <span className="inline-flex items-center justify-center h-[28px] px-3 rounded-full border border-[rgb(var(--theme-dark-rgb)/0.10)] bg-[var(--glass-dark-bg)] backdrop-blur-[32px] text-xs font-raleway font-medium text-[var(--theme-white)] parallax-large leading-none shrink-0">
                             {videoRef.current ? formatTime(videoRef.current.currentTime) : '0:00'} / {formatTime(duration)}
                         </span>
                     </div>
