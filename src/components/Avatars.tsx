@@ -412,6 +412,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const [isFullSizeOpen, setIsFullSizeOpen] = useState<boolean>(false);
   const [selectedFullImage, setSelectedFullImage] = useState<GalleryImageLike | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+  const [activeUseCaseSection, setActiveUseCaseSection] = useState<'create' | 'edit'>('create');
   const [isAvatarFullSizeOpen, setIsAvatarFullSizeOpen] = useState<boolean>(false);
   const [activeAvatarImageId, setActiveAvatarImageId] = useState<string | null>(null);
   const avatarImageInputRef = useRef<HTMLInputElement | null>(null);
@@ -2291,55 +2292,134 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
           {isMasterSection && (
             <>
               <div className="w-full">
-                <h2 className="text-xl font-normal font-raleway text-theme-text">
+                <h2 className="text-xl font-normal font-raleway text-theme-text mb-2">
                   What do you want to do?
                 </h2>
+                <div className="flex gap-2 mb-1">
+                  <button
+                    type="button"
+                    onClick={() => setActiveUseCaseSection('create')}
+                    className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-raleway font-medium transition-colors duration-200 ${
+                      activeUseCaseSection === 'create'
+                        ? 'bg-theme-white/10 border border-theme-mid text-theme-text'
+                        : 'bg-theme-black/50 border border-theme-dark text-theme-white/80 hover:border-theme-mid hover:text-theme-text'
+                    }`}
+                  >
+                    create
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveUseCaseSection('edit')}
+                    className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-raleway font-medium transition-colors duration-200 ${
+                      activeUseCaseSection === 'edit'
+                        ? 'bg-theme-white/10 border border-theme-mid text-theme-text'
+                        : 'bg-theme-black/50 border border-theme-dark text-theme-white/80 hover:border-theme-mid hover:text-theme-text'
+                    }`}
+                  >
+                    edit
+                  </button>
+                </div>
               </div>
               <div className="w-full">
                 <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                  <UseCaseCard
-                    title="use presets"
-                    imageUrl="/deepdream1.png"
-                    imageAlt="Your image plus preset example"
-                    onClick={openStyleModal}
-                    imageHeight="h-32 sm:h-36 md:h-40"
-                  />
-                  <UseCaseCard
-                    title="style transfer"
-                    imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/artistic images.png"
-                    imageAlt="Style transfer example"
-                    onClick={openStyleModal}
-                    imageHeight="h-32 sm:h-36 md:h-40"
-                  />
-                  <UseCaseCard
-                    title="product placement"
-                    imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/product visualizations.png"
-                    imageAlt="Product placement example"
-                    onClick={openStyleModal}
-                    imageHeight="h-32 sm:h-36 md:h-40"
-                  />
-                  <UseCaseCard
-                    title="virtual try-on"
-                    imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/virtual try-on.png"
-                    imageAlt="Virtual try-on example"
-                    onClick={openStyleModal}
-                    imageHeight="h-32 sm:h-36 md:h-40"
-                  />
-
-                  <UseCaseCard
-                    title="person swap"
-                    imageUrl="/person swap.png"
-                    imageAlt="Infographics example"
-                    onClick={openStyleModal}
-                    imageHeight="h-32 sm:h-36 md:h-40"
-                  />
-                  <UseCaseCard
-                    title="upscaling"
-                    imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/upscaling.png"
-                    imageAlt="Upscaling example"
-                    onClick={openStyleModal}
-                    imageHeight="h-32 sm:h-36 md:h-40"
-                  />
+                  {activeUseCaseSection === 'create' ? (
+                    <>
+                      <UseCaseCard
+                        title="lifestyle images"
+                        imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/lifestyle images.png"
+                        imageAlt="Lifestyle images example"
+                        onClick={openStyleModal}
+                        imageHeight="h-32 sm:h-36 md:h-40"
+                      />
+                      <UseCaseCard
+                        title="business headshot"
+                        imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/3b632ef0-3d13-4359-a2ba-5dec11fc3eab.png"
+                        imageAlt="Business headshot example"
+                        onClick={openStyleModal}
+                        imageHeight="h-32 sm:h-36 md:h-40"
+                      />
+                      <UseCaseCard
+                        title="artistic images"
+                        imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/artistic images.png"
+                        imageAlt="Artistic images example"
+                        onClick={openStyleModal}
+                        imageHeight="h-32 sm:h-36 md:h-40"
+                      />
+                      <UseCaseCard
+                        title="add object/product"
+                        imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/product visualizations.png"
+                        imageAlt="Add object/product example"
+                        onClick={openStyleModal}
+                        imageHeight="h-32 sm:h-36 md:h-40"
+                      />
+                      <UseCaseCard
+                        title="create brand assets"
+                        imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/brand identity.png"
+                        imageAlt="Create brand assets example"
+                        onClick={openStyleModal}
+                        imageHeight="h-32 sm:h-36 md:h-40"
+                      />
+                      <UseCaseCard
+                        title="you as a meme"
+                        imageUrl="/person swap.png"
+                        imageAlt="You as a meme example"
+                        onClick={openStyleModal}
+                        imageHeight="h-32 sm:h-36 md:h-40"
+                      />
+                      <UseCaseCard
+                        title="short-form video"
+                        imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/virtual try-on.png"
+                        imageAlt="Short-form video example"
+                        onClick={openStyleModal}
+                        imageHeight="h-32 sm:h-36 md:h-40"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <UseCaseCard
+                        title="edit image details"
+                        imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/3b632ef0-3d13-4359-a2ba-5dec11fc3eab.png"
+                        imageAlt="Edit image details example"
+                        onClick={openStyleModal}
+                        imageHeight="h-32 sm:h-36 md:h-40"
+                      />
+                      <UseCaseCard
+                        title="upscale image"
+                        imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/upscaling.png"
+                        imageAlt="Upscale image example"
+                        onClick={openStyleModal}
+                        imageHeight="h-32 sm:h-36 md:h-40"
+                      />
+                      <UseCaseCard
+                        title="change image style"
+                        imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/artistic images.png"
+                        imageAlt="Change image style example"
+                        onClick={openStyleModal}
+                        imageHeight="h-32 sm:h-36 md:h-40"
+                      />
+                      <UseCaseCard
+                        title="change outfit"
+                        imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/virtual try-on.png"
+                        imageAlt="Change outfit example"
+                        onClick={openStyleModal}
+                        imageHeight="h-32 sm:h-36 md:h-40"
+                      />
+                      <UseCaseCard
+                        title="person swap"
+                        imageUrl="/person swap.png"
+                        imageAlt="Person swap example"
+                        onClick={openStyleModal}
+                        imageHeight="h-32 sm:h-36 md:h-40"
+                      />
+                      <UseCaseCard
+                        title="remove background"
+                        imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/3b632ef0-3d13-4359-a2ba-5dec11fc3eab.png"
+                        imageAlt="Remove background example"
+                        onClick={openStyleModal}
+                        imageHeight="h-32 sm:h-36 md:h-40"
+                      />
+                    </>
+                  )}
                 </div>
               </div>
             </>

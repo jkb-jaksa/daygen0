@@ -49,7 +49,7 @@ const IMAGE_CASES: readonly UseCaseItem[] = [
   createUseCase("recreate-images", "recreate images", "recreate any image inside the tool", "create"),
   createUseCase("realtime-generation", "realtime generation", "test your prompts in real-time", "create"),
   createUseCase("product-visualisations", "product visualisations", "create product and packaging visuals", "create"),
-  createUseCase("virtual-try-on", "virtual try-on", "simulate products on models or users", "create"),
+  createUseCase("virtual-try-on", "change outfit", "simulate products on models or users", "create"),
   createUseCase("brand-identity", "brand identity", "create cohesive brand visuals and assets", "create"),
   createUseCase("infographics", "infographics", "create clear, data-driven visuals", "create"),
   createUseCase("social-media", "social media", "create posts, covers and ad creatives", "create"),
@@ -57,10 +57,10 @@ const IMAGE_CASES: readonly UseCaseItem[] = [
   createUseCase("edit-image-details", "edit image details", "adjust lighting, color, background and more", "edit"),
   createUseCase("add-edit-text", "add/edit text", "add or refine text inside images", "edit"),
   createUseCase("style-reference", "style reference", "apply visual styles from reference images", "edit"),
-  createUseCase("person-swap", "person swap", "replace people while keeping composition", "edit"),
+  createUseCase("person-swap", "you as a meme", "replace people while keeping composition", "edit"),
   createUseCase("batch-edits", "batch edits", "edit multiple images consistently", "edit"),
   createUseCase("retouching", "retouching", "cleanup, remove objects and fix flaws", "edit"),
-  createUseCase("upscaling", "upscaling", "enhance resolution while preserving detail", "edit"),
+  createUseCase("upscaling", "upscale image", "enhance resolution while preserving detail", "edit"),
   // Personalize
   createUseCase("style-tuning", "style tuning", "personalize outputs to your brand/style", "personalize"),
 ];
@@ -80,7 +80,7 @@ const VIDEO_CASES: readonly UseCaseItem[] = [
   createUseCase("edit-video-details", "edit video details", "adjust lighting, color and timing", "edit"),
   createUseCase("video-add-edit-text", "add/edit text", "overlay or refine text in video", "edit"),
   createUseCase("video-style-reference", "style reference", "apply looks from reference videos/images", "edit"),
-  createUseCase("video-person-swap", "person swap", "replace subjects while keeping motion", "edit"),
+  createUseCase("video-person-swap", "you as a meme", "replace subjects while keeping motion", "edit"),
   createUseCase("facial-animation", "facial animation", "drive expressions and lip movement", "edit"),
   createUseCase("extend-video", "extend video", "continue scenes forward or backward", "edit"),
   createUseCase("motion-control", "motion control", "manipulate trajectories, speed and easing", "edit"),
@@ -89,7 +89,7 @@ const VIDEO_CASES: readonly UseCaseItem[] = [
   createUseCase("aspect-ratio-video", "aspect ratio", "reframe between formats cleanly", "edit"),
   createUseCase("dubbing-lipsync", "dubbing/lip-sync", "match voiceover to character lips", "edit"),
   createUseCase("captions", "captions", "auto-generate and style subtitles", "edit"),
-  createUseCase("video-upscaling", "upscaling", "enhance resolution and detail", "edit"),
+  createUseCase("video-upscaling", "upscale image", "enhance resolution and detail", "edit"),
   // Personalize
   createUseCase("video-style-tuning", "style tuning", "personalize outputs to your brand/style", "personalize"),
 ];
