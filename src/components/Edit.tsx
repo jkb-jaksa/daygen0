@@ -388,109 +388,111 @@ export default function Edit() {
       return undefined;
     }
 
-    return new Promise(async (resolve, reject) => {
-      const originalImg = new Image();
-      // Only set crossOrigin if we are NOT using a blob URL (which means we fell back to original URL)
-      // For blob URLs, crossOrigin is not needed and can cause issues in some browsers/contexts
+    return new Promise((resolve, reject) => {
+      (async () => {
+        const originalImg = new Image();
+        // Only set crossOrigin if we are NOT using a blob URL (which means we fell back to original URL)
+        // For blob URLs, crossOrigin is not needed and can cause issues in some browsers/contexts
 
-      let srcUrl = previewUrl;
-      let objectUrlToRevoke: string | undefined;
-      let isBlob = false;
+        let srcUrl = previewUrl;
+        let objectUrlToRevoke: string | undefined;
+        let isBlob = false;
 
-      // Robustly handle image loading by fetching as blob first if needed
-      try {
-        if (previewUrl.startsWith('http') || previewUrl.startsWith('https')) {
-          const apiBase = import.meta.env.VITE_API_BASE_URL || '';
-          // If apiBase is set, we use it. Otherwise we assume relative path (which relies on proxy)
-          // Note: apiBase usually doesn't include /api if it's just the host, but let's check.
-          // In .env it is http://localhost:3000. Backend prefix is /api.
+        // Robustly handle image loading by fetching as blob first if needed
+        try {
+          if (previewUrl.startsWith('http') || previewUrl.startsWith('https')) {
+            const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+            // If apiBase is set, we use it. Otherwise we assume relative path (which relies on proxy)
+            // Note: apiBase usually doesn't include /api if it's just the host, but let's check.
+            // In .env it is http://localhost:3000. Backend prefix is /api.
 
-          const proxyEndpoint = `${apiBase}/api/r2files/proxy`;
+            const proxyEndpoint = `${apiBase}/api/r2files/proxy`;
 
-          const proxyUrl = previewUrl.includes('r2.dev')
-            ? `${proxyEndpoint}?url=${encodeURIComponent(previewUrl)}`
-            : previewUrl;
+            const proxyUrl = previewUrl.includes('r2.dev')
+              ? `${proxyEndpoint}?url=${encodeURIComponent(previewUrl)}`
+              : previewUrl;
 
-          console.log('[Edit] Fetching image for mask via proxy:', proxyUrl);
-          const response = await fetch(proxyUrl);
-          if (!response.ok) throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
-          const blob = await response.blob();
+            console.log('[Edit] Fetching image for mask via proxy:', proxyUrl);
+            const response = await fetch(proxyUrl);
+            if (!response.ok) throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+            const blob = await response.blob();
 
-          if (blob.type.includes('text/html')) {
-            throw new Error('Fetched blob is text/html, likely an error page or index.html fallback');
+            if (blob.type.includes('text/html')) {
+              throw new Error('Fetched blob is text/html, likely an error page or index.html fallback');
+            }
+
+            console.log('[Edit] Image fetched successfully, blob size:', blob.size, blob.type);
+            srcUrl = URL.createObjectURL(blob);
+            objectUrlToRevoke = srcUrl;
+            isBlob = true;
+          }
+        } catch (e) {
+          console.error('[Edit] Error fetching image for mask generation:', e);
+          // Fallback to original URL if fetch fails (might work if CORS allows)
+        }
+
+        if (!isBlob) {
+          originalImg.crossOrigin = "anonymous";
+        }
+
+        originalImg.onload = () => {
+          console.log('[Edit] Original image loaded for mask generation');
+          const width = originalImg.naturalWidth;
+          const height = originalImg.naturalHeight;
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
+            console.error('[Edit] Could not get canvas context for mask generation.');
+            reject(new Error('Could not get canvas context'));
+            return;
           }
 
-          console.log('[Edit] Image fetched successfully, blob size:', blob.size, blob.type);
-          srcUrl = URL.createObjectURL(blob);
-          objectUrlToRevoke = srcUrl;
-          isBlob = true;
-        }
-      } catch (e) {
-        console.error('[Edit] Error fetching image for mask generation:', e);
-        // Fallback to original URL if fetch fails (might work if CORS allows)
-      }
-
-      if (!isBlob) {
-        originalImg.crossOrigin = "anonymous";
-      }
-
-      originalImg.onload = () => {
-        console.log('[Edit] Original image loaded for mask generation');
-        const width = originalImg.naturalWidth;
-        const height = originalImg.naturalHeight;
-
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
-          console.error('[Edit] Could not get canvas context for mask generation.');
-          reject(new Error('Could not get canvas context'));
-          return;
-        }
-
-        // 1. Fill White (Keep area)
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, width, height);
-        console.log('[Edit] Canvas filled with white.');
-
-        // 2. Load Mask Image
-        const maskImg = new Image();
-        maskImg.onload = () => {
-          console.log('[Edit] Mask image loaded.');
-          // 3. Erase where mask is (turn to transparent)
-          // maskData has white strokes. destination-out will use alpha of strokes to erase.
-          ctx.globalCompositeOperation = 'destination-out';
-          ctx.drawImage(maskImg, 0, 0, width, height);
-          console.log('[Edit] Mask applied (destination-out).');
-
-          // 4. Fill Black behind (turning transparent to Black -> Edit area)
-          ctx.globalCompositeOperation = 'destination-over';
-          ctx.fillStyle = '#000000';
+          // 1. Fill White (Keep area)
+          ctx.fillStyle = '#FFFFFF';
           ctx.fillRect(0, 0, width, height);
-          console.log('[Edit] Background filled with black (destination-over).');
+          console.log('[Edit] Canvas filled with white.');
 
-          if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
-          const dataUrl = canvas.toDataURL('image/png');
-          console.log('[Edit] Mask generation complete, returning data URL.');
-          resolve(dataUrl);
+          // 2. Load Mask Image
+          const maskImg = new Image();
+          maskImg.onload = () => {
+            console.log('[Edit] Mask image loaded.');
+            // 3. Erase where mask is (turn to transparent)
+            // maskData has white strokes. destination-out will use alpha of strokes to erase.
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.drawImage(maskImg, 0, 0, width, height);
+            console.log('[Edit] Mask applied (destination-out).');
+
+            // 4. Fill Black behind (turning transparent to Black -> Edit area)
+            ctx.globalCompositeOperation = 'destination-over';
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, width, height);
+            console.log('[Edit] Background filled with black (destination-over).');
+
+            if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
+            const dataUrl = canvas.toDataURL('image/png');
+            console.log('[Edit] Mask generation complete, returning data URL.');
+            resolve(dataUrl);
+          };
+          maskImg.onerror = (e) => {
+            console.error('[Edit] Error loading mask image:', e);
+            if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
+            reject(e);
+          };
+          maskImg.src = maskData;
+          console.log('[Edit] Attempting to load maskImg from maskData.');
         };
-        maskImg.onerror = (e) => {
-          console.error('[Edit] Error loading mask image:', e);
+        originalImg.onerror = (e) => {
           if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
+          console.error('[Edit] Error loading original image for mask:', e, 'src:', srcUrl);
           reject(e);
         };
-        maskImg.src = maskData;
-        console.log('[Edit] Attempting to load maskImg from maskData.');
-      };
-      originalImg.onerror = (e) => {
-        if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
-        console.error('[Edit] Error loading original image for mask:', e, 'src:', srcUrl);
-        reject(e);
-      };
-      originalImg.src = srcUrl;
-      console.log('[Edit] Attempting to load originalImg from srcUrl:', srcUrl);
+        originalImg.src = srcUrl;
+        console.log('[Edit] Attempting to load originalImg from srcUrl:', srcUrl);
+      })();
     });
   };
 
