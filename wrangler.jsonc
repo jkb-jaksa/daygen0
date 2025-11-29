@@ -1,0 +1,10 @@
+{
+  "name": "daygen",
+  "compatibility_date": "2025-10-06",
+  "pages_build_output_dir": "./dist",
+  "vars": {
+    "VITE_API_BASE_URL": "https://daygen-backend-365299591811.europe-central2.run.app",
+    "VITE_SUPABASE_URL": "https://kxrxsydlhfkkmvwypcqm.supabase.co",
+    "VITE_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4cnhzeWRsaGZra212d3lwY3FtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzOTgzOTEsImV4cCI6MjA3Mzk3NDM5MX0.odXDaM0gAoQT2hd09StEG2Jl1eBAVFDtahupZLU7v2k"
+  }
+}

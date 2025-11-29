@@ -1,0 +1,238 @@
+import React, { useState, useRef, useCallback } from 'react';
+import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
+import type { Crop, PixelCrop } from 'react-image-crop';
+import { X, Check, RotateCcw } from 'lucide-react';
+import 'react-image-crop/dist/ReactCrop.css';
+import { buttons, glass } from "../styles/designSystem";
+
+interface ProfileCropModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  imageSrc: string;
+  onCropComplete: (croppedImageBlob: Blob) => void;
+}
+
+export default function ProfileCropModal({ isOpen, onClose, imageSrc, onCropComplete }: ProfileCropModalProps) {
+  const [crop, setCrop] = useState<Crop>();
+  const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
+  const [scale, setScale] = useState(1);
+  const [rotate, setRotate] = useState(0);
+  const [aspect] = useState<number | undefined>(1);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+
+  const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    const { width, height } = e.currentTarget;
+    const crop = centerCrop(
+      makeAspectCrop(
+        {
+          unit: '%',
+          width: 90,
+        },
+        1,
+        width,
+        height
+      ),
+      width,
+      height
+    );
+    setCrop(crop);
+  }, []);
+
+  const onDownloadCropClick = useCallback(() => {
+    if (!completedCrop || !imgRef.current || !canvasRef.current) {
+      return;
+    }
+
+    const image = imgRef.current;
+    const canvas = canvasRef.current;
+    const crop = completedCrop;
+
+    // Get the actual displayed image dimensions
+    const displayWidth = image.width;
+    const displayHeight = image.height;
+    
+    // Calculate scale factors from display to natural dimensions
+    const scaleX = image.naturalWidth / displayWidth;
+    const scaleY = image.naturalHeight / displayHeight;
+    
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+      throw new Error('No 2d context');
+    }
+
+    // Set canvas size to crop dimensions
+    canvas.width = crop.width;
+    canvas.height = crop.height;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    // Draw the cropped portion
+    ctx.drawImage(
+      image,
+      crop.x * scaleX,           // Source x (scaled to natural dimensions)
+      crop.y * scaleY,           // Source y (scaled to natural dimensions)
+      crop.width * scaleX,       // Source width (scaled to natural dimensions)
+      crop.height * scaleY,      // Source height (scaled to natural dimensions)
+      0,                         // Destination x
+      0,                         // Destination y
+      crop.width,                // Destination width
+      crop.height                // Destination height
+    );
+
+    canvas.toBlob((blob) => {
+      if (blob) {
+        onCropComplete(blob);
+        onClose();
+      }
+    }, 'image/jpeg', 0.9);
+  }, [completedCrop, onCropComplete, onClose]);
+
+  const resetCrop = () => {
+    if (imgRef.current) {
+      const { width, height } = imgRef.current;
+      const crop = centerCrop(
+        makeAspectCrop(
+          {
+            unit: '%',
+            width: 90,
+          },
+          1,
+          width,
+          height
+        ),
+        width,
+        height
+      );
+      setCrop(crop);
+    }
+    setScale(1);
+    setRotate(0);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className={`fixed inset-0 z-[120] ${glass.promptDark} flex items-center justify-center py-12`}>
+      <div className="rounded-[20px] py-12 px-6 max-w-2xl w-full min-w-[28rem] max-h-[90vh] overflow-hidden">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-raleway font-normal text-theme-text">Crop Profile Picture</h3>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-theme-dark/40 rounded-full transition-colors group"
+          >
+            <X className="w-5 h-5 text-theme-white group-hover:text-theme-text transition-colors" />
+          </button>
+        </div>
+
+        <div className="space-y-6">
+          {/* Controls */}
+          <div className="flex flex-wrap gap-4 items-center">
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-theme-white font-raleway">Scale:</label>
+              <input
+                type="range"
+                min="0.5"
+                max="2"
+                step="0.1"
+                value={scale}
+                onChange={(e) => setScale(Number(e.target.value))}
+                className="w-20 h-1 bg-theme-white rounded-lg appearance-none cursor-pointer"
+                style={{
+                  background: `linear-gradient(to right, rgba(184, 192, 192, 1) 0%, rgba(184, 192, 192, 1) ${((scale - 0.5) / 1.5) * 100}%, rgba(184, 192, 192, 0.3) ${((scale - 0.5) / 1.5) * 100}%, rgba(184, 192, 192, 0.3) 100%)`,
+                  WebkitAppearance: 'none',
+                  appearance: 'none',
+                }}
+              />
+              <span className="text-xs text-theme-white font-raleway">{Math.round(scale * 100)}%</span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-theme-white font-raleway">Rotate:</label>
+              <input
+                type="range"
+                min="-180"
+                max="180"
+                step="1"
+                value={rotate}
+                onChange={(e) => setRotate(Number(e.target.value))}
+                className="w-20 h-1 bg-theme-white rounded-lg appearance-none cursor-pointer"
+                style={{
+                  background: `linear-gradient(to right, rgba(184, 192, 192, 1) 0%, rgba(184, 192, 192, 1) ${((rotate + 180) / 360) * 100}%, rgba(184, 192, 192, 0.3) ${((rotate + 180) / 360) * 100}%, rgba(184, 192, 192, 0.3) 100%)`,
+                  WebkitAppearance: 'none',
+                  appearance: 'none',
+                }}
+              />
+              <span className="text-xs text-theme-white font-raleway">{rotate}°</span>
+            </div>
+
+            <button
+              onClick={resetCrop}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text font-raleway text-sm`}
+            >
+              <RotateCcw className="w-4 h-4" />
+              Reset
+            </button>
+          </div>
+
+          {/* Image Crop Area */}
+          <div className="flex justify-center">
+            <div className="max-w-full max-h-[50vh] overflow-auto">
+              <ReactCrop
+                crop={crop}
+                onChange={(_, percentCrop) => setCrop(percentCrop)}
+                onComplete={(c) => setCompletedCrop(c)}
+                aspect={aspect}
+                minWidth={100}
+                minHeight={100}
+              >
+                <img
+                  ref={imgRef}
+                  alt="Crop me"
+                  src={imageSrc}
+                  style={{
+                    transform: `scale(${scale}) rotate(${rotate}deg)`,
+                    maxWidth: '100%',
+                    maxHeight: '50vh',
+                  }}
+                  onLoad={onImageLoad}
+                />
+              </ReactCrop>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-4 pt-6 border-t border-theme-dark">
+            <button
+              onClick={onClose}
+              className={buttons.ghost}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onDownloadCropClick}
+              disabled={!completedCrop}
+              className={buttons.primary}
+            >
+              <Check className="w-4 h-4" />
+              Done
+            </button>
+          </div>
+        </div>
+
+        {/* Hidden canvas for processing */}
+        <canvas
+          ref={canvasRef}
+          style={{
+            display: 'none',
+          }}
+        />
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>GPT Image 1: Generate & Edit</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; }
+    form { display: grid; gap: 12px; max-width: 780px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+    .thumb { width: 100%; border: 1px solid #ddd; border-radius: 8px; }
+    button { padding: 10px 14px; cursor: pointer; }
+    .toolbar { display: flex; gap: 12px; align-items: center; margin-top: 12px; }
+    .error { color: red; }
+    .success { color: green; }
+  </style>
+</head>
+<body>
+  <h1>GPT Image 1: Generate & Edit</h1>
+
+  <form id="genForm">
+    <label>
+      Mode
+      <select id="mode">
+        <option value="generate">Generate</option>
+        <option value="edit">Edit (image + optional mask)</option>
+      </select>
+    </label>
+
+    <label>
+      Prompt
+      <textarea id="prompt" rows="4" placeholder="A cozy modern reading nook with warm sunlight…" required></textarea>
+    </label>
+
+    <div class="row">
+      <label>
+        Size
+        <select id="size">
+          <option>1024x1024</option>
+          <option>1024x1536</option>
+          <option>1536x1024</option>
+          <option>512x512</option>
+          <option>256x256</option>
+        </select>
+      </label>
+
+      <label>
+        Background
+        <select id="background">
+          <option>transparent</option>
+          <option>white</option>
+          <option>black</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="row">
+      <label>
+        Quality
+        <select id="quality">
+          <option>high</option>
+          <option>standard</option>
+        </select>
+      </label>
+
+      <label>
+        Count (n)
+        <input id="count" type="number" min="1" max="8" value="1" />
+      </label>
+    </div>
+
+    <div id="editInputs" style="display:none;">
+      <div class="row">
+        <label>
+          Base image (PNG/JPG)
+          <input id="image" type="file" accept="image/*" />
+        </label>
+        <label>
+          Mask (PNG with transparency)
+          <input id="mask" type="file" accept="image/png" />
+        </label>
+      </div>
+      <small>Tip: In the mask, <strong>transparent pixels are the editable areas</strong>.</small>
+    </div>
+
+    <button type="submit">Run</button>
+    <span id="status"></span>
+  </form>
+
+  <div class="grid" id="gallery"></div>
+
+  <script>
+    const $ = (sel) => document.querySelector(sel);
+    const form = $('#genForm');
+    const gallery = $('#gallery');
+    const status = $('#status');
+    const modeSel = $('#mode');
+    const editInputs = $('#editInputs');
+
+    modeSel.addEventListener('change', () => {
+      editInputs.style.display = modeSel.value === 'edit' ? 'block' : 'none';
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const n = Math.max(1, Math.min(8, parseInt($('#count').value || '1', 10)));
+      const common = {
+        prompt: $('#prompt').value.trim(),
+        size: $('#size').value,
+        background: $('#background').value,
+        quality: $('#quality').value
+      };
+      if (!common.prompt) return;
+
+      status.textContent = 'Working…';
+      status.className = '';
+      gallery.innerHTML = '';
+
+      try {
+        let dataUrls;
+        if (modeSel.value === 'edit') {
+          const img = $('#image').files[0];
+          if (!img) throw new Error('Please choose a base image for editing.');
+          const formData = new FormData();
+          formData.set('prompt', common.prompt);
+          formData.set('size', common.size);
+          formData.set('background', common.background);
+          formData.set('quality', common.quality);
+          formData.set('n', String(n));
+          formData.set('image', img);
+          const mask = $('#mask').files[0];
+          if (mask) formData.set('mask', mask);
+
+          const resp = await fetch('/api/chatgpt-image/edit', { method: 'POST', body: formData });
+          const json = await resp.json();
+          if (!resp.ok) throw new Error(json?.error || 'Edit request failed');
+          dataUrls = json.dataUrls;
+        } else {
+          const resp = await fetch('/api/chatgpt-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...common, n })
+          });
+          const json = await resp.json();
+          if (!resp.ok) throw new Error(json?.error || 'Generate request failed');
+          dataUrls = json.dataUrls;
+        }
+
+        for (const url of dataUrls) {
+          const img = document.createElement('img');
+          img.src = url;
+          img.className = 'thumb';
+          gallery.appendChild(img);
+
+          const a = document.createElement('a');
+          a.href = url; 
+          a.download = 'gpt-image.png';
+          a.textContent = 'Download';
+          const wrap = document.createElement('div');
+          wrap.appendChild(img);
+          wrap.appendChild(document.createElement('br'));
+          wrap.appendChild(a);
+        }
+
+        status.textContent = `Done (${dataUrls.length})`;
+        status.className = 'success';
+      } catch (err) {
+        status.textContent = 'Error: ' + (err?.message || 'Unknown');
+        status.className = 'error';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "name": "daygen-project",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Daygen project root - convenience scripts for daygen0",
+  "scripts": {
+    "dev": "cd daygen0 && npm run dev",
+    "dev:server": "cd daygen0 && npm run dev:server",
+    "dev:full": "cd daygen0 && npm run dev:full",
+    "build": "cd daygen0 && npm run build",
+    "lint": "cd daygen0 && npm run lint",
+    "typecheck": "cd daygen0 && npm run typecheck",
+    "lint:css": "cd daygen0 && npm run lint:css",
+    "test": "cd daygen0 && npm run test",
+    "test:frontend": "cd daygen0 && npm run test:frontend",
+    "test:visual": "cd daygen0 && npm run test:visual",
+    "preview": "cd daygen0 && npm run preview",
+    "install": "cd daygen0 && npm install"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
