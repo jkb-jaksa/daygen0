@@ -59,10 +59,13 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         if (bottomTimeoutRef.current) {
             clearTimeout(bottomTimeoutRef.current);
         }
-        bottomTimeoutRef.current = setTimeout(() => {
-            setShowBottomControls(false);
-        }, delay);
-    }, []);
+        // Only auto-hide if we are in fullscreen mode
+        if (isFullscreen) {
+            bottomTimeoutRef.current = setTimeout(() => {
+                setShowBottomControls(false);
+            }, delay);
+        }
+    }, [isFullscreen]);
 
     const animationFrameRef = useRef<number | null>(null);
 
@@ -134,6 +137,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 setHasEnded(false);
             }
             setIsPlaying(!isPlaying);
+            // If not fullscreen, we don't want to auto-hide controls on play/pause interaction if mouse is over
+            // But resetBottomTimeout now handles the isFullscreen check
             resetBottomTimeout(2000);
 
             // Clear momentary icon after animation for play only
@@ -326,8 +331,17 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }, [duration]);
 
     const handleMouseMove = useCallback(() => {
-        resetBottomTimeout(2000);
-    }, [resetBottomTimeout]);
+        if (isFullscreen) {
+            resetBottomTimeout(2000);
+        } else {
+            // In non-fullscreen, just ensure controls are visible and clear any existing timeout
+            setShowBottomControls(true);
+            if (bottomTimeoutRef.current) {
+                clearTimeout(bottomTimeoutRef.current);
+                bottomTimeoutRef.current = null;
+            }
+        }
+    }, [resetBottomTimeout, isFullscreen]);
 
     const handleMouseLeave = useCallback(() => {
         setShowBottomControls(false);
@@ -362,7 +376,13 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         <div
             ref={containerRef}
             className={`${containerBaseClass} ${className} outline-none`}
-            onMouseEnter={() => setShowBottomControls(true)}
+            onMouseEnter={() => {
+                setShowBottomControls(true);
+                if (bottomTimeoutRef.current) {
+                    clearTimeout(bottomTimeoutRef.current);
+                    bottomTimeoutRef.current = null;
+                }
+            }}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             onClick={onClick || togglePlay}
@@ -395,7 +415,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
             {/* Controls Bar */}
             <div
-                className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent transition-opacity duration-200 ${layout === 'intrinsic' ? 'px-6 pb-4 pt-16' : 'px-3 pb-1 pt-12'
+                className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent transition-opacity duration-200 ${layout === 'intrinsic' ? 'px-6 pb-4 pt-16' : 'px-3 pb-2 pt-12'
                     } ${showBottomControls ? 'opacity-100' : 'opacity-0'}`}
                 onClick={(e) => e.stopPropagation()}
             >
@@ -460,7 +480,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
                             {/* Vertical Volume Slider Popup */}
                             <div
-                                className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-8 h-0 opacity-0 group-hover/volume:h-24 group-hover/volume:opacity-100 ${isDraggingVolume ? 'h-24 opacity-100 pointer-events-auto' : ''} transition-all duration-300 ease-out flex flex-col justify-end items-center bg-black/60 backdrop-blur-md rounded-full border border-white/10 overflow-hidden`}
+                                className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-8 h-0 opacity-0 group-hover/volume:h-24 group-hover/volume:opacity-100 ${isDraggingVolume ? 'h-24 opacity-100 pointer-events-auto' : ''} transition-all duration-300 ease-out flex flex-col justify-end items-center ${glass.promptDark} rounded-full overflow-hidden`}
                             >
                                 <div
                                     ref={volumeSliderRef}
@@ -468,13 +488,13 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                                     onMouseDown={handleVolumeMouseDown}
                                     onClick={(e) => e.stopPropagation()}
                                 >
-                                    <div className="w-1 h-16 bg-white/20 rounded-full relative pointer-events-none">
+                                    <div className="w-1 h-16 bg-theme-text/20 rounded-full relative pointer-events-none">
                                         <div
-                                            className="absolute bottom-0 left-0 w-full bg-white rounded-full"
+                                            className="absolute bottom-0 left-0 w-full bg-theme-text rounded-full"
                                             style={{ height: `${volume * 100}%` }}
                                         />
                                         <div
-                                            className="absolute left-1/2 w-3 h-3 bg-white rounded-full shadow-sm"
+                                            className="absolute left-1/2 w-3 h-3 bg-theme-text rounded-full shadow-sm"
                                             style={{
                                                 bottom: `${volume * 100}%`,
                                                 transform: 'translate(-50%, 50%)'
