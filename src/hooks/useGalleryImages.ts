@@ -94,8 +94,8 @@ export const useGalleryImages = () => {
       const fileUrl = normalizedUrl?.toLowerCase() ?? '';
       const looksLikeVideo =
         mimeType.startsWith('video/') ||
-        /\.(mp4|mov|webm|m4v|mkv)$/i.test(fileName) ||
-        /\.(mp4|mov|webm|m4v|mkv)$/i.test(fileUrl);
+        /\.(mp4|mov|webm|m4v|mkv|avi|wmv)(\?|$)/i.test(fileName) ||
+        /\.(mp4|mov|webm|m4v|mkv|avi|wmv)(\?|$)/i.test(fileUrl);
 
       if (looksLikeVideo) {
         const videoItem: GalleryVideoLike = {
@@ -176,14 +176,14 @@ export const useGalleryImages = () => {
       const key = getImageKey(image);
       if (key && !processedKeys.has(key)) {
         const imageUrl = image.url?.trim();
-        
+
         // Skip local images with R2 URLs that are not in the R2 list (they're likely deleted)
         if (imageUrl && isR2Url(imageUrl) && !r2UrlSet.has(imageUrl)) {
           // This image has an R2 URL but is not in the R2 list, so it's likely deleted
           // Skip it to avoid showing deleted images
           return;
         }
-        
+
         // Only add non-base64 local images, or base64 images that don't have R2 equivalents
         if (!isBase64Url(image.url) || !r2ImageMap.has(key)) {
           mergedImages.push(image);
@@ -230,7 +230,7 @@ export const useGalleryImages = () => {
         throw new Error(`Failed to fetch gallery images: ${response.status}`);
       }
 
-      const data = await parseJsonSafe(response);
+      const data = (await parseJsonSafe(response)) as { items?: R2FileResponse[] };
       const r2Images = data.items?.map(convertR2FileToGalleryItem) || [];
 
       // Merge R2 images with local cache, prioritizing R2 URLs
@@ -258,12 +258,12 @@ export const useGalleryImages = () => {
           const r2UrlSet = new Set(r2Images.map(img => img.url?.trim()).filter(Boolean));
           const updatedLocalImages = localImages.filter(image => {
             const imageUrl = image.url?.trim();
-            
+
             // Remove R2 images that are not in the R2 list (deleted)
             if (imageUrl && isR2Url(imageUrl) && !r2UrlSet.has(imageUrl)) {
               return false;
             }
-            
+
             // Keep non-base64 images, or base64 images that don't have R2 equivalents
             const key = image.jobId || image.url;
             return !isBase64Url(image.url) || !r2Images.some((r2Image: GalleryImageLike) => (r2Image.jobId || r2Image.url) === key);
@@ -298,7 +298,7 @@ export const useGalleryImages = () => {
           debugError('Failed to persist gallery snapshot:', error);
         }
       }
-      
+
       setState({
         images: dedupedImages,
         isLoading: false,
@@ -394,7 +394,7 @@ export const useGalleryImages = () => {
         // First, deduplicate existing images
         const seenKeys = new Set<string>();
         const deduplicatedImages: GalleryImageLike[] = [];
-        
+
         for (const image of prev.images) {
           const key = getImageKey(image);
           if (key && !seenKeys.has(key)) {
@@ -413,7 +413,7 @@ export const useGalleryImages = () => {
           if (key) {
             existingByKey.set(key, index);
           }
-          
+
           if (hasUpdates && image.url && urlSet.has(image.url)) {
             // Collect r2FileIds for optional server update (only for isPublic toggle)
             if (updates.isPublic !== undefined && image.r2FileId) {
@@ -481,7 +481,7 @@ export const useGalleryImages = () => {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({ isPublic: updates.isPublic }),
-          }).catch(() => {});
+          }).catch(() => { });
         }
       }
     },
@@ -496,12 +496,12 @@ export const useGalleryImages = () => {
 
     setState(prev => {
       const filtered = prev.images.filter(img => !urlsToRemove.has(img.url));
-      
+
       // Persist to local storage so deletion survives page refresh
       if (storagePrefix) {
         void setPersistedValue(storagePrefix, 'gallery', serializeGallery(filtered));
       }
-      
+
       return {
         ...prev,
         images: filtered,

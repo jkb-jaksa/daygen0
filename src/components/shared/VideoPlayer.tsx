@@ -370,7 +370,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
 
     // Determine if center controls should be visible
-    const isCenterVisible = momentaryIcon || (!isPlaying && !hasInteracted) || hasEnded;
+    const isCenterVisible = (momentaryIcon === 'play') ||
+        (momentaryIcon === 'pause' && showBottomControls) ||
+        (!isPlaying && !hasInteracted) ||
+        hasEnded;
 
     return (
         <div

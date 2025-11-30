@@ -103,140 +103,137 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
 
   return (
     <>
-    <div className="relative flex items-center gap-0.5">
-      <button
-        type="button"
-        className={`image-action-btn ${isFullSize ? 'image-action-btn--fullsize' : isGallery ? 'image-action-btn--gallery' : ''} parallax-large transition-opacity duration-100 ${
-          anyMenuOpen
-            ? 'opacity-100 pointer-events-auto'
-            : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-        }`}
-        title="Make video"
-        aria-label="Make video"
-        onClick={handleMakeVideoClick}
-        onMouseEnter={(e) => {
-          showTooltip(e.currentTarget, makeVideoTooltipId);
-        }}
-        onMouseLeave={() => {
-          hideTooltip(makeVideoTooltipId);
-        }}
-      >
-        <Camera className="w-3 h-3" />
-      </button>
-      {!isVideo && onMakeVariation && (
+      <div className="relative flex items-center gap-0.5">
         <button
           type="button"
-          className={`image-action-btn ${isFullSize ? 'image-action-btn--fullsize' : isGallery ? 'image-action-btn--gallery' : ''} parallax-large transition-opacity duration-100 ${
-            anyMenuOpen
+          className={`image-action-btn ${isFullSize ? 'image-action-btn--fullsize' : isGallery ? 'image-action-btn--gallery' : ''} parallax-large transition-opacity duration-100 master-action-make-video hover:text-blue-500 ${anyMenuOpen
               ? 'opacity-100 pointer-events-auto'
               : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-          }`}
-          title="Create variation"
-          aria-label="Create variation"
-          onClick={handleMakeVariationClick}
+            }`}
+          title="Make video"
+          aria-label="Make video"
+          onClick={handleMakeVideoClick}
           onMouseEnter={(e) => {
-            showTooltip(e.currentTarget, makeVariationTooltipId);
+            showTooltip(e.currentTarget, makeVideoTooltipId);
           }}
           onMouseLeave={() => {
-            hideTooltip(makeVariationTooltipId);
+            hideTooltip(makeVideoTooltipId);
           }}
         >
-          <Shuffle className="w-3 h-3" />
+          <Camera className="w-3 h-3" />
         </button>
+        {!isVideo && onMakeVariation && (
+          <button
+            type="button"
+            className={`image-action-btn ${isFullSize ? 'image-action-btn--fullsize' : isGallery ? 'image-action-btn--gallery' : ''} parallax-large transition-opacity duration-100 ${anyMenuOpen
+                ? 'opacity-100 pointer-events-auto'
+                : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+              }`}
+            title="Create variation"
+            aria-label="Create variation"
+            onClick={handleMakeVariationClick}
+            onMouseEnter={(e) => {
+              showTooltip(e.currentTarget, makeVariationTooltipId);
+            }}
+            onMouseLeave={() => {
+              hideTooltip(makeVariationTooltipId);
+            }}
+          >
+            <Shuffle className="w-3 h-3" />
+          </button>
+        )}
+        <button
+          type="button"
+          className={`image-action-btn ${isFullSize ? 'image-action-btn--fullsize' : isGallery ? 'image-action-btn--gallery' : ''} parallax-large transition-opacity duration-100 ${anyMenuOpen
+              ? 'opacity-100 pointer-events-auto'
+              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+            }`}
+          title="Edit"
+          aria-haspopup="menu"
+          aria-expanded={isOpen}
+          onClick={handleButtonClick}
+          onMouseEnter={(e) => {
+            showTooltip(e.currentTarget, editTooltipId);
+          }}
+          onMouseLeave={() => {
+            hideTooltip(editTooltipId);
+          }}
+        >
+          <Edit className="w-3 h-3" />
+        </button>
+        <MenuPortal
+          anchorEl={isOpen ? anchor : null}
+          open={isOpen}
+          onClose={onClose}
+        >
+          <button
+            type="button"
+            className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+            onClick={handleEditImageClick}
+          >
+            <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+            <Edit className="h-4 w-4 text-theme-text relative z-10" />
+            <span className="relative z-10">Edit image</span>
+          </button>
+          <button
+            type="button"
+            className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+            onClick={handleCreateAvatarClick}
+          >
+            <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+            <User className="h-4 w-4 text-theme-text relative z-10" />
+            <span className="relative z-10">Create Avatar</span>
+          </button>
+          <button
+            type="button"
+            className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+            onClick={handleUseAsReferenceClick}
+          >
+            <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+            <Copy className="h-4 w-4 text-theme-text relative z-10" />
+            <span className="relative z-10">Use as reference</span>
+          </button>
+          <button
+            type="button"
+            className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+            onClick={handleReusePromptClick}
+          >
+            <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+            <RefreshCw className="h-4 w-4 text-theme-text relative z-10" />
+            <span className="relative z-10">Reuse prompt</span>
+          </button>
+        </MenuPortal>
+      </div>
+      {createPortal(
+        <div
+          data-tooltip-for={makeVideoTooltipId}
+          className={`${tooltips.base} fixed`}
+          style={{ zIndex: 9999 }}
+        >
+          Make video
+        </div>,
+        document.body,
       )}
-      <button
-        type="button"
-        className={`image-action-btn ${isFullSize ? 'image-action-btn--fullsize' : isGallery ? 'image-action-btn--gallery' : ''} parallax-large transition-opacity duration-100 ${
-          anyMenuOpen
-            ? 'opacity-100 pointer-events-auto'
-            : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-        }`}
-        title="Edit"
-        aria-haspopup="menu"
-        aria-expanded={isOpen}
-        onClick={handleButtonClick}
-        onMouseEnter={(e) => {
-          showTooltip(e.currentTarget, editTooltipId);
-        }}
-        onMouseLeave={() => {
-          hideTooltip(editTooltipId);
-        }}
-      >
-        <Edit className="w-3 h-3" />
-      </button>
-      <MenuPortal
-        anchorEl={isOpen ? anchor : null}
-        open={isOpen}
-        onClose={onClose}
-      >
-        <button
-          type="button"
-          className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-          onClick={handleEditImageClick}
+      {onMakeVariation && !isVideo && createPortal(
+        <div
+          data-tooltip-for={makeVariationTooltipId}
+          className={`${tooltips.base} fixed`}
+          style={{ zIndex: 9999 }}
         >
-          <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-          <Edit className="h-4 w-4 text-theme-text relative z-10" />
-          <span className="relative z-10">Edit image</span>
-        </button>
-        <button
-          type="button"
-          className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-          onClick={handleCreateAvatarClick}
+          Create variation
+        </div>,
+        document.body,
+      )}
+      {createPortal(
+        <div
+          data-tooltip-for={editTooltipId}
+          className={`${tooltips.base} fixed`}
+          style={{ zIndex: 9999 }}
         >
-          <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-          <User className="h-4 w-4 text-theme-text relative z-10" />
-          <span className="relative z-10">Create Avatar</span>
-        </button>
-        <button
-          type="button"
-          className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-          onClick={handleUseAsReferenceClick}
-        >
-          <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-          <Copy className="h-4 w-4 text-theme-text relative z-10" />
-          <span className="relative z-10">Use as reference</span>
-        </button>
-        <button
-          type="button"
-          className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-          onClick={handleReusePromptClick}
-        >
-          <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-          <RefreshCw className="h-4 w-4 text-theme-text relative z-10" />
-          <span className="relative z-10">Reuse prompt</span>
-        </button>
-      </MenuPortal>
-    </div>
-    {createPortal(
-      <div
-        data-tooltip-for={makeVideoTooltipId}
-        className={`${tooltips.base} fixed`}
-        style={{ zIndex: 9999 }}
-      >
-        Make video
-      </div>,
-      document.body,
-    )}
-    {onMakeVariation && !isVideo && createPortal(
-      <div
-        data-tooltip-for={makeVariationTooltipId}
-        className={`${tooltips.base} fixed`}
-        style={{ zIndex: 9999 }}
-      >
-        Create variation
-      </div>,
-      document.body,
-    )}
-    {createPortal(
-      <div
-        data-tooltip-for={editTooltipId}
-        className={`${tooltips.base} fixed`}
-        style={{ zIndex: 9999 }}
-      >
-        Edit
-      </div>,
-      document.body,
-    )}
+          Edit
+        </div>,
+        document.body,
+      )}
     </>
   );
 });
