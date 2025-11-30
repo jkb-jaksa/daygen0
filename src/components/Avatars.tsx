@@ -2285,7 +2285,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 </button>
               </div>
             )}
-            <div className={`grid grid-cols-1 gap-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-items-start ${isMasterSection ? 'mb-0' : ''}`}>
+            <div className={`${isMasterSection ? 'flex flex-wrap gap-1' : 'grid grid-cols-1 gap-0.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-items-start'} ${isMasterSection ? 'mb-0' : ''}`}>
               {avatars.map(avatar => renderAvatarCard(avatar))}
             </div>
           </div>
@@ -2299,22 +2299,20 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                   <button
                     type="button"
                     onClick={() => setActiveUseCaseSection('create')}
-                    className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-raleway font-medium transition-colors duration-200 ${
-                      activeUseCaseSection === 'create'
-                        ? 'bg-theme-white/10 border border-theme-mid text-theme-text'
-                        : 'bg-theme-black/50 border border-theme-dark text-theme-white/80 hover:border-theme-mid hover:text-theme-text'
-                    }`}
+                    className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-raleway font-medium transition-colors duration-200 ${activeUseCaseSection === 'create'
+                      ? 'bg-theme-white/10 border border-theme-mid text-theme-text'
+                      : 'bg-theme-black/50 border border-theme-dark text-theme-white/80 hover:border-theme-mid hover:text-theme-text'
+                      }`}
                   >
                     create
                   </button>
                   <button
                     type="button"
                     onClick={() => setActiveUseCaseSection('edit')}
-                    className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-raleway font-medium transition-colors duration-200 ${
-                      activeUseCaseSection === 'edit'
-                        ? 'bg-theme-white/10 border border-theme-mid text-theme-text'
-                        : 'bg-theme-black/50 border border-theme-dark text-theme-white/80 hover:border-theme-mid hover:text-theme-text'
-                    }`}
+                    className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-raleway font-medium transition-colors duration-200 ${activeUseCaseSection === 'edit'
+                      ? 'bg-theme-white/10 border border-theme-mid text-theme-text'
+                      : 'bg-theme-black/50 border border-theme-dark text-theme-white/80 hover:border-theme-mid hover:text-theme-text'
+                      }`}
                   >
                     edit
                   </button>

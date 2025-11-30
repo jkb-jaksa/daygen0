@@ -1774,7 +1774,7 @@ const PromptForm = memo<PromptFormProps>(
           open={isAvatarPickerOpen}
           onClose={handleAvatarPickerClose}
         >
-          <div className="min-w-[260px] space-y-3">
+          <div className="min-w-[260px] space-y-2">
             <div className="flex items-center justify-between px-1">
               <button
                 type="button"
@@ -1799,7 +1799,7 @@ const PromptForm = memo<PromptFormProps>(
               </button>
             </div>
             {storedAvatars.length > 0 ? (
-              <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+              <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
                 {storedAvatars.map(avatar => {
                   const isActive = selectedAvatar?.id === avatar.id;
                   return (
@@ -2309,7 +2309,7 @@ const PromptForm = memo<PromptFormProps>(
 
                 <div className="space-y-3">
                   <h3 className="text-lg font-raleway text-theme-text">Avatar images</h3>
-                  <div className="flex flex-wrap gap-4">
+                  <div className="flex flex-wrap gap-2">
                     {creationsModalAvatar.images.map((image, index) => {
                       const isSelectedForPrompt =
                         selectedAvatar?.id === creationsModalAvatar.id
