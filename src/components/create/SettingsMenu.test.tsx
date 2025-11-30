@@ -203,7 +203,7 @@ describe('SettingsMenu', () => {
 
     render(<SettingsMenu {...props} />);
 
-    expect(screen.getByText('Veo 3 Settings')).toBeInTheDocument();
+    expect(screen.getByText('Veo 3.1 Settings')).toBeInTheDocument();
 
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(props.onClose).toHaveBeenCalledTimes(1);
