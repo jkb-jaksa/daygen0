@@ -1008,9 +1008,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                             <MoreHorizontal className="w-3 h-3" />
                           </button>
                         </div >
-                        <Suspense fallback={null}>
-                          <GenerationProgress />
-                        </Suspense>
+
                       </div >
                     )}
                   </div >
@@ -1480,9 +1478,11 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
             );
           })}
         </div >
-        <Suspense fallback={null}>
-          <GenerationProgress />
-        </Suspense>
+        {!isGenerationCategory && (
+          <Suspense fallback={null}>
+            <GenerationProgress />
+          </Suspense>
+        )}
       </div >
     </>
   );

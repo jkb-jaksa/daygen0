@@ -29,7 +29,7 @@ export interface VideoGenerationState {
 
 export interface VideoGenerationOptions {
   prompt: string;
-  model?: 'veo-3.0-generate-001' | 'veo-3.0-fast-generate-001';
+  model?: 'veo-3.1-generate-preview' | 'veo-3.1-fast-generate-preview';
   aspectRatio?: '16:9' | '9:16';
   negativePrompt?: string;
   seed?: number;
@@ -40,6 +40,7 @@ export interface VideoGenerationOptions {
   pollTimeoutMs?: number;
   pollIntervalMs?: number;
   pollRequestTimeoutMs?: number;
+  references?: string[];
 }
 
 const INITIAL_STATE: VideoGenerationState = {
@@ -70,9 +71,9 @@ const collectVideoUrl = (
   if (metadata) {
     candidates.push(
       pickString(metadata.resultUrl) ??
-        pickString(metadata.result_url) ??
-        pickString(metadata.url) ??
-        pickString(metadata.videoUrl),
+      pickString(metadata.result_url) ??
+      pickString(metadata.url) ??
+      pickString(metadata.videoUrl),
     );
 
     const results = metadata.results;
@@ -85,8 +86,8 @@ const collectVideoUrl = (
           if (record) {
             candidates.push(
               pickString(record.url) ??
-                pickString(record.resultUrl) ??
-                pickString(record.videoUrl),
+              pickString(record.resultUrl) ??
+              pickString(record.videoUrl),
             );
           }
         }
@@ -120,7 +121,7 @@ const parseVeoVideoJobResult = (
   return {
     url,
     prompt: options.prompt,
-    model: options.model ?? 'veo-3.0-generate-001',
+    model: options.model ?? 'veo-3.1-generate-preview',
     timestamp: new Date().toISOString(),
     jobId: response.jobId ?? snapshot.job.id ?? undefined,
     type: 'video',
@@ -144,7 +145,7 @@ const parseImmediateVeoVideoResult = (
   return {
     url,
     prompt: options.prompt,
-    model: options.model ?? 'veo-3.0-generate-001',
+    model: options.model ?? 'veo-3.1-generate-preview',
     timestamp: new Date().toISOString(),
     jobId: pickString(payload.jobId),
     type: 'video',
@@ -182,12 +183,13 @@ export const useVeoVideoGeneration = () => {
         mediaType: 'video',
         body: {
           prompt: options.prompt,
-          model: options.model ?? 'veo-3.0-generate-001',
+          model: options.model ?? 'veo-3.1-generate-preview',
+          references: options.references,
           providerOptions,
         },
         tracker,
         prompt: options.prompt,
-        model: options.model ?? 'veo-3.0-generate-001',
+        model: options.model ?? 'veo-3.1-generate-preview',
         signal: options.signal,
         timeoutMs: options.requestTimeoutMs,
         pollTimeoutMs: options.pollTimeoutMs,

@@ -1,5 +1,7 @@
 export const VIDEO_MODEL_IDS = [
   'veo-3',
+  'veo-3.0',
+  'veo-3.1',
   'sora-2',
   'runway-video-gen4',
   'wan-video-2.2',
@@ -18,3 +20,8 @@ export const DEFAULT_IMAGE_MODEL_ID = 'gemini-3.0-pro-image';
 
 export const isVideoModelId = (modelId?: string | null): modelId is VideoModelId =>
   typeof modelId === 'string' && VIDEO_MODEL_ID_SET.has(modelId as VideoModelId);
+
+export const REFERENCE_SUPPORTED_MODELS = [
+  'gemini-3.0-pro-image',
+  'veo-3',
+];

@@ -50,7 +50,7 @@ type AspectRatioControl = {
 
 type SettingsSections = Omit<SettingsMenuProps, 'anchorRef' | 'open' | 'onClose'>;
 
-const MAX_GEMINI_REFERENCES = 3;
+const MAX_REFERENCES = 3;
 
 const fileToDataUrl = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -350,7 +350,7 @@ export function useCreateGenerationController(): CreateGenerationController {
   const [grokModel, setGrokModel] = useState<'grok-2-image' | 'grok-2-image-1212' | 'grok-2-image-latest'>('grok-2-image');
   const [lumaPhotonModel, setLumaPhotonModel] = useState<'luma-photon-1' | 'luma-photon-flash-1'>('luma-photon-1');
   const [lumaRayVariant, setLumaRayVariant] = useState<'luma-ray-2' | 'luma-ray-flash-2'>('luma-ray-2');
-  const [veoModel, setVeoModel] = useState<'veo-3.0-generate-001' | 'veo-3.0-fast-generate-001'>('veo-3.0-generate-001');
+  const [veoModel, setVeoModel] = useState<'veo-3.1-generate-preview' | 'veo-3.1-fast-generate-preview'>('veo-3.1-generate-preview');
   const [veoNegativePrompt, setVeoNegativePrompt] = useState('');
   const [veoSeed, setVeoSeed] = useState<number | undefined>(undefined);
 
@@ -391,7 +391,7 @@ export function useCreateGenerationController(): CreateGenerationController {
         aspectRatio: (videoAspectRatio === '9:16' ? '9:16' : '16:9'),
         onAspectRatioChange: value => setVideoAspectRatio(value),
         model: veoModel,
-        onModelChange: value => setVeoModel(value as 'veo-3.0-generate-001' | 'veo-3.0-fast-generate-001'),
+        onModelChange: value => setVeoModel(value as 'veo-3.1-generate-preview' | 'veo-3.1-fast-generate-preview'),
         negativePrompt: veoNegativePrompt,
         onNegativePromptChange: value => setVeoNegativePrompt(value),
         seed: veoSeed,
@@ -626,7 +626,7 @@ export function useCreateGenerationController(): CreateGenerationController {
     const normalizedReferences = referencesBase64
       .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
       .filter((value, index, arr) => arr.indexOf(value) === index)
-      .slice(0, MAX_GEMINI_REFERENCES);
+      .slice(0, MAX_REFERENCES);
 
     const references = normalizedReferences.length ? normalizedReferences : undefined;
     const finalPrompt = promptHandlers.getFinalPrompt();
@@ -1010,6 +1010,7 @@ export function useCreateGenerationController(): CreateGenerationController {
             aspectRatio: normalizedVeoAspectRatio,
             negativePrompt: veoNegativePrompt?.trim() || undefined,
             seed: veoSeed,
+            references,
           });
 
           persistVideoResults(veoVideo, {

@@ -7,6 +7,8 @@ import { serializeGallery, hydrateStoredGallery, isBase64Url } from '../utils/ga
 import type { GalleryImageLike, GalleryVideoLike } from '../components/create/types';
 import type { StoredGalleryImage } from '../components/create/types';
 
+import { isVideoModelId } from '../components/create/constants';
+
 export interface R2FileResponse {
   id: string;
   fileName: string;
@@ -95,7 +97,8 @@ export const useGalleryImages = () => {
       const looksLikeVideo =
         mimeType.startsWith('video/') ||
         /\.(mp4|mov|webm|m4v|mkv|avi|wmv)(\?|$)/i.test(fileName) ||
-        /\.(mp4|mov|webm|m4v|mkv|avi|wmv)(\?|$)/i.test(fileUrl);
+        /\.(mp4|mov|webm|m4v|mkv|avi|wmv)(\?|$)/i.test(fileUrl) ||
+        isVideoModelId(r2File.model);
 
       if (looksLikeVideo) {
         const videoItem: GalleryVideoLike = {

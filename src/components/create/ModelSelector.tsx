@@ -8,7 +8,7 @@ import { useDropdownScrollLock } from '../../hooks/useDropdownScrollLock';
 import { glass, tooltips } from '../../styles/designSystem';
 import { debugLog } from '../../utils/debug';
 import { ToolInfoHover } from '../ToolInfoHover';
-import { isVideoModelId } from './constants';
+import { isVideoModelId, REFERENCE_SUPPORTED_MODELS } from './constants';
 
 // AI Model data with icons and descriptions (matching V1 exactly)
 // Exported as single source of truth for all model lists in the app
@@ -28,7 +28,7 @@ export const AI_MODELS = [
   { name: "Hailuo 02", desc: "MiniMax video with start & end frame control.", Icon: VideoIcon, id: "hailuo-02" },
   { name: "Kling", desc: "ByteDance's cinematic video model.", Icon: VideoIcon, id: "kling-video" },
   { name: "ChatGPT", desc: "Popular image model.", Icon: Sparkles, id: "chatgpt-image" },
-  { name: "Veo 3", desc: "Google's advanced video generation model.", Icon: Film, id: "veo-3" },
+  { name: "Veo 3.1", desc: "Google's advanced video generation model.", Icon: Film, id: "veo-3" },
   { name: "Seedance 1.0 Pro (Video)", desc: "Great quality text-to-image.", Icon: Film, id: "seedance-1.0-pro" },
   { name: "Luma Photon", desc: "High-quality image generation with Photon.", Icon: Sparkles, id: "luma-photon-1" },
   { name: "Luma Ray 2", desc: "High-quality video generation with Ray 2.", Icon: VideoIcon, id: "luma-ray-2" },
@@ -44,9 +44,6 @@ interface ModelSelectorProps {
   hasReferences?: boolean;
 }
 
-const REFERENCE_SUPPORTED_MODELS = [
-  "gemini-3.0-pro-image"
-];
 
 const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, isGenerating, activeCategory, hasReferences }) => {
   const { setSelectedModel } = useGeneration();
@@ -76,7 +73,7 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
   const getCurrentModel = useCallback(() => {
     if (inferredCategory === "video") {
       if (selectedModel === "veo-3") {
-        return { name: "Veo 3", Icon: Film, desc: "Best video model. Great cinematic quality with sound output.", id: "veo-3" };
+        return { name: "Veo 3.1", Icon: Film, desc: "Best video model. Great cinematic quality with sound output.", id: "veo-3" };
       }
       if (selectedModel === "sora-2") {
         return { name: "Sora 2", Icon: VideoIcon, desc: "OpenAI’s Sora 2 with high-quality text-to-video.", id: "sora-2" };
@@ -99,7 +96,7 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
       if (selectedModel === "luma-ray-2") {
         return { name: "Luma Ray 2", Icon: VideoIcon, desc: "Cinematic 4K video with detailed camera control.", id: "luma-ray-2" };
       }
-      return { name: "Veo 3", Icon: Film, desc: "Best video model. Great cinematic quality with sound output.", id: "veo-3" };
+      return { name: "Veo 3.1", Icon: Film, desc: "Best video model. Great cinematic quality with sound output.", id: "veo-3" };
     }
     return AI_MODELS.find(model => model.id === selectedModel) || AI_MODELS[0];
   }, [selectedModel, inferredCategory]);
@@ -308,7 +305,7 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
             <>
               <button
                 onClick={() => {
-                  handleModelSelect("Veo 3");
+                  handleModelSelect("Veo 3.1");
                   setIsOpen(false);
                 }}
                 className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${selectedModel === "veo-3"
@@ -316,10 +313,10 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                   : 'bg-transparent hover:bg-theme-text/20 border-0'
                   }`}
               >
-                {hasToolLogo("Veo 3") ? (
+                {hasToolLogo("Veo 3.1") ? (
                   <img
-                    src={getToolLogo("Veo 3")!}
-                    alt="Veo 3 logo"
+                    src={getToolLogo("Veo 3.1")!}
+                    alt="Veo 3.1 logo"
                     loading="lazy"
                     className="w-5 h-5 flex-shrink-0 object-contain rounded"
                   />
@@ -330,7 +327,7 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                 <div className="flex-1 min-w-0">
                   <div className={`text-sm font-raleway truncate transition-colors duration-100 ${selectedModel === "veo-3" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
                     }`}>
-                    Veo 3
+                    Veo 3.1
                   </div>
                   <div className={`text-xs font-raleway truncate transition-colors duration-100 ${selectedModel === "veo-3" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
                     }`}>

@@ -3,7 +3,7 @@ import PromptForm from './PromptForm';
 import ComingSoonCategory from './ComingSoonCategory';
 import ResultsGrid from './ResultsGrid';
 import FullImageModal from './FullImageModal';
-const GenerationProgress = lazy(() => import('./GenerationProgress'));
+
 const ImageActionMenu = lazy(() => import('./ImageActionMenu'));
 const BulkActionsMenu = lazy(() => import('./BulkActionsMenu'));
 const GallerySelectionBar = lazy(() => import('./GallerySelectionBar'));
@@ -946,8 +946,8 @@ function CreateRefactoredView() {
                         type="button"
                         onClick={() => handleSelectCategory(item.key)}
                         className={`flex-shrink-0 inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-raleway transition-colors duration-200 ${isActive
-                            ? 'border-theme-light bg-theme-white/10 text-theme-text'
-                            : 'border-theme-dark text-theme-white hover:text-theme-text'
+                          ? 'border-theme-light bg-theme-white/10 text-theme-text'
+                          : 'border-theme-dark text-theme-white hover:text-theme-text'
                           }`}
                         aria-pressed={isActive}
                       >
@@ -971,8 +971,8 @@ function CreateRefactoredView() {
                         type="button"
                         onClick={() => handleSelectCategory(item.key)}
                         className={`flex-shrink-0 inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-raleway transition-colors duration-200 ${isActive
-                            ? 'border-theme-light bg-theme-white/10 text-theme-text'
-                            : 'border-theme-dark text-theme-white hover:text-theme-text'
+                          ? 'border-theme-light bg-theme-white/10 text-theme-text'
+                          : 'border-theme-dark text-theme-white hover:text-theme-text'
                           }`}
                         aria-pressed={isActive}
                       >
@@ -1048,9 +1048,7 @@ function CreateRefactoredView() {
                     activeCategory={activeCategory as 'image' | 'video'}
                     onFocusPrompt={focusPromptBar}
                   />
-                  <Suspense fallback={null}>
-                    <GenerationProgress />
-                  </Suspense>
+
                 </>
               )}
               {!isGenerationCategory && isComingSoonCategory && (
