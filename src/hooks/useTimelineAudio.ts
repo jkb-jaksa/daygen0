@@ -18,8 +18,10 @@ export const useTimelineAudio = (audioRef: React.RefObject<HTMLAudioElement | nu
 
         if (isPlaying) {
             audio.play().catch((e) => {
-                console.error('Failed to play audio:', e);
-                setIsPlaying(false);
+                if (e.name !== 'AbortError') {
+                    console.error('Failed to play audio:', e);
+                    setIsPlaying(false);
+                }
             });
             requestRef.current = requestAnimationFrame(animate);
         } else {

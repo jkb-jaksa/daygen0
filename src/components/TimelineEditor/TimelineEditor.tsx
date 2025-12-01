@@ -12,50 +12,34 @@ export default function TimelineEditor() {
     const audioUrl = useTimelineStore((state) => state.audioUrl);
     const setIsPlaying = useTimelineStore((state) => state.setIsPlaying);
     const updateSegmentImage = useTimelineStore((state) => state.updateSegmentImage);
-    const setSegments = useTimelineStore((state) => state.setSegments);
 
     // Sync audio with store
     useTimelineAudio(audioRef);
 
-    // Mock data for development if empty
+    // Redirect if no segments (e.g. page refresh without persistence)
+    // In a real app, we might fetch the job by ID from URL if we supported /editor/:jobId
+    // For now, we rely on the store being populated.
     useEffect(() => {
         if (segments.length === 0) {
-            setSegments([
-                {
-                    id: '1',
-                    script: "Welcome to Daygen. This is the beginning of your journey.",
-                    visualPrompt: "Futuristic city sunrise",
-                    startTime: 0,
-                    endTime: 5,
-                    imageUrl: "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=800&q=80"
-                },
-                {
-                    id: '2',
-                    script: "We create digital copies of your voice and persona.",
-                    visualPrompt: "Digital avatar interface",
-                    startTime: 5,
-                    endTime: 10,
-                    imageUrl: "https://images.unsplash.com/photo-1531297461136-82lw9z28926e?auto=format&fit=crop&w=800&q=80"
-                },
-                {
-                    id: '3',
-                    script: "Experience the future of content creation today.",
-                    visualPrompt: "Abstract network connections",
-                    startTime: 10,
-                    endTime: 15,
-                    imageUrl: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80"
-                }
-            ]);
-            useTimelineStore.setState({ audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' });
+            // Optional: navigate back to generator
+            // navigate('/app/cyran-roll');
         }
-    }, [segments.length, setSegments]);
+    }, [segments.length]);
 
     const togglePlay = () => {
         setIsPlaying(!isPlaying);
     };
 
+    if (segments.length === 0) {
+        return (
+            <div className="w-full h-screen flex items-center justify-center text-theme-white/60 pt-32">
+                No timeline loaded. Please generate one first.
+            </div>
+        );
+    }
+
     return (
-        <div className="w-full max-w-5xl mx-auto p-6 space-y-8 pb-32">
+        <div className="w-full max-w-5xl mx-auto p-6 pt-32 space-y-8 pb-32">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-raleway font-bold text-theme-text">Cyran Roll Editor</h1>
                 <div className="flex items-center gap-4">
