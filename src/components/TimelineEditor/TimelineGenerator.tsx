@@ -48,18 +48,14 @@ export default function TimelineGenerator() {
 
         const segmentsWithIds = response.segments.map((s: any, i: number) => ({
             ...s,
-            id: s.id || `segment-${i}-${Date.now()}`
+            id: s.id || `segment-${i}-${Date.now()}`,
+            voiceUrl: s.voiceUrl
         }));
 
         setSegments(segmentsWithIds);
 
-        // Check if there is a global audioUrl in the response
-        const audioUrl = (response as any).audioUrl;
-        if (audioUrl) {
-            useTimelineStore.setState({ audioUrl });
-        } else {
-            useTimelineStore.setState({ audioUrl: undefined });
-        }
+        // Global audioUrl is not supported in the current store structure for multi-segment audio
+        // We rely on segment-level audioUrl
 
         setIsPlaying(false);
         setCurrentTime(0);
@@ -76,10 +72,11 @@ export default function TimelineGenerator() {
 
             const segmentsWithIds = response.segments.map((s, i) => ({
                 ...s,
-                id: s.id || `segment-${i}-${Date.now()}`
+                id: s.id || `segment-${i}-${Date.now()}`,
+                voiceUrl: s.voiceUrl
             }));
             setSegments(segmentsWithIds);
-            useTimelineStore.setState({ audioUrl: response.audioUrl });
+            // useTimelineStore.setState({ audioUrl: response.audioUrl });
 
             setIsPlaying(false);
             setCurrentTime(0);

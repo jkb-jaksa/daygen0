@@ -6,7 +6,9 @@ import { VerticalTimeline } from '../editor/VerticalTimeline';
 import { Play, Pause } from 'lucide-react';
 
 export default function TimelineEditor() {
-    const { segments, currentTime, isPlaying, setIsPlaying } = useTimelineStore();
+    const { segments, currentTime, isPlaying, setIsPlaying, activeSegmentIndex, nextSegment } = useTimelineStore();
+
+    console.log("TimelineEditor rendered. Segments:", segments.length, "Active Index:", activeSegmentIndex, "Voice URL:", segments[activeSegmentIndex]?.voiceUrl);
 
     // Sync audio with store using the new hook
     const { audioRef } = useAudioSync();
@@ -21,6 +23,11 @@ export default function TimelineEditor() {
 
     const togglePlay = () => {
         setIsPlaying(!isPlaying);
+    };
+
+    const handleAudioEnded = () => {
+        console.log("Audio ended. Moving to next segment.");
+        nextSegment();
     };
 
     if (segments.length === 0) {
@@ -56,9 +63,10 @@ export default function TimelineEditor() {
             {/* Hidden Audio Element */}
             <audio
                 ref={audioRef}
-                src={segments[0]?.audioUrl}
+                src={segments[activeSegmentIndex]?.voiceUrl}
                 className="hidden"
                 controls
+                onEnded={handleAudioEnded}
             />
         </div>
     );
