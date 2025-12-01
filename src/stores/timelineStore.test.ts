@@ -7,7 +7,6 @@ describe('useTimelineStore', () => {
             segments: [],
             currentTime: 0,
             isPlaying: false,
-            audioUrl: undefined,
         });
     });
 
@@ -16,15 +15,18 @@ describe('useTimelineStore', () => {
         expect(state.segments).toEqual([]);
         expect(state.currentTime).toBe(0);
         expect(state.isPlaying).toBe(false);
-        expect(state.audioUrl).toBeUndefined();
     });
 
     it('should set segments', () => {
         const segments = [
             {
                 id: '1',
+                sceneNumber: 1,
                 script: 'test',
                 visualPrompt: 'test prompt',
+                voiceUrl: 'http://example.com/voice.mp3',
+                imageUrl: 'http://example.com/image.png',
+                duration: 5,
                 startTime: 0,
                 endTime: 5,
             },
@@ -47,14 +49,18 @@ describe('useTimelineStore', () => {
         const segments = [
             {
                 id: '1',
+                sceneNumber: 1,
                 script: 'test',
                 visualPrompt: 'test prompt',
+                voiceUrl: 'http://example.com/voice.mp3',
+                imageUrl: 'http://example.com/old.png',
+                duration: 5,
                 startTime: 0,
                 endTime: 5,
             },
         ];
         useTimelineStore.getState().setSegments(segments);
-        useTimelineStore.getState().updateSegmentImage(0, 'http://example.com/image.png');
+        useTimelineStore.getState().updateSegmentImage('1', 'http://example.com/image.png');
 
         const updatedSegments = useTimelineStore.getState().segments;
         expect(updatedSegments[0].imageUrl).toBe('http://example.com/image.png');

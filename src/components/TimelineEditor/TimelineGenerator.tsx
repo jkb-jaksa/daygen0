@@ -5,6 +5,12 @@ import { useTimelineStore } from '../../stores/timelineStore';
 import { fetchJobs, type Job } from '../../api/jobs';
 import { Loader2, Sparkles, History } from 'lucide-react';
 
+interface Segment {
+    id?: string;
+    voiceUrl: string;
+    [key: string]: unknown;
+}
+
 export default function TimelineGenerator() {
     const navigate = useNavigate();
     const [topic, setTopic] = useState('');
@@ -25,7 +31,7 @@ export default function TimelineGenerator() {
         try {
             const response = await fetchJobs('CYRAN_ROLL');
             // Handle both array and object response formats
-            const history = Array.isArray(response) ? response : (response as any).jobs || [];
+            const history = Array.isArray(response) ? response : (response as { jobs: Job[] }).jobs || [];
 
             // Sort by createdAt desc
             const sorted = history.sort((a: Job, b: Job) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -46,7 +52,7 @@ export default function TimelineGenerator() {
         const response = job.metadata.response;
         if (!response.segments) return;
 
-        const segmentsWithIds = response.segments.map((s: any, i: number) => ({
+        const segmentsWithIds = response.segments.map((s: Segment, i: number) => ({
             ...s,
             id: s.id || `segment-${i}-${Date.now()}`,
             voiceUrl: s.voiceUrl

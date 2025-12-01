@@ -7,7 +7,7 @@ export interface Job {
     progress: number;
     resultUrl?: string;
     error?: string;
-    metadata?: any;
+    metadata?: Record<string, unknown>;
     createdAt: string;
 }
 
