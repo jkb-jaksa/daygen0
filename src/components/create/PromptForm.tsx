@@ -96,7 +96,7 @@ interface PromptFormProps {
   onModeChange: (mode: GenerationMode) => void;
 }
 
-const MAX_REFERENCE_SLOTS = 3;
+
 
 // Tooltip helper functions (matching V1 implementation)
 const showHoverTooltip = (target: HTMLElement, tooltipId: string) => {
@@ -167,6 +167,7 @@ const PromptForm = memo<PromptFormProps>(
       isButtonSpinning: controllerIsButtonSpinning,
       error,
       clearError,
+      maxReferences,
     } = useCreateGenerationController();
     const presetGenerationFlow = usePresetGenerationFlow();
     const handlePresetStylesApply = useCallback(
@@ -1032,7 +1033,7 @@ const PromptForm = memo<PromptFormProps>(
       (selectedAvatar ? 1 : 0) +
       (selectedProduct ? 1 : 0);
 
-    const remainingReferenceSlots = Math.max(0, MAX_REFERENCE_SLOTS - totalReferenceCount);
+    const remainingReferenceSlots = Math.max(0, maxReferences - totalReferenceCount);
 
     const handleReferencePreviewClick = useCallback(
       (preview: string) => {
@@ -1258,7 +1259,7 @@ const PromptForm = memo<PromptFormProps>(
                   {referencePreviews.length > 0 && (
                     <div className="flex items-center gap-2">
                       <div className="hidden lg:block text-sm text-n-text font-raleway">
-                        Reference ({totalReferenceCount}/{MAX_REFERENCE_SLOTS})
+                        Reference ({totalReferenceCount}/{maxReferences})
                       </div>
                       <div className="flex items-center gap-1.5">
                         {referencePreviews.map((preview, index) => (

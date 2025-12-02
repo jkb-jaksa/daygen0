@@ -338,7 +338,7 @@ html[data-theme="day"] .animate-gradient-colors {
   --theme-orange-2-rgb: var(--n-orange-2-rgb);
 
   /* Glass surface tokens */
-  --glass-border: rgb(var(--theme-dark-rgb) / 0.5);
+  --glass-border: rgb(var(--theme-dark-rgb) / 1);
   --glass-base-bg: rgb(var(--n-light-rgb) / 0.5);
   --glass-surface-bg: rgb(var(--n-black-rgb) / 0.15);
   --glass-tight-bg: var(--glass-base-bg);
@@ -381,7 +381,7 @@ html[data-theme="day"] {
   --theme-orange-2: var(--d-orange-2);
   --theme-orange-2-rgb: var(--d-orange-2-rgb);
 
-  --glass-border: rgb(var(--theme-dark-rgb) / 0.5);
+  --glass-border: rgb(var(--theme-dark-rgb) / 1);
   --glass-base-bg: rgb(var(--d-dark-rgb) / 0.5);
   --glass-surface-bg: rgb(var(--d-black-rgb) / 0.70);
   --glass-tight-bg: var(--glass-base-bg);
@@ -867,7 +867,7 @@ html[data-theme="day"] .footer-gradient-bg {
 
 .prompt-surface {
   color: var(--glass-prompt-text);
-  --glass-border: rgb(var(--theme-dark-rgb) / 0.5);
+  --glass-border: rgb(var(--theme-dark-rgb) / 1);
   --glass-base-bg: rgb(var(--theme-light-rgb) / 0.15);
   --glass-surface-bg: rgb(var(--theme-black-rgb) / 0.15);
   --glass-tight-bg: var(--glass-base-bg);
@@ -896,7 +896,7 @@ html[data-theme="day"] .prompt-surface {
   --theme-orange-1-rgb: var(--n-orange-1-rgb);
   --theme-orange-2: var(--n-orange-2);
   --theme-orange-2-rgb: var(--n-orange-2-rgb);
-  --glass-border: rgb(var(--n-dark-rgb) / 0.5);
+  --glass-border: rgb(var(--n-dark-rgb) / 1);
   --glass-base-bg: rgb(var(--n-light-rgb) / 0.15);
   --glass-surface-bg: rgb(var(--n-black-rgb) / 0.15);
   --glass-tight-bg: var(--glass-base-bg);
@@ -924,7 +924,7 @@ html[data-theme="day"] .prompt-surface {
   --theme-orange-1-rgb: var(--n-orange-1-rgb);
   --theme-orange-2: var(--n-orange-2);
   --theme-orange-2-rgb: var(--n-orange-2-rgb);
-  --glass-border: rgb(var(--n-dark-rgb) / 0.5);
+  --glass-border: rgb(var(--n-dark-rgb) / 1);
   --glass-base-bg: rgb(var(--n-light-rgb) / 0.15);
   --glass-surface-bg: rgb(var(--n-black-rgb) / 0.15);
   --glass-tight-bg: var(--glass-base-bg);
@@ -1651,6 +1651,7 @@ html[data-theme="day"] .card-media-frame::before {
   backdrop-filter: blur(32px);
   background: var(--glass-dark-bg);
   border: 1px solid var(--glass-border);
+  border-color: rgb(var(--theme-dark-rgb) / 0.5);
   border-radius: 9999px;
   color: var(--theme-white);
   display: inline-grid;
@@ -1666,6 +1667,13 @@ html[data-theme="day"] .card-media-frame::before {
   /* Scale effect is handled by Tailwind's hover:scale-105 class */
 }
 
+/* Preserve 50% opacity for VideoPlayer action buttons (play/pause controls) */
+/* Target video player control buttons - they use glass.promptDark which includes border-[color:var(--glass-border)] */
+/* These buttons are 64px (w-16 h-16) rounded-full with backdrop-blur-[40px] from glass.promptDark */
+/* The combination of w-16 h-16 rounded-full with backdrop-blur-[40px] is unique to VideoPlayer controls */
+button[class*="w-16"][class*="h-16"][class*="rounded-full"][class*="backdrop-blur-"] {
+  border-color: rgb(var(--theme-dark-rgb) / 0.5) !important;
+}
 
 .image-action-btn--labelled {
   display: inline-flex;

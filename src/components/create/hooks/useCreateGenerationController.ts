@@ -50,8 +50,6 @@ type AspectRatioControl = {
 
 type SettingsSections = Omit<SettingsMenuProps, 'anchorRef' | 'open' | 'onClose'>;
 
-const MAX_REFERENCES = 3;
-
 const fileToDataUrl = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -159,6 +157,7 @@ export interface CreateGenerationController {
   isButtonSpinning: boolean;
   error: string | null;
   clearError: () => void;
+  maxReferences: number;
 }
 
 export function useCreateGenerationController(): CreateGenerationController {
@@ -222,10 +221,18 @@ export function useCreateGenerationController(): CreateGenerationController {
     styleHandlers.applyStyleToPrompt,
   );
 
+  const maxReferences = useMemo(() => {
+    if (selectedModel === 'gemini-3.0-pro-image') {
+      return 14;
+    }
+    return 3;
+  }, [selectedModel]);
+
   const referenceHandlers = useReferenceHandlers(
     avatarHandlers.selectedAvatar,
     productHandlers.selectedProduct,
     () => { },
+    maxReferences,
   );
 
   const { generateImage: generateGeminiImage } = useGeminiImageGeneration();
@@ -626,7 +633,7 @@ export function useCreateGenerationController(): CreateGenerationController {
     const normalizedReferences = referencesBase64
       .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
       .filter((value, index, arr) => arr.indexOf(value) === index)
-      .slice(0, MAX_REFERENCES);
+      .slice(0, maxReferences);
 
     const references = normalizedReferences.length ? normalizedReferences : undefined;
     const finalPrompt = promptHandlers.getFinalPrompt();
@@ -1189,6 +1196,7 @@ export function useCreateGenerationController(): CreateGenerationController {
     activeAvatarImageId,
     selectedAvatarImageUrl,
     selectedProductId,
+    maxReferences,
     selectedProductImageUrl,
     selectedStyleId,
     fluxModel,
@@ -1279,5 +1287,6 @@ export function useCreateGenerationController(): CreateGenerationController {
     isButtonSpinning: contextSpinner || isSubmitting,
     error: localError,
     clearError,
+    maxReferences,
   };
 }
