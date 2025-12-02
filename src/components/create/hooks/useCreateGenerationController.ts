@@ -50,8 +50,6 @@ type AspectRatioControl = {
 
 type SettingsSections = Omit<SettingsMenuProps, 'anchorRef' | 'open' | 'onClose'>;
 
-const MAX_REFERENCES = 3;
-
 const fileToDataUrl = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -1198,6 +1196,7 @@ export function useCreateGenerationController(): CreateGenerationController {
     activeAvatarImageId,
     selectedAvatarImageUrl,
     selectedProductId,
+    maxReferences,
     selectedProductImageUrl,
     selectedStyleId,
     fluxModel,
