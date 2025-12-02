@@ -5,7 +5,8 @@ const Avatars = lazy(() => import("../components/Avatars"));
 const Products = lazy(() => import("../components/Products"));
 const ChatMode = lazy(() => import("../components/create/ChatMode"));
 const CreateRefactored = lazy(() => import("../components/create/Create-refactored"));
-const TimelineEditor = lazy(() => import("../components/TimelineEditor/TimelineEditor"));
+
+const ReelsEditorLayout = lazy(() => import("../components/editor/ReelsEditorLayout").then(module => ({ default: module.ReelsEditorLayout })));
 const TimelineGenerator = lazy(() => import("../components/TimelineEditor/TimelineGenerator"));
 
 const Loading = () => (
@@ -23,7 +24,7 @@ export default function MasterRoutes() {
         <Route path="audio" element={<CreateRefactored />} />
         <Route path="cyran-roll">
           <Route index element={<TimelineGenerator />} />
-          <Route path="editor" element={<TimelineEditor />} />
+          <Route path="editor" element={<ReelsEditorLayout />} />
         </Route>
         <Route path="avatars" element={<Avatars showSidebar={false} />} />
         <Route path="products">

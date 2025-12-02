@@ -60,8 +60,9 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeMenu, setActiveMenu] = useState<MenuId | null>(null);
+  const [activeItemPosition, setActiveItemPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
   const navRef = useRef<HTMLElement | null>(null);
-  const [navH, setNavH] = useState(0);
+  const [navH] = useState(0);
   const { user, logOut, mockSignIn } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -130,24 +131,25 @@ export default function Navbar() {
     handleTouchEnd,
   } = useDropdownScrollLock<HTMLDivElement>(menuOpen);
 
-  useLayoutEffect(() => {
-    const measure = () => {
-      if (navRef.current) {
-        const h = Math.ceil(navRef.current.getBoundingClientRect().height);
-        setNavH(h);
-        if (typeof document !== "undefined") {
-          document.documentElement.style.setProperty("--nav-h", `${h}px`);
-        }
-      }
-    };
-    measure();
-    const raf = requestAnimationFrame(measure);
-    window.addEventListener("resize", measure);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", measure);
-    };
-  }, []);
+  // Removed dynamic resizing logic to keep navbar height fixed
+  // useLayoutEffect(() => {
+  //   const measure = () => {
+  //     if (navRef.current) {
+  //       const h = Math.ceil(navRef.current.getBoundingClientRect().height);
+  //       setNavH(h);
+  //       if (typeof document !== "undefined") {
+  //         document.documentElement.style.setProperty("--nav-h", `${h}px`);
+  //       }
+  //     }
+  //   };
+  //   measure();
+  //   const raf = requestAnimationFrame(measure);
+  //   window.addEventListener("resize", measure);
+  //   return () => {
+  //     cancelAnimationFrame(raf);
+  //     window.removeEventListener("resize", measure);
+  //   };
+  // }, []);
 
   // Compute & clamp menu position relative to the trigger button
   useLayoutEffect(() => {
@@ -326,9 +328,14 @@ export default function Navbar() {
                   className={({ isActive }) =>
                     `relative overflow-hidden group parallax-small transition-colors duration-200 px-4 h-9 flex items-center rounded-full font-normal ${isActive ? "text-theme-text" : "text-theme-white hover:text-theme-text"}`
                   }
-                  onMouseEnter={() => {
+                  onMouseEnter={(e) => {
                     item.prefetch?.();
                     if (MENU_DROPDOWN_LABELS.has(item.label)) {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setActiveItemPosition({
+                        top: rect.bottom + 8, // 8px gap
+                        left: rect.left + rect.width / 2 // Center alignment
+                      });
                       setActiveMenu(item.label);
                     } else {
                       setActiveMenu(null);
@@ -465,7 +472,7 @@ export default function Navbar() {
                     setMenuOpen(false);
                     navigate('/upgrade');
                   }}
-                  className={`${buttons.ghostSlim} hidden lg:flex items-center gap-1.5 rounded-full py-2 text-sm`}
+                  className={`${buttons.ghostSlim} hidden lg:flex items-center gap-1.5 rounded-full py-2 text-sm min-w-0`}
                   aria-label="Credit usage"
                 >
                   <CreditCard className="w-4 h-4" />
@@ -492,7 +499,7 @@ export default function Navbar() {
                   <button
                     ref={accountBtnRef}
                     onClick={() => setMenuOpen(v => !v)}
-                    className={`${buttons.ghostSlim} flex items-center gap-1.5 rounded-full py-2 text-sm`}
+                    className={`${buttons.ghostSlim} flex items-center gap-1.5 rounded-full py-2 text-sm min-w-0`}
                     aria-haspopup="menu"
                     aria-expanded={menuOpen}
                     aria-label="My account"
@@ -541,78 +548,74 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Hover reveal section – sibling fixed panel below navbar (independent blur) */}
+      {/* Hover reveal section – positioned dropdown */}
       <div
-        className={`fixed left-0 right-0 z-[49] ${activeMenu ? "pointer-events-auto" : "pointer-events-none"}`}
-        style={{ top: navH }}
+        className={`fixed z-[12000] transition-opacity duration-200 ${activeMenu ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`}
+        style={{
+          top: activeItemPosition.top,
+          left: activeItemPosition.left,
+          transform: 'translateX(-50%)' // Center relative to the item center
+        }}
+        onMouseEnter={() => setActiveMenu(activeMenu)}
+        onMouseLeave={closeMenu}
       >
         <div
-          className={`${glass.promptDark} border-t-0 transition-opacity duration-100`}
-          style={{ opacity: activeMenu ? 1 : 0 }}
+          className={`${glass.promptDark} rounded-2xl border border-theme-dark/50 shadow-2xl overflow-hidden min-w-[200px] backdrop-blur-xl`}
         >
-          <div className={`${layout.container} pb-6 pt-3 min-h-[220px] text-base text-theme-text`}>
+          <div className="p-2 flex flex-col gap-1">
             {activeMenu && (
-              <div key={activeMenu} className="fade-in-200 text-theme-text">
-                <div className="text-base font-normal font-raleway mb-4">
-                  {activeMenu}
-                </div>
+              <div key={activeMenu} className="fade-in-200">
                 {activeMenu === "create" ? (
-                  <div className="flex flex-col items-start gap-0">
+                  <div className="flex flex-col gap-1">
                     {CREATE_MENU_ITEMS.map((category) => (
                       <button
                         key={category.key}
                         onClick={() => handleCategoryClick(category.key)}
-                        className="relative overflow-hidden group inline-flex items-center gap-2 pl-2 pr-4 h-9 w-[9rem] transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text rounded-full"
+                        className="relative overflow-hidden group flex items-center gap-3 px-3 py-2 w-full text-sm font-raleway font-normal text-left transition-colors duration-200 rounded-xl hover:bg-theme-white/10 text-theme-white hover:text-theme-text"
                       >
-                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-                        <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-gradient-to-br ${category.gradient} transition-opacity duration-200 opacity-0 group-hover:opacity-10`} />
-                        <div className={`size-6 grid place-items-center rounded-full transition-colors duration-100 relative overflow-hidden z-10`}>
-                          <category.Icon className="h-4 w-4 text-theme-white group-hover:text-theme-text" />
+                        <div className={`size-8 grid place-items-center rounded-lg bg-theme-white/5 group-hover:bg-theme-white/10 transition-colors duration-200`}>
+                          <category.Icon className={`h-4 w-4 ${category.iconColor}`} />
                         </div>
                         <span className="relative z-10">{category.label}</span>
                       </button>
                     ))}
                   </div>
                 ) : activeMenu === "explore" ? (
-                  <div className="text-base font-raleway text-theme-white/85">Coming soon.</div>
+                  <div className="px-4 py-3 text-sm font-raleway text-theme-white/60 text-center whitespace-nowrap">Coming soon.</div>
                 ) : activeMenu === "learn" ? (
-                  <div className="flex flex-col items-start gap-0">
+                  <div className="flex flex-col gap-1">
                     {LEARN_MENU_LINKS.map((item) => (
                       <Link
                         key={item.to}
                         to={item.to}
                         onClick={() => setActiveMenu(null)}
-                        className="relative overflow-hidden group inline-flex items-center gap-2 pl-2 pr-4 h-9 w-[9rem] transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text rounded-full"
+                        className="relative overflow-hidden group flex items-center gap-3 px-3 py-2 w-full text-sm font-raleway font-normal text-left transition-colors duration-200 rounded-xl hover:bg-theme-white/10 text-theme-white hover:text-theme-text"
                       >
-                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-                        <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 opacity-0 group-hover:opacity-10" />
-                        <div className={`size-6 grid place-items-center rounded-full transition-colors duration-100 relative overflow-hidden z-10`}>
-                          <item.Icon className="h-4 w-4 text-theme-text group-hover:text-theme-text" />
+                        <div className={`size-8 grid place-items-center rounded-lg bg-theme-white/5 group-hover:bg-theme-white/10 transition-colors duration-200`}>
+                          <item.Icon className="h-4 w-4 text-theme-white group-hover:text-theme-text" />
                         </div>
-                        <span className="relative z-10">{item.label}</span>
+                        <span className="relative z-10 whitespace-nowrap">{item.label}</span>
                       </Link>
                     ))}
                   </div>
                 ) : activeMenu === "my works" ? (
-                  <div className="flex flex-col items-start gap-0">
+                  <div className="flex flex-col gap-1">
                     {MY_WORKS_MENU_LINKS.map((item) => (
                       <Link
                         key={item.to}
                         to={item.to}
                         onClick={() => setActiveMenu(null)}
-                        className="relative overflow-hidden group inline-flex items-center gap-2 pl-2 pr-4 h-9 w-[9rem] transition duration-200 cursor-pointer text-base font-raleway font-normal appearance-none bg-transparent m-0 border-0 text-left focus:outline-none focus:ring-0 text-theme-white hover:text-theme-text rounded-full"
+                        className="relative overflow-hidden group flex items-center gap-3 px-3 py-2 w-full text-sm font-raleway font-normal text-left transition-colors duration-200 rounded-xl hover:bg-theme-white/10 text-theme-white hover:text-theme-text"
                       >
-                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-                        <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 opacity-0 group-hover:opacity-10" />
-                        <div className={`size-6 grid place-items-center rounded-full transition-colors duration-100 relative overflow-hidden z-10`}>
-                          <item.Icon className="h-4 w-4 text-theme-text group-hover:text-theme-text" />
+                        <div className={`size-8 grid place-items-center rounded-lg bg-theme-white/5 group-hover:bg-theme-white/10 transition-colors duration-200`}>
+                          <item.Icon className="h-4 w-4 text-theme-white group-hover:text-theme-text" />
                         </div>
-                        <span className="relative z-10">{item.label}</span>
+                        <span className="relative z-10 whitespace-nowrap">{item.label}</span>
                       </Link>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-base font-raleway text-theme-white/85">Coming soon.</div>
+                  <div className="px-4 py-3 text-sm font-raleway text-theme-white/60 text-center whitespace-nowrap">Coming soon.</div>
                 )}
               </div>
             )}

@@ -182,7 +182,7 @@ html[data-theme="day"] .animate-gradient-colors {
 
 
 :root {
-  --nav-h: clamp(2.75rem, calc(2.6rem + 0.5vw), 3.25rem);
+  --nav-h: 4rem;
   /* Navbar height used for hero offset */
   --container-inline-padding: clamp(0.5rem, 2vw, 3rem);
   --layout-inline-width: calc(100vw - 2 * var(--container-inline-padding, clamp(0.5rem, 2vw, 3rem)));
