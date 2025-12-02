@@ -446,7 +446,7 @@ const FullImageModal = memo(() => {
     }
 
     if (!fullSizeImage.url) {
-      showToast('No image URL available', 'error');
+      showToast('No image URL available');
       return;
     }
 
@@ -480,15 +480,15 @@ const FullImageModal = memo(() => {
             r2FileId: variation.r2FileId,
           });
         }
-        showToast(`Generated ${variations.length} variation${variations.length > 1 ? 's' : ''}`, 'success');
+        showToast(`Generated ${variations.length} variation${variations.length > 1 ? 's' : ''}`);
         finalizeVariateJob(syntheticJobId, 'completed');
       } else {
-        showToast('Failed to generate variation', 'error');
+        showToast('Failed to generate variation');
         finalizeVariateJob(syntheticJobId, 'failed');
       }
     } catch (error) {
       debugError('Failed to variate image:', error);
-      showToast('Failed to generate variation', 'error');
+      showToast('Failed to generate variation');
       if (syntheticJobId) {
         finalizeVariateJob(syntheticJobId, 'failed');
       }
@@ -1187,7 +1187,35 @@ const FullImageModal = memo(() => {
                         );
                       })()}
                     </div>
-                    <div className="mt-2 flex justify-center items-center">
+                    <div className="mt-2 flex flex-col justify-center items-center gap-2">
+                      {/* Reference images thumbnails */}
+                      {fullSizeImage.references && fullSizeImage.references.length > 0 && (
+                        <div className="flex items-center gap-1.5">
+                          <div className="flex gap-1">
+                            {fullSizeImage.references.map((ref, refIdx) => (
+                              <div key={refIdx} className="relative">
+                                <img
+                                  src={ref}
+                                  alt={`Reference ${refIdx + 1}`}
+                                  loading="lazy"
+                                  className="w-6 h-6 rounded object-cover border border-theme-mid cursor-pointer hover:border-theme-text transition-colors duration-200"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    window.open(ref, '_blank');
+                                  }}
+                                />
+                                <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
+                                  {refIdx + 1}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          <span className="text-xs font-raleway text-theme-white/70">
+                            {fullSizeImage.references.length} ref{fullSizeImage.references.length > 1 ? 's' : ''}
+                          </span>
+                        </div>
+                      )}
+
                       <ImageBadgeRow
                         align="center"
                         model={{
