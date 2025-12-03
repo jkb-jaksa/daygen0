@@ -14,6 +14,7 @@ import { useAuth } from '../../auth/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { loadSavedPrompts } from '../../lib/savedPrompts';
 import { useRecraftImageGeneration } from '../../hooks/useRecraftImageGeneration';
+import { useGeminiImageGeneration } from '../../hooks/useGeminiImageGeneration';
 import type { GalleryImageLike, GalleryVideoLike } from './types';
 import type { StoredAvatar } from '../avatars/types';
 import type { StoredProduct } from '../products/types';
@@ -33,6 +34,7 @@ const ProductBadge = lazy(() => import('../products/ProductBadge'));
 const StyleBadge = lazy(() => import('../styles/StyleBadge'));
 const PublicBadge = lazy(() => import('./PublicBadge'));
 const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
+const QuickEditModal = lazy(() => import('./QuickEditModal'));
 const GenerationProgress = lazy(() => import('./GenerationProgress'));
 
 // Helper to get consistent item identifier for UI actions (jobId → r2FileId → url)
@@ -101,15 +103,13 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const { showToast } = useToast();
   const { state, toggleItemSelection, isLoading, filteredItems: contextFilteredItems, addImage, openFullSize } = useGallery();
   const { variateImage: variateImageHook } = useRecraftImageGeneration();
+  const { generateImage: generateGeminiImage } = useGeminiImageGeneration();
   const {
     handleImageActionMenu,
     handleBulkActionsMenu,
     handleToggleLike,
     handleDeleteImage,
     handleEditMenuSelect,
-    handleCreateAvatarFromMenu,
-    handleUseAsReference,
-    handleReusePrompt,
     handleMakeVideo,
   } = useGalleryActions();
   const generation = useGeneration();
@@ -123,6 +123,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const savePromptModalRef = useRef<HTMLDivElement>(null);
   const lastOpenRef = useRef<{ id: string | null; ts: number }>({ id: null, ts: 0 });
   const [expandedVideoPrompts, setExpandedVideoPrompts] = useState<Set<string>>(() => new Set());
+  const [quickEditModalState, setQuickEditModalState] = useState<{ isOpen: boolean; initialPrompt: string; item: GalleryImageLike } | null>(null);
+  const [isQuickEditLoading, setIsQuickEditLoading] = useState(false);
   const {
     goToAvatarProfile,
     goToProductProfile,
@@ -480,35 +482,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     handleCloseEditMenu();
   }, [editMenu, filteredItems, handleEditMenuSelect, handleCloseEditMenu]);
 
-  const handleCreateAvatar = useCallback((item: GalleryImageLike | GalleryVideoLike) => {
-    handleCreateAvatarFromMenu(item);
-    handleCloseEditMenu();
-  }, [handleCreateAvatarFromMenu, handleCloseEditMenu]);
-
-  const handleUseReference = useCallback(() => {
-    const menuId = editMenu?.id;
-    if (!menuId) return;
-
-    const index = parseInt(menuId.split('-')[2], 10);
-    const item = filteredItems[index];
-    if (item) {
-      handleUseAsReference(item);
-    }
-    handleCloseEditMenu();
-  }, [editMenu, filteredItems, handleUseAsReference, handleCloseEditMenu]);
-
-  const handleReuse = useCallback(() => {
-    const menuId = editMenu?.id;
-    if (!menuId) return;
-
-    const index = parseInt(menuId.split('-')[2], 10);
-    const item = filteredItems[index];
-    if (item) {
-      handleReusePrompt(item);
-    }
-    handleCloseEditMenu();
-  }, [editMenu, filteredItems, handleReusePrompt, handleCloseEditMenu]);
-
   const handleVideo = useCallback(() => {
     handleMakeVideo();
     handleCloseEditMenu();
@@ -564,6 +537,91 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     });
     removeActiveJob(jobId);
   }, [removeActiveJob, updateJobStatus]);
+
+  const startQuickEditJob = useCallback((image: GalleryImageLike, prompt: string) => {
+    const syntheticId = buildSyntheticJobId(image);
+    const timestamp = Date.now();
+
+    addActiveJob({
+      id: syntheticId,
+      prompt: prompt,
+      model: 'gemini-3-pro-image-preview',
+      status: 'running',
+      progress: 5,
+      backendProgress: 5,
+      backendProgressUpdatedAt: timestamp,
+      startedAt: timestamp,
+      jobId: syntheticId,
+    });
+
+    return syntheticId;
+  }, [addActiveJob]);
+
+  const finalizeQuickEditJob = useCallback((jobId: string, status: 'completed' | 'failed') => {
+    updateJobStatus(jobId, status, {
+      progress: status === 'completed' ? 100 : undefined,
+      backendProgress: status === 'completed' ? 100 : undefined,
+      backendProgressUpdatedAt: Date.now(),
+    });
+    removeActiveJob(jobId);
+  }, [removeActiveJob, updateJobStatus]);
+
+  const handleQuickEdit = useCallback((item: GalleryImageLike) => {
+    setQuickEditModalState({
+      isOpen: true,
+      initialPrompt: item.prompt || '',
+      item,
+    });
+    handleCloseEditMenu();
+  }, [handleCloseEditMenu]);
+
+  const handleQuickEditSubmit = useCallback(async (prompt: string) => {
+    if (!quickEditModalState?.item || !quickEditModalState.item.url) {
+      showToast('No image URL available');
+      return;
+    }
+
+    const item = quickEditModalState.item;
+
+    // Close modal immediately
+    setQuickEditModalState(null);
+
+    // Start background job
+    const syntheticJobId = startQuickEditJob(item, prompt);
+
+    // Run generation in background
+    generateGeminiImage({
+      prompt: prompt,
+      references: [item.url.split('?')[0]], // Strip query params for original quality
+      model: 'gemini-3-pro-image-preview',
+      clientJobId: syntheticJobId,
+    }).then(async (result) => {
+      if (result) {
+        await addImage({
+          url: result.url,
+          prompt: result.prompt,
+          model: result.model,
+          timestamp: new Date().toISOString(),
+          ownerId: item.ownerId,
+          isLiked: false,
+          isPublic: false,
+          r2FileId: result.r2FileId,
+        });
+        finalizeQuickEditJob(syntheticJobId, 'completed');
+      } else {
+        showToast('Failed to edit image');
+        finalizeQuickEditJob(syntheticJobId, 'failed');
+      }
+    }).catch((error) => {
+      debugError('Failed to quick edit image:', error);
+      showToast('Failed to edit image');
+      finalizeQuickEditJob(syntheticJobId, 'failed');
+    });
+  }, [quickEditModalState, generateGeminiImage, addImage, showToast, startQuickEditJob, finalizeQuickEditJob]);
+
+  const handleQuickEditClose = useCallback(() => {
+    setQuickEditModalState(null);
+  }, []);
 
   // Handle variate image
   const handleVariateImage = useCallback(async (e: React.MouseEvent, item: GalleryImageLike | GalleryVideoLike) => {
@@ -741,6 +799,19 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
 
   return (
     <>
+      {/* Quick Edit Modal */}
+      {quickEditModalState && (
+        <Suspense fallback={null}>
+          <QuickEditModal
+            isOpen={quickEditModalState.isOpen}
+            onClose={handleQuickEditClose}
+            onSubmit={(prompt) => handleQuickEdit(quickEditModalState.image, prompt)}
+            initialPrompt={quickEditModalState.initialPrompt}
+            isLoading={quickEditModalState.isLoading}
+          />
+        </Suspense>
+      )}
+
       {/* Save Prompt Modal */}
       {savePromptModalState && createPortal(
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-n-black/80 py-12">
@@ -900,11 +971,9 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                               onClose={handleCloseEditMenu}
                               onToggleMenu={handleToggleEditMenu}
                               onEditImage={handleEditImage}
-                              onCreateAvatar={handleCreateAvatar}
-                              onUseAsReference={handleUseReference}
-                              onReusePrompt={handleReuse}
                               onMakeVideo={handleVideo}
                               onMakeVariation={!isVideo(item) ? (e) => handleVariateImage(e, item) : undefined}
+                              onQuickEdit={() => handleQuickEdit(item as GalleryImageLike)}
                             />
                           </Suspense>
                         </div>
@@ -931,10 +1000,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                 onClose={handleCloseEditMenu}
                                 onToggleMenu={handleToggleEditMenu}
                                 onEditImage={handleEditImage}
-                                onCreateAvatar={handleCreateAvatar}
-                                onUseAsReference={handleUseReference}
-                                onReusePrompt={handleReuse}
                                 onMakeVideo={handleVideo}
+                                onQuickEdit={() => handleQuickEdit(item as GalleryImageLike)}
                               />
                             </Suspense>
                           )}
@@ -1484,6 +1551,19 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           </Suspense>
         )}
       </div >
+      {/* Quick Edit Modal */}
+      {quickEditModalState && (
+        <Suspense fallback={null}>
+          <QuickEditModal
+            isOpen={quickEditModalState.isOpen}
+            onClose={handleQuickEditClose}
+            onSubmit={handleQuickEditSubmit}
+            initialPrompt={quickEditModalState.initialPrompt}
+            isLoading={isQuickEditLoading}
+            imageUrl={quickEditModalState.item.url}
+          />
+        </Suspense>
+      )}
     </>
   );
 });

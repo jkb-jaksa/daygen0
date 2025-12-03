@@ -2,7 +2,7 @@ import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from '
 import { lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { X, Download, Heart, ChevronLeft, ChevronRight, Copy, Globe, Lock, FolderPlus, Trash2, Edit as EditIcon, User, RefreshCw, Camera, Bookmark, BookmarkPlus, MoreHorizontal } from 'lucide-react';
+import { X, Download, Heart, ChevronLeft, ChevronRight, Copy, Globe, Lock, FolderPlus, Trash2, Edit as EditIcon, Camera, Bookmark, BookmarkPlus, MoreHorizontal } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
@@ -26,10 +26,12 @@ import { STORAGE_CHANGE_EVENT } from '../../utils/storageEvents';
 import { useBadgeNavigation } from './hooks/useBadgeNavigation';
 import { scrollLockExemptAttr, useGlobalScrollLock } from '../../hooks/useGlobalScrollLock';
 import { useRecraftImageGeneration } from '../../hooks/useRecraftImageGeneration';
+import { useGeminiImageGeneration } from '../../hooks/useGeminiImageGeneration';
 
 // Lazy load VerticalGalleryNav
 const VerticalGalleryNav = lazy(() => import('../shared/VerticalGalleryNav'));
 const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
+const QuickEditModal = lazy(() => import('./QuickEditModal'));
 const MasterSidebar = lazy(() => import('../master/MasterSidebar'));
 // Individual badges are rendered via ImageBadgeRow
 
@@ -95,14 +97,12 @@ const FullImageModal = memo(() => {
   const { state, filteredItems, addImage, closeFullSize, moveFullSize, openFullSize } = useGallery();
   const { addActiveJob, updateJobStatus, removeActiveJob } = useGeneration();
   const { variateImage: variateImageHook } = useRecraftImageGeneration();
+  const { generateImage: generateGeminiImage } = useGeminiImageGeneration();
   const {
     handleToggleLike,
     handleTogglePublic,
     handleDeleteImage,
     handleEditMenuSelect,
-    handleCreateAvatarFromMenu,
-    handleUseAsReference,
-    handleReusePrompt,
     handleMakeVideo,
     handleImageActionMenu,
     handleDownloadImage,
@@ -122,6 +122,7 @@ const FullImageModal = memo(() => {
   const [storedAvatars, setStoredAvatars] = useState<StoredAvatar[]>([]);
   const [storedProducts, setStoredProducts] = useState<StoredProduct[]>([]);
   const [isVideoPromptExpanded, setIsVideoPromptExpanded] = useState(false);
+  const [quickEditModalState, setQuickEditModalState] = useState<{ isOpen: boolean; initialPrompt: string } | null>(null);
 
   // Save prompt functionality
   const { user, storagePrefix } = useAuth();
@@ -155,6 +156,35 @@ const FullImageModal = memo(() => {
     });
     removeActiveJob(jobId);
   }, [removeActiveJob, updateJobStatus]);
+
+  const startQuickEditJob = useCallback((image: GalleryImageLike, prompt: string) => {
+    const syntheticId = buildModalVariateJobId(image); // Reuse ID builder for consistency
+    const timestamp = Date.now();
+
+    addActiveJob({
+      id: syntheticId,
+      prompt: prompt,
+      model: 'gemini-3-pro-image-preview',
+      status: 'running',
+      progress: 5,
+      backendProgress: 5,
+      backendProgressUpdatedAt: timestamp,
+      startedAt: timestamp,
+      jobId: syntheticId,
+    });
+
+    return syntheticId;
+  }, [addActiveJob]);
+
+  const finalizeQuickEditJob = useCallback((jobId: string, status: 'completed' | 'failed') => {
+    updateJobStatus(jobId, status, {
+      progress: status === 'completed' ? 100 : undefined,
+      backendProgress: status === 'completed' ? 100 : undefined,
+      backendProgressUpdatedAt: Date.now(),
+    });
+    removeActiveJob(jobId);
+  }, [removeActiveJob, updateJobStatus]);
+
   const [savePromptModalState, setSavePromptModalState] = useState<{ prompt: string; originalPrompt: string } | null>(null);
   const savePromptModalRef = useRef<HTMLDivElement>(null);
   const {
@@ -557,29 +587,6 @@ const FullImageModal = memo(() => {
     }
   }, [fullSizeImage, handleEditMenuSelect]);
 
-  const handleCreateAvatarClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (fullSizeImage) {
-      handleCreateAvatarFromMenu(fullSizeImage);
-    }
-  }, [fullSizeImage, handleCreateAvatarFromMenu]);
-
-  const handleUseAsReferenceClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (fullSizeImage) {
-      handleUseAsReference(fullSizeImage);
-      closeFullSize();
-    }
-  }, [fullSizeImage, handleUseAsReference, closeFullSize]);
-
-  const handleReusePromptClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (fullSizeImage) {
-      handleReusePrompt(fullSizeImage);
-      closeFullSize();
-    }
-  }, [fullSizeImage, handleReusePrompt, closeFullSize]);
-
   const handleMakeVideoClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     handleMakeVideo();
@@ -609,33 +616,64 @@ const FullImageModal = memo(() => {
     handleCloseEditMenu();
   }, [fullSizeImage, handleEditMenuSelect, handleCloseEditMenu]);
 
-  const handleCreateAvatar = useCallback(() => {
-    if (fullSizeImage) {
-      handleCreateAvatarFromMenu(fullSizeImage);
-    }
-    handleCloseEditMenu();
-  }, [fullSizeImage, handleCreateAvatarFromMenu, handleCloseEditMenu]);
-
-  const handleUseReference = useCallback(() => {
-    if (fullSizeImage) {
-      handleUseAsReference(fullSizeImage);
-      closeFullSize();
-    }
-    handleCloseEditMenu();
-  }, [fullSizeImage, handleUseAsReference, closeFullSize, handleCloseEditMenu]);
-
-  const handleReuse = useCallback(() => {
-    if (fullSizeImage) {
-      handleReusePrompt(fullSizeImage);
-      closeFullSize();
-    }
-    handleCloseEditMenu();
-  }, [fullSizeImage, handleReusePrompt, closeFullSize, handleCloseEditMenu]);
-
   const handleVideo = useCallback(() => {
     handleMakeVideo();
     handleCloseEditMenu();
   }, [handleMakeVideo, handleCloseEditMenu]);
+
+  const handleQuickEdit = useCallback(() => {
+    if (fullSizeImage) {
+      setQuickEditModalState({
+        isOpen: true,
+        initialPrompt: fullSizeImage.prompt || '',
+      });
+    }
+    handleCloseEditMenu();
+  }, [fullSizeImage, handleCloseEditMenu]);
+
+  const handleQuickEditSubmit = useCallback(async (prompt: string) => {
+    if (!fullSizeImage || !fullSizeImage.url) {
+      showToast('No image URL available');
+      return;
+    }
+
+    // Close modal immediately
+    setQuickEditModalState(null);
+
+    // Start background job
+    const syntheticJobId = startQuickEditJob(fullSizeImage, prompt);
+
+    // Run generation in background
+    generateGeminiImage({
+      prompt: prompt,
+      references: [fullSizeImage.url.split('?')[0]], // Strip query params for original quality
+      model: 'gemini-3-pro-image-preview',
+      clientJobId: syntheticJobId,
+    }).then(async (result) => {
+      if (result) {
+        await addImage({
+          url: result.url,
+          prompt: result.prompt,
+          model: result.model,
+          timestamp: new Date().toISOString(),
+          ownerId: fullSizeImage.ownerId,
+          isLiked: false,
+          isPublic: false,
+          r2FileId: result.r2FileId,
+        });
+        finalizeQuickEditJob(syntheticJobId, 'completed');
+      } else {
+        showToast('Failed to edit image');
+        finalizeQuickEditJob(syntheticJobId, 'failed');
+      }
+    }).catch((error) => {
+      debugError('Failed to quick edit image:', error);
+      showToast('Failed to edit image');
+      finalizeQuickEditJob(syntheticJobId, 'failed');
+    });
+  }, [fullSizeImage, generateGeminiImage, addImage, showToast, startQuickEditJob, finalizeQuickEditJob]);
+
+
 
   // Handle more actions menu
   const handleMoreActionsClick = useCallback((e: React.MouseEvent) => {
@@ -929,11 +967,9 @@ const FullImageModal = memo(() => {
                         onClose={handleCloseEditMenu}
                         onToggleMenu={handleToggleEditMenu}
                         onEditImage={handleEditImage}
-                        onCreateAvatar={handleCreateAvatar}
-                        onUseAsReference={handleUseReference}
-                        onReusePrompt={handleReuse}
                         onMakeVideo={handleVideo}
                         onMakeVariation={!isVideo ? handleVariateClick : undefined}
+                        onQuickEdit={handleQuickEdit}
                       />
                     </Suspense>
                   </div>
@@ -962,11 +998,9 @@ const FullImageModal = memo(() => {
                       onClose={handleCloseEditMenu}
                       onToggleMenu={handleToggleEditMenu}
                       onEditImage={handleEditImage}
-                      onCreateAvatar={handleCreateAvatar}
-                      onUseAsReference={handleUseReference}
-                      onReusePrompt={handleReuse}
                       onMakeVideo={handleVideo}
                       onMakeVariation={!isVideo ? handleVariateClick : undefined}
+                      onQuickEdit={handleQuickEdit}
                     />
                   </Suspense>
                 )}
@@ -1525,30 +1559,6 @@ const FullImageModal = memo(() => {
               </button>
               <button
                 type="button"
-                onClick={handleCreateAvatarClick}
-                className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
-              >
-                <User className="w-4 h-4 flex-shrink-0 text-theme-text" />
-                Create Avatar
-              </button>
-              <button
-                type="button"
-                onClick={handleUseAsReferenceClick}
-                className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
-              >
-                <Copy className="w-4 h-4 flex-shrink-0 text-theme-text" />
-                Use as reference
-              </button>
-              <button
-                type="button"
-                onClick={handleReusePromptClick}
-                className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
-              >
-                <RefreshCw className="w-4 h-4 flex-shrink-0 text-theme-text" />
-                Reuse prompt
-              </button>
-              <button
-                type="button"
                 onClick={handleMakeVideoClick}
                 className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
               >
@@ -1576,6 +1586,19 @@ const FullImageModal = memo(() => {
           </Suspense>
         )}
       </div>
+      {/* Quick Edit Modal */}
+      {quickEditModalState && fullSizeImage && (
+        <Suspense fallback={null}>
+          <QuickEditModal
+            isOpen={quickEditModalState.isOpen}
+            onClose={() => setQuickEditModalState(null)}
+            onSubmit={handleQuickEditSubmit}
+            initialPrompt={quickEditModalState.initialPrompt}
+            imageUrl={fullSizeImage.url}
+            isLoading={isLoading}
+          />
+        </Suspense>
+      )}
     </>
   );
 });

@@ -1,7 +1,7 @@
 import React, { memo, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Edit, User, Copy, RefreshCw, Camera, Shuffle } from 'lucide-react';
-import { MenuPortal } from './shared/MenuPortal';
+import { Edit, Camera, Shuffle } from 'lucide-react';
+
 import { tooltips } from '../../styles/designSystem';
 import type { GalleryImageLike, GalleryVideoLike } from './types';
 
@@ -16,11 +16,9 @@ interface EditButtonMenuProps {
   onClose: () => void;
   onToggleMenu: (menuId: string, anchor: HTMLElement, image: GalleryImageLike | GalleryVideoLike) => void;
   onEditImage: () => void;
-  onCreateAvatar: (image: GalleryImageLike | GalleryVideoLike) => void;
-  onUseAsReference: () => void;
-  onReusePrompt: () => void;
   onMakeVideo: () => void;
   onMakeVariation?: (event: React.MouseEvent) => void;
+  onQuickEdit?: () => void;
 }
 
 const EditButtonMenu = memo<EditButtonMenuProps>(({
@@ -34,11 +32,9 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
   onClose,
   onToggleMenu,
   onEditImage,
-  onCreateAvatar,
-  onUseAsReference,
-  onReusePrompt,
   onMakeVideo,
   onMakeVariation,
+  onQuickEdit,
 }) => {
   const tooltipBaseId = useMemo(() => image.jobId || image.r2FileId || image.url || menuId, [image, menuId]);
   const makeVideoTooltipId = `${tooltipBaseId}-make-video`;
@@ -62,29 +58,15 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
     if (typeof document === 'undefined') return;
     const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
     if (!tooltip) return;
-    tooltip.classList.remove('opacity-100');
-    tooltip.classList.add('opacity-0');
+    const tooltipEl = tooltip as HTMLElement;
+    tooltipEl.classList.remove('opacity-100');
+    tooltipEl.classList.add('opacity-0');
   }, []);
 
   const handleEditImageClick = useCallback((event: React.MouseEvent) => {
     event.stopPropagation();
     onEditImage();
   }, [onEditImage]);
-
-  const handleCreateAvatarClick = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-    onCreateAvatar(image);
-  }, [onCreateAvatar, image]);
-
-  const handleUseAsReferenceClick = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-    onUseAsReference();
-  }, [onUseAsReference]);
-
-  const handleReusePromptClick = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-    onReusePrompt();
-  }, [onReusePrompt]);
 
   const handleMakeVideoClick = useCallback((event: React.MouseEvent) => {
     event.stopPropagation();
@@ -107,10 +89,9 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
         <button
           type="button"
           className={`image-action-btn ${isFullSize ? 'image-action-btn--fullsize' : isGallery ? 'image-action-btn--gallery' : ''} parallax-large transition-opacity duration-100 master-action-make-video hover:text-blue-500 ${anyMenuOpen
-              ? 'opacity-100 pointer-events-auto'
-              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+            ? 'opacity-100 pointer-events-auto'
+            : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
             }`}
-          title="Make video"
           aria-label="Make video"
           onClick={handleMakeVideoClick}
           onMouseEnter={(e) => {
@@ -126,10 +107,9 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
           <button
             type="button"
             className={`image-action-btn ${isFullSize ? 'image-action-btn--fullsize' : isGallery ? 'image-action-btn--gallery' : ''} parallax-large transition-opacity duration-100 ${anyMenuOpen
-                ? 'opacity-100 pointer-events-auto'
-                : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+              ? 'opacity-100 pointer-events-auto'
+              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
               }`}
-            title="Create variation"
             aria-label="Create variation"
             onClick={handleMakeVariationClick}
             onMouseEnter={(e) => {
@@ -145,13 +125,16 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
         <button
           type="button"
           className={`image-action-btn ${isFullSize ? 'image-action-btn--fullsize' : isGallery ? 'image-action-btn--gallery' : ''} parallax-large transition-opacity duration-100 ${anyMenuOpen
-              ? 'opacity-100 pointer-events-auto'
-              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+            ? 'opacity-100 pointer-events-auto'
+            : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
             }`}
-          title="Edit"
-          aria-haspopup="menu"
-          aria-expanded={isOpen}
-          onClick={handleButtonClick}
+          aria-label="Edit"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onQuickEdit) {
+              onQuickEdit();
+            }
+          }}
           onMouseEnter={(e) => {
             showTooltip(e.currentTarget, editTooltipId);
           }}
@@ -161,48 +144,6 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
         >
           <Edit className="w-3 h-3" />
         </button>
-        <MenuPortal
-          anchorEl={isOpen ? anchor : null}
-          open={isOpen}
-          onClose={onClose}
-        >
-          <button
-            type="button"
-            className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-            onClick={handleEditImageClick}
-          >
-            <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-            <Edit className="h-4 w-4 text-theme-text relative z-10" />
-            <span className="relative z-10">Edit image</span>
-          </button>
-          <button
-            type="button"
-            className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-            onClick={handleCreateAvatarClick}
-          >
-            <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-            <User className="h-4 w-4 text-theme-text relative z-10" />
-            <span className="relative z-10">Create Avatar</span>
-          </button>
-          <button
-            type="button"
-            className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-            onClick={handleUseAsReferenceClick}
-          >
-            <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-            <Copy className="h-4 w-4 text-theme-text relative z-10" />
-            <span className="relative z-10">Use as reference</span>
-          </button>
-          <button
-            type="button"
-            className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-            onClick={handleReusePromptClick}
-          >
-            <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-            <RefreshCw className="h-4 w-4 text-theme-text relative z-10" />
-            <span className="relative z-10">Reuse prompt</span>
-          </button>
-        </MenuPortal>
       </div>
       {createPortal(
         <div
