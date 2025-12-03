@@ -544,7 +544,15 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     });
   }, []);
 
-  const handleQuickEditSubmit = useCallback(async (prompt: string) => {
+  const fileToDataUrl = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error('Failed to read reference file.'));
+      reader.readAsDataURL(file);
+    });
+
+  const handleQuickEditSubmit = useCallback(async (prompt: string, referenceFile?: File) => {
     if (!quickEditModalState?.item || !quickEditModalState.item.url) {
       showToast('No image URL available');
       return;
@@ -558,34 +566,47 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     // Start background job
     const syntheticJobId = startQuickEditJob(item, prompt);
 
-    // Run generation in background
-    generateGeminiImage({
-      prompt: prompt,
-      references: [item.url.split('?')[0]], // Strip query params for original quality
-      model: 'gemini-3-pro-image-preview',
-      clientJobId: syntheticJobId,
-    }).then(async (result) => {
-      if (result) {
-        await addImage({
-          url: result.url,
-          prompt: result.prompt,
-          model: result.model,
-          timestamp: new Date().toISOString(),
-          ownerId: item.ownerId,
-          isLiked: false,
-          isPublic: false,
-          r2FileId: result.r2FileId,
-        });
-        finalizeQuickEditJob(syntheticJobId, 'completed');
-      } else {
+    try {
+      const references = [item.url.split('?')[0]]; // Strip query params for original quality
+
+      if (referenceFile) {
+        const referenceDataUrl = await fileToDataUrl(referenceFile);
+        references.push(referenceDataUrl);
+      }
+
+      // Run generation in background
+      generateGeminiImage({
+        prompt: prompt,
+        references: references,
+        model: 'gemini-3-pro-image-preview',
+        clientJobId: syntheticJobId,
+      }).then(async (result) => {
+        if (result) {
+          await addImage({
+            url: result.url,
+            prompt: result.prompt,
+            model: result.model,
+            timestamp: new Date().toISOString(),
+            ownerId: item.ownerId,
+            isLiked: false,
+            isPublic: false,
+            r2FileId: result.r2FileId,
+          });
+          finalizeQuickEditJob(syntheticJobId, 'completed');
+        } else {
+          showToast('Failed to edit image');
+          finalizeQuickEditJob(syntheticJobId, 'failed');
+        }
+      }).catch((error) => {
+        debugError('Failed to quick edit image:', error);
         showToast('Failed to edit image');
         finalizeQuickEditJob(syntheticJobId, 'failed');
-      }
-    }).catch((error) => {
-      debugError('Failed to quick edit image:', error);
-      showToast('Failed to edit image');
+      });
+    } catch (error) {
+      debugError('Failed to process quick edit submission:', error);
+      showToast('Failed to start edit');
       finalizeQuickEditJob(syntheticJobId, 'failed');
-    });
+    }
   }, [quickEditModalState, generateGeminiImage, addImage, showToast, startQuickEditJob, finalizeQuickEditJob]);
 
   const handleQuickEditClose = useCallback(() => {

@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Sparkles, Edit, Loader2 } from 'lucide-react';
-import { glass, buttons, inputs } from '../../styles/designSystem';
+import { X, Sparkles, Edit, Loader2, Plus } from 'lucide-react';
+import { glass, buttons, inputs, tooltips } from '../../styles/designSystem';
 import { getToolLogo, hasToolLogo } from '../../utils/toolLogos';
+import { useReferenceHandlers } from './hooks/useReferenceHandlers';
+import { useParallaxHover } from '../../hooks/useParallaxHover';
 
 interface QuickEditModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (prompt: string) => void;
+    onSubmit: (prompt: string, reference?: File) => void;
     initialPrompt?: string;
     isLoading?: boolean;
     imageUrl: string;
@@ -24,6 +26,17 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     const [prompt, setPrompt] = useState(initialPrompt);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const modalRef = useRef<HTMLDivElement>(null);
+    const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLButtonElement>();
+    const [isImageHovered, setIsImageHovered] = useState(false);
+
+    const {
+        referenceFiles,
+        referencePreviews,
+        handleAddReferenceFiles,
+        clearReference,
+        openFileInput,
+        fileInputRef,
+    } = useReferenceHandlers(null, null, () => { }, 1);
 
     useEffect(() => {
         if (isOpen) {
@@ -56,7 +69,8 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (prompt.trim()) {
-            onSubmit(prompt.trim());
+            const referenceFile = referenceFiles.length > 0 && referenceFiles[0] instanceof File ? referenceFiles[0] : undefined;
+            onSubmit(prompt.trim(), referenceFile);
         }
     };
 
@@ -65,6 +79,28 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
             e.preventDefault();
             handleSubmit(e);
         }
+    };
+
+    // Tooltip helper
+    const showHoverTooltip = (target: HTMLElement, tooltipId: string) => {
+        if (typeof document === 'undefined') return;
+        const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
+        if (!tooltip) return;
+
+        const rect = target.getBoundingClientRect();
+        tooltip.style.top = `${rect.top - 8}px`;
+        tooltip.style.left = `${rect.left + rect.width / 2}px`;
+        tooltip.style.transform = 'translateX(-50%) translateY(-100%)';
+        tooltip.classList.remove('opacity-0');
+        tooltip.classList.add('opacity-100');
+    };
+
+    const hideHoverTooltip = (tooltipId: string) => {
+        if (typeof document === 'undefined') return;
+        const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
+        if (!tooltip) return;
+        tooltip.classList.remove('opacity-100');
+        tooltip.classList.add('opacity-0');
     };
 
     if (!isOpen) return null;
@@ -115,16 +151,87 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                             <label htmlFor="quick-edit-prompt" className="text-sm font-raleway text-theme-white">
                                 Enter your prompt
                             </label>
-                            <textarea
-                                id="quick-edit-prompt"
-                                ref={inputRef}
-                                value={prompt}
-                                onChange={(e) => setPrompt(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                className={`${inputs.textarea} min-h-[100px] flex-1 ${prompt ? '!text-theme-text' : '!text-theme-light'}`}
-                                placeholder="e.g. Make it a sunny day, Add a red hat..."
-                                disabled={isLoading}
-                            />
+                            <div className="relative">
+                                <textarea
+                                    id="quick-edit-prompt"
+                                    ref={inputRef}
+                                    value={prompt}
+                                    onChange={(e) => setPrompt(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    className={`${inputs.textarea} min-h-[100px] w-full ${prompt ? '!text-theme-text' : '!text-theme-light'}`}
+                                    placeholder="e.g. Make it a sunny day, Add a red hat..."
+                                    disabled={isLoading}
+                                />
+                                {/* Reference Image Controls */}
+                                <div className="absolute bottom-2 left-2 flex items-center gap-2">
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        className="hidden"
+                                        accept="image/*"
+                                        onChange={(e) => {
+                                            const files = Array.from(e.target.files || []);
+                                            if (files.length > 0) {
+                                                handleAddReferenceFiles(files);
+                                            }
+                                            e.target.value = '';
+                                        }}
+                                    />
+                                    <div className="relative">
+                                        <button
+                                            type="button"
+                                            onClick={() => openFileInput()}
+                                            aria-label="Add reference image"
+                                            disabled={referenceFiles.length >= 1}
+                                            className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small ${referenceFiles.length >= 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                            onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'edit-reference-tooltip')}
+                                            onMouseLeave={() => hideHoverTooltip('edit-reference-tooltip')}
+                                            onPointerMove={onPointerMove}
+                                            onPointerEnter={onPointerEnter}
+                                            onPointerLeave={onPointerLeave}
+                                        >
+                                            <Plus className="w-4 h-4 flex-shrink-0 text-n-text" />
+                                        </button>
+                                        <div
+                                            data-tooltip-for="edit-reference-tooltip"
+                                            className={`${tooltips.base} absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full z-[130] hidden lg:block`}
+                                        >
+                                            Reference Image
+                                        </div>
+                                    </div>
+
+                                    {referencePreviews.length > 0 && (
+                                        <div className="flex items-center gap-1.5">
+                                            {referencePreviews.map((preview, index) => (
+                                                <div
+                                                    key={`${preview}-${index}`}
+                                                    className="relative group"
+                                                    onMouseEnter={() => setIsImageHovered(true)}
+                                                    onMouseLeave={() => setIsImageHovered(false)}
+                                                >
+                                                    <img
+                                                        src={preview}
+                                                        alt={`Reference ${index + 1}`}
+                                                        loading="lazy"
+                                                        className="w-9 h-9 rounded-lg object-cover border border-theme-mid cursor-pointer hover:bg-theme-light transition-colors duration-200"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            clearReference(index);
+                                                        }}
+                                                        className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-text hover:text-n-text rounded-full p-0.5 transition-all duration-200"
+                                                        title="Remove reference"
+                                                    >
+                                                        <X className="w-2.5 h-2.5 text-n-text" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
 
                         {/* Model Display - Read Only */}
