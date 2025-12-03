@@ -991,11 +991,8 @@ const FullImageModal = memo(() => {
                     <EditButtonMenu
                       menuId={`fullsize-edit-${fullSizeImage.jobId}`}
                       image={fullSizeImage}
-                      isOpen={editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}`}
-                      anchor={editMenu?.anchor || null}
                       isFullSize={true}
                       anyMenuOpen={editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId}
-                      onClose={handleCloseEditMenu}
                       onToggleMenu={handleToggleEditMenu}
                       onEditImage={handleEditImage}
                       onMakeVideo={handleVideo}

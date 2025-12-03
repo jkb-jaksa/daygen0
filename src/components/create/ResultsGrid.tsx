@@ -124,7 +124,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const lastOpenRef = useRef<{ id: string | null; ts: number }>({ id: null, ts: 0 });
   const [expandedVideoPrompts, setExpandedVideoPrompts] = useState<Set<string>>(() => new Set());
   const [quickEditModalState, setQuickEditModalState] = useState<{ isOpen: boolean; initialPrompt: string; item: GalleryImageLike } | null>(null);
-  const [isQuickEditLoading, setIsQuickEditLoading] = useState(false);
+  const [isQuickEditLoading] = useState(false);
   const {
     goToAvatarProfile,
     goToProductProfile,
@@ -964,11 +964,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                             <EditButtonMenu
                               menuId={`gallery-actions-${index}-${item.url}`}
                               image={item}
-                              isOpen={editMenu?.id === `gallery-actions-${index}-${item.url}`}
-                              anchor={editMenu?.anchor || null}
                               isGallery={false}
                               anyMenuOpen={isMenuActive}
-                              onClose={handleCloseEditMenu}
                               onToggleMenu={handleToggleEditMenu}
                               onEditImage={handleEditImage}
                               onMakeVideo={handleVideo}
@@ -993,11 +990,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                               <EditButtonMenu
                                 menuId={`gallery-actions-${index}-${item.url}`}
                                 image={item}
-                                isOpen={editMenu?.id === `gallery-actions-${index}-${item.url}`}
-                                anchor={editMenu?.anchor || null}
                                 isGallery={true}
                                 anyMenuOpen={isMenuActive}
-                                onClose={handleCloseEditMenu}
                                 onToggleMenu={handleToggleEditMenu}
                                 onEditImage={handleEditImage}
                                 onMakeVideo={handleVideo}

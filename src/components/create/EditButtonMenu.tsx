@@ -8,12 +8,9 @@ import type { GalleryImageLike, GalleryVideoLike } from './types';
 interface EditButtonMenuProps {
   menuId: string;
   image: GalleryImageLike | GalleryVideoLike;
-  isOpen: boolean;
-  anchor: HTMLElement | null;
   isFullSize?: boolean;
   isGallery?: boolean;
   anyMenuOpen?: boolean;
-  onClose: () => void;
   onToggleMenu: (menuId: string, anchor: HTMLElement, image: GalleryImageLike | GalleryVideoLike) => void;
   onEditImage: () => void;
   onMakeVideo: () => void;
@@ -24,12 +21,9 @@ interface EditButtonMenuProps {
 const EditButtonMenu = memo<EditButtonMenuProps>(({
   menuId,
   image,
-  isOpen,
-  anchor,
   isFullSize = false,
   isGallery = false,
   anyMenuOpen = false,
-  onClose,
   onToggleMenu,
   onEditImage,
   onMakeVideo,
@@ -63,11 +57,6 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
     tooltipEl.classList.add('opacity-0');
   }, []);
 
-  const handleEditImageClick = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-    onEditImage();
-  }, [onEditImage]);
-
   const handleMakeVideoClick = useCallback((event: React.MouseEvent) => {
     event.stopPropagation();
     onMakeVideo();
@@ -77,11 +66,6 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
     event.stopPropagation();
     onMakeVariation?.(event);
   }, [onMakeVariation]);
-
-  const handleButtonClick = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-    onToggleMenu(menuId, event.currentTarget as HTMLElement, image);
-  }, [menuId, image, onToggleMenu]);
 
   return (
     <>
