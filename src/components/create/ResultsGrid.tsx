@@ -109,13 +109,12 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     handleBulkActionsMenu,
     handleToggleLike,
     handleDeleteImage,
-    handleEditMenuSelect,
     handleMakeVideo,
   } = useGalleryActions();
   const generation = useGeneration();
   const { state: generationState, addActiveJob, updateJobStatus, removeActiveJob } = generation;
   const { selectedItems, isBulkMode, imageActionMenu } = state;
-  const [editMenu, setEditMenu] = useState<{ id: string; anchor: HTMLElement | null } | null>(null);
+  const [editMenu] = useState<{ id: string; anchor: HTMLElement | null } | null>(null);
   const [storedAvatars, setStoredAvatars] = useState<StoredAvatar[]>([]);
   const [storedProducts, setStoredProducts] = useState<StoredProduct[]>([]);
   const [hoveredPromptButton, setHoveredPromptButton] = useState<string | null>(null);
@@ -543,8 +542,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       initialPrompt: item.prompt || '',
       item,
     });
-    handleCloseEditMenu();
-  }, [handleCloseEditMenu]);
+  }, []);
 
   const handleQuickEditSubmit = useCallback(async (prompt: string) => {
     if (!quickEditModalState?.item || !quickEditModalState.item.url) {

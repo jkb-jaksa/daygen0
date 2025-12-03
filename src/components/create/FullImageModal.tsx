@@ -114,7 +114,7 @@ const FullImageModal = memo(() => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const [editMenu, setEditMenu] = useState<{ id: string; anchor: HTMLElement | null } | null>(null);
+  const [editMenu] = useState<{ id: string; anchor: HTMLElement | null } | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -604,8 +604,7 @@ const FullImageModal = memo(() => {
         initialPrompt: fullSizeImage.prompt || '',
       });
     }
-    handleCloseEditMenu();
-  }, [fullSizeImage, handleCloseEditMenu]);
+  }, [fullSizeImage]);
 
   const handleQuickEditSubmit = useCallback(async (prompt: string) => {
     if (!fullSizeImage || !fullSizeImage.url) {
