@@ -1,14 +1,14 @@
-import type { Segment } from '../stores/timelineStore';
+import type { Job } from './jobs';
 import { apiFetch } from '../utils/api';
 
 export interface TimelineResponse {
-    segments: Segment[];
+    segments: any[]; // Using any[] to avoid circular dependency if Segment is not exported or complex, but ideally import Segment
     audioUrl: string;
 }
 
-export async function generateTimeline(topic: string, style: string): Promise<TimelineResponse> {
-    return apiFetch<TimelineResponse>('/api/timeline/generate', {
+export async function generateTimeline(topic: string, style: string, duration: 'short' | 'medium' | 'long' = 'medium'): Promise<Job> {
+    return apiFetch<Job>('/api/timeline/generate', {
         method: 'POST',
-        body: { topic, style },
+        body: { topic, style, duration },
     });
 }

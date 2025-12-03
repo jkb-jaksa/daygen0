@@ -1,22 +1,19 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { generateTimeline } from '../../api/timeline';
-import { useTimelineStore } from '../../stores/timelineStore';
-import { fetchJobs, type Job } from '../../api/jobs';
+import { generateTimeline, type TimelineResponse } from '../../api/timeline';
+import { useTimelineStore, type Segment } from '../../stores/timelineStore';
+import { fetchJobs, getJob, type Job } from '../../api/jobs';
 import { Loader2, Sparkles, History } from 'lucide-react';
-
-interface Segment {
-    id?: string;
-    voiceUrl: string;
-    [key: string]: unknown;
-}
 
 export default function TimelineGenerator() {
     const navigate = useNavigate();
     const [topic, setTopic] = useState('');
     const [style, setStyle] = useState('Cinematic');
+    const [duration, setDuration] = useState<'short' | 'medium' | 'long'>('medium');
     const [isLoading, setIsLoading] = useState(false);
     const [jobs, setJobs] = useState<Job[]>([]);
+    const [activeJobId, setActiveJobId] = useState<string | null>(null);
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
     const setSegments = useTimelineStore((state) => state.setSegments);
     const setIsPlaying = useTimelineStore((state) => state.setIsPlaying);
@@ -25,6 +22,39 @@ export default function TimelineGenerator() {
     useEffect(() => {
         loadHistory();
     }, []);
+
+    useEffect(() => {
+        if (!activeJobId) return;
+
+        const interval = setInterval(async () => {
+            try {
+                const job = await getJob(activeJobId);
+
+                // Update in history list
+                setJobs(prev => {
+                    const exists = prev.find(j => j.id === job.id);
+                    if (exists) {
+                        return prev.map(j => j.id === job.id ? job : j);
+                    }
+                    return [job, ...prev];
+                });
+
+                if (job.status === 'COMPLETED') {
+                    setActiveJobId(null);
+                    setIsLoading(false);
+                    handleLoadJob(job);
+                } else if (job.status === 'FAILED') {
+                    setActiveJobId(null);
+                    setIsLoading(false);
+                    alert(`Generation failed: ${job.error || 'Unknown error'}`);
+                }
+            } catch (error) {
+                console.error('Polling error:', error);
+            }
+        }, 2000);
+
+        return () => clearInterval(interval);
+    }, [activeJobId]);
 
     const loadHistory = async () => {
         setIsLoadingHistory(true);
@@ -49,7 +79,7 @@ export default function TimelineGenerator() {
             return;
         }
 
-        const response = job.metadata.response;
+        const response = job.metadata.response as TimelineResponse;
         if (!response.segments) return;
 
         const segmentsWithIds = response.segments.map((s: Segment, i: number) => ({
@@ -74,23 +104,12 @@ export default function TimelineGenerator() {
 
         setIsLoading(true);
         try {
-            const response = await generateTimeline(topic, style);
-
-            const segmentsWithIds = response.segments.map((s, i) => ({
-                ...s,
-                id: s.id || `segment-${i}-${Date.now()}`,
-                voiceUrl: s.voiceUrl
-            }));
-            setSegments(segmentsWithIds);
-            // useTimelineStore.setState({ audioUrl: response.audioUrl });
-
-            setIsPlaying(false);
-            setCurrentTime(0);
-            navigate('/app/cyran-roll/editor');
+            const job = await generateTimeline(topic, style, duration);
+            setJobs(prev => [job, ...prev]);
+            setActiveJobId(job.id);
         } catch (error) {
             console.error('Failed to generate timeline:', error);
             alert('Failed to generate timeline. Please try again.');
-        } finally {
             setIsLoading(false);
         }
     };
@@ -122,22 +141,48 @@ export default function TimelineGenerator() {
                         />
                     </div>
 
-                    <div className="space-y-2">
-                        <label htmlFor="style" className="block text-sm font-medium text-theme-white font-raleway ml-1">
-                            Style
-                        </label>
-                        <select
-                            id="style"
-                            value={style}
-                            onChange={(e) => setStyle(e.target.value)}
-                            className="w-full bg-theme-black/40 border border-theme-dark rounded-xl p-4 text-theme-text font-raleway text-base focus:outline-none focus:border-theme-mid focus:ring-1 focus:ring-theme-mid transition-all appearance-none cursor-pointer"
-                        >
-                            <option value="Cinematic">Cinematic</option>
-                            <option value="Documentary">Documentary</option>
-                            <option value="Vlog">Vlog</option>
-                            <option value="Educational">Educational</option>
-                            <option value="Music Video">Music Video</option>
-                        </select>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label htmlFor="style" className="block text-sm font-medium text-theme-white font-raleway ml-1">
+                                Style
+                            </label>
+                            <select
+                                id="style"
+                                value={style}
+                                onChange={(e) => setStyle(e.target.value)}
+                                className="w-full bg-theme-black/40 border border-theme-dark rounded-xl p-3 text-theme-text font-raleway text-sm focus:outline-none focus:border-theme-mid focus:ring-1 focus:ring-theme-mid transition-all appearance-none cursor-pointer"
+                            >
+                                <option value="Cinematic">Cinematic</option>
+                                <option value="Documentary">Documentary</option>
+                                <option value="Vlog">Vlog</option>
+                                <option value="Educational">Educational</option>
+                                <option value="Music Video">Music Video</option>
+                            </select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label htmlFor="duration" className="block text-sm font-medium text-theme-white font-raleway ml-1">
+                                Duration
+                            </label>
+                            <div className="grid grid-cols-3 gap-2">
+                                {(['short', 'medium', 'long'] as const).map((d) => (
+                                    <button
+                                        key={d}
+                                        type="button"
+                                        onClick={() => setDuration(d)}
+                                        className={`p-2 rounded-xl border font-raleway text-xs transition-all flex flex-col items-center justify-center gap-0.5 ${duration === d
+                                            ? 'bg-theme-mid/20 border-theme-mid text-theme-mid shadow-[0_0_10px_rgba(0,255,255,0.1)]'
+                                            : 'bg-theme-black/40 border-theme-dark text-theme-text/60 hover:border-theme-white/30 hover:text-theme-text'
+                                            }`}
+                                    >
+                                        <span className="capitalize font-bold">{d}</span>
+                                        <span className="text-[10px] opacity-60">
+                                            {d === 'short' ? '~15s' : d === 'medium' ? '~30s' : '~60s'}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                     </div>
 
                     <button
@@ -187,7 +232,7 @@ export default function TimelineGenerator() {
                                     }`}
                             >
                                 <span className="font-raleway text-sm truncate pr-4">
-                                    {job.metadata?.topic || job.metadata?.prompt || 'Untitled Project'}
+                                    {(job.metadata?.topic as string) || (job.metadata?.prompt as string) || 'Untitled Project'}
                                 </span>
                                 <span className="text-xs text-theme-white/30 font-mono whitespace-nowrap group-hover:text-theme-white/50 transition-colors">
                                     {new Date(job.createdAt).toLocaleDateString()}

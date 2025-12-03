@@ -21,5 +21,11 @@ export async function fetchJobs(type?: string): Promise<Job[]> {
     // Let's try to fetch all first if we are unsure, but usually filtering is supported.
     // Checking backend logs earlier: "Mapped {/api/jobs, GET} route"
 
+
     return apiFetch<Job[]>(url);
 }
+
+export async function getJob(id: string): Promise<Job> {
+    return apiFetch<Job>(`/api/timeline/${id}`);
+}
+
