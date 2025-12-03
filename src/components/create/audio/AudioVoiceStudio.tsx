@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { buttons, inputs, text } from "../../../styles/designSystem";
 import {
   Mic,
@@ -12,12 +12,16 @@ import {
 import { useToast } from "../../../hooks/useToast";
 import {
   cloneElevenLabsVoice,
-  fetchElevenLabsVoices,
   generateElevenLabsSpeech,
   type ElevenLabsVoiceSummary,
 } from "../../../utils/audioApi";
+import { VoiceSelector } from "../../shared/VoiceSelector";
 
 type VoiceFlowMode = "menu" | "record" | "design";
+
+type AudioVoiceStudioProps = {
+  onBack?: () => void;
+};
 
 type RecordingState = {
   isRecording: boolean;
@@ -48,7 +52,7 @@ const base64ToObjectUrl = (base64: string, contentType: string) => {
   return URL.createObjectURL(blob);
 };
 
-export function AudioVoiceStudio() {
+export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
   const [mode, setMode] = useState<VoiceFlowMode>("menu");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
@@ -77,13 +81,9 @@ export function AudioVoiceStudio() {
     "Digital copy voice sample",
   );
   const { showToast } = useToast();
-  const [availableVoices, setAvailableVoices] = useState<
-    ElevenLabsVoiceSummary[]
-  >([]);
+  // recentVoice is used to locally cache a newly created voice so it appears in the list immediately
   const [recentVoice, setRecentVoice] =
     useState<ElevenLabsVoiceSummary | null>(null);
-  const [isLoadingVoices, setIsLoadingVoices] = useState(false);
-  const [voicesError, setVoicesError] = useState<string | null>(null);
   const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null);
   const [isGeneratingSpeech, setIsGeneratingSpeech] = useState(false);
   const [generatedPreviewUrl, setGeneratedPreviewUrl] = useState<string | null>(
@@ -143,74 +143,6 @@ export function AudioVoiceStudio() {
     };
   }, [stopRecording, recordingState.audioUrl]);
 
-  const voiceOptions = useMemo(() => {
-    const combined = [...availableVoices];
-    if (
-      recentVoice &&
-      !combined.some((voice) => voice.id === recentVoice.id)
-    ) {
-      combined.unshift(recentVoice);
-    }
-    return combined;
-  }, [availableVoices, recentVoice]);
-
-  useEffect(() => {
-    if (voiceOptions.length > 0 && !selectedVoiceId) {
-      setSelectedVoiceId(voiceOptions[0].id);
-    }
-  }, [voiceOptions, selectedVoiceId]);
-
-  useEffect(() => {
-    if (
-      mode !== "design" ||
-      isLoadingVoices ||
-      availableVoices.length > 0
-    ) {
-      return;
-    }
-
-    let isCancelled = false;
-    setIsLoadingVoices(true);
-    setVoicesError(null);
-
-    void fetchElevenLabsVoices()
-      .then((response) => {
-        if (isCancelled) {
-          return;
-        }
-        const voices = Array.isArray(response.voices) ? response.voices : [];
-        setAvailableVoices(voices);
-        if (voices.length > 0) {
-          setSelectedVoiceId((current) => current ?? voices[0].id);
-        }
-      })
-      .catch((error) => {
-        if (isCancelled) {
-          return;
-        }
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Unable to load voices from ElevenLabs.";
-        setVoicesError(message);
-        showToast(message);
-      })
-      .finally(() => {
-        if (!isCancelled) {
-          setIsLoadingVoices(false);
-        }
-      });
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [
-    availableVoices.length,
-    isLoadingVoices,
-    mode,
-    showToast,
-  ]);
-
   useEffect(() => {
     return () => {
       if (generatedPreviewUrl) {
@@ -237,9 +169,12 @@ export function AudioVoiceStudio() {
     }
   }, [filePreviewUrl]);
 
-
   const handleReturnToMenu = useCallback(() => {
-    setMode("menu");
+    if (onBack) {
+      onBack();
+    } else {
+      setMode("menu");
+    }
     resetUpload();
     if (recordingState.audioUrl) {
       URL.revokeObjectURL(recordingState.audioUrl);
@@ -258,7 +193,21 @@ export function AudioVoiceStudio() {
     setGeneratedPreviewUrl(null);
     setDesignError(null);
     setCloneError(null);
-  }, [generatedPreviewUrl, recordingState.audioUrl, resetUpload]);
+  }, [generatedPreviewUrl, recordingState.audioUrl, resetUpload, onBack]);
+
+  const handleVoicesLoaded = useCallback(
+    (voices: ElevenLabsVoiceSummary[]) => {
+      // If we have a selected voice already, don't change it unless it's invalid
+      // Otherwise select the first available voice
+      if (
+        !selectedVoiceId &&
+        voices.length > 0
+      ) {
+        setSelectedVoiceId(voices[0].voice_id);
+      }
+    },
+    [selectedVoiceId],
+  );
 
   const handleFileSelect = useCallback(
     (file: File | null) => {
@@ -330,7 +279,7 @@ export function AudioVoiceStudio() {
           labels,
         });
         setRecentVoice(result.voice);
-        setSelectedVoiceId(result.voice.id);
+        setSelectedVoiceId(result.voice.voice_id);
         showToast(`Voice "${result.voice.name}" saved to ElevenLabs.`);
       } catch (error) {
         const message =
@@ -673,7 +622,7 @@ export function AudioVoiceStudio() {
                   Last saved voice: {recentVoice.name}
                 </p>
                 <p className="text-xs font-mono text-theme-white/60">
-                  Voice ID: {recentVoice.id}
+                  Voice ID: {recentVoice.voice_id}
                 </p>
               </div>
             )}
@@ -813,7 +762,7 @@ export function AudioVoiceStudio() {
             Last saved voice: {recentVoice.name}
           </p>
           <p className="text-xs font-mono text-theme-white/60">
-            Voice ID: {recentVoice.id}
+            Voice ID: {recentVoice.voice_id}
           </p>
         </div>
       )}
@@ -856,35 +805,13 @@ export function AudioVoiceStudio() {
             </label>
             <label className="block text-sm font-raleway text-theme-text">
               Voice preset
-              <select
+              <VoiceSelector
                 value={selectedVoiceId ?? ""}
-                onChange={(event) =>
-                  setSelectedVoiceId(
-                    event.target.value ? event.target.value : null,
-                  )
-                }
-                className="mt-1 w-full rounded-2xl border border-theme-dark bg-theme-black/60 px-4 py-3 text-sm text-theme-white focus:border-theme-text focus:outline-none focus:ring-0"
-                disabled={voiceOptions.length === 0 && isLoadingVoices}
-              >
-                {voiceOptions.length === 0 ? (
-                  <option value="">
-                    {isLoadingVoices
-                      ? "Loading voices…"
-                      : "No voices yet — upload or record first"}
-                  </option>
-                ) : (
-                  voiceOptions.map((voice) => (
-                    <option key={voice.id} value={voice.id}>
-                      {voice.name || voice.id}
-                    </option>
-                  ))
-                )}
-              </select>
-              {voicesError && (
-                <p className="mt-1 text-xs font-raleway text-red-400">
-                  {voicesError}
-                </p>
-              )}
+                onChange={setSelectedVoiceId}
+                className="mt-1 w-full"
+                recentVoice={recentVoice}
+                onLoaded={handleVoicesLoaded}
+              />
             </label>
             <label className="block text-sm font-raleway text-theme-text">
               Base model
