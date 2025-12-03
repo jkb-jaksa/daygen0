@@ -46,7 +46,7 @@ export function ProfileCard({
   // Debug log to track profile image changes
   console.log('ProfileCard render - user.profileImage:', user.profileImage);
   console.log('ProfileCard render - user object:', user);
-  
+
   // Track profile image changes
   useEffect(() => {
     console.log('ProfileCard - Profile image changed to:', user.profileImage);
@@ -119,7 +119,7 @@ export function ProfileCard({
           onSaveProfile();
         }}
       >
-        <div>
+        <div className="-mt-2">
           <label className="block text-sm text-theme-white mb-1 font-raleway" htmlFor="display-name">
             Display Name
           </label>
@@ -136,6 +136,19 @@ export function ProfileCard({
               <p className="mt-1 text-xs font-raleway text-red-400">{saveError ?? nameErrorMessage}</p>
             )}
           </div>
+        </div>
+        <div className="-mt-4 mb-6">
+          <label className="block text-sm text-theme-white mb-1 font-raleway" htmlFor="email">
+            Email
+          </label>
+          <input
+            id="email"
+            className={inputs.base}
+            value={user.email}
+            readOnly
+            disabled
+            title="Email cannot be changed"
+          />
         </div>
         <div className="flex gap-2 items-center">
           <button type="button" className={buttons.ghost} onClick={onLogOut}>

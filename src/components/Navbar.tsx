@@ -813,7 +813,7 @@ export default function Navbar() {
               width: MENU_WIDTH,
               zIndex: 100
             }}
-            className={`rounded-2xl ${glass.promptDark} border-t-0 text-base text-theme-text shadow-xl transition-colors duration-200 pt-2`}
+            className={`rounded-2xl ${glass.promptDark} border-t-0 text-base text-theme-text shadow-xl transition-colors duration-200 pt-2 pb-2`}
             onWheel={handleWheel}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
@@ -838,7 +838,7 @@ export default function Navbar() {
                   navigate("/account");
                 }
               }}
-              className="relative overflow-hidden group block w-[9rem] text-left pl-2 pr-4 py-1.5 text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-colors font-raleway font-normal rounded-full"
+              className="relative overflow-hidden group block w-[9rem] text-left pl-4 pr-4 py-1.5 text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-colors font-raleway font-normal rounded-full"
               role="menuitem"
             >
               <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 opacity-0 group-hover:opacity-10" />
@@ -851,7 +851,7 @@ export default function Navbar() {
                 navigate("/gallery");
                 emitNavigateToCategory("gallery");
               }}
-              className="relative overflow-hidden group block w-[9rem] text-left pl-2 pr-4 py-1.5 text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-colors font-raleway font-normal rounded-full"
+              className="relative overflow-hidden group block w-[9rem] text-left pl-4 pr-4 py-1.5 text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-colors font-raleway font-normal rounded-full"
               role="menuitem"
             >
               <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 opacity-0 group-hover:opacity-10" />
@@ -868,7 +868,7 @@ export default function Navbar() {
                 }
                 navigate("/");
               }}
-              className="relative overflow-hidden group block w-[9rem] text-left pl-2 pr-4 py-1.5 text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-colors font-raleway font-normal rounded-full"
+              className="relative overflow-hidden group block w-[9rem] text-left pl-4 pr-4 py-1.5 text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-colors font-raleway font-normal rounded-full"
               role="menuitem"
             >
               <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 opacity-0 group-hover:opacity-10" />
