@@ -593,33 +593,9 @@ const FullImageModal = memo(() => {
     closeFullSize();
   }, [handleMakeVideo, closeFullSize]);
 
-  // Handle toggle edit menu
-  const handleToggleEditMenu = useCallback((menuId: string, anchor: HTMLElement) => {
-    setEditMenu(prev => {
-      if (prev?.id === menuId) {
-        return null;
-      }
-      return { id: menuId, anchor };
-    });
-  }, []);
-
-  // Handle close edit menu
-  const handleCloseEditMenu = useCallback(() => {
-    setEditMenu(null);
-  }, []);
-
-  // Edit menu actions
-  const handleEditImage = useCallback(() => {
-    if (fullSizeImage) {
-      handleEditMenuSelect(fullSizeImage);
-    }
-    handleCloseEditMenu();
-  }, [fullSizeImage, handleEditMenuSelect, handleCloseEditMenu]);
-
   const handleVideo = useCallback(() => {
     handleMakeVideo();
-    handleCloseEditMenu();
-  }, [handleMakeVideo, handleCloseEditMenu]);
+  }, [handleMakeVideo]);
 
   const handleQuickEdit = useCallback(() => {
     if (fullSizeImage) {
@@ -993,8 +969,6 @@ const FullImageModal = memo(() => {
                       image={fullSizeImage}
                       isFullSize={true}
                       anyMenuOpen={editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId}
-                      onToggleMenu={handleToggleEditMenu}
-                      onEditImage={handleEditImage}
                       onMakeVideo={handleVideo}
                       onMakeVariation={!isVideo ? handleVariateClick : undefined}
                       onQuickEdit={handleQuickEdit}

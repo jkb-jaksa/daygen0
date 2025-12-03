@@ -454,38 +454,9 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     }
   }, [handleDeleteImage]);
 
-  // Handle toggle edit menu
-  const handleToggleEditMenu = useCallback((menuId: string, anchor: HTMLElement) => {
-    setEditMenu(prev => {
-      if (prev?.id === menuId) {
-        return null;
-      }
-      return { id: menuId, anchor };
-    });
-  }, []);
-
-  // Handle close edit menu
-  const handleCloseEditMenu = useCallback(() => {
-    setEditMenu(null);
-  }, []);
-
-  // Edit menu actions
-  const handleEditImage = useCallback(() => {
-    const menuId = editMenu?.id;
-    if (!menuId) return;
-
-    const index = parseInt(menuId.split('-')[2], 10);
-    const item = filteredItems[index];
-    if (item) {
-      handleEditMenuSelect(item);
-    }
-    handleCloseEditMenu();
-  }, [editMenu, filteredItems, handleEditMenuSelect, handleCloseEditMenu]);
-
   const handleVideo = useCallback(() => {
     handleMakeVideo();
-    handleCloseEditMenu();
-  }, [handleMakeVideo, handleCloseEditMenu]);
+  }, [handleMakeVideo]);
 
   // Check if item is selected
   const isItemSelected = useCallback((item: GalleryImageLike | GalleryVideoLike) => {
@@ -805,9 +776,10 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           <QuickEditModal
             isOpen={quickEditModalState.isOpen}
             onClose={handleQuickEditClose}
-            onSubmit={(prompt) => handleQuickEdit(quickEditModalState.image, prompt)}
+            onSubmit={handleQuickEditSubmit}
             initialPrompt={quickEditModalState.initialPrompt}
-            isLoading={quickEditModalState.isLoading}
+            isLoading={isQuickEditLoading}
+            imageUrl={quickEditModalState.item.url}
           />
         </Suspense>
       )}
@@ -966,8 +938,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                               image={item}
                               isGallery={false}
                               anyMenuOpen={isMenuActive}
-                              onToggleMenu={handleToggleEditMenu}
-                              onEditImage={handleEditImage}
                               onMakeVideo={handleVideo}
                               onMakeVariation={!isVideo(item) ? (e) => handleVariateImage(e, item) : undefined}
                               onQuickEdit={() => handleQuickEdit(item as GalleryImageLike)}
@@ -992,8 +962,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                 image={item}
                                 isGallery={true}
                                 anyMenuOpen={isMenuActive}
-                                onToggleMenu={handleToggleEditMenu}
-                                onEditImage={handleEditImage}
                                 onMakeVideo={handleVideo}
                                 onQuickEdit={() => handleQuickEdit(item as GalleryImageLike)}
                               />

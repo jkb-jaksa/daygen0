@@ -11,8 +11,6 @@ interface EditButtonMenuProps {
   isFullSize?: boolean;
   isGallery?: boolean;
   anyMenuOpen?: boolean;
-  onToggleMenu: (menuId: string, anchor: HTMLElement, image: GalleryImageLike | GalleryVideoLike) => void;
-  onEditImage: () => void;
   onMakeVideo: () => void;
   onMakeVariation?: (event: React.MouseEvent) => void;
   onQuickEdit?: () => void;
@@ -24,8 +22,6 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
   isFullSize = false,
   isGallery = false,
   anyMenuOpen = false,
-  onToggleMenu,
-  onEditImage,
   onMakeVideo,
   onMakeVariation,
   onQuickEdit,
