@@ -57,6 +57,7 @@ export interface RunGenerationJobConfig<Result, Payload extends Record<string, u
   prompt: string;
   model: string;
   tracker: GenerationJobTracker;
+  clientJobId?: string;
   parseJobResult: (snapshot: JobStatusSnapshot, response: ProviderJobResponse) => Result;
   parseImmediateResult?: (response: ProviderJobResponse) => Result | undefined;
   onUpdate?: (snapshot: JobStatusSnapshot) => void;
@@ -302,6 +303,7 @@ export async function runGenerationJob<Result, Payload extends Record<string, un
   prompt,
   model,
   signal,
+  clientJobId,
   parseJobResult,
   parseImmediateResult,
   onUpdate,
@@ -326,7 +328,11 @@ export async function runGenerationJob<Result, Payload extends Record<string, un
   }
 
   const jobId = response.jobId;
-  tracker.enqueue(jobId, prompt, model);
+  const trackingId = clientJobId ?? jobId;
+
+  // If clientJobId is provided, we assume the UI might have already added it.
+  // However, to be safe and ensure consistent state, we enqueue it (or update it).
+  tracker.enqueue(trackingId, prompt, model);
 
   try {
     const snapshot = await pollJobStatus({
@@ -336,12 +342,12 @@ export async function runGenerationJob<Result, Payload extends Record<string, un
       timeoutMs: pollTimeoutMs,
       requestTimeoutMs,
       onUpdate: (update) => {
-        tracker.update(jobId, update);
+        tracker.update(trackingId, update);
         onUpdate?.(update);
       },
     });
 
-    tracker.finalize(jobId);
+    tracker.finalize(trackingId);
 
     // If the job failed, surface a clear error instead of attempting to parse a result
     if (snapshot.status !== 'completed') {
@@ -356,11 +362,11 @@ export async function runGenerationJob<Result, Payload extends Record<string, un
 
     return { result, jobId, snapshot, response };
   } catch (error) {
-    tracker.update(jobId, {
+    tracker.update(trackingId, {
       job: { status: 'FAILED' },
       status: 'failed',
     });
-    tracker.finalize(jobId);
+    tracker.finalize(trackingId);
     throw error;
   }
 }

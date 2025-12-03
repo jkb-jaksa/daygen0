@@ -579,6 +579,7 @@ export const useGeminiImageGeneration = () => {
           pollTimeoutMs: options.pollTimeoutMs,
           pollIntervalMs: options.pollIntervalMs,
           requestTimeoutMs: options.pollRequestTimeoutMs,
+          clientJobId: options.clientJobId,
           parseImmediateResult: (response) =>
             parseImmediateGeminiResult(response, options, user?.id, modelToUse),
           parseJobResult: (snapshot, response) =>
