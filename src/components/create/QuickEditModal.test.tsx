@@ -1,7 +1,8 @@
 /* @vitest-environment jsdom */
 import React from 'react';
+import '@testing-library/jest-dom';
 import { describe, expect, it, vi, beforeAll, afterAll } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import QuickEditModal from './QuickEditModal';
 
@@ -47,7 +48,7 @@ describe('QuickEditModal', () => {
         render(<QuickEditModal {...defaultProps} />);
 
         const file = new File(['(⌐□_□)'], 'chucknorris.png', { type: 'image/png' });
-        const input = screen.getByLabelText('Add reference image').previousSibling as HTMLInputElement;
+        // const input = screen.getByLabelText('Add reference image').previousSibling as HTMLInputElement; // Unused
 
         // The input is hidden, so we can't click it directly with userEvent in the same way, 
         // but we can fire change event on it or use upload

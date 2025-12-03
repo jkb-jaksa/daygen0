@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { generateTimeline, type TimelineResponse } from '../../api/timeline';
 import { useTimelineStore, type Segment } from '../../stores/timelineStore';
@@ -22,6 +22,31 @@ export default function TimelineGenerator() {
     useEffect(() => {
         loadHistory();
     }, []);
+
+    const handleLoadJob = useCallback((job: Job) => {
+        if (job.status !== 'COMPLETED' || !job.metadata?.response) {
+            alert('This job is not completed or has no data.');
+            return;
+        }
+
+        const response = job.metadata.response as TimelineResponse;
+        if (!response.segments) return;
+
+        const segmentsWithIds = response.segments.map((s: Segment, i: number) => ({
+            ...s,
+            id: s.id || `segment-${i}-${Date.now()}`,
+            voiceUrl: s.voiceUrl
+        }));
+
+        setSegments(segmentsWithIds);
+
+        // Global audioUrl is not supported in the current store structure for multi-segment audio
+        // We rely on segment-level audioUrl
+
+        setIsPlaying(false);
+        setCurrentTime(0);
+        navigate('/app/cyran-roll/editor');
+    }, [navigate, setSegments, setIsPlaying, setCurrentTime]);
 
     useEffect(() => {
         if (!activeJobId) return;
@@ -54,7 +79,7 @@ export default function TimelineGenerator() {
         }, 2000);
 
         return () => clearInterval(interval);
-    }, [activeJobId]);
+    }, [activeJobId, handleLoadJob]);
 
     const loadHistory = async () => {
         setIsLoadingHistory(true);
@@ -73,30 +98,7 @@ export default function TimelineGenerator() {
         }
     };
 
-    const handleLoadJob = (job: Job) => {
-        if (job.status !== 'COMPLETED' || !job.metadata?.response) {
-            alert('This job is not completed or has no data.');
-            return;
-        }
 
-        const response = job.metadata.response as TimelineResponse;
-        if (!response.segments) return;
-
-        const segmentsWithIds = response.segments.map((s: Segment, i: number) => ({
-            ...s,
-            id: s.id || `segment-${i}-${Date.now()}`,
-            voiceUrl: s.voiceUrl
-        }));
-
-        setSegments(segmentsWithIds);
-
-        // Global audioUrl is not supported in the current store structure for multi-segment audio
-        // We rely on segment-level audioUrl
-
-        setIsPlaying(false);
-        setCurrentTime(0);
-        navigate('/app/cyran-roll/editor');
-    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

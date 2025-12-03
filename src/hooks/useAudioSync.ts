@@ -1,5 +1,5 @@
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useTimelineStore } from '../stores/timelineStore';
 
 export const useAudioSync = () => {
@@ -7,14 +7,14 @@ export const useAudioSync = () => {
     const { isPlaying, setIsPlaying, setCurrentTime, segments, activeSegmentIndex } = useTimelineStore((state) => state);
     const requestRef = useRef<number | null>(null);
 
-    const tick = () => {
+    const tick = useCallback(() => {
         if (audioRef.current && segments[activeSegmentIndex]) {
             // Calculate global time: segment start time + current audio time
             const globalTime = segments[activeSegmentIndex].startTime + audioRef.current.currentTime;
             setCurrentTime(globalTime);
             requestRef.current = requestAnimationFrame(tick);
         }
-    };
+    }, [segments, activeSegmentIndex, setCurrentTime]);
 
     // Handle Play/Pause Triggers from Store
     useEffect(() => {
@@ -46,7 +46,7 @@ export const useAudioSync = () => {
         return () => {
             if (requestRef.current) cancelAnimationFrame(requestRef.current);
         };
-    }, [isPlaying, activeSegmentIndex]); // Re-run when active segment changes to ensure new audio plays if isPlaying is true
+    }, [isPlaying, activeSegmentIndex, tick, setIsPlaying]); // Re-run when active segment changes to ensure new audio plays if isPlaying is true
 
     // Handle Audio Element Events (e.g., when audio ends naturally)
     const onEnded = () => {

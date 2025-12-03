@@ -27,7 +27,8 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const modalRef = useRef<HTMLDivElement>(null);
     const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLButtonElement>();
-    const [isImageHovered, setIsImageHovered] = useState(false);
+    // const [isImageHovered, setIsImageHovered] = useState(false); // Unused
+    // const [isImageHovered, setIsImageHovered] = useState(false); // Unused
 
     const {
         referenceFiles,
@@ -206,8 +207,8 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                 <div
                                                     key={`${preview}-${index}`}
                                                     className="relative group"
-                                                    onMouseEnter={() => setIsImageHovered(true)}
-                                                    onMouseLeave={() => setIsImageHovered(false)}
+                                                // onMouseEnter={() => setIsImageHovered(true)}
+                                                // onMouseLeave={() => setIsImageHovered(false)}
                                                 >
                                                     <img
                                                         src={preview}

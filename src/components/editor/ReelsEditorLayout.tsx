@@ -61,7 +61,7 @@ export const ReelsEditorLayout = () => {
                 }
             ]);
         }
-    }, []);
+    }, [segments.length]);
 
     if (segments.length === 0) {
         return (

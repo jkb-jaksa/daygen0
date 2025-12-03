@@ -1,8 +1,9 @@
 import type { Job } from './jobs';
 import { apiFetch } from '../utils/api';
+import type { Segment } from '../stores/timelineStore';
 
 export interface TimelineResponse {
-    segments: any[]; // Using any[] to avoid circular dependency if Segment is not exported or complex, but ideally import Segment
+    segments: Segment[];
     audioUrl: string;
 }
 
