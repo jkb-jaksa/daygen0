@@ -157,7 +157,7 @@ const GridVideoItem = memo<GridVideoItemProps>(({
       })}
       showInfoButton={shouldShowPromptDetails}
       isInfoActive={isPromptExpanded}
-      externalRef={ref as any}
+      externalRef={ref as React.RefObject<HTMLVideoElement>}
       forcePause={isFullSizeOpen}
     />
   );

@@ -175,7 +175,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 }, (wasInitial || hasEnded) ? 100 : 700);
             }
         }
-    }, [isPlaying, resetBottomTimeout, hasInteracted, hasEnded]);
+    }, [isPlaying, resetBottomTimeout, hasInteracted, hasEnded, videoRef]);
 
     const toggleMute = useCallback((e?: React.SyntheticEvent) => {
         e?.stopPropagation();
@@ -189,7 +189,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 videoRef.current.volume = 1;
             }
         }
-    }, [isMuted]);
+    }, [isMuted, videoRef]);
 
     const handleVolumeChange = useCallback((e: React.MouseEvent<HTMLDivElement> | MouseEvent) => {
         if (!videoRef.current) return;
@@ -211,7 +211,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         setVolume(newVolume);
         setIsMuted(newVolume === 0);
         videoRef.current.muted = newVolume === 0;
-    }, []);
+    }, [videoRef]);
 
     const handleVolumeMouseDown = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
@@ -324,7 +324,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 toggleFullscreen();
                 break;
         }
-    }, [togglePlay, duration, volume, toggleMute, toggleFullscreen]);
+    }, [togglePlay, duration, volume, toggleMute, toggleFullscreen, videoRef]);
 
     const [hoverProgress, setHoverProgress] = useState<number | null>(null);
 
@@ -351,7 +351,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         videoRef.current.currentTime = newTime;
         setProgress(percentage);
         setHasEnded(false);
-    }, [duration]);
+    }, [duration, videoRef]);
 
     const handleMouseMove = useCallback(() => {
         if (isFullscreen) {
