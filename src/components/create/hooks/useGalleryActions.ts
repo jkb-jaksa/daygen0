@@ -40,6 +40,7 @@ export function useGalleryActions() {
     removeVideo,
     toggleImagesInFolder,
     updateImage,
+    updateVideo,
     deleteImage: deleteGalleryImage,
     openFullSize,
     filteredItems,
@@ -341,12 +342,17 @@ export function useGalleryActions() {
         debugError('Cannot toggle like: item has no identifier');
         return;
       }
-      await updateImage(itemId, { isLiked: !item.isLiked });
+
+      if ('type' in item && item.type === 'video') {
+        updateVideo(itemId, { isLiked: !item.isLiked });
+      } else {
+        await updateImage(itemId, { isLiked: !item.isLiked });
+      }
       debugLog('Toggled like status for item:', itemId);
     } catch (error) {
       debugError('Error toggling like status:', error);
     }
-  }, [updateImage]);
+  }, [updateImage, updateVideo]);
 
   // Show delete confirmation for bulk delete
   const handleBulkDelete = useCallback((imageIds: string[]) => {

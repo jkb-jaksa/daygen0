@@ -223,6 +223,21 @@ const FullImageModal = memo(() => {
     return map;
   }, [storedProducts]);
 
+  // Filter items for the vertical gallery nav based on current category
+  // When in /app/image: show only images
+  // When in /app/video: show only videos
+  // Otherwise (gallery, etc.): show all items
+  const categoryFilteredItems = useMemo(() => {
+    if (activeCategory === 'image') {
+      return filteredItems.filter(item => !('type' in item && item.type === 'video'));
+    }
+    if (activeCategory === 'video') {
+      return filteredItems.filter(item => 'type' in item && item.type === 'video');
+    }
+    // For gallery and other categories, show all items
+    return filteredItems;
+  }, [filteredItems, activeCategory]);
+
   // Handle category selection
   const handleSelectCategory = useCallback((category: string) => {
     navigate(`/app/${category}`);
@@ -1478,15 +1493,30 @@ const FullImageModal = memo(() => {
         )}
 
         {/* Vertical Gallery Navigation */}
-        {hasMultipleItems && (
+        {categoryFilteredItems.length > 1 && (
           <Suspense fallback={null}>
             <VerticalGalleryNav
-              images={filteredItems.map((item) => ({ url: item.url, id: item.jobId || item.r2FileId }))}
-              currentIndex={fullSizeIndex}
+              images={categoryFilteredItems.map((item) => ({
+                url: item.url,
+                id: item.jobId || item.r2FileId,
+                isVideo: 'type' in item && item.type === 'video',
+              }))}
+              currentIndex={(() => {
+                // Find the current item's index in the category-filtered list
+                if (!fullSizeImage) return 0;
+                const currentId = fullSizeImage.jobId || fullSizeImage.r2FileId || fullSizeImage.url;
+                return categoryFilteredItems.findIndex(
+                  item => (item.jobId || item.r2FileId || item.url) === currentId
+                );
+              })()}
               onNavigate={(index) => {
-                const next = filteredItems[index];
+                const next = categoryFilteredItems[index];
                 if (next) {
-                  openFullSize(next, index);
+                  // Find the actual index in the full filteredItems list for openFullSize
+                  const fullIndex = filteredItems.findIndex(
+                    item => (item.jobId || item.r2FileId || item.url) === (next.jobId || next.r2FileId || next.url)
+                  );
+                  openFullSize(next, fullIndex >= 0 ? fullIndex : index);
                 }
               }}
               className="z-[130]"

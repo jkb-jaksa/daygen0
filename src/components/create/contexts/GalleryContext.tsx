@@ -482,8 +482,12 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
   }, [findImageById, persistImageUpdates]);
 
   const updateVideo = useCallback((id: string, updates: Partial<GalleryVideoLike>) => {
+    const targetVideo = stateRef.current.videos.find(video => matchGalleryItemId(video, id));
+    if (targetVideo) {
+      persistImageUpdates([targetVideo.url], updates as Partial<GalleryImageLike>);
+    }
     dispatch({ type: 'UPDATE_VIDEO', payload: { id, updates } });
-  }, []);
+  }, [persistImageUpdates]);
 
   const removeImage = useCallback(async (id: string) => {
     const targetImage = findImageById(id);
