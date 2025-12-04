@@ -424,13 +424,13 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             >
                 {/* Progress Bar */}
                 <div
-                    className={`relative w-full h-1.5 ${layout === 'intrinsic' ? 'mb-4' : 'mb-2'} cursor-pointer group/progress-wrapper`}
+                    className={`relative w-full h-2 ${layout === 'intrinsic' ? 'mb-4' : 'mb-2'} cursor-pointer group/progress-wrapper`}
                     onClick={handleSeek}
                     onMouseMove={handleProgressBarMouseMove}
                     onMouseLeave={handleProgressBarMouseLeave}
                 >
                     <div
-                        className={`absolute bottom-0 left-0 right-0 h-full group-hover/progress-wrapper:h-2 transition-all duration-200 ease-out ${glass.promptBorderless} rounded-full !overflow-visible`}
+                        className={`absolute bottom-0 left-0 right-0 h-full group-hover/progress-wrapper:h-2.5 transition-all duration-200 ease-out ${glass.promptBorderless} rounded-full !overflow-visible`}
                         style={{
                             '--glass-prompt-bg': 'rgb(var(--n-mid-rgb) / 0.80)',
                             '--glass-prompt-text': 'var(--n-text)'
@@ -491,7 +491,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                                     onMouseDown={handleVolumeMouseDown}
                                     onClick={(e) => e.stopPropagation()}
                                 >
-                                    <div className="w-1 h-16 bg-theme-text/20 rounded-full relative pointer-events-none">
+                                    <div className="w-[4px] h-16 bg-theme-text/20 rounded-full relative pointer-events-none">
                                         <div
                                             className="absolute bottom-0 left-0 w-full bg-theme-text rounded-full"
                                             style={{ height: `${volume * 100}%` }}
