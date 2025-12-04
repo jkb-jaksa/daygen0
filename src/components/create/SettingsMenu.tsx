@@ -188,7 +188,7 @@ const SettingsPortal: React.FC<{
   children: React.ReactNode;
 }> = ({ anchorRef, open, onClose, children }) => {
   const menuRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0, transform: 'translateY(-100%)' });
   const {
     setScrollableRef,
     handleWheel,
@@ -203,12 +203,24 @@ const SettingsPortal: React.FC<{
     const updatePosition = () => {
       if (!anchorRef.current) return;
       const rect = anchorRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const dropdownHeight = 400; // Approximate max height
+
+      // Check if there's enough space above the trigger
+      const spaceAbove = rect.top;
+      const spaceBelow = viewportHeight - rect.bottom;
+
+      // Position above if there's more space above, otherwise position below
+      // But favor below if there isn't enough space above
+      const shouldPositionAbove = spaceAbove > dropdownHeight || (spaceAbove > spaceBelow);
+
       const verticalOffset = 2;
 
       setPos({
-        top: rect.top - verticalOffset,
+        top: shouldPositionAbove ? rect.top - verticalOffset : rect.bottom + verticalOffset,
         left: rect.left,
         width: Math.max(320, rect.width),
+        transform: shouldPositionAbove ? 'translateY(-100%)' : 'translateY(0)',
       });
     };
 
@@ -264,10 +276,14 @@ const SettingsPortal: React.FC<{
         top: pos.top,
         left: pos.left,
         width: pos.width,
-        zIndex: 1000,
-        transform: "translateY(-100%)",
+        zIndex: 10001,
+        transform: pos.transform,
+        maxHeight: "400px",
+        overflowY: "auto",
+        overflowX: "hidden",
       }}
-      className={`${glass.prompt} rounded-lg p-4`}
+      className={`${glass.prompt} rounded-xl p-4 shadow-lg focus:outline-none scrollbar-thin scrollbar-thumb-n-mid/30 scrollbar-track-transparent hover:scrollbar-thumb-n-mid/50`}
+      tabIndex={-1}
       onWheel={handleWheel}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}

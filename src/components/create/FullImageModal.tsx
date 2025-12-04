@@ -32,6 +32,7 @@ import { useGeminiImageGeneration } from '../../hooks/useGeminiImageGeneration';
 const VerticalGalleryNav = lazy(() => import('../shared/VerticalGalleryNav'));
 const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
 const QuickEditModal = lazy(() => import('./QuickEditModal'));
+import type { QuickEditOptions } from './QuickEditModal';
 const MasterSidebar = lazy(() => import('../master/MasterSidebar'));
 // Individual badges are rendered via ImageBadgeRow
 
@@ -606,46 +607,72 @@ const FullImageModal = memo(() => {
     }
   }, [fullSizeImage]);
 
-  const handleQuickEditSubmit = useCallback(async (prompt: string) => {
+  const handleQuickEditSubmit = useCallback(async (options: QuickEditOptions) => {
     if (!fullSizeImage || !fullSizeImage.url) {
       showToast('No image URL available');
       return;
     }
 
+    const { prompt, referenceFile, aspectRatio, batchSize, avatarId, productId, styleId } = options;
+
     // Close modal immediately
     setQuickEditModalState(null);
 
-    // Start background job
-    const syntheticJobId = startQuickEditJob(fullSizeImage, prompt);
+    // Determine references
+    const references: string[] = [fullSizeImage.url.split('?')[0]];
 
-    // Run generation in background
-    generateGeminiImage({
-      prompt: prompt,
-      references: [fullSizeImage.url.split('?')[0]], // Strip query params for original quality
-      model: 'gemini-3-pro-image-preview',
-      clientJobId: syntheticJobId,
-    }).then(async (result) => {
-      if (result) {
-        await addImage({
-          url: result.url,
-          prompt: result.prompt,
-          model: result.model,
-          timestamp: new Date().toISOString(),
-          ownerId: fullSizeImage.ownerId,
-          isLiked: false,
-          isPublic: false,
-          r2FileId: result.r2FileId,
+    if (referenceFile) {
+      try {
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(referenceFile);
         });
-        finalizeQuickEditJob(syntheticJobId, 'completed');
-      } else {
+        references.push(base64);
+      } catch (e) {
+        debugError('Failed to convert reference file', e);
+      }
+    }
+
+    // Loop for batch size
+    for (let i = 0; i < batchSize; i++) {
+      // Start background job
+      const syntheticJobId = startQuickEditJob(fullSizeImage, prompt);
+
+      // Run generation in background
+      generateGeminiImage({
+        prompt: prompt,
+        references: references,
+        model: 'gemini-3-pro-image-preview',
+        clientJobId: syntheticJobId,
+        aspectRatio: aspectRatio,
+        avatarId,
+        productId,
+        styleId,
+      }).then(async (result) => {
+        if (result) {
+          await addImage({
+            url: result.url,
+            prompt: result.prompt,
+            model: result.model,
+            timestamp: new Date().toISOString(),
+            ownerId: fullSizeImage.ownerId,
+            isLiked: false,
+            isPublic: false,
+            r2FileId: result.r2FileId,
+          });
+          finalizeQuickEditJob(syntheticJobId, 'completed');
+        } else {
+          showToast('Failed to edit image');
+          finalizeQuickEditJob(syntheticJobId, 'failed');
+        }
+      }).catch((error) => {
+        debugError('Failed to quick edit image:', error);
         showToast('Failed to edit image');
         finalizeQuickEditJob(syntheticJobId, 'failed');
-      }
-    }).catch((error) => {
-      debugError('Failed to quick edit image:', error);
-      showToast('Failed to edit image');
-      finalizeQuickEditJob(syntheticJobId, 'failed');
-    });
+      });
+    }
   }, [fullSizeImage, generateGeminiImage, addImage, showToast, startQuickEditJob, finalizeQuickEditJob]);
 
 
@@ -1560,6 +1587,7 @@ const FullImageModal = memo(() => {
             onSubmit={handleQuickEditSubmit}
             initialPrompt={quickEditModalState.initialPrompt}
             imageUrl={fullSizeImage.url}
+            item={fullSizeImage}
             isLoading={isLoading}
           />
         </Suspense>

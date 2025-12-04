@@ -42,10 +42,11 @@ interface ModelSelectorProps {
   isGenerating: boolean;
   activeCategory?: GenerationMode; // defaults to inferring from selectedModel
   hasReferences?: boolean;
+  readOnly?: boolean;
+  allowedModels?: string[];
 }
 
-
-const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, isGenerating, activeCategory, hasReferences }) => {
+const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, isGenerating, activeCategory, hasReferences, readOnly, compact, allowedModels }) => {
   const { setSelectedModel } = useGeneration();
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -113,10 +114,10 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
 
   // Handle toggle
   const handleToggle = useCallback(() => {
-    if (!isGenerating) {
+    if (!isGenerating && !readOnly) {
       setIsOpen(prev => !prev);
     }
-  }, [isGenerating]);
+  }, [isGenerating, readOnly]);
 
   // Handle close
   const handleClose = useCallback(() => {
@@ -200,16 +201,14 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
     if (typeof document === 'undefined') return;
     const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
     if (!tooltip) return;
-    const ownerCard = target.closest('.relative') as HTMLElement | null;
-    if (ownerCard) {
-      const triggerRect = target.getBoundingClientRect();
-      const cardRect = ownerCard.getBoundingClientRect();
-      const relativeTop = triggerRect.top - cardRect.top;
-      const relativeLeft = triggerRect.left - cardRect.left + triggerRect.width / 2;
-      tooltip.style.top = `${relativeTop - 2}px`;
-      tooltip.style.left = `${relativeLeft}px`;
-      tooltip.style.transform = 'translateX(-50%) translateY(-100%)';
-    }
+
+    const rect = target.getBoundingClientRect();
+    tooltip.style.position = 'fixed';
+    tooltip.style.top = `${rect.top - 4}px`;
+    tooltip.style.left = `${rect.left + rect.width / 2}px`;
+    tooltip.style.transform = 'translateX(-50%) translateY(-100%)';
+    tooltip.style.zIndex = '9999';
+
     tooltip.classList.remove('opacity-0');
     tooltip.classList.add('opacity-100');
   }, []);
@@ -230,8 +229,8 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
         type="button"
         onClick={handleToggle}
         disabled={isGenerating}
-        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2 parallax-small ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
+        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2 parallax-small ${isGenerating || readOnly ? 'opacity-100 cursor-default' : ''
+          } ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
         onMouseEnter={(e) => {
           showHoverTooltip(e.currentTarget, 'model-selector-tooltip');
         }}
@@ -246,27 +245,45 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
           const currentModel = getCurrentModel();
           if (hasToolLogo(currentModel.name)) {
             return (
-              <img
-                src={getToolLogo(currentModel.name)!}
-                alt={`${currentModel.name} logo`}
-                loading="lazy"
-                className="w-4 h-4 object-contain rounded flex-shrink-0"
-              />
+              <div className="flex items-center gap-2 min-w-0">
+                <img
+                  src={getToolLogo(currentModel.name)!}
+                  alt={`${currentModel.name} logo`}
+                  loading="lazy"
+                  className="w-4 h-4 object-contain rounded flex-shrink-0"
+                />
+                {!compact && (
+                  <span className={`font-raleway text-sm whitespace-nowrap ${isGenerating ? 'text-n-text/50' : 'text-n-text'}`}>
+                    {currentModel?.name || 'Select Model'}
+                  </span>
+                )}
+              </div>
             );
           } else {
             const Icon = currentModel.Icon;
-            return <Icon className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />;
+            return (
+              <div className="flex items-center gap-2 min-w-0">
+                <Icon className={`w-4 h-4 flex-shrink-0 ${isGenerating ? 'text-n-text/50' : 'text-n-text'}`} />
+                {!compact && (
+                  <span className={`font-raleway text-sm whitespace-nowrap ${isGenerating ? 'text-n-text/50' : 'text-n-text'}`}>
+                    {currentModel?.name || 'Select Model'}
+                  </span>
+                )}
+              </div>
+            );
           }
         })()}
-        <span className="hidden xl:inline font-raleway text-sm whitespace-nowrap text-n-text">{getCurrentModel().name}</span>
       </button>
-      <div
-        data-tooltip-for="model-selector-tooltip"
-        className={`${tooltips.base} absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full z-[70] hidden lg:block`}
-        style={{ left: '50%', transform: 'translateX(-50%) translateY(calc(-100% - 2px))', top: '0px' }}
-      >
-        Select model
-      </div>
+      {createPortal(
+        <div
+          data-tooltip-for="model-selector-tooltip"
+          className={`${tooltips.base} fixed z-[9999]`}
+          style={{ pointerEvents: 'none' }}
+        >
+          Select model
+        </div>,
+        document.body
+      )}
 
       {/* Model Dropdown Portal - matches V1's ModelMenuPortal exactly */}
       {isOpen && createPortal(
@@ -594,6 +611,13 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
             </>
           ) : (
             AI_MODELS.filter(model => {
+              // Filter by allowedModels if provided
+              if (allowedModels && allowedModels.length > 0) {
+                if (!allowedModels.includes(model.id)) {
+                  return false;
+                }
+              }
+
               const isVideoModel = isVideoModelId(model.id);
 
               // Filter by references if enabled

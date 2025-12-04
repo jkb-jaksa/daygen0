@@ -34,7 +34,7 @@ const ProductBadge = lazy(() => import('../products/ProductBadge'));
 const StyleBadge = lazy(() => import('../styles/StyleBadge'));
 const PublicBadge = lazy(() => import('./PublicBadge'));
 const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
-const QuickEditModal = lazy(() => import('./QuickEditModal'));
+import QuickEditModal from './QuickEditModal';
 const GenerationProgress = lazy(() => import('./GenerationProgress'));
 
 // Helper to get consistent item identifier for UI actions (jobId → r2FileId → url)
@@ -130,6 +130,12 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     goToPublicGallery,
     goToModelGallery,
   } = useBadgeNavigation();
+
+  console.log('[ResultsGrid] Render state:', {
+    hasQuickEditState: !!quickEditModalState,
+    quickEditItem: quickEditModalState?.item,
+    quickEditUrl: quickEditModalState?.item?.url
+  });
 
   // Apply category-specific filtering
   const filteredItems = useMemo(() => {
@@ -537,6 +543,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   }, [removeActiveJob, updateJobStatus]);
 
   const handleQuickEdit = useCallback((item: GalleryImageLike) => {
+    console.log('[ResultsGrid] handleQuickEdit called with:', item);
     setQuickEditModalState({
       isOpen: true,
       initialPrompt: item.prompt || '',
@@ -790,18 +797,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   return (
     <>
       {/* Quick Edit Modal */}
-      {quickEditModalState && (
-        <Suspense fallback={null}>
-          <QuickEditModal
-            isOpen={quickEditModalState.isOpen}
-            onClose={handleQuickEditClose}
-            onSubmit={handleQuickEditSubmit}
-            initialPrompt={quickEditModalState.initialPrompt}
-            isLoading={isQuickEditLoading}
-            imageUrl={quickEditModalState.item.url}
-          />
-        </Suspense>
-      )}
+
 
       {/* Save Prompt Modal */}
       {savePromptModalState && createPortal(
@@ -1534,16 +1530,16 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       </div >
       {/* Quick Edit Modal */}
       {quickEditModalState && (
-        <Suspense fallback={null}>
-          <QuickEditModal
-            isOpen={quickEditModalState.isOpen}
-            onClose={handleQuickEditClose}
-            onSubmit={handleQuickEditSubmit}
-            initialPrompt={quickEditModalState.initialPrompt}
-            isLoading={isQuickEditLoading}
-            imageUrl={quickEditModalState.item.url}
-          />
-        </Suspense>
+        <QuickEditModal
+          key={quickEditModalState.item.url}
+          isOpen={quickEditModalState.isOpen}
+          onClose={handleQuickEditClose}
+          onSubmit={handleQuickEditSubmit}
+          initialPrompt={quickEditModalState.initialPrompt}
+          isLoading={isQuickEditLoading}
+          imageUrl={quickEditModalState.item.url}
+          item={quickEditModalState.item}
+        />
       )}
     </>
   );
