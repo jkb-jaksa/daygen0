@@ -94,7 +94,7 @@ const buildModalVariateJobId = (item: GalleryImageLike): string => {
 };
 
 const FullImageModal = memo(() => {
-  const { state, filteredItems, addImage, closeFullSize, moveFullSize, openFullSize } = useGallery();
+  const { state, filteredItems, addImage, closeFullSize, openFullSize } = useGallery();
   const { addActiveJob, updateJobStatus, removeActiveJob } = useGeneration();
 
   const { generateImage: generateGeminiImage } = useGeminiImageGeneration();
@@ -250,15 +250,63 @@ const FullImageModal = memo(() => {
     closeFullSize();
   }, [navigate, closeFullSize]);
 
-  // Handle previous image (with wraparound)
+  // Handle previous image (with wraparound within category-filtered items)
   const handlePrevious = useCallback(() => {
-    moveFullSize(-1);
-  }, [moveFullSize]);
+    if (categoryFilteredItems.length <= 1) return;
 
-  // Handle next image (with wraparound)
+    // Find current item's index in categoryFilteredItems
+    const currentId = fullSizeImage?.jobId || fullSizeImage?.r2FileId || fullSizeImage?.url;
+    if (!currentId) return;
+
+    const currentCategoryIndex = categoryFilteredItems.findIndex(
+      item => (item.jobId || item.r2FileId || item.url) === currentId
+    );
+
+    if (currentCategoryIndex === -1) return;
+
+    // Loop to the end if at the beginning
+    const prevCategoryIndex = currentCategoryIndex === 0
+      ? categoryFilteredItems.length - 1
+      : currentCategoryIndex - 1;
+
+    const prevItem = categoryFilteredItems[prevCategoryIndex];
+    if (prevItem) {
+      // Find the actual index in the full filteredItems list for openFullSize
+      const fullIndex = filteredItems.findIndex(
+        item => (item.jobId || item.r2FileId || item.url) === (prevItem.jobId || prevItem.r2FileId || prevItem.url)
+      );
+      openFullSize(prevItem, fullIndex >= 0 ? fullIndex : prevCategoryIndex);
+    }
+  }, [categoryFilteredItems, fullSizeImage, filteredItems, openFullSize]);
+
+  // Handle next image (with wraparound within category-filtered items)
   const handleNext = useCallback(() => {
-    moveFullSize(1);
-  }, [moveFullSize]);
+    if (categoryFilteredItems.length <= 1) return;
+
+    // Find current item's index in categoryFilteredItems
+    const currentId = fullSizeImage?.jobId || fullSizeImage?.r2FileId || fullSizeImage?.url;
+    if (!currentId) return;
+
+    const currentCategoryIndex = categoryFilteredItems.findIndex(
+      item => (item.jobId || item.r2FileId || item.url) === currentId
+    );
+
+    if (currentCategoryIndex === -1) return;
+
+    // Loop to the beginning if at the end
+    const nextCategoryIndex = currentCategoryIndex === categoryFilteredItems.length - 1
+      ? 0
+      : currentCategoryIndex + 1;
+
+    const nextItem = categoryFilteredItems[nextCategoryIndex];
+    if (nextItem) {
+      // Find the actual index in the full filteredItems list for openFullSize
+      const fullIndex = filteredItems.findIndex(
+        item => (item.jobId || item.r2FileId || item.url) === (nextItem.jobId || nextItem.r2FileId || nextItem.url)
+      );
+      openFullSize(nextItem, fullIndex >= 0 ? fullIndex : nextCategoryIndex);
+    }
+  }, [categoryFilteredItems, fullSizeImage, filteredItems, openFullSize]);
 
   // Handle escape key
   useEffect(() => {
@@ -751,7 +799,7 @@ const FullImageModal = memo(() => {
   }
 
   const isVideo = 'type' in fullSizeImage && fullSizeImage.type === 'video';
-  const hasMultipleItems = filteredItems.length > 1;
+  const hasMultipleItems = categoryFilteredItems.length > 1;
   const fullSizeActionTooltipId = fullSizeImage.jobId || fullSizeImage.r2FileId || fullSizeImage.url || 'fullsize';
   const promptText = fullSizeImage.prompt?.trim() ?? '';
   const hasPromptContent = promptText.length > 0;

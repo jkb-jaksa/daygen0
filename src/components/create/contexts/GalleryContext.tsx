@@ -375,7 +375,6 @@ type GalleryContextType = {
   clearSelection: () => void;
   setSelectedImagesForFolder: (imageUrls: string[]) => void;
   setFullSizeOpen: (open: boolean) => void;
-  setFullSizeOpen: (open: boolean) => void;
   setFullSizeImage: (image: GalleryImageLike | GalleryVideoLike | null, index: number, initialTime?: number) => void;
   setFolders: (folders: Folder[]) => void;
   addFolder: (folder: Folder) => void;
@@ -455,6 +454,15 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     return images.find(image => matchGalleryItemId(image, identifier)) ?? null;
   }, []);
 
+  const findVideoById = useCallback((identifier: string) => {
+    if (!identifier) {
+      return null;
+    }
+
+    const { videos } = stateRef.current;
+    return videos.find(video => matchGalleryItemId(video, identifier)) ?? null;
+  }, []);
+
   const setImages = useCallback((images: GalleryImageLike[]) => {
     dispatch({ type: 'SET_IMAGES', payload: images });
   }, []);
@@ -503,8 +511,13 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const deleteImage = useCallback(async (id: string) => {
+    // Try to find as image first, then as video
     const targetImage = findImageById(id);
-    const apiIdentifier = targetImage?.r2FileId ?? id;
+    const targetVideo = targetImage ? null : findVideoById(id);
+    const targetItem = targetImage ?? targetVideo;
+    const isVideo = targetVideo !== null;
+
+    const apiIdentifier = targetItem?.r2FileId ?? id;
 
     if (!apiIdentifier) {
       return false;
@@ -515,13 +528,18 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
       return false;
     }
 
-    if (targetImage) {
-      persistRemoveImages([targetImage.url]);
+    if (targetItem) {
+      persistRemoveImages([targetItem.url]);
     }
 
-    dispatch({ type: 'REMOVE_IMAGE', payload: id });
+    // Dispatch appropriate action based on item type
+    if (isVideo) {
+      dispatch({ type: 'REMOVE_VIDEO', payload: id });
+    } else {
+      dispatch({ type: 'REMOVE_IMAGE', payload: id });
+    }
     return true;
-  }, [deleteImageFromService, findImageById, persistRemoveImages]);
+  }, [deleteImageFromService, findImageById, findVideoById, persistRemoveImages]);
 
   const setFilters = useCallback((filters: Partial<GalleryFilters>) => {
     dispatch({ type: 'SET_FILTERS', payload: filters });
