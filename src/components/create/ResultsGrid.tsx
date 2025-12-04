@@ -98,10 +98,76 @@ const renderPlaceholderGrid = (
   </div>
 );
 
+
+
+interface GridVideoItemProps {
+  item: GalleryVideoLike;
+  index: number;
+  handleItemClick: (item: GalleryVideoLike, index: number) => void;
+  toggleVideoPrompt: (id: string) => void;
+  setExpandedVideoPrompts: React.Dispatch<React.SetStateAction<Set<string>>>;
+  shouldShowPromptDetails: boolean;
+  isPromptExpanded: boolean;
+  videoRefs: React.MutableRefObject<{ [key: string]: HTMLVideoElement }>;
+  isFullSizeOpen: boolean;
+  baseActionTooltipId: string;
+}
+
+const GridVideoItem = memo<GridVideoItemProps>(({
+  item,
+  index,
+  handleItemClick,
+  toggleVideoPrompt,
+  setExpandedVideoPrompts,
+  shouldShowPromptDetails,
+  isPromptExpanded,
+  videoRefs,
+  isFullSizeOpen,
+  baseActionTooltipId
+}) => {
+  const ref = useMemo(() => ({
+    get current() {
+      return videoRefs.current[baseActionTooltipId] || null;
+    },
+    set current(el: HTMLVideoElement | null) {
+      if (el) {
+        videoRefs.current[baseActionTooltipId] = el;
+      } else {
+        delete videoRefs.current[baseActionTooltipId];
+      }
+    }
+  }), [videoRefs, baseActionTooltipId]);
+
+  return (
+    <VideoPlayer
+      src={item.url}
+      className="relative z-[1] h-full w-full"
+      objectFit="cover"
+      onClick={() => handleItemClick(item, index)}
+      onInfoClick={() => toggleVideoPrompt(baseActionTooltipId)}
+      onInfoMouseEnter={() => setExpandedVideoPrompts(prev => {
+        const next = new Set(prev);
+        next.add(baseActionTooltipId);
+        return next;
+      })}
+      onInfoMouseLeave={() => setExpandedVideoPrompts(prev => {
+        const next = new Set(prev);
+        next.delete(baseActionTooltipId);
+        return next;
+      })}
+      showInfoButton={shouldShowPromptDetails}
+      isInfoActive={isPromptExpanded}
+      externalRef={ref as any}
+      forcePause={isFullSizeOpen}
+    />
+  );
+});
+
 const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, onFocusPrompt, filterIds }) => {
   const { user, storagePrefix } = useAuth();
   const { showToast } = useToast();
   const { state, toggleItemSelection, isLoading, filteredItems: contextFilteredItems, addImage, openFullSize } = useGallery();
+  const { isFullSizeOpen } = state;
   const { variateImage: variateImageHook } = useRecraftImageGeneration();
   const { generateImage: generateGeminiImage } = useGeminiImageGeneration();
   const {
@@ -124,6 +190,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const [expandedVideoPrompts, setExpandedVideoPrompts] = useState<Set<string>>(() => new Set());
   const [quickEditModalState, setQuickEditModalState] = useState<{ isOpen: boolean; initialPrompt: string; item: GalleryImageLike } | null>(null);
   const [isQuickEditLoading] = useState(false);
+  const videoRefs = useRef<{ [key: string]: HTMLVideoElement }>({});
   const {
     goToAvatarProfile,
     goToProductProfile,
@@ -418,7 +485,14 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       lastOpenRef.current = { id: identifier, ts: now };
     }
 
-    openFullSize(item, index);
+    // Get current video time if it's a video
+    let initialTime = 0;
+    const itemId = getItemIdentifier(item);
+    if (itemId && videoRefs.current[itemId]) {
+      initialTime = videoRefs.current[itemId].currentTime;
+    }
+
+    openFullSize(item, index, initialTime);
   }, [openFullSize]);
 
   // Handle item click
@@ -1059,24 +1133,17 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
 
                   {/* Image/Video */}
                   {isVideoItem ? (
-                    <VideoPlayer
-                      src={item.url}
-                      className="relative z-[1] h-full w-full"
-                      objectFit="cover"
-                      onClick={() => handleItemClick(item, index)}
-                      onInfoClick={() => toggleVideoPrompt(baseActionTooltipId)}
-                      onInfoMouseEnter={() => setExpandedVideoPrompts(prev => {
-                        const next = new Set(prev);
-                        next.add(baseActionTooltipId);
-                        return next;
-                      })}
-                      onInfoMouseLeave={() => setExpandedVideoPrompts(prev => {
-                        const next = new Set(prev);
-                        next.delete(baseActionTooltipId);
-                        return next;
-                      })}
-                      showInfoButton={shouldShowPromptDetails}
-                      isInfoActive={isPromptExpanded}
+                    <GridVideoItem
+                      item={item as GalleryVideoLike}
+                      index={index}
+                      handleItemClick={handleItemClick}
+                      toggleVideoPrompt={toggleVideoPrompt}
+                      setExpandedVideoPrompts={setExpandedVideoPrompts}
+                      shouldShowPromptDetails={shouldShowPromptDetails}
+                      isPromptExpanded={isPromptExpanded}
+                      videoRefs={videoRefs}
+                      isFullSizeOpen={isFullSizeOpen}
+                      baseActionTooltipId={baseActionTooltipId}
                     />
                   ) : (
                     <img

@@ -17,6 +17,9 @@ interface VideoPlayerProps {
     onExpand?: () => void;
     objectFit?: 'cover' | 'contain';
     layout?: 'fill' | 'intrinsic';
+    initialTime?: number;
+    externalRef?: React.RefObject<HTMLVideoElement>;
+    forcePause?: boolean;
     onClick?: () => void;
 }
 
@@ -36,8 +39,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     layout = 'fill',
     onClick,
     objectFit = 'contain',
+    initialTime = 0,
+    externalRef,
+    forcePause = false,
 }) => {
-    const videoRef = useRef<HTMLVideoElement>(null);
+    const internalVideoRef = useRef<HTMLVideoElement>(null);
+    const videoRef = externalRef || internalVideoRef;
     const containerRef = useRef<HTMLDivElement>(null);
     const volumeSliderRef = useRef<HTMLDivElement>(null);
     const [isPlaying, setIsPlaying] = useState(autoPlay);
@@ -53,6 +60,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const [hasEnded, setHasEnded] = useState(false);
     const bottomTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const momentaryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const hasSetInitialTime = useRef(false);
 
     const resetBottomTimeout = useCallback((delay = 2000) => {
         setShowBottomControls(true);
@@ -78,7 +86,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             }
         }
         animationFrameRef.current = requestAnimationFrame(updateProgress);
-    }, []);
+    }, [videoRef]);
 
     useEffect(() => {
         if (isPlaying) {
@@ -95,12 +103,27 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         };
     }, [isPlaying, updateProgress]);
 
+    // Handle forcePause
+    useEffect(() => {
+        if (forcePause && isPlaying && videoRef.current) {
+            videoRef.current.pause();
+            setIsPlaying(false);
+            setMomentaryIcon('pause');
+        }
+    }, [forcePause, isPlaying, videoRef]);
+
     useEffect(() => {
         const video = videoRef.current;
         if (!video) return;
 
         const handleLoadedMetadata = () => {
             setDuration(video.duration);
+
+            // Set initial time if provided and not already set
+            if (initialTime > 0 && !hasSetInitialTime.current) {
+                video.currentTime = initialTime;
+                hasSetInitialTime.current = true;
+            }
         };
 
         const handleEnded = () => {
@@ -120,7 +143,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             video.removeEventListener('loadedmetadata', handleLoadedMetadata);
             video.removeEventListener('ended', handleEnded);
         };
-    }, [loop]);
+    }, [loop, initialTime, videoRef]);
 
     const togglePlay = useCallback((e?: React.MouseEvent) => {
         e?.stopPropagation();

@@ -195,7 +195,7 @@ const FullImageModal = memo(() => {
     goToModelGallery,
   } = useBadgeNavigation();
 
-  const { fullSizeImage, fullSizeIndex, isFullSizeOpen } = state;
+  const { fullSizeImage, fullSizeIndex, isFullSizeOpen, initialVideoTime } = state;
   const open = isFullSizeOpen;
   const fullSizeItemType: 'image' | 'video' = getGalleryItemType(fullSizeImage);
   // Identify current item and whether the image action (More) menu is open for it
@@ -1093,6 +1093,8 @@ const FullImageModal = memo(() => {
                       onInfoMouseLeave={() => setIsVideoPromptExpanded(false)}
                       showInfoButton={hasPromptContent}
                       isInfoActive={isVideoPromptExpanded}
+                      initialTime={initialVideoTime ?? 0}
+                      autoPlay={true}
                     />
                   </div>
                 ) : (
