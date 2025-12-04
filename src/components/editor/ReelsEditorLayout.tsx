@@ -10,6 +10,7 @@ export const ReelsEditorLayout = () => {
 
     // Ref for the scrollable container to auto-scroll
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const videoRef = useRef<HTMLVideoElement>(null);
 
     // Find active segment for the main preview
     const activeSegment = segments.find(
@@ -21,6 +22,17 @@ export const ReelsEditorLayout = () => {
         console.log("Audio ended. Moving to next segment.");
         nextSegment();
     };
+
+    // Sync video playback with isPlaying state
+    useEffect(() => {
+        if (videoRef.current) {
+            if (isPlaying) {
+                videoRef.current.play().catch(e => console.warn("Video play failed:", e));
+            } else {
+                videoRef.current.pause();
+            }
+        }
+    }, [isPlaying, activeSegment]);
 
     // MOCK DATA FOR DEVELOPMENT
     useEffect(() => {
@@ -104,7 +116,17 @@ export const ReelsEditorLayout = () => {
                 <div className="relative w-full max-w-[200px] lg:max-w-[340px] aspect-[9/16] bg-black rounded-[1.5rem] lg:rounded-[2rem] border-4 lg:border-8 border-zinc-900 shadow-2xl overflow-hidden ring-1 ring-zinc-800">
 
                     {/* Main Display Layer */}
-                    {activeSegment?.imageUrl ? (
+                    {activeSegment?.videoUrl ? (
+                        <video
+                            ref={videoRef}
+                            key={activeSegment.videoUrl} // Force re-render on change
+                            src={activeSegment.videoUrl}
+                            className="absolute inset-0 w-full h-full object-cover"
+                            loop
+                            muted
+                            playsInline
+                        />
+                    ) : activeSegment?.imageUrl ? (
                         <img
                             src={activeSegment.imageUrl}
                             className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
