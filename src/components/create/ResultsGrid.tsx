@@ -34,7 +34,7 @@ const ProductBadge = lazy(() => import('../products/ProductBadge'));
 const StyleBadge = lazy(() => import('../styles/StyleBadge'));
 const PublicBadge = lazy(() => import('./PublicBadge'));
 const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
-import QuickEditModal from './QuickEditModal';
+import QuickEditModal, { type QuickEditOptions } from './QuickEditModal';
 const GenerationProgress = lazy(() => import('./GenerationProgress'));
 
 // Helper to get consistent item identifier for UI actions (jobId → r2FileId → url)
@@ -80,7 +80,7 @@ const renderPlaceholderGrid = (
     message = 'Create something amazing.',
   }: { className?: string; onTileClick?: (() => void) | null; message?: string } = {},
 ) => (
-  <div className={`grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1 w-full p-1 ${className}`}>
+  <div className={`grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 w-full p-1 ${className}`}>
     {Array.from({ length: MAX_GALLERY_TILES }).map((_, idx) => (
       <div
         key={`ph-${idx}`}
@@ -559,7 +559,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       reader.readAsDataURL(file);
     });
 
-  const handleQuickEditSubmit = useCallback(async (prompt: string, referenceFile?: File) => {
+  const handleQuickEditSubmit = useCallback(async ({ prompt, referenceFile }: QuickEditOptions) => {
     if (!quickEditModalState?.item || !quickEditModalState.item.url) {
       showToast('No image URL available');
       return;
@@ -846,7 +846,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       <div className={`space-y-4 ${className}`}>
         {statusBanner}
         {/* Grid */}
-        <div className={`grid ${gridCols} gap-1 w-full p-1`}>
+        <div className={`grid ${gridCols} gap-2 w-full p-1`}>
           {activeJobPlaceholders.map(renderActiveJobCard)}
           {filteredItems.map((item, index) => {
             const isSelected = isItemSelected(item);

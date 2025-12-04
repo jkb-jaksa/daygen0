@@ -1416,7 +1416,7 @@ const FullImageModal = memo(() => {
             ref={sidebarRef}
             className={`${glass.promptDark} w-[200px] rounded-2xl p-4 flex flex-col gap-0 overflow-y-auto fixed z-[120]`}
             style={{
-              right: 'calc(var(--container-inline-padding, clamp(1rem,5vw,6rem)) + 80px)',
+              right: 'calc(var(--container-inline-padding, clamp(1rem,5vw,6rem)) + 72px)',
               top: 'calc(var(--nav-h) + 16px)',
               height: 'calc(100vh - var(--nav-h) - 32px)'
             }}

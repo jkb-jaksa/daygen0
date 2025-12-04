@@ -81,7 +81,9 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     const { user } = useAuth();
     const { showToast } = useToast();
     const userKey = user?.id || user?.email || "anon";
-    const { savePrompt, isPromptSaved } = useSavedPrompts(userKey);
+    const { savePrompt, isPromptSaved, removePrompt } = useSavedPrompts(userKey);
+    const [savePromptModalState, setSavePromptModalState] = useState<{ prompt: string; originalPrompt: string } | null>(null);
+    const savePromptModalRef = useRef<HTMLDivElement>(null);
 
     const {
         goToAvatarProfile,
@@ -117,23 +119,77 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         }
     };
 
+    // Load saved prompts to enable unsaving
+    useEffect(() => {
+        // This hook already loads prompts, so we just need access to the list if we want to find by text
+        // But useSavedPrompts doesn't expose the list directly in the destructuring above
+        // We need to import loadSavedPrompts helper or check if useSavedPrompts exposes it
+        // Looking at ResultsGrid, it uses loadSavedPrompts(userKey) helper
+    }, []);
+
     const handleToggleSavePrompt = (text: string, event: React.MouseEvent) => {
         event.stopPropagation();
         if (!text) return;
         try {
             if (isPromptSaved(text)) {
                 // Find and remove
-                // Note: In a real implementation we'd need the ID, but for now we can't easily get it without loading all prompts
-                // So we'll just show a toast that this feature is limited in quick edit for now or implement a lookup if critical
-                showToast('Manage saved prompts in gallery');
+                // We need to import loadSavedPrompts to find the ID
+                import('../../lib/savedPrompts').then(({ loadSavedPrompts }) => {
+                    const savedPrompts = loadSavedPrompts(userKey);
+                    const existing = savedPrompts.find(p => p.text.toLowerCase() === text.trim().toLowerCase());
+                    if (existing) {
+                        removePrompt(existing.id);
+                        showToast('Prompt unsaved');
+                    }
+                });
             } else {
-                savePrompt(text.trim());
-                showToast('Prompt saved!');
+                setSavePromptModalState({ prompt: text.trim(), originalPrompt: text.trim() });
             }
         } catch {
+            showToast('Failed to update prompt');
+        }
+    };
+
+    const handleSavePromptModalClose = () => {
+        setSavePromptModalState(null);
+    };
+
+    const handleSavePromptModalSave = () => {
+        if (!savePromptModalState || !savePromptModalState.prompt.trim()) return;
+
+        try {
+            savePrompt(savePromptModalState.prompt.trim());
+            showToast('Prompt saved!');
+            setSavePromptModalState(null);
+        } catch (err) {
             showToast('Failed to save prompt');
         }
     };
+
+    // Handle modal click outside and escape key
+    useEffect(() => {
+        if (!savePromptModalState) return;
+
+        const handleClickOutside = (e: MouseEvent) => {
+            if (savePromptModalRef.current && !savePromptModalRef.current.contains(e.target as Node)) {
+                setSavePromptModalState(null);
+            }
+        };
+
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                setSavePromptModalState(null);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('keydown', handleEscape);
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('keydown', handleEscape);
+        };
+    }, [savePromptModalState]);
 
     // Hover states for buttons
     const [isAvatarButtonHovered, setIsAvatarButtonHovered] = useState(false);
@@ -199,12 +255,10 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
 
     useEffect(() => {
         if (isOpen) {
-            setPrompt(initialPrompt);
+            setPrompt('');
             // Focus input after a short delay to allow animation
             setTimeout(() => {
                 inputRef.current?.focus();
-                // Select all text
-                inputRef.current?.select();
             }, 100);
 
             // Load avatars and products
@@ -253,16 +307,23 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     };
 
     // Tooltip helper
-    const showHoverTooltip = (target: HTMLElement, tooltipId: string) => {
+    const showHoverTooltip = (
+        target: HTMLElement,
+        tooltipId: string,
+        options?: { placement?: 'above' | 'below'; offset?: number },
+    ) => {
         if (typeof document === 'undefined') return;
         const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
         if (!tooltip) return;
 
         const rect = target.getBoundingClientRect();
-        tooltip.style.position = 'fixed';
-        tooltip.style.top = `${rect.top - 4}px`;
+        const placement = options?.placement ?? 'above';
+        const defaultOffset = placement === 'above' ? 28 : 8;
+        const offset = options?.offset ?? defaultOffset;
+        const top = placement === 'above' ? rect.top - offset : rect.bottom + offset;
+        tooltip.style.top = `${top}px`;
         tooltip.style.left = `${rect.left + rect.width / 2}px`;
-        tooltip.style.transform = 'translateX(-50%) translateY(-100%)';
+        tooltip.style.transform = 'translateX(-50%)';
         tooltip.style.zIndex = '9999';
 
         tooltip.classList.remove('opacity-0');
@@ -318,801 +379,846 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     if (!isOpen) return null;
 
     return createPortal(
-        <div
-            className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/75 px-4 py-6 backdrop-blur-sm"
-            onClick={(e) => {
-                e.stopPropagation();
-                onClose();
-            }}
-        >
+        <>
+            {/* Save Prompt Modal */}
+            {savePromptModalState && (
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-theme-black/80 py-12" onClick={(e) => e.stopPropagation()}>
+                    <div ref={savePromptModalRef} className={`${glass.promptDark} rounded-[20px] w-full max-w-lg mx-4 py-8 px-6 transition-colors duration-200`}>
+                        <div className="space-y-6">
+                            <div className="space-y-3 text-center">
+                                <BookmarkPlus className="w-10 h-10 mx-auto text-theme-text" />
+                                <h3 className="text-xl font-raleway font-normal text-theme-text">
+                                    Save Prompt
+                                </h3>
+                                <p className="text-base font-raleway text-theme-white">
+                                    Edit your prompt before saving it for future creations.
+                                </p>
+                            </div>
+
+                            <textarea
+                                value={savePromptModalState.prompt}
+                                onChange={(e) => setSavePromptModalState(prev => prev ? { ...prev, prompt: e.target.value } : null)}
+                                className="w-full min-h-[120px] bg-theme-black/40 text-theme-text placeholder-theme-white border border-theme-mid rounded-xl px-4 py-3 focus:outline-none focus:border-theme-text transition-colors duration-200 font-raleway text-base resize-none"
+                                placeholder="Enter your prompt..."
+                                autoFocus
+                            />
+
+                            <div className="flex justify-center gap-3">
+                                <button
+                                    onClick={handleSavePromptModalClose}
+                                    className={`${buttons.ghost}`}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleSavePromptModalSave}
+                                    disabled={!savePromptModalState.prompt.trim()}
+                                    className={`${buttons.primary} disabled:opacity-50 disabled:cursor-not-allowed`}
+                                >
+                                    Save
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div
-                ref={modalRef}
-                className={`${glass.promptDark} w-full max-w-6xl rounded-3xl border border-theme-dark p-6 shadow-2xl flex flex-col md:flex-row gap-6 transition-all duration-200`}
-                onClick={(e) => e.stopPropagation()}
+                className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/75 px-4 py-6 backdrop-blur-sm"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onClose();
+                }}
             >
-                {/* Left Column - Image Preview */}
-                <div className="w-full md:w-5/12 flex items-center justify-center bg-theme-black/20 rounded-xl overflow-hidden border border-theme-dark relative aspect-square group">
-                    <img
-                        src={imageUrl}
-                        alt="Preview"
-                        className="w-full h-full object-cover absolute inset-0"
-                    />
+                <div
+                    ref={modalRef}
+                    className={`${glass.promptDark} w-full max-w-6xl rounded-3xl border border-theme-dark p-6 shadow-2xl flex flex-col md:flex-row gap-6 transition-all duration-200`}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {/* Left Column - Image Preview */}
+                    <div className="w-full md:w-5/12 flex items-center justify-center bg-theme-black/20 rounded-xl overflow-hidden border border-theme-dark relative aspect-square group">
+                        <img
+                            src={imageUrl}
+                            alt="Preview"
+                            className="w-full h-full object-cover absolute inset-0"
+                        />
 
-                    {/* Prompt Description Bar */}
-                    {item && (
-                        <div
-                            className="PromptDescriptionBar absolute left-4 right-4 rounded-2xl p-4 text-theme-text bottom-4 transition-opacity duration-150 z-10 pointer-events-none group-hover:pointer-events-auto"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className="flex items-center justify-center">
-                                <div className="text-center">
-                                    <div className="text-theme-white text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
-                                        {item.prompt}
-                                        {item.prompt && (
-                                            <>
-                                                <button
-                                                    onClick={(e) => void handleCopyPrompt(item.prompt!, e)}
-                                                    className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle"
-                                                    onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'quick-edit-copy-prompt')}
-                                                    onMouseLeave={() => hideHoverTooltip('quick-edit-copy-prompt')}
-                                                >
-                                                    <Copy className="w-3 h-3" />
-                                                </button>
-                                                <TooltipPortal id="quick-edit-copy-prompt">
-                                                    Copy prompt
-                                                </TooltipPortal>
+                        {/* Prompt Description Bar */}
+                        {item && (
+                            <div
+                                className="PromptDescriptionBar absolute left-4 right-4 rounded-2xl p-4 text-theme-text bottom-4 transition-all duration-150 z-10 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <div className="flex items-center justify-center">
+                                    <div className="text-center">
+                                        <div className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
+                                            {item.prompt}
+                                            {item.prompt && (
+                                                <>
+                                                    <button
+                                                        onClick={(e) => void handleCopyPrompt(item.prompt!, e)}
+                                                        className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle"
+                                                        onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'quick-edit-copy-prompt')}
+                                                        onMouseLeave={() => hideHoverTooltip('quick-edit-copy-prompt')}
+                                                    >
+                                                        <Copy className="w-3 h-3" />
+                                                    </button>
+                                                    <TooltipPortal id="quick-edit-copy-prompt">
+                                                        Copy prompt
+                                                    </TooltipPortal>
 
-                                                <button
-                                                    onClick={(e) => handleToggleSavePrompt(item.prompt!, e)}
-                                                    className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle"
-                                                    onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'quick-edit-save-prompt')}
-                                                    onMouseLeave={() => hideHoverTooltip('quick-edit-save-prompt')}
-                                                >
-                                                    {isPromptSaved(item.prompt!) ? (
-                                                        <Bookmark className="w-3 h-3 fill-current" />
-                                                    ) : (
-                                                        <BookmarkPlus className="w-3 h-3" />
-                                                    )}
-                                                </button>
-                                                <TooltipPortal id="quick-edit-save-prompt">
-                                                    {isPromptSaved(item.prompt!) ? "Prompt saved" : "Save prompt"}
-                                                </TooltipPortal>
-                                            </>
-                                        )}
-                                    </div>
-                                    <div className="mt-2 flex flex-col justify-center items-center gap-2">
-                                        {/* Reference images thumbnails */}
-                                        {item.references && item.references.length > 0 && (
-                                            <div className="flex items-center gap-1.5">
-                                                <div className="flex gap-1">
-                                                    {item.references.map((ref, refIdx) => (
-                                                        <div key={refIdx} className="relative">
-                                                            <img
-                                                                src={ref}
-                                                                alt={`Reference ${refIdx + 1}`}
-                                                                loading="lazy"
-                                                                className="w-6 h-6 rounded object-cover border border-theme-mid cursor-pointer hover:border-theme-text transition-colors duration-200"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    window.open(ref, '_blank');
-                                                                }}
-                                                            />
-                                                            <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
-                                                                {refIdx + 1}
+                                                    <button
+                                                        onClick={(e) => handleToggleSavePrompt(item.prompt!, e)}
+                                                        className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle"
+                                                        onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'quick-edit-save-prompt')}
+                                                        onMouseLeave={() => hideHoverTooltip('quick-edit-save-prompt')}
+                                                    >
+                                                        {isPromptSaved(item.prompt!) ? (
+                                                            <Bookmark className="w-3 h-3 fill-current" />
+                                                        ) : (
+                                                            <BookmarkPlus className="w-3 h-3" />
+                                                        )}
+                                                    </button>
+                                                    <TooltipPortal id="quick-edit-save-prompt">
+                                                        {isPromptSaved(item.prompt!) ? "Prompt saved" : "Save prompt"}
+                                                    </TooltipPortal>
+                                                </>
+                                            )}
+                                        </div>
+                                        <div className="mt-2 flex flex-col justify-center items-center gap-2">
+                                            {/* Reference images thumbnails */}
+                                            {item.references && item.references.length > 0 && (
+                                                <div className="flex items-center gap-1.5">
+                                                    <div className="flex gap-1">
+                                                        {item.references.map((ref, refIdx) => (
+                                                            <div key={refIdx} className="relative">
+                                                                <img
+                                                                    src={ref}
+                                                                    alt={`Reference ${refIdx + 1}`}
+                                                                    loading="lazy"
+                                                                    className="w-6 h-6 rounded object-cover border border-theme-mid cursor-pointer hover:border-theme-text transition-colors duration-200"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        window.open(ref, '_blank');
+                                                                    }}
+                                                                />
+                                                                <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
+                                                                    {refIdx + 1}
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    ))}
+                                                        ))}
+                                                    </div>
+                                                    <span className="text-xs font-raleway text-theme-white/70">
+                                                        {item.references.length} ref{item.references.length > 1 ? 's' : ''}
+                                                    </span>
                                                 </div>
-                                                <span className="text-xs font-raleway text-theme-white/70">
-                                                    {item.references.length} ref{item.references.length > 1 ? 's' : ''}
-                                                </span>
-                                            </div>
-                                        )}
+                                            )}
 
-                                        <ImageBadgeRow
-                                            align="center"
-                                            model={{
-                                                name: item.model || 'unknown',
-                                                size: 'md',
-                                                onClick: () => goToModelGallery(item.model, 'image')
-                                            }}
-                                            avatars={
-                                                item.avatarId
-                                                    ? (() => {
-                                                        const avatarForImage = avatarHandlers.storedAvatars.find(a => a.id === item.avatarId);
-                                                        return avatarForImage ? [{ data: avatarForImage, onClick: () => goToAvatarProfile(avatarForImage) }] : [];
-                                                    })()
-                                                    : []
-                                            }
-                                            products={
-                                                item.productId
-                                                    ? (() => {
-                                                        const productForImage = productHandlers.storedProducts.find(p => p.id === item.productId);
-                                                        return productForImage ? [{ data: productForImage, onClick: () => goToProductProfile(productForImage) }] : [];
-                                                    })()
-                                                    : []
-                                            }
-                                            styles={
-                                                item.styleId
-                                                    ? (() => {
-                                                        const styleForImage = styleIdToStoredStyle(item.styleId!);
-                                                        return styleForImage ? [{ data: styleForImage }] : [];
-                                                    })()
-                                                    : []
-                                            }
-                                            aspectRatio={item.aspectRatio}
-                                            isPublic={item.isPublic}
-                                            onPublicClick={item.isPublic ? () => goToPublicGallery() : undefined}
-                                            compact={false}
-                                        />
+                                            <ImageBadgeRow
+                                                align="center"
+                                                model={{
+                                                    name: item.model || 'unknown',
+                                                    size: 'md',
+                                                    onClick: () => goToModelGallery(item.model, 'image')
+                                                }}
+                                                avatars={
+                                                    item.avatarId
+                                                        ? (() => {
+                                                            const avatarForImage = avatarHandlers.storedAvatars.find(a => a.id === item.avatarId);
+                                                            return avatarForImage ? [{ data: avatarForImage, onClick: () => goToAvatarProfile(avatarForImage) }] : [];
+                                                        })()
+                                                        : []
+                                                }
+                                                products={
+                                                    item.productId
+                                                        ? (() => {
+                                                            const productForImage = productHandlers.storedProducts.find(p => p.id === item.productId);
+                                                            return productForImage ? [{ data: productForImage, onClick: () => goToProductProfile(productForImage) }] : [];
+                                                        })()
+                                                        : []
+                                                }
+                                                styles={
+                                                    item.styleId
+                                                        ? (() => {
+                                                            const styleForImage = styleIdToStoredStyle(item.styleId!);
+                                                            return styleForImage ? [{ data: styleForImage }] : [];
+                                                        })()
+                                                        : []
+                                                }
+                                                aspectRatio={item.aspectRatio}
+                                                isPublic={item.isPublic}
+                                                onPublicClick={item.isPublic ? () => goToPublicGallery() : undefined}
+                                                compact={false}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* Right Column - Form */}
-                < div className="w-full md:w-7/12 flex flex-col" >
-                    <div className="flex items-center justify-between mb-1">
-                        <h2 className="text-lg font-raleway text-theme-text flex items-center gap-2">
-                            <Edit className="w-5 h-5 text-theme-text" />
-                            Edit
-                        </h2>
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="inline-flex size-8 items-center justify-center rounded-full border border-theme-dark bg-theme-black text-theme-white transition-colors duration-200 hover:border-theme-mid hover:text-theme-text"
-                            aria-label="Close edit"
-                        >
-                            <X className="w-4 h-4" />
-                        </button>
+                        )}
                     </div>
 
-                    <form onSubmit={handleSubmit} className="flex flex-col gap-3 flex-1">
-                        <div className="flex flex-col gap-2 flex-1">
-                            <label htmlFor="quick-edit-prompt" className="text-sm font-raleway text-theme-white">
-                                Enter your prompt
-                            </label>
-                            <div className={`relative flex flex-col rounded-xl transition-colors duration-200 ${glass.prompt} focus-within:border-theme-mid`}>
-                                <textarea
-                                    id="quick-edit-prompt"
-                                    ref={inputRef}
-                                    value={prompt}
-                                    onChange={(e) => setPrompt(e.target.value)}
-                                    onKeyDown={handleKeyDown}
-                                    className="w-full min-h-[100px] bg-transparent border-none focus:ring-0 text-theme-text placeholder:text-theme-light/50 font-raleway text-base px-3 py-2 resize-none focus:outline-none"
-                                    placeholder="e.g. Make it a sunny day, Add a red hat..."
-                                    disabled={isLoading}
-                                />
+                    {/* Right Column - Form */}
+                    < div className="w-full md:w-7/12 flex flex-col" >
+                        <div className="flex items-center justify-between mb-1">
+                            <h2 className="text-lg font-raleway text-theme-text flex items-center gap-2">
+                                <Edit className="w-5 h-5 text-theme-text" />
+                                Edit
+                            </h2>
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="inline-flex size-8 items-center justify-center rounded-full border border-theme-dark bg-theme-black text-theme-white transition-colors duration-200 hover:border-theme-mid hover:text-theme-text"
+                                aria-label="Close edit"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
 
-                                {/* Bottom Controls Bar */}
-                                <div className="flex items-center justify-between border-t border-theme-dark px-3 py-2">
-                                    <div className="flex items-center gap-1">
-                                        {/* Reference Image Controls */}
-                                        <div className="relative">
-                                            <input
-                                                type="file"
-                                                ref={fileInputRef}
-                                                className="hidden"
-                                                accept="image/*"
-                                                onChange={(e) => {
-                                                    const files = Array.from(e.target.files || []);
-                                                    if (files.length > 0) {
-                                                        handleAddReferenceFiles(files);
-                                                    }
-                                                    e.target.value = '';
-                                                }}
-                                            />
+                        <form onSubmit={handleSubmit} className="flex flex-col gap-3 flex-1">
+                            <div className="flex flex-col gap-2 flex-1">
+                                <label htmlFor="quick-edit-prompt" className="text-sm font-raleway text-theme-white">
+                                    Enter your prompt
+                                </label>
+                                <div className={`relative flex flex-col rounded-xl transition-colors duration-200 ${glass.prompt} focus-within:border-theme-mid`}>
+                                    <textarea
+                                        id="quick-edit-prompt"
+                                        ref={inputRef}
+                                        value={prompt}
+                                        onChange={(e) => setPrompt(e.target.value)}
+                                        onKeyDown={handleKeyDown}
+                                        className="w-full min-h-[100px] bg-transparent border-none focus:ring-0 text-theme-text placeholder:text-n-light font-raleway text-base px-3 py-2 resize-none focus:outline-none"
+                                        placeholder="e.g. Make it a sunny day, Add a red hat..."
+                                        disabled={isLoading}
+                                    />
+
+                                    {/* Bottom Controls Bar */}
+                                    <div className="flex items-center justify-between border-t border-n-dark px-3 py-2">
+                                        <div className="flex items-center gap-1">
+                                            {/* Reference Image Controls */}
+                                            <div className="relative">
+                                                <input
+                                                    type="file"
+                                                    ref={fileInputRef}
+                                                    className="hidden"
+                                                    accept="image/*"
+                                                    onChange={(e) => {
+                                                        const files = Array.from(e.target.files || []);
+                                                        if (files.length > 0) {
+                                                            handleAddReferenceFiles(files);
+                                                        }
+                                                        e.target.value = '';
+                                                    }}
+                                                />
+                                                <div className="relative">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => openFileInput()}
+                                                        aria-label="Add reference image"
+                                                        disabled={referenceFiles.length >= 1}
+                                                        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small ${referenceFiles.length >= 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                        onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'edit-reference-tooltip')}
+                                                        onMouseLeave={() => hideHoverTooltip('edit-reference-tooltip')}
+                                                        onPointerMove={onPointerMove}
+                                                        onPointerEnter={onPointerEnter}
+                                                        onPointerLeave={onPointerLeave}
+                                                    >
+                                                        <Plus className="w-4 h-4 flex-shrink-0 text-n-text" />
+                                                    </button>
+                                                    <TooltipPortal id="edit-reference-tooltip">
+                                                        Reference Image
+                                                    </TooltipPortal>
+                                                </div>
+                                            </div>
+
+                                            {referencePreviews.length > 0 && (
+                                                <div className="flex items-center gap-1.5">
+                                                    {referencePreviews.map((preview, index) => (
+                                                        <div
+                                                            key={`${preview}-${index}`}
+                                                            className="relative group"
+                                                        >
+                                                            <img
+                                                                src={preview}
+                                                                alt={`Reference ${index + 1}`}
+                                                                loading="lazy"
+                                                                className="w-9 h-9 rounded-lg object-cover border border-theme-mid cursor-pointer hover:bg-theme-light transition-colors duration-200"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    clearReference(index);
+                                                                }}
+                                                                className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-text hover:text-n-text rounded-full p-0.5 transition-all duration-200"
+                                                                title="Remove reference"
+                                                            >
+                                                                <X className="w-2.5 h-2.5 text-n-text" />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {/* Model Selector (Restricted to Nano Banana) */}
+                                            <div className="relative">
+                                                <Suspense fallback={null}>
+                                                    <ModelSelector
+                                                        selectedModel="gemini-3.0-pro-image"
+                                                        onModelChange={() => { }} // No-op
+                                                        isGenerating={isLoading}
+                                                        activeCategory="image"
+                                                        hasReferences={referenceFiles.length > 0}
+                                                        allowedModels={['gemini-3.0-pro-image']}
+                                                    />
+                                                </Suspense>
+                                            </div>
+
+                                            {/* Settings Button */}
                                             <div className="relative">
                                                 <button
+                                                    ref={settingsButtonRef}
                                                     type="button"
-                                                    onClick={() => openFileInput()}
-                                                    aria-label="Add reference image"
-                                                    disabled={referenceFiles.length >= 1}
-                                                    className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small ${referenceFiles.length >= 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                    onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'edit-reference-tooltip')}
-                                                    onMouseLeave={() => hideHoverTooltip('edit-reference-tooltip')}
+                                                    onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                                                    className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small`}
+                                                    onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'edit-settings-tooltip')}
+                                                    onMouseLeave={() => hideHoverTooltip('edit-settings-tooltip')}
                                                     onPointerMove={onPointerMove}
                                                     onPointerEnter={onPointerEnter}
                                                     onPointerLeave={onPointerLeave}
                                                 >
-                                                    <Plus className="w-4 h-4 flex-shrink-0 text-n-text" />
+                                                    <Settings className="w-4 h-4 text-n-text" />
                                                 </button>
-                                                <TooltipPortal id="edit-reference-tooltip">
-                                                    Reference Image
+                                                <TooltipPortal id="edit-settings-tooltip">
+                                                    Settings
+                                                </TooltipPortal>
+                                                <Suspense fallback={null}>
+                                                    <SettingsMenu {...settingsProps} />
+                                                </Suspense>
+                                            </div>
+
+                                            {/* Aspect Ratio Button */}
+                                            <div className="relative">
+                                                <button
+                                                    ref={aspectRatioButtonRef}
+                                                    type="button"
+                                                    onClick={() => setIsAspectRatioOpen(!isAspectRatioOpen)}
+                                                    className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2 parallax-small`}
+                                                    onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'edit-aspect-ratio-tooltip')}
+                                                    onMouseLeave={() => hideHoverTooltip('edit-aspect-ratio-tooltip')}
+                                                    onPointerMove={onPointerMove}
+                                                    onPointerEnter={onPointerEnter}
+                                                    onPointerLeave={onPointerLeave}
+                                                >
+                                                    <Scan className="w-4 h-4 flex-shrink-0 text-n-text" />
+                                                    <span className="font-raleway text-sm whitespace-nowrap text-n-text">{aspectRatio}</span>
+                                                </button>
+                                                <TooltipPortal id="edit-aspect-ratio-tooltip">
+                                                    Aspect Ratio
+                                                </TooltipPortal>
+                                                <Suspense fallback={null}>
+                                                    <AspectRatioDropdown
+                                                        anchorRef={aspectRatioButtonRef}
+                                                        open={isAspectRatioOpen}
+                                                        onClose={() => setIsAspectRatioOpen(false)}
+                                                        options={GEMINI_ASPECT_RATIO_OPTIONS}
+                                                        selectedValue={aspectRatio}
+                                                        onSelect={(val) => {
+                                                            setAspectRatio(val as GeminiAspectRatio);
+                                                            setIsAspectRatioOpen(false);
+                                                        }}
+                                                    />
+                                                </Suspense>
+                                            </div>
+
+                                            {/* Batch Size (Visible on larger screens) */}
+                                            <div
+                                                className="relative hidden lg:flex items-center"
+                                                onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'edit-batch-size-tooltip')}
+                                                onMouseLeave={() => hideHoverTooltip('edit-batch-size-tooltip')}
+                                            >
+                                                <div className={`${glass.promptBorderless} flex items-center gap-0 h-8 px-2 rounded-full text-n-text`}>
+                                                    <div className="relative">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setBatchSize(Math.max(1, batchSize - 1))}
+                                                            disabled={batchSize === 1}
+                                                            className="grid size-6 place-items-center rounded-full text-n-text transition-colors duration-200 hover:bg-n-text/20 disabled:cursor-not-allowed disabled:opacity-40"
+                                                        >
+                                                            <Minus className="h-3.5 w-3.5" />
+                                                        </button>
+                                                    </div>
+                                                    <span className="min-w-[1.25rem] text-center text-sm font-raleway text-n-text whitespace-nowrap">
+                                                        {batchSize}
+                                                    </span>
+                                                    <div className="relative">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setBatchSize(Math.min(4, batchSize + 1))}
+                                                            disabled={batchSize === 4}
+                                                            className="grid size-6 place-items-center rounded-full text-n-text transition-colors duration-200 hover:bg-n-text/20 disabled:cursor-not-allowed disabled:opacity-40"
+                                                        >
+                                                            <Plus className="h-3.5 w-3.5" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <TooltipPortal id="edit-batch-size-tooltip">
+                                                    Batch size
                                                 </TooltipPortal>
                                             </div>
                                         </div>
-
-                                        {referencePreviews.length > 0 && (
-                                            <div className="flex items-center gap-1.5">
-                                                {referencePreviews.map((preview, index) => (
-                                                    <div
-                                                        key={`${preview}-${index}`}
-                                                        className="relative group"
-                                                    >
-                                                        <img
-                                                            src={preview}
-                                                            alt={`Reference ${index + 1}`}
-                                                            loading="lazy"
-                                                            className="w-9 h-9 rounded-lg object-cover border border-theme-mid cursor-pointer hover:bg-theme-light transition-colors duration-200"
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                clearReference(index);
-                                                            }}
-                                                            className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-text hover:text-n-text rounded-full p-0.5 transition-all duration-200"
-                                                            title="Remove reference"
-                                                        >
-                                                            <X className="w-2.5 h-2.5 text-n-text" />
-                                                        </button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-
-                                        {/* Model Selector (Restricted to Nano Banana) */}
-                                        <div className="relative">
-                                            <Suspense fallback={null}>
-                                                <ModelSelector
-                                                    selectedModel="gemini-3.0-pro-image"
-                                                    onModelChange={() => { }} // No-op
-                                                    isGenerating={isLoading}
-                                                    activeCategory="image"
-                                                    hasReferences={referenceFiles.length > 0}
-                                                    allowedModels={['gemini-3.0-pro-image']}
-                                                />
-                                            </Suspense>
-                                        </div>
-
-                                        {/* Settings Button */}
-                                        <div className="relative">
-                                            <button
-                                                ref={settingsButtonRef}
-                                                type="button"
-                                                onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-                                                className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small`}
-                                                onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'edit-settings-tooltip')}
-                                                onMouseLeave={() => hideHoverTooltip('edit-settings-tooltip')}
-                                                onPointerMove={onPointerMove}
-                                                onPointerEnter={onPointerEnter}
-                                                onPointerLeave={onPointerLeave}
-                                            >
-                                                <Settings className="w-4 h-4 text-n-text" />
-                                            </button>
-                                            <TooltipPortal id="edit-settings-tooltip">
-                                                Settings
-                                            </TooltipPortal>
-                                            <Suspense fallback={null}>
-                                                <SettingsMenu {...settingsProps} />
-                                            </Suspense>
-                                        </div>
-
-                                        {/* Aspect Ratio Button */}
-                                        <div className="relative">
-                                            <button
-                                                ref={aspectRatioButtonRef}
-                                                type="button"
-                                                onClick={() => setIsAspectRatioOpen(!isAspectRatioOpen)}
-                                                className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2 parallax-small`}
-                                                onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'edit-aspect-ratio-tooltip')}
-                                                onMouseLeave={() => hideHoverTooltip('edit-aspect-ratio-tooltip')}
-                                                onPointerMove={onPointerMove}
-                                                onPointerEnter={onPointerEnter}
-                                                onPointerLeave={onPointerLeave}
-                                            >
-                                                <Scan className="w-4 h-4 flex-shrink-0 text-n-text" />
-                                                <span className="font-raleway text-sm whitespace-nowrap text-n-text">{aspectRatio}</span>
-                                            </button>
-                                            <TooltipPortal id="edit-aspect-ratio-tooltip">
-                                                Aspect Ratio
-                                            </TooltipPortal>
-                                            <Suspense fallback={null}>
-                                                <AspectRatioDropdown
-                                                    anchorRef={aspectRatioButtonRef}
-                                                    open={isAspectRatioOpen}
-                                                    onClose={() => setIsAspectRatioOpen(false)}
-                                                    options={GEMINI_ASPECT_RATIO_OPTIONS}
-                                                    selectedValue={aspectRatio}
-                                                    onSelect={(val) => {
-                                                        setAspectRatio(val as GeminiAspectRatio);
-                                                        setIsAspectRatioOpen(false);
-                                                    }}
-                                                />
-                                            </Suspense>
-                                        </div>
-
-                                        {/* Batch Size (Visible on larger screens) */}
-                                        <div
-                                            className="relative hidden lg:flex items-center"
-                                            onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'edit-batch-size-tooltip')}
-                                            onMouseLeave={() => hideHoverTooltip('edit-batch-size-tooltip')}
-                                        >
-                                            <div className={`${glass.promptBorderless} flex items-center gap-0 h-8 px-2 rounded-full text-n-text`}>
-                                                <div className="relative">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setBatchSize(Math.max(1, batchSize - 1))}
-                                                        disabled={batchSize === 1}
-                                                        className="grid size-6 place-items-center rounded-full text-n-text transition-colors duration-200 hover:bg-n-text/20 disabled:cursor-not-allowed disabled:opacity-40"
-                                                    >
-                                                        <Minus className="h-3.5 w-3.5" />
-                                                    </button>
-                                                </div>
-                                                <span className="min-w-[1.25rem] text-center text-sm font-raleway text-n-text whitespace-nowrap">
-                                                    {batchSize}
-                                                </span>
-                                                <div className="relative">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setBatchSize(Math.min(4, batchSize + 1))}
-                                                        disabled={batchSize === 4}
-                                                        className="grid size-6 place-items-center rounded-full text-n-text transition-colors duration-200 hover:bg-n-text/20 disabled:cursor-not-allowed disabled:opacity-40"
-                                                    >
-                                                        <Plus className="h-3.5 w-3.5" />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <TooltipPortal id="edit-batch-size-tooltip">
-                                                Batch size
-                                            </TooltipPortal>
-                                        </div>
                                     </div>
-                                </div>
 
-                                {/* Second Row: Avatar, Voice, Product, Style */}
-                                <div className="flex items-center gap-2 border-t border-theme-dark px-3 py-2">
-                                    {/* Avatar Button */}
-                                    <div className="relative">
-                                        <button
-                                            type="button"
-                                            ref={avatarButtonRef}
-                                            onClick={() => {
-                                                setIsProductPickerOpen(false);
-                                                if (avatarHandlers.storedAvatars.length === 0) {
-                                                    avatarHandlers.setAvatarUploadError(null);
-                                                    avatarHandlers.avatarQuickUploadInputRef.current?.click();
-                                                } else {
-                                                    setIsAvatarPickerOpen(!isAvatarPickerOpen);
-                                                }
-                                            }}
-                                            onMouseEnter={() => {
-                                                setIsAvatarButtonHovered(true);
-                                                showHoverTooltip(avatarButtonRef.current!, 'avatar-tooltip');
-                                            }}
-                                            onMouseLeave={() => {
-                                                setIsAvatarButtonHovered(false);
-                                                hideHoverTooltip('avatar-tooltip');
-                                            }}
-                                            className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid ${selectedAvatar ? 'hover:border-n-white' : ''} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
-                                            onPointerMove={onPointerMove}
-                                            onPointerEnter={onPointerEnter}
-                                            onPointerLeave={onPointerLeave}
-                                        >
-                                            {!selectedAvatar && (
-                                                <>
-                                                    <div className="flex-1 flex items-center justify-center lg:mt-3">
-                                                        {isAvatarButtonHovered ? (
-                                                            <Plus className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
-                                                        ) : (
-                                                            <User className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
-                                                        )}
-                                                    </div>
-                                                    <div className="hidden lg:flex items-center gap-1">
-                                                        <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
-                                                            Avatar
-                                                        </span>
-                                                    </div>
-                                                </>
-                                            )}
-                                            {selectedAvatar && (
-                                                <>
-                                                    <img
-                                                        src={selectedAvatar.imageUrl}
-                                                        alt={selectedAvatar.name}
-                                                        loading="lazy"
-                                                        className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover"
-                                                        title={selectedAvatar.name}
-                                                    />
-                                                    <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
-                                                        <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
-                                                            {selectedAvatar.name}
-                                                        </span>
-                                                    </div>
-                                                </>
-                                            )}
-                                        </button>
-                                        {selectedAvatar && (
+                                    {/* Second Row: Avatar, Voice, Product, Style */}
+                                    <div className="flex items-center gap-2 border-t border-n-dark px-3 py-2">
+                                        {/* Avatar Button */}
+                                        <div className="relative">
                                             <button
                                                 type="button"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    avatarHandlers.handleAvatarSelect(null);
+                                                ref={avatarButtonRef}
+                                                onClick={() => {
+                                                    setIsProductPickerOpen(false);
+                                                    if (avatarHandlers.storedAvatars.length === 0) {
+                                                        avatarHandlers.setAvatarUploadError(null);
+                                                        avatarHandlers.avatarQuickUploadInputRef.current?.click();
+                                                    } else {
+                                                        setIsAvatarPickerOpen(!isAvatarPickerOpen);
+                                                    }
                                                 }}
-                                                className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
-                                                title="Remove avatar"
-                                                aria-label="Remove avatar"
+                                                onMouseEnter={() => {
+                                                    setIsAvatarButtonHovered(true);
+                                                    showHoverTooltip(avatarButtonRef.current!, 'avatar-tooltip');
+                                                }}
+                                                onMouseLeave={() => {
+                                                    setIsAvatarButtonHovered(false);
+                                                    hideHoverTooltip('avatar-tooltip');
+                                                }}
+                                                className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid ${selectedAvatar ? 'hover:border-n-white' : ''} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                onPointerMove={onPointerMove}
+                                                onPointerEnter={onPointerEnter}
+                                                onPointerLeave={onPointerLeave}
                                             >
-                                                <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
+                                                {!selectedAvatar && (
+                                                    <>
+                                                        <div className="flex-1 flex items-center justify-center lg:mt-3">
+                                                            {isAvatarButtonHovered ? (
+                                                                <Plus className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
+                                                            ) : (
+                                                                <User className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
+                                                            )}
+                                                        </div>
+                                                        <div className="hidden lg:flex items-center gap-1">
+                                                            <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
+                                                                Avatar
+                                                            </span>
+                                                        </div>
+                                                    </>
+                                                )}
+                                                {selectedAvatar && (
+                                                    <>
+                                                        <img
+                                                            src={selectedAvatar.imageUrl}
+                                                            alt={selectedAvatar.name}
+                                                            loading="lazy"
+                                                            className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover"
+                                                            title={selectedAvatar.name}
+                                                        />
+                                                        <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
+                                                            <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
+                                                                {selectedAvatar.name}
+                                                            </span>
+                                                        </div>
+                                                    </>
+                                                )}
                                             </button>
-                                        )}
-                                        <TooltipPortal id="avatar-tooltip">
-                                            Avatar
-                                        </TooltipPortal>
-                                    </div>
-
-
-
-
-                                    {/* Product Button */}
-                                    < div className="relative" >
-                                        <button
-                                            type="button"
-                                            ref={productButtonRef}
-                                            onClick={() => {
-                                                setIsAvatarPickerOpen(false);
-                                                if (productHandlers.storedProducts.length === 0) {
-                                                    productHandlers.setProductUploadError(null);
-                                                    productHandlers.productQuickUploadInputRef.current?.click();
-                                                } else {
-                                                    setIsProductPickerOpen(!isProductPickerOpen);
-                                                }
-                                            }}
-                                            onMouseEnter={() => {
-                                                setIsProductButtonHovered(true);
-                                                showHoverTooltip(productButtonRef.current!, 'product-tooltip');
-                                            }}
-                                            onMouseLeave={() => {
-                                                setIsProductButtonHovered(false);
-                                                hideHoverTooltip('product-tooltip');
-                                            }}
-                                            className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid ${selectedProduct ? 'hover:border-n-white' : ''} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
-                                            onPointerMove={onPointerMove}
-                                            onPointerEnter={onPointerEnter}
-                                            onPointerLeave={onPointerLeave}
-                                        >
-                                            {!selectedProduct && (
-                                                <>
-                                                    <div className="flex-1 flex items-center justify-center lg:mt-3">
-                                                        {isProductButtonHovered ? (
-                                                            <Plus className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
-                                                        ) : (
-                                                            <Package className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
-                                                        )}
-                                                    </div>
-                                                    <div className="hidden lg:flex items-center gap-1">
-                                                        <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
-                                                            Product
-                                                        </span>
-                                                    </div>
-                                                </>
-                                            )}
-                                            {selectedProduct && (
-                                                <>
-                                                    <img
-                                                        src={selectedProduct.imageUrl}
-                                                        alt={selectedProduct.name}
-                                                        loading="lazy"
-                                                        className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover"
-                                                        title={selectedProduct.name}
-                                                    />
-                                                    <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
-                                                        <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
-                                                            {selectedProduct.name}
-                                                        </span>
-                                                    </div>
-                                                </>
-                                            )}
-                                        </button>
-                                        {
-                                            selectedProduct && (
+                                            {selectedAvatar && (
                                                 <button
                                                     type="button"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        productHandlers.handleProductSelect(null);
+                                                        avatarHandlers.handleAvatarSelect(null);
                                                     }}
                                                     className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
-                                                    title="Remove product"
-                                                    aria-label="Remove product"
+                                                    title="Remove avatar"
+                                                    aria-label="Remove avatar"
                                                 >
                                                     <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
                                                 </button>
-                                            )
-                                        }
-                                        <TooltipPortal id="product-tooltip">
-                                            Product
-                                        </TooltipPortal>
-                                    </div >
+                                            )}
+                                            <TooltipPortal id="avatar-tooltip">
+                                                Avatar
+                                            </TooltipPortal>
+                                        </div>
 
-                                    {/* Style Button */}
-                                    < div className="relative" >
-                                        <button
-                                            type="button"
-                                            ref={styleButtonRef}
-                                            onMouseEnter={() => {
-                                                setIsStyleButtonHovered(true);
-                                                showHoverTooltip(styleButtonRef.current!, 'style-tooltip');
-                                            }}
-                                            onMouseLeave={() => {
-                                                setIsStyleButtonHovered(false);
-                                                hideHoverTooltip('style-tooltip');
-                                            }}
-                                            onClick={styleHandlers.handleStyleModalOpen}
-                                            className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
-                                            onPointerMove={onPointerMove}
-                                            onPointerEnter={onPointerEnter}
-                                            onPointerLeave={onPointerLeave}
-                                        >
-                                            <div className="flex-1 flex items-center justify-center lg:mt-3">
-                                                {isStyleButtonHovered ? (
-                                                    <LayoutGrid className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
-                                                ) : (
-                                                    <Palette className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
+
+
+
+                                        {/* Product Button */}
+                                        < div className="relative" >
+                                            <button
+                                                type="button"
+                                                ref={productButtonRef}
+                                                onClick={() => {
+                                                    setIsAvatarPickerOpen(false);
+                                                    if (productHandlers.storedProducts.length === 0) {
+                                                        productHandlers.setProductUploadError(null);
+                                                        productHandlers.productQuickUploadInputRef.current?.click();
+                                                    } else {
+                                                        setIsProductPickerOpen(!isProductPickerOpen);
+                                                    }
+                                                }}
+                                                onMouseEnter={() => {
+                                                    setIsProductButtonHovered(true);
+                                                    showHoverTooltip(productButtonRef.current!, 'product-tooltip');
+                                                }}
+                                                onMouseLeave={() => {
+                                                    setIsProductButtonHovered(false);
+                                                    hideHoverTooltip('product-tooltip');
+                                                }}
+                                                className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid ${selectedProduct ? 'hover:border-n-white' : ''} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                onPointerMove={onPointerMove}
+                                                onPointerEnter={onPointerEnter}
+                                                onPointerLeave={onPointerLeave}
+                                            >
+                                                {!selectedProduct && (
+                                                    <>
+                                                        <div className="flex-1 flex items-center justify-center lg:mt-3">
+                                                            {isProductButtonHovered ? (
+                                                                <Plus className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
+                                                            ) : (
+                                                                <Package className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
+                                                            )}
+                                                        </div>
+                                                        <div className="hidden lg:flex items-center gap-1">
+                                                            <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
+                                                                Product
+                                                            </span>
+                                                        </div>
+                                                    </>
                                                 )}
-                                            </div>
-                                            <div className="hidden lg:flex items-center gap-1">
-                                                <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
-                                                    Style
-                                                </span>
-                                            </div>
-                                        </button>
-                                        <TooltipPortal id="style-tooltip">
-                                            Style
-                                        </TooltipPortal>
+                                                {selectedProduct && (
+                                                    <>
+                                                        <img
+                                                            src={selectedProduct.imageUrl}
+                                                            alt={selectedProduct.name}
+                                                            loading="lazy"
+                                                            className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover"
+                                                            title={selectedProduct.name}
+                                                        />
+                                                        <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
+                                                            <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
+                                                                {selectedProduct.name}
+                                                            </span>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </button>
+                                            {
+                                                selectedProduct && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            productHandlers.handleProductSelect(null);
+                                                        }}
+                                                        className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
+                                                        title="Remove product"
+                                                        aria-label="Remove product"
+                                                    >
+                                                        <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
+                                                    </button>
+                                                )
+                                            }
+                                            <TooltipPortal id="product-tooltip">
+                                                Product
+                                            </TooltipPortal>
+                                        </div >
+
+                                        {/* Style Button */}
+                                        < div className="relative" >
+                                            <button
+                                                type="button"
+                                                ref={styleButtonRef}
+                                                onMouseEnter={() => {
+                                                    setIsStyleButtonHovered(true);
+                                                    showHoverTooltip(styleButtonRef.current!, 'style-tooltip');
+                                                }}
+                                                onMouseLeave={() => {
+                                                    setIsStyleButtonHovered(false);
+                                                    hideHoverTooltip('style-tooltip');
+                                                }}
+                                                onClick={styleHandlers.handleStyleModalOpen}
+                                                className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                onPointerMove={onPointerMove}
+                                                onPointerEnter={onPointerEnter}
+                                                onPointerLeave={onPointerLeave}
+                                            >
+                                                <div className="flex-1 flex items-center justify-center lg:mt-3">
+                                                    {isStyleButtonHovered ? (
+                                                        <LayoutGrid className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
+                                                    ) : (
+                                                        <Palette className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
+                                                    )}
+                                                </div>
+                                                <div className="hidden lg:flex items-center gap-1">
+                                                    <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
+                                                        Style
+                                                    </span>
+                                                </div>
+                                            </button>
+                                            <TooltipPortal id="style-tooltip">
+                                                Style
+                                            </TooltipPortal>
+                                        </div >
                                     </div >
                                 </div >
                             </div >
-                        </div >
 
-                        <div className="flex justify-end gap-3">
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                className={`${buttons.ghost} disabled:cursor-not-allowed disabled:opacity-60`}
-                                disabled={isLoading}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                className={`${buttons.primary} disabled:cursor-not-allowed disabled:opacity-60`}
-                                disabled={isLoading || !prompt.trim()}
-                            >
-                                <span className="text-theme-black">{isLoading ? 'Generating...' : 'Generate'}</span>
-                                <div className="flex items-center gap-1">
-                                    {isLoading ? (
-                                        <Loader2 className="w-4 h-4 animate-spin text-theme-black" />
-                                    ) : (
-                                        <Sparkles className="w-4 h-4 text-theme-black" />
-                                    )}
-                                    <span className="min-w-[0.75rem] inline-block text-center text-sm font-raleway font-medium text-theme-black">{batchSize}</span>
-                                </div>
-                            </button>
-                        </div>
-                    </form >
-                </div >
-            </div >
-            {/* Avatar Picker Portal */}
-            < AvatarPickerPortal
-                anchorRef={avatarButtonRef}
-                open={isAvatarPickerOpen}
-                onClose={() => setIsAvatarPickerOpen(false)}
-            >
-                <div className="min-w-[260px] space-y-2">
-                    <div className="flex items-center justify-between px-1">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setIsAvatarPickerOpen(false);
-                                navigate('/app/avatars');
-                            }}
-                            className="text-base font-raleway text-theme-text"
-                        >
-                            Your Avatars
-                        </button>
-                    </div>
-                    {avatarHandlers.storedAvatars.length > 0 ? (
-                        <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
-                            {avatarHandlers.storedAvatars.map(avatar => {
-                                const isActive = selectedAvatar?.id === avatar.id;
-                                return (
-                                    <div
-                                        key={avatar.id}
-                                        className="rounded-2xl border border-theme-mid px-3 py-2 transition-colors duration-200 group hover:border-theme-mid hover:bg-theme-text/10"
-                                    >
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                avatarHandlers.handleAvatarSelect(avatar);
-                                                setIsAvatarPickerOpen(false);
-                                            }}
-                                            className={`flex w-full items-center gap-3 ${isActive ? 'text-theme-text' : 'text-white'}`}
-                                        >
-                                            <img
-                                                src={avatar.imageUrl}
-                                                alt={avatar.name}
-                                                loading="lazy"
-                                                className="h-10 w-10 rounded-lg object-cover"
-                                            />
-                                            <div className="min-w-0 flex-1 text-left">
-                                                <p className="truncate text-sm font-raleway text-theme-white group-hover:text-n-text">
-                                                    {avatar.name}
-                                                </p>
-                                            </div>
-                                            {isActive && <div className="h-2 w-2 rounded-full bg-theme-text" />}
-                                        </button>
+                            <div className="flex justify-end gap-3">
+                                <button
+                                    type="button"
+                                    onClick={onClose}
+                                    className={`${buttons.ghost} disabled:cursor-not-allowed disabled:opacity-60`}
+                                    disabled={isLoading}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className={`${buttons.primary} disabled:cursor-not-allowed disabled:opacity-60`}
+                                    disabled={isLoading || !prompt.trim()}
+                                >
+                                    <span className="text-theme-black">{isLoading ? 'Generating...' : 'Generate'}</span>
+                                    <div className="flex items-center gap-1">
+                                        {isLoading ? (
+                                            <Loader2 className="w-4 h-4 animate-spin text-theme-black" />
+                                        ) : (
+                                            <Sparkles className="w-4 h-4 text-theme-black" />
+                                        )}
+                                        <span className="min-w-[0.75rem] inline-block text-center text-sm font-raleway font-medium text-theme-black">{batchSize}</span>
                                     </div>
-                                );
-                            })}
-                        </div>
-                    ) : (
-                        <div className="py-4 text-center">
-                            <p className="text-sm text-theme-light">No avatars found</p>
+                                </button>
+                            </div>
+                        </form >
+                    </div >
+                </div >
+                {/* Avatar Picker Portal */}
+                < AvatarPickerPortal
+                    anchorRef={avatarButtonRef}
+                    open={isAvatarPickerOpen}
+                    onClose={() => setIsAvatarPickerOpen(false)}
+                >
+                    <div className="min-w-[260px] space-y-2">
+                        <div className="flex items-center justify-between px-1">
                             <button
                                 type="button"
                                 onClick={() => {
                                     setIsAvatarPickerOpen(false);
                                     navigate('/app/avatars');
                                 }}
-                                className="mt-2 text-sm text-theme-text hover:underline"
+                                className="text-base font-raleway text-theme-text"
                             >
-                                Create one
+                                Your Avatars
                             </button>
                         </div>
-                    )}
-                </div>
-            </AvatarPickerPortal >
-
-            {/* Product Picker Portal */}
-            < AvatarPickerPortal
-                anchorRef={productButtonRef}
-                open={isProductPickerOpen}
-                onClose={() => setIsProductPickerOpen(false)}
-            >
-                <div className="min-w-[260px] space-y-2">
-                    <div className="flex items-center justify-between px-1">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setIsProductPickerOpen(false);
-                                navigate('/app/products');
-                            }}
-                            className="text-base font-raleway text-theme-text"
-                        >
-                            Your Products
-                        </button>
-                    </div>
-                    {productHandlers.storedProducts.length > 0 ? (
-                        <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
-                            {productHandlers.storedProducts.map(product => {
-                                const isActive = selectedProduct?.id === product.id;
-                                return (
-                                    <div
-                                        key={product.id}
-                                        className="rounded-2xl border border-theme-mid px-3 py-2 transition-colors duration-200 group hover:border-theme-mid hover:bg-theme-text/10"
-                                    >
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                productHandlers.handleProductSelect(product);
-                                                setIsProductPickerOpen(false);
-                                            }}
-                                            className={`flex w-full items-center gap-3 ${isActive ? 'text-theme-text' : 'text-white'}`}
+                        {avatarHandlers.storedAvatars.length > 0 ? (
+                            <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
+                                {avatarHandlers.storedAvatars.map(avatar => {
+                                    const isActive = selectedAvatar?.id === avatar.id;
+                                    return (
+                                        <div
+                                            key={avatar.id}
+                                            className="rounded-2xl border border-theme-mid px-3 py-2 transition-colors duration-200 group hover:border-theme-mid hover:bg-theme-text/10"
                                         >
-                                            <img
-                                                src={product.imageUrl}
-                                                alt={product.name}
-                                                loading="lazy"
-                                                className="h-10 w-10 rounded-lg object-cover"
-                                            />
-                                            <div className="min-w-0 flex-1 text-left">
-                                                <p className="truncate text-sm font-raleway text-theme-white group-hover:text-n-text">
-                                                    {product.name}
-                                                </p>
-                                            </div>
-                                            {isActive && <div className="h-2 w-2 rounded-full bg-theme-text" />}
-                                        </button>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    ) : (
-                        <div className="py-4 text-center">
-                            <p className="text-sm text-theme-light">No products found</p>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    avatarHandlers.handleAvatarSelect(avatar);
+                                                    setIsAvatarPickerOpen(false);
+                                                }}
+                                                className={`flex w-full items-center gap-3 ${isActive ? 'text-theme-text' : 'text-white'}`}
+                                            >
+                                                <img
+                                                    src={avatar.imageUrl}
+                                                    alt={avatar.name}
+                                                    loading="lazy"
+                                                    className="h-10 w-10 rounded-lg object-cover"
+                                                />
+                                                <div className="min-w-0 flex-1 text-left">
+                                                    <p className="truncate text-sm font-raleway text-theme-white group-hover:text-n-text">
+                                                        {avatar.name}
+                                                    </p>
+                                                </div>
+                                                {isActive && <div className="h-2 w-2 rounded-full bg-theme-text" />}
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="py-4 text-center">
+                                <p className="text-sm text-theme-light">No avatars found</p>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsAvatarPickerOpen(false);
+                                        navigate('/app/avatars');
+                                    }}
+                                    className="mt-2 text-sm text-theme-text hover:underline"
+                                >
+                                    Create one
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </AvatarPickerPortal >
+
+                {/* Product Picker Portal */}
+                < AvatarPickerPortal
+                    anchorRef={productButtonRef}
+                    open={isProductPickerOpen}
+                    onClose={() => setIsProductPickerOpen(false)}
+                >
+                    <div className="min-w-[260px] space-y-2">
+                        <div className="flex items-center justify-between px-1">
                             <button
                                 type="button"
                                 onClick={() => {
                                     setIsProductPickerOpen(false);
                                     navigate('/app/products');
                                 }}
-                                className="mt-2 text-sm text-theme-text hover:underline"
+                                className="text-base font-raleway text-theme-text"
                             >
-                                Create one
+                                Your Products
                             </button>
                         </div>
-                    )}
-                </div>
-            </AvatarPickerPortal >
+                        {productHandlers.storedProducts.length > 0 ? (
+                            <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
+                                {productHandlers.storedProducts.map(product => {
+                                    const isActive = selectedProduct?.id === product.id;
+                                    return (
+                                        <div
+                                            key={product.id}
+                                            className="rounded-2xl border border-theme-mid px-3 py-2 transition-colors duration-200 group hover:border-theme-mid hover:bg-theme-text/10"
+                                        >
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    productHandlers.handleProductSelect(product);
+                                                    setIsProductPickerOpen(false);
+                                                }}
+                                                className={`flex w-full items-center gap-3 ${isActive ? 'text-theme-text' : 'text-white'}`}
+                                            >
+                                                <img
+                                                    src={product.imageUrl}
+                                                    alt={product.name}
+                                                    loading="lazy"
+                                                    className="h-10 w-10 rounded-lg object-cover"
+                                                />
+                                                <div className="min-w-0 flex-1 text-left">
+                                                    <p className="truncate text-sm font-raleway text-theme-white group-hover:text-n-text">
+                                                        {product.name}
+                                                    </p>
+                                                </div>
+                                                {isActive && <div className="h-2 w-2 rounded-full bg-theme-text" />}
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="py-4 text-center">
+                                <p className="text-sm text-theme-light">No products found</p>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsProductPickerOpen(false);
+                                        navigate('/app/products');
+                                    }}
+                                    className="mt-2 text-sm text-theme-text hover:underline"
+                                >
+                                    Create one
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </AvatarPickerPortal >
 
-            {/* Style Selection Modal */}
-            {
-                styleHandlers.isStyleModalOpen && (
-                    <Suspense fallback={null}>
-                        <StyleSelectionModal
-                            open={styleHandlers.isStyleModalOpen}
-                            onClose={styleHandlers.handleStyleModalClose}
-                            styleHandlers={styleHandlers}
-                            onApplySelectedStyles={() => { }}
-                        />
-                    </Suspense>
-                )
-            }
+                {/* Style Selection Modal */}
+                {
+                    styleHandlers.isStyleModalOpen && (
+                        <Suspense fallback={null}>
+                            <StyleSelectionModal
+                                open={styleHandlers.isStyleModalOpen}
+                                onClose={styleHandlers.handleStyleModalClose}
+                                styleHandlers={styleHandlers}
+                                onApplySelectedStyles={() => { }}
+                            />
+                        </Suspense>
+                    )
+                }
 
-            {/* Hidden File Inputs */}
-            <input
-                ref={avatarHandlers.avatarQuickUploadInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarQuickUploadInput}
-                className="hidden"
-            />
-            <input
-                ref={productHandlers.productQuickUploadInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleProductQuickUploadInput}
-                className="hidden"
-            />
+                {/* Hidden File Inputs */}
+                <input
+                    ref={avatarHandlers.avatarQuickUploadInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarQuickUploadInput}
+                    className="hidden"
+                />
+                <input
+                    ref={productHandlers.productQuickUploadInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleProductQuickUploadInput}
+                    className="hidden"
+                />
 
-            {/* Creation Modals */}
-            {
-                avatarHandlers.isAvatarCreationModalOpen && (
-                    <Suspense fallback={null}>
-                        <AvatarCreationModal
-                            open={avatarHandlers.isAvatarCreationModalOpen}
-                            selection={avatarHandlers.avatarSelection}
-                            uploadError={avatarHandlers.avatarUploadError}
-                            isDragging={avatarHandlers.isDraggingAvatar}
-                            avatarName={avatarHandlers.avatarName}
-                            disableSave={!avatarHandlers.avatarSelection || !avatarHandlers.avatarName.trim()}
-                            onClose={avatarHandlers.handleAvatarCreationModalClose}
-                            onAvatarNameChange={avatarHandlers.setAvatarName}
-                            onSave={() => avatarHandlers.handleAvatarSave(avatarHandlers.avatarName, avatarHandlers.avatarSelection!)}
-                            onClearSelection={() => avatarHandlers.setAvatarSelection(null)}
-                            onProcessFile={avatarHandlers.processAvatarImageFile}
-                            onDragStateChange={avatarHandlers.setIsDraggingAvatar}
-                            onUploadError={avatarHandlers.setAvatarUploadError}
-                        />
-                    </Suspense>
-                )
-            }
+                {/* Creation Modals */}
+                {
+                    avatarHandlers.isAvatarCreationModalOpen && (
+                        <Suspense fallback={null}>
+                            <AvatarCreationModal
+                                open={avatarHandlers.isAvatarCreationModalOpen}
+                                selection={avatarHandlers.avatarSelection}
+                                uploadError={avatarHandlers.avatarUploadError}
+                                isDragging={avatarHandlers.isDraggingAvatar}
+                                avatarName={avatarHandlers.avatarName}
+                                disableSave={!avatarHandlers.avatarSelection || !avatarHandlers.avatarName.trim()}
+                                onClose={avatarHandlers.handleAvatarCreationModalClose}
+                                onAvatarNameChange={avatarHandlers.setAvatarName}
+                                onSave={() => avatarHandlers.handleAvatarSave(avatarHandlers.avatarName, avatarHandlers.avatarSelection!)}
+                                onClearSelection={() => avatarHandlers.setAvatarSelection(null)}
+                                onProcessFile={avatarHandlers.processAvatarImageFile}
+                                onDragStateChange={avatarHandlers.setIsDraggingAvatar}
+                                onUploadError={avatarHandlers.setAvatarUploadError}
+                            />
+                        </Suspense>
+                    )
+                }
 
-            {
-                productHandlers.isProductCreationModalOpen && (
-                    <Suspense fallback={null}>
-                        <ProductCreationModal
-                            open={productHandlers.isProductCreationModalOpen}
-                            selection={productHandlers.productSelection}
-                            uploadError={productHandlers.productUploadError}
-                            isDragging={productHandlers.isDraggingProduct}
-                            productName={productHandlers.productName}
-                            disableSave={!productHandlers.productSelection || !productHandlers.productName.trim()}
-                            onClose={productHandlers.handleProductCreationModalClose}
-                            onProductNameChange={productHandlers.setProductName}
-                            onSave={() => productHandlers.handleProductSave(productHandlers.productName, productHandlers.productSelection!)}
-                            onClearSelection={() => productHandlers.setProductSelection(null)}
-                            onProcessFile={productHandlers.processProductImageFile}
-                            onDragStateChange={productHandlers.setIsDraggingProduct}
-                            onUploadError={productHandlers.setProductUploadError}
-                        />
-                    </Suspense>
-                )
-            }
-        </div >,
+                {
+                    productHandlers.isProductCreationModalOpen && (
+                        <Suspense fallback={null}>
+                            <ProductCreationModal
+                                open={productHandlers.isProductCreationModalOpen}
+                                selection={productHandlers.productSelection}
+                                uploadError={productHandlers.productUploadError}
+                                isDragging={productHandlers.isDraggingProduct}
+                                productName={productHandlers.productName}
+                                disableSave={!productHandlers.productSelection || !productHandlers.productName.trim()}
+                                onClose={productHandlers.handleProductCreationModalClose}
+                                onProductNameChange={productHandlers.setProductName}
+                                onSave={() => productHandlers.handleProductSave(productHandlers.productName, productHandlers.productSelection!)}
+                                onClearSelection={() => productHandlers.setProductSelection(null)}
+                                onProcessFile={productHandlers.processProductImageFile}
+                                onDragStateChange={productHandlers.setIsDraggingProduct}
+                                onUploadError={productHandlers.setProductUploadError}
+                            />
+                        </Suspense>
+                    )
+                }
+            </div>
+        </>,
         document.body
     );
 };
