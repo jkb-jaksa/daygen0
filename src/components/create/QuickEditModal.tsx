@@ -161,7 +161,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
             savePrompt(savePromptModalState.prompt.trim());
             showToast('Prompt saved!');
             setSavePromptModalState(null);
-        } catch (err) {
+        } catch {
             showToast('Failed to save prompt');
         }
     };
@@ -265,7 +265,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
             avatarHandlers.loadStoredAvatars();
             productHandlers.loadStoredProducts();
         }
-    }, [isOpen, initialPrompt]);
+    }, [isOpen, initialPrompt, avatarHandlers, productHandlers]);
 
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
