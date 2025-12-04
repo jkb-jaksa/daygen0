@@ -66,8 +66,11 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
       combined.unshift(recentVoice);
     }
 
+    // Filter out any voices without a valid voice_id
+    const validVoices = combined.filter((voice) => voice.voice_id);
+
     const groups: Record<string, ElevenLabsVoiceSummary[]> = {};
-    combined.forEach((voice) => {
+    validVoices.forEach((voice) => {
       const category = voice.category || "premade";
       if (!groups[category]) {
         groups[category] = [];
@@ -84,7 +87,7 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
         className={`${inputs.base} ${className}`}
         disabled
         value=""
-        onChange={() => {}}
+        onChange={() => { }}
       >
         <option value="">Loading voices...</option>
       </select>
@@ -98,7 +101,7 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
         className={`${inputs.base} ${className} border-red-500/50 text-red-400`}
         disabled
         value=""
-        onChange={() => {}}
+        onChange={() => { }}
       >
         <option value="">Error: {error}</option>
       </select>
@@ -118,7 +121,7 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
       {Object.entries(groupedVoices).map(([category, categoryVoices]) => (
         <optgroup key={category} label={category.toUpperCase()}>
           {categoryVoices.map((voice) => (
-            <option key={voice.voice_id} value={voice.voice_id}>
+            <option key={`${category}-${voice.voice_id}`} value={voice.voice_id}>
               {voice.name}
             </option>
           ))}

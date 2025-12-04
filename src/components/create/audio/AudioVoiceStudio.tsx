@@ -8,6 +8,10 @@ import {
   Sparkles,
   Activity,
   Loader2,
+  Download,
+  Play,
+  Pause,
+  CheckCircle2,
 } from "lucide-react";
 import { useToast } from "../../../hooks/useToast";
 import {
@@ -42,14 +46,19 @@ const formatDuration = (ms: number) => {
     .padStart(2, "0")}`;
 };
 
-const base64ToObjectUrl = (base64: string, contentType: string) => {
+const base64ToBlob = (base64: string, contentType: string) => {
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i += 1) {
     bytes[i] = binary.charCodeAt(i);
   }
-  const blob = new Blob([bytes], { type: contentType });
-  return URL.createObjectURL(blob);
+  return new Blob([bytes], { type: contentType });
+};
+
+type GeneratedVariation = {
+  id: string;
+  url: string;
+  blob: Blob;
 };
 
 export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
@@ -86,9 +95,10 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
     useState<ElevenLabsVoiceSummary | null>(null);
   const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null);
   const [isGeneratingSpeech, setIsGeneratingSpeech] = useState(false);
-  const [generatedPreviewUrl, setGeneratedPreviewUrl] = useState<string | null>(
-    null,
-  );
+  const [variations, setVariations] = useState<GeneratedVariation[]>([]);
+  const [selectedVariationId, setSelectedVariationId] = useState<string | null>(null);
+  const [playingVariationId, setPlayingVariationId] = useState<string | null>(null);
+  const audioRefs = useRef<Record<string, HTMLAudioElement | null>>({});
   const [designError, setDesignError] = useState<string | null>(null);
   const [isUploadingVoiceClone, setIsUploadingVoiceClone] = useState(false);
   const [isSavingRecordingClone, setIsSavingRecordingClone] = useState(false);
@@ -145,11 +155,9 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
 
   useEffect(() => {
     return () => {
-      if (generatedPreviewUrl) {
-        URL.revokeObjectURL(generatedPreviewUrl);
-      }
+      variations.forEach((v) => URL.revokeObjectURL(v.url));
     };
-  }, [generatedPreviewUrl]);
+  }, [variations]);
 
   useEffect(() => {
     if (designError && script.trim()) {
@@ -187,13 +195,13 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
       blob: null,
       error: null,
     }));
-    if (generatedPreviewUrl) {
-      URL.revokeObjectURL(generatedPreviewUrl);
-    }
-    setGeneratedPreviewUrl(null);
+    variations.forEach((v) => URL.revokeObjectURL(v.url));
+    setVariations([]);
+    setSelectedVariationId(null);
+    setPlayingVariationId(null);
     setDesignError(null);
     setCloneError(null);
-  }, [generatedPreviewUrl, recordingState.audioUrl, resetUpload, onBack]);
+  }, [recordingState.audioUrl, resetUpload, onBack, variations]);
 
   const handleVoicesLoaded = useCallback(
     (voices: ElevenLabsVoiceSummary[]) => {
@@ -326,21 +334,44 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
     setIsGeneratingSpeech(true);
     setDesignError(null);
 
+    // Clear previous variations
+    variations.forEach((v) => URL.revokeObjectURL(v.url));
+    setVariations([]);
+    setSelectedVariationId(null);
+    setPlayingVariationId(null);
+
     try {
-      const result = await generateElevenLabsSpeech({
-        text: script,
-        voiceId: selectedVoiceId ?? undefined,
-        modelId,
-      });
-      if (generatedPreviewUrl) {
-        URL.revokeObjectURL(generatedPreviewUrl);
-      }
-      const objectUrl = base64ToObjectUrl(
-        result.audioBase64,
-        result.contentType,
+      // Generate 3 variations concurrently
+      const promises = Array(3).fill(null).map(() =>
+        generateElevenLabsSpeech({
+          text: script,
+          voiceId: selectedVoiceId ?? undefined,
+          modelId,
+        })
       );
-      setGeneratedPreviewUrl(objectUrl);
-      showToast("Voice preview ready.");
+
+      const results = await Promise.all(promises);
+
+      const newVariations: GeneratedVariation[] = results.map((result, index) => {
+        console.log(`Variation ${index} received:`, {
+          contentType: result.contentType,
+          base64Length: result.audioBase64?.length,
+          base64Prefix: result.audioBase64?.substring(0, 50)
+        });
+
+        const blob = base64ToBlob(result.audioBase64, result.contentType);
+        return {
+          id: `var-${Date.now()}-${index}`,
+          url: URL.createObjectURL(blob),
+          blob,
+        };
+      });
+
+      setVariations(newVariations);
+      if (newVariations.length > 0) {
+        setSelectedVariationId(newVariations[0].id);
+      }
+      showToast("Voice variations ready.");
     } catch (error) {
       const message =
         error instanceof Error
@@ -352,21 +383,70 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
       setIsGeneratingSpeech(false);
     }
   }, [
-    generatedPreviewUrl,
-    modelId,
     script,
     selectedVoiceId,
+    modelId,
     showToast,
+    variations,
   ]);
+
+  const togglePlayVariation = async (id: string) => {
+    const audio = audioRefs.current[id];
+    if (!audio) return;
+
+    try {
+      if (playingVariationId === id) {
+        audio.pause();
+        setPlayingVariationId(null);
+      } else {
+        // Stop currently playing if any
+        if (playingVariationId && audioRefs.current[playingVariationId]) {
+          const prevAudio = audioRefs.current[playingVariationId];
+          if (prevAudio) {
+            prevAudio.pause();
+            prevAudio.currentTime = 0;
+          }
+        }
+
+        // Update state first to reflect intent
+        setPlayingVariationId(id);
+
+        // Reset time to 0 to ensure full playback
+        audio.currentTime = 0;
+        await audio.play();
+      }
+    } catch (error) {
+      // Ignore AbortError which happens if playback is interrupted by another play/pause
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('Playback interrupted (AbortError)');
+        return;
+      }
+      console.error('Playback failed:', error);
+      setPlayingVariationId(null);
+      showToast("Could not play audio.");
+    }
+  };
+
+  const handleDownload = () => {
+    const selected = variations.find(v => v.id === selectedVariationId);
+    if (!selected) return;
+
+    const a = document.createElement('a');
+    a.href = selected.url;
+    a.download = `generated-voice-${Date.now()}.mp3`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
 
   const handleClearScript = useCallback(() => {
     setScript("");
-    if (generatedPreviewUrl) {
-      URL.revokeObjectURL(generatedPreviewUrl);
-    }
-    setGeneratedPreviewUrl(null);
+    variations.forEach((v) => URL.revokeObjectURL(v.url));
+    setVariations([]);
+    setSelectedVariationId(null);
+    setPlayingVariationId(null);
     setDesignError(null);
-  }, [generatedPreviewUrl]);
+  }, [variations]);
 
   const startRecording = useCallback(async () => {
     try {
@@ -417,11 +497,11 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
         error: null,
       });
       const startTime = Date.now();
-    recordingIntervalRef.current = window.setInterval(() => {
-      setRecordingState((prev) => {
-        if (!prev.isRecording) {
-          return prev;
-        }
+      recordingIntervalRef.current = window.setInterval(() => {
+        setRecordingState((prev) => {
+          if (!prev.isRecording) {
+            return prev;
+          }
           const elapsedMs = Date.now() - startTime;
           const maxDuration = MAX_RECORDING_MINUTES * 60 * 1000;
           if (elapsedMs >= maxDuration) {
@@ -663,9 +743,8 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
         <div className="flex flex-col items-center gap-4">
           <div className="flex items-center gap-3 rounded-full border border-theme-dark bg-theme-black/50 px-4 py-2 text-sm font-raleway text-theme-text">
             <span
-              className={`size-2 rounded-full ${
-                recordingState.isRecording ? "animate-pulse bg-red-500" : "bg-theme-white/50"
-              }`}
+              className={`size-2 rounded-full ${recordingState.isRecording ? "animate-pulse bg-red-500" : "bg-theme-white/50"
+                }`}
             />
             <span>{recordingStatusLabel}</span>
           </div>
@@ -897,14 +976,67 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
             {designError}
           </p>
         )}
-        {generatedPreviewUrl && (
-          <div className="rounded-3xl border border-theme-dark bg-theme-black/40 p-6">
-            <audio
-              src={generatedPreviewUrl}
-              controls
-              className="w-full"
-              style={{ borderRadius: "12px", height: "46px" }}
-            />
+        {variations.length > 0 && (
+          <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-3">
+              {variations.map((variation, index) => (
+                <div
+                  key={variation.id}
+                  className={`relative flex flex-col gap-3 rounded-3xl border p-4 transition-all duration-200 ${selectedVariationId === variation.id
+                    ? "border-cyan-400 bg-theme-black/60 shadow-[0_0_20px_-5px_rgba(34,211,238,0.3)]"
+                    : "border-theme-dark bg-theme-black/40 hover:border-theme-white/30"
+                    }`}
+                  onClick={() => setSelectedVariationId(variation.id)}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-raleway font-bold text-theme-white/80">
+                      Variation {index + 1}
+                    </span>
+                    {selectedVariationId === variation.id && (
+                      <CheckCircle2 className="size-4 text-cyan-400" />
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        togglePlayVariation(variation.id);
+                      }}
+                      className="grid size-10 place-items-center rounded-full bg-theme-white/10 text-theme-white transition-colors hover:bg-theme-white/20"
+                    >
+                      {playingVariationId === variation.id ? (
+                        <Pause className="size-4 fill-current" />
+                      ) : (
+                        <Play className="size-4 fill-current ml-0.5" />
+                      )}
+                    </button>
+                    <div className="h-1 flex-1 overflow-hidden rounded-full bg-theme-white/10">
+                      {/* Simple visualizer placeholder */}
+                      <div className="h-full w-2/3 bg-gradient-to-r from-cyan-500 to-blue-500 opacity-50" />
+                    </div>
+                  </div>
+
+                  <audio
+                    ref={(el) => { audioRefs.current[variation.id] = el; }}
+                    src={variation.url}
+                    onEnded={() => setPlayingVariationId(null)}
+                    className="hidden"
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-center pt-2">
+              <button
+                className={`${buttons.primary} inline-flex items-center gap-2`}
+                onClick={handleDownload}
+                disabled={!selectedVariationId}
+              >
+                <Download className="size-4" />
+                Download Selected MP3
+              </button>
+            </div>
           </div>
         )}
       </div>
