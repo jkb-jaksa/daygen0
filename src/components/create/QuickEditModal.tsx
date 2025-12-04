@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { X, Sparkles, Edit, Loader2, Plus, Settings, User, Package, Scan, Minus, Palette, LayoutGrid, Copy, Bookmark, BookmarkPlus } from 'lucide-react';
@@ -244,6 +244,8 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         }
     };
 
+    const handleReferenceAdd = useCallback(() => { }, []);
+
     const {
         referenceFiles,
         referencePreviews,
@@ -251,7 +253,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         clearReference,
         openFileInput,
         fileInputRef,
-    } = useReferenceHandlers(selectedAvatar, selectedProduct, () => { }, 1);
+    } = useReferenceHandlers(selectedAvatar, selectedProduct, handleReferenceAdd, 1);
 
     useEffect(() => {
         if (isOpen) {
@@ -260,12 +262,18 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
             setTimeout(() => {
                 inputRef.current?.focus();
             }, 100);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen]); // Removed initialPrompt from dependency to prevent reset
 
+    useEffect(() => {
+        if (isOpen) {
             // Load avatars and products
             avatarHandlers.loadStoredAvatars();
             productHandlers.loadStoredProducts();
         }
-    }, [isOpen, initialPrompt, avatarHandlers, productHandlers]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen, avatarHandlers.loadStoredAvatars, productHandlers.loadStoredProducts]);
 
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
@@ -300,6 +308,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
+        e.stopPropagation();
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSubmit(e);

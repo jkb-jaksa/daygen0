@@ -25,7 +25,6 @@ import { getPersistedValue } from '../../lib/clientStorage';
 import { STORAGE_CHANGE_EVENT } from '../../utils/storageEvents';
 import { useBadgeNavigation } from './hooks/useBadgeNavigation';
 import { scrollLockExemptAttr, useGlobalScrollLock } from '../../hooks/useGlobalScrollLock';
-import { useRecraftImageGeneration } from '../../hooks/useRecraftImageGeneration';
 import { useGeminiImageGeneration } from '../../hooks/useGeminiImageGeneration';
 
 // Lazy load VerticalGalleryNav
@@ -97,7 +96,7 @@ const buildModalVariateJobId = (item: GalleryImageLike): string => {
 const FullImageModal = memo(() => {
   const { state, filteredItems, addImage, closeFullSize, moveFullSize, openFullSize } = useGallery();
   const { addActiveJob, updateJobStatus, removeActiveJob } = useGeneration();
-  const { variateImage: variateImageHook } = useRecraftImageGeneration();
+
   const { generateImage: generateGeminiImage } = useGeminiImageGeneration();
   const {
     handleToggleLike,
@@ -130,33 +129,7 @@ const FullImageModal = memo(() => {
   const userKey = user?.id || user?.email || "anon";
   const { savePrompt, isPromptSaved, removePrompt } = useSavedPrompts(userKey);
   const { showToast } = useToast();
-  const startVariateJob = useCallback((image: GalleryImageLike) => {
-    const syntheticId = buildModalVariateJobId(image);
-    const timestamp = Date.now();
 
-    addActiveJob({
-      id: syntheticId,
-      prompt: image.prompt || 'Image variation',
-      model: image.model || 'recraft-variation',
-      status: 'running',
-      progress: 5,
-      backendProgress: 5,
-      backendProgressUpdatedAt: timestamp,
-      startedAt: timestamp,
-      jobId: syntheticId,
-    });
-
-    return syntheticId;
-  }, [addActiveJob]);
-
-  const finalizeVariateJob = useCallback((jobId: string, status: 'completed' | 'failed') => {
-    updateJobStatus(jobId, status, {
-      progress: status === 'completed' ? 100 : undefined,
-      backendProgress: status === 'completed' ? 100 : undefined,
-      backendProgressUpdatedAt: Date.now(),
-    });
-    removeActiveJob(jobId);
-  }, [removeActiveJob, updateJobStatus]);
 
   const startQuickEditJob = useCallback((image: GalleryImageLike, prompt: string) => {
     const syntheticId = buildModalVariateJobId(image); // Reuse ID builder for consistency
@@ -467,64 +440,7 @@ const FullImageModal = memo(() => {
     }
   }, [fullSizeImage, handleTogglePublic]);
 
-  // Handle variate image
-  const handleVariateClick = useCallback(async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
 
-    if (!fullSizeImage || ('type' in fullSizeImage && fullSizeImage.type === 'video')) {
-      return;
-    }
-
-    if (!fullSizeImage.url) {
-      showToast('No image URL available');
-      return;
-    }
-
-    let syntheticJobId: string | null = null;
-
-    const normalizedPrompt = fullSizeImage.prompt?.trim();
-    const promptForRequest = normalizedPrompt && normalizedPrompt.length > 0 ? normalizedPrompt : 'Variation';
-    const modelForRequest = fullSizeImage.model || 'recraft-v3';
-
-    try {
-      syntheticJobId = startVariateJob(fullSizeImage);
-      const variations = await variateImageHook({
-        imageUrl: fullSizeImage.url,
-        prompt: promptForRequest,
-        model: modelForRequest,
-      });
-
-      if (variations.length > 0) {
-        // Add each variation to the gallery
-        for (const variation of variations) {
-          await addImage({
-            url: variation.url,
-            prompt: variation.prompt?.trim() && variation.prompt.trim().length > 0
-              ? variation.prompt.trim()
-              : promptForRequest,
-            model: variation.model || modelForRequest,
-            timestamp: new Date().toISOString(),
-            ownerId: fullSizeImage.ownerId,
-            isLiked: false,
-            isPublic: false,
-            r2FileId: variation.r2FileId,
-          });
-        }
-        showToast(`Generated ${variations.length} variation${variations.length > 1 ? 's' : ''}`);
-        finalizeVariateJob(syntheticJobId, 'completed');
-      } else {
-        showToast('Failed to generate variation');
-        finalizeVariateJob(syntheticJobId, 'failed');
-      }
-    } catch (error) {
-      debugError('Failed to variate image:', error);
-      showToast('Failed to generate variation');
-      if (syntheticJobId) {
-        finalizeVariateJob(syntheticJobId, 'failed');
-      }
-    }
-  }, [fullSizeImage, variateImageHook, addImage, showToast, startVariateJob, finalizeVariateJob]);
 
   // Handle delete
   const handleDeleteClick = useCallback((e: React.MouseEvent) => {
@@ -602,7 +518,7 @@ const FullImageModal = memo(() => {
     if (fullSizeImage) {
       setQuickEditModalState({
         isOpen: true,
-        initialPrompt: fullSizeImage.prompt || '',
+        initialPrompt: '',
       });
     }
   }, [fullSizeImage]);
@@ -965,7 +881,6 @@ const FullImageModal = memo(() => {
                         isFullSize={true}
                         anyMenuOpen={editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId}
                         onMakeVideo={handleVideo}
-                        onMakeVariation={!isVideo ? handleVariateClick : undefined}
                         onQuickEdit={handleQuickEdit}
                       />
                     </Suspense>
@@ -991,7 +906,6 @@ const FullImageModal = memo(() => {
                       isFullSize={true}
                       anyMenuOpen={editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId}
                       onMakeVideo={handleVideo}
-                      onMakeVariation={!isVideo ? handleVariateClick : undefined}
                       onQuickEdit={handleQuickEdit}
                     />
                   </Suspense>

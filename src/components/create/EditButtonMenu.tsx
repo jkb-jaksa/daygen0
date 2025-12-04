@@ -1,6 +1,6 @@
 import React, { memo, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Edit, Camera, Shuffle } from 'lucide-react';
+import { Edit, Camera } from 'lucide-react';
 
 import { tooltips } from '../../styles/designSystem';
 import type { GalleryImageLike, GalleryVideoLike } from './types';
@@ -12,7 +12,6 @@ interface EditButtonMenuProps {
   isGallery?: boolean;
   anyMenuOpen?: boolean;
   onMakeVideo: () => void;
-  onMakeVariation?: (event: React.MouseEvent) => void;
   onQuickEdit?: () => void;
 }
 
@@ -23,14 +22,11 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
   isGallery = false,
   anyMenuOpen = false,
   onMakeVideo,
-  onMakeVariation,
   onQuickEdit,
 }) => {
   const tooltipBaseId = useMemo(() => image.jobId || image.r2FileId || image.url || menuId, [image, menuId]);
   const makeVideoTooltipId = `${tooltipBaseId}-make-video`;
-  const makeVariationTooltipId = `${tooltipBaseId}-make-variation`;
   const editTooltipId = `${tooltipBaseId}-edit`;
-  const isVideo = 'type' in image && image.type === 'video';
 
   const showTooltip = useCallback((target: HTMLElement, tooltipId: string) => {
     if (typeof document === 'undefined') return;
@@ -57,11 +53,6 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
     event.stopPropagation();
     onMakeVideo();
   }, [onMakeVideo]);
-
-  const handleMakeVariationClick = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-    onMakeVariation?.(event);
-  }, [onMakeVariation]);
 
   return (
     <>
@@ -105,25 +96,6 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
         >
           <Edit className="w-4 h-4 text-theme-white transition-colors duration-100 group-hover/edit-action:text-red-500" />
         </button>
-        {!isVideo && onMakeVariation && (
-          <button
-            type="button"
-            className={`image-action-btn ${isFullSize ? 'image-action-btn--fullsize' : isGallery ? 'image-action-btn--gallery' : ''} parallax-large transition-opacity duration-100 group/variation-action master-action-create-image text-theme-white ${anyMenuOpen
-              ? 'opacity-100 pointer-events-auto'
-              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-              }`}
-            aria-label="Create variation"
-            onClick={handleMakeVariationClick}
-            onMouseEnter={(e) => {
-              showTooltip(e.currentTarget, makeVariationTooltipId);
-            }}
-            onMouseLeave={() => {
-              hideTooltip(makeVariationTooltipId);
-            }}
-          >
-            <Shuffle className="w-4 h-4 text-theme-white transition-colors duration-100 group-hover/variation-action:text-red-500" />
-          </button>
-        )}
       </div>
       {createPortal(
         <div
@@ -142,16 +114,6 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
           style={{ zIndex: 9999 }}
         >
           Edit
-        </div>,
-        document.body,
-      )}
-      {onMakeVariation && !isVideo && createPortal(
-        <div
-          data-tooltip-for={makeVariationTooltipId}
-          className={`${tooltips.base} fixed`}
-          style={{ zIndex: 9999 }}
-        >
-          Create variation
         </div>,
         document.body,
       )}
