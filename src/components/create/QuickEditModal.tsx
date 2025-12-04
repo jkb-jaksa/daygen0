@@ -112,7 +112,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         try {
             await navigator.clipboard.writeText(text);
             showToast('Prompt copied!');
-        } catch (err) {
+        } catch {
             showToast('Failed to copy prompt');
         }
     };
@@ -130,7 +130,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                 savePrompt(text.trim());
                 showToast('Prompt saved!');
             }
-        } catch (err) {
+        } catch {
             showToast('Failed to save prompt');
         }
     };

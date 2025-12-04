@@ -27,7 +27,6 @@ import {
   Info,
   Trash2,
   Upload,
-  Mic,
 } from 'lucide-react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useCreateGenerationController } from './hooks/useCreateGenerationController';
