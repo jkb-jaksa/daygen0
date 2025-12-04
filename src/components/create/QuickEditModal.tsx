@@ -255,7 +255,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
 
     useEffect(() => {
         if (isOpen) {
-            setPrompt('');
+            setPrompt(initialPrompt || '');
             // Focus input after a short delay to allow animation
             setTimeout(() => {
                 inputRef.current?.focus();
