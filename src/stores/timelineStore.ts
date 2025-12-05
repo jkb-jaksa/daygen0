@@ -6,6 +6,7 @@ export interface Segment {
     sceneNumber: number;
     script: string;
     visualPrompt: string;
+    motionPrompt?: string;
     voiceUrl: string; // R2 URL (Speech)
     audioUrl?: string; // Optional background music
     imageUrl: string; // R2 URL (Flux)
@@ -35,6 +36,7 @@ interface TimelineState {
     updateSegmentImage: (segmentId: string, newImageUrl: string) => void;
     updateSegmentScript: (segmentId: string, newScript: string) => void;
     updateSegmentAudio: (segmentId: string, audioUrl: string, duration: number) => void;
+    updateSegmentPrompt: (segmentId: string, field: 'script' | 'visualPrompt' | 'motionPrompt', value: string) => void;
 }
 
 export const useTimelineStore = create<TimelineState>()(
@@ -88,6 +90,14 @@ export const useTimelineStore = create<TimelineState>()(
                 seg.audioUrl = audioUrl; // Background music if any? No, voiceUrl usually.
                 seg.voiceUrl = audioUrl; // Mapped to voiceUrl usually
                 seg.duration = duration;
+            }
+        }),
+        updateSegmentPrompt: (id, field, value) => set((state) => {
+            const seg = state.segments.find(s => s.id === id);
+            if (seg) {
+                if (field === 'script') seg.script = value;
+                if (field === 'visualPrompt') seg.visualPrompt = value;
+                if (field === 'motionPrompt') seg.motionPrompt = value;
             }
         }),
     }))

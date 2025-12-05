@@ -1,5 +1,5 @@
 import React from 'react';
-import { RefreshCw, Image as ImageIcon, Volume2, Loader2, Save } from 'lucide-react';
+import { RefreshCw, Image as ImageIcon, Volume2, Loader2 } from 'lucide-react';
 import { useTimelineStore, type Segment } from '../../stores/timelineStore';
 import { regenerateSegment } from '../../api/timeline';
 import clsx from 'clsx';
