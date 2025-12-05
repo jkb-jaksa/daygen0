@@ -165,7 +165,7 @@ const GridVideoItem = memo<GridVideoItemProps>(({
 const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, onFocusPrompt, filterIds }) => {
   const { user, storagePrefix } = useAuth();
   const { showToast } = useToast();
-  const { state, toggleItemSelection, isLoading, filteredItems: contextFilteredItems, addImage, openFullSize } = useGallery();
+  const { state, toggleItemSelection, isLoading, filteredItems: contextFilteredItems, addImage, openFullSize, loadMore, hasMore } = useGallery();
   const { isFullSizeOpen } = state;
 
   const { generateImage: generateGeminiImage } = useGeminiImageGeneration();
@@ -196,6 +196,30 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     goToPublicGallery,
     goToModelGallery,
   } = useBadgeNavigation();
+
+  // Infinite Scroll Observer
+  const observerTarget = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoading) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => {
+      if (observerTarget.current) {
+        observer.unobserve(observerTarget.current);
+      }
+    };
+  }, [hasMore, isLoading, loadMore]);
 
   console.log('[ResultsGrid] Render state:', {
     hasQuickEditState: !!quickEditModalState,
@@ -425,8 +449,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     const defaultOffset = placement === 'above' ? 28 : 8;
     const offset = options?.offset ?? defaultOffset;
     const top = placement === 'above' ? rect.top - offset : rect.bottom + offset;
-    tooltip.style.top = `${top}px`;
-    tooltip.style.left = `${rect.left + rect.width / 2}px`;
+    tooltip.style.top = `${top} px`;
+    tooltip.style.left = `${rect.left + rect.width / 2} px`;
     tooltip.style.transform = 'translateX(-50%)';
 
     tooltip.classList.remove('opacity-0');
@@ -818,7 +842,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
               <div className="flex justify-center gap-3">
                 <button
                   onClick={handleSavePromptModalClose}
-                  className={`${buttons.ghost}`}
+                  className={`${buttons.ghost} `}
                 >
                   Cancel
                 </button>
@@ -865,10 +889,10 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
             const shouldShowPromptDetails = Boolean(promptForDisplay);
             const isPromptExpanded = !isVideoItem || expandedVideoPrompts.has(baseActionTooltipId);
             const promptBarVisibilityClass = isVideoItem
-              ? `transition-transform ${isPromptExpanded
+              ? `transition - transform ${isPromptExpanded
                 ? 'translate-y-0 opacity-100 pointer-events-auto'
                 : 'translate-y-full opacity-0 pointer-events-none'
-              }`
+              } `
               : isMenuActive
                 ? 'opacity-100 pointer-events-auto'
                 : 'opacity-0 group-hover:opacity-100 pointer-events-auto';
@@ -879,7 +903,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                 className={`group flex flex-col overflow-hidden rounded-[24px] border transition-all duration-100 shadow-lg parallax-large cursor-pointer relative ${isSelected
                   ? 'border-theme-white bg-theme-black hover:bg-theme-dark'
                   : 'border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid'
-                  } ${isMenuActive ? 'parallax-active' : ''} ${shouldDim ? 'opacity-50' : ''}`}
+                  } ${isMenuActive ? 'parallax-active' : ''} ${shouldDim ? 'opacity-50' : ''} `}
                 onClick={() => {
                   console.log('[ResultsGrid] Card div onClick fired', { index, url: item.url });
                   handleItemClick(item, index);
@@ -939,7 +963,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                         <div className={`${isMenuActive
                           ? 'opacity-100'
                           : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
-                          }`}>
+                          } `}>
                           <Suspense fallback={null}>
                             <EditButtonMenu
                               menuId={`gallery-actions-${index}-${item.url}`}
@@ -1066,7 +1090,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                   ) : (
                     <img
                       src={item.url}
-                      alt={item.prompt || `Generated ${index + 1}`}
+                      alt={item.prompt || `Generated ${index + 1} `}
                       loading="lazy"
                       className="relative z-[1] h-full w-full object-cover"
                     />
@@ -1159,7 +1183,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                   <div key={refIdx} className="relative">
                                     <img
                                       src={ref}
-                                      alt={`Reference ${refIdx + 1}`}
+                                      alt={`Reference ${refIdx + 1} `}
                                       loading="lazy"
                                       className="w-6 h-6 rounded object-cover border border-theme-mid cursor-pointer hover:border-theme-text transition-colors duration-200"
                                       onClick={(e) => {
@@ -1306,7 +1330,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                   {/* Tooltips rendered via portal to avoid clipping */}
                   {
                     promptForActions && shouldShowPromptDetails && !isGalleryView && (() => {
-                      const tooltipId = `copy-${item.jobId || item.r2FileId || index}`;
+                      const tooltipId = `copy - ${item.jobId || item.r2FileId || index} `;
                       return (
                         <>
                           {createPortal(
@@ -1321,7 +1345,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                           )}
                           {createPortal(
                             <div
-                              data-tooltip-for={`save-${tooltipId}`}
+                              data-tooltip-for={`save - ${tooltipId} `}
                               className={`${tooltips.base} fixed`}
                               style={{ zIndex: 9999 }}
                             >
@@ -1336,9 +1360,9 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
 
                   {
                     (() => {
-                      const deleteId = `delete-${baseActionTooltipId}`;
-                      const likeId = `like-${baseActionTooltipId}`;
-                      const moreId = `more-${baseActionTooltipId}`;
+                      const deleteId = `delete -${baseActionTooltipId} `;
+                      const likeId = `like - ${baseActionTooltipId} `;
+                      const moreId = `more - ${baseActionTooltipId} `;
                       return (
                         <>
                           {createPortal(
@@ -1423,7 +1447,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                             <p className="leading-relaxed break-words whitespace-pre-wrap max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-theme-mid/40 scrollbar-track-transparent">
                               {promptForDisplay}
                               {promptForActions && (() => {
-                                const tooltipId = `copy-gallery-${item.jobId || item.r2FileId || index}`;
+                                const tooltipId = `copy - gallery - ${item.jobId || item.r2FileId || index} `;
                                 return (
                                   <>
                                     <button
@@ -1449,10 +1473,10 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                         e.stopPropagation();
                                       }}
                                       onMouseEnter={(e) => {
-                                        showHoverTooltip(e.currentTarget, `save-${tooltipId}`, { placement: 'above', offset: 2 });
+                                        showHoverTooltip(e.currentTarget, `save - ${tooltipId} `, { placement: 'above', offset: 2 });
                                       }}
                                       onMouseLeave={() => {
-                                        hideHoverTooltip(`save-${tooltipId}`);
+                                        hideHoverTooltip(`save - ${tooltipId} `);
                                       }}
                                       className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
                                     >
@@ -1476,7 +1500,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                 {/* Tooltips rendered via portal to avoid clipping - Gallery view */}
                 {
                   promptForActions && shouldShowPromptDetails && isGalleryView && (() => {
-                    const tooltipId = `copy-gallery-${item.jobId || item.r2FileId || index}`;
+                    const tooltipId = `copy - gallery - ${item.jobId || item.r2FileId || index} `;
                     return (
                       <>
                         {createPortal(
@@ -1491,7 +1515,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                         )}
                         {createPortal(
                           <div
-                            data-tooltip-for={`save-${tooltipId}`}
+                            data-tooltip-for={`save - ${tooltipId} `}
                             className={`${tooltips.base} fixed`}
                             style={{ zIndex: 9999 }}
                           >
@@ -1506,7 +1530,18 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
               </div >
             );
           })}
-        </div >
+        </div>
+
+        {hasMore && (
+          <div
+            ref={observerTarget}
+            className="flex justify-center pt-8 pb-12 w-full min-h-[60px]"
+          >
+            {isLoading && (
+              <div className="w-8 h-8 border-2 border-theme-white/30 border-t-theme-white rounded-full animate-spin"></div>
+            )}
+          </div>
+        )}
         {!isGenerationCategory && (
           <Suspense fallback={null}>
             <GenerationProgress />

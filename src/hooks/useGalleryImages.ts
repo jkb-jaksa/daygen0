@@ -33,6 +33,7 @@ export interface GalleryImagesState {
   error: string | null;
   hasBase64Images: boolean;
   needsMigration: boolean;
+  nextCursor?: string | null;
 }
 
 const getImageKey = (image: GalleryImageLike): string | null => {
@@ -71,6 +72,12 @@ export const useGalleryImages = () => {
     hasBase64Images: false,
     needsMigration: false,
   });
+
+  // Keep a ref to state to access latest values in useCallback without adding to dependencies
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   // Convert R2File response to GalleryImageLike format
   const convertR2FileToGalleryItem = useCallback(
@@ -199,7 +206,7 @@ export const useGalleryImages = () => {
   }, [isR2Url]);
 
   // Fetch gallery images from backend
-  const fetchGalleryImages = useCallback(async () => {
+  const fetchGalleryImages = useCallback(async (options: { cursor?: string | null; reset?: boolean } = {}) => {
     if (!token) {
       setState(prev => ({ ...prev, images: [], error: 'Not authenticated' }));
       return;
@@ -215,12 +222,26 @@ export const useGalleryImages = () => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      // Load local images first for immediate display
-      const localImages = await loadLocalImages();
+      // Load local images first for immediate display (only on reset/initial load)
+      let localImages: GalleryImageLike[] = [];
+      if (options.reset !== false) {
+        localImages = await loadLocalImages();
+      } else {
+        // If loading more, keep existing images from state to merge against
+        localImages = stateRef.current.images;
+      }
+
       const hasBase64Images = localImages.some(image => isBase64Url(image.url));
 
       // Fetch from R2 API
-      const apiUrl = getApiUrl('/api/r2files');
+      const query = new URLSearchParams();
+      // Default limit 50
+      query.append('limit', '50');
+      if (options.cursor) {
+        query.append('cursor', options.cursor);
+      }
+
+      const apiUrl = getApiUrl(`/api/r2files?${query.toString()}`);
       const response = await fetch(apiUrl, {
         method: 'GET',
         headers: {
@@ -233,11 +254,24 @@ export const useGalleryImages = () => {
         throw new Error(`Failed to fetch gallery images: ${response.status}`);
       }
 
-      const data = (await parseJsonSafe(response)) as { items?: R2FileResponse[] };
+      const data = (await parseJsonSafe(response)) as { items?: R2FileResponse[], nextCursor?: string | null };
       const r2Images = data.items?.map(convertR2FileToGalleryItem) || [];
+      const nextCursor = data.nextCursor || null;
 
-      // Merge R2 images with local cache, prioritizing R2 URLs
-      const mergedImages = mergeImages(r2Images, localImages);
+      // Merge R2 images with local cache/state
+      // If reset=true (default), we merge R2 page 1 with all Local images
+      // If reset=false (load more), we append R2 page N to current State images
+      let mergedImages: GalleryImageLike[];
+
+      if (options.reset === false) {
+        // APPEND logic for "Load More"
+        // We simply take the current images and add the new R2 images at the end
+        mergedImages = [...localImages, ...r2Images];
+      } else {
+        // MERGE logic for "Reset/Initial Load"
+        // This preserves the existing "prioritize R2 but keep local" logic which might prepend
+        mergedImages = mergeImages(r2Images, localImages);
+      }
 
       // Remove duplicates
       const seen = new Set<string>();
@@ -253,16 +287,14 @@ export const useGalleryImages = () => {
         return true;
       });
 
-      // Update local storage to remove:
-      // 1. Base64 images that now have R2 equivalents
-      // 2. R2 images that are deleted (not in the R2 list)
-      if (storagePrefix) {
+      // Update local storage only on reset (page 1) to avoid blowing it up or handling complex partials
+      if (storagePrefix && options.reset !== false) {
         try {
           const r2UrlSet = new Set(r2Images.map(img => img.url?.trim()).filter(Boolean));
           const updatedLocalImages = localImages.filter(image => {
             const imageUrl = image.url?.trim();
 
-            // Remove R2 images that are not in the R2 list (deleted)
+            // Remove R2 images that are not in the R2 list (deleted) - strict on page 1
             if (imageUrl && isR2Url(imageUrl) && !r2UrlSet.has(imageUrl)) {
               return false;
             }
@@ -282,20 +314,14 @@ export const useGalleryImages = () => {
         }
       }
 
-      console.log('[Gallery] Migration check:', {
-        hasBase64Images,
-        r2ImagesLength: r2Images.length,
-        needsMigration: hasBase64Images && r2Images.length > 0,
-        localImagesCount: localImages.length,
-        base64Count: localImages.filter(img => isBase64Url(img.url)).length
-      });
-
-      if (storagePrefix) {
+      // Persist gallery snapshot (top 50-100 items)
+      if (storagePrefix && options.reset !== false) {
         try {
+          const snapshot = dedupedImages.slice(0, 100);
           await setPersistedValue(
             storagePrefix,
             'gallery',
-            serializeGallery(dedupedImages),
+            serializeGallery(snapshot),
           );
         } catch (error) {
           debugError('Failed to persist gallery snapshot:', error);
@@ -308,26 +334,30 @@ export const useGalleryImages = () => {
         error: null,
         hasBase64Images,
         needsMigration: hasBase64Images && r2Images.length > 0,
+        nextCursor,
       });
     } catch (error) {
       // Fallback to local images if R2 fetch fails
-      const localImages = await loadLocalImages();
-      const hasBase64Images = localImages.some(image => isBase64Url(image.url));
+      if (options.reset !== false) {
+        const localImages = await loadLocalImages();
+        const hasBase64Images = localImages.some(image => isBase64Url(image.url));
 
-      console.log('[Gallery] Fallback migration check:', {
-        hasBase64Images,
-        needsMigration: hasBase64Images,
-        localImagesCount: localImages.length,
-        base64Count: localImages.filter(img => isBase64Url(img.url)).length
-      });
-
-      setState({
-        images: localImages,
-        isLoading: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch gallery images',
-        hasBase64Images,
-        needsMigration: hasBase64Images,
-      });
+        setState(prev => ({
+          ...prev,
+          images: localImages,
+          isLoading: false,
+          error: error instanceof Error ? error.message : 'Failed to fetch gallery images',
+          hasBase64Images,
+          needsMigration: hasBase64Images,
+        }));
+      } else {
+        // If load more failed, just stop loading and keep current state
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          error: error instanceof Error ? error.message : 'Failed to load more images',
+        }));
+      }
     } finally {
       isFetchingRef.current = false;
     }
@@ -521,11 +551,19 @@ export const useGalleryImages = () => {
     }
   }, [token, fetchGalleryImages]);
 
+  const loadMore = useCallback(() => {
+    if (state.nextCursor && !state.isLoading) {
+      fetchGalleryImages({ cursor: state.nextCursor, reset: false });
+    }
+  }, [state.nextCursor, state.isLoading, fetchGalleryImages]);
+
   return {
     ...state,
     fetchGalleryImages,
     deleteImage,
     updateImages,
     removeImages,
+    loadMore,
+    hasMore: !!state.nextCursor,
   };
 };

@@ -408,6 +408,8 @@ type GalleryContextType = {
   refresh: () => Promise<void>;
   hasBase64Images: boolean;
   needsMigration: boolean;
+  loadMore: () => void;
+  hasMore: boolean;
 };
 
 const GalleryContext = createContext<GalleryContextType | null>(null);
@@ -431,6 +433,8 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     updateImages: persistImageUpdates,
     removeImages: persistRemoveImages,
     deleteImage: deleteImageFromService,
+    loadMore,
+    hasMore,
   } = useGalleryImages();
   const generation = useGeneration();
   const stateRef = useRef(state);
@@ -1321,6 +1325,8 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     refresh: fetchGalleryImages,
     hasBase64Images,
     needsMigration,
+    loadMore,
+    hasMore,
   }), [
     state,
     setImages,
@@ -1372,6 +1378,8 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     fetchGalleryImages,
     hasBase64Images,
     needsMigration,
+    loadMore,
+    hasMore,
   ]);
 
   return (
