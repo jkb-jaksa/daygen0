@@ -90,16 +90,6 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
                         const job = await getJob(jobId);
                         if (job.status === 'COMPLETED' && job.metadata?.response) {
                             const segments = (job.metadata.response as any).segments;
-                            const updatedSegment = segments.find((s: any) => s.index === segment.sceneNumber); // sceneNumber matches index property? sceneNumber is typically 1-based or 0-based? 
-                            // In timelineStore: activeSegmentIndex starts at 0. sceneNumber usually 1-based?
-                            // Let's check `segments` in store. TimelineService uses `index` (0-based) for DB and logic. 
-                            // segment.sceneNumber might be display only? 
-                            // In `SceneBlock`, we used `index` from findIndex. 
-                            // `updatedSegment` in backend response has `index`.
-                            // Let's use `index` property if possible. 
-                            // But `segment` interface in frontend has `sceneNumber`. 
-                            // Let's trust `updatedSegment.index` matches `segment.id` lookup or `segment.sceneNumber - 1`.
-                            // Or simpler: match by ID? The `_syncJobMetadata` adds `id`.
                             const matched = segments.find((s: any) => s.id === segment.id);
 
                             if (matched && matched.videoUrl) {
