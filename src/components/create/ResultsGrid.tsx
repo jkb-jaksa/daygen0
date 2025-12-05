@@ -626,7 +626,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       reader.readAsDataURL(file);
     });
 
-  const handleQuickEditSubmit = useCallback(async ({ prompt, referenceFiles }: QuickEditOptions) => {
+  const handleQuickEditSubmit = useCallback(async ({ prompt, referenceFiles, avatarImageUrl, productImageUrl }: QuickEditOptions) => {
     if (!quickEditModalState?.item || !quickEditModalState.item.url) {
       showToast('No image URL available');
       return;
@@ -643,11 +643,25 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     try {
       const references = [item.url.split('?')[0]]; // Strip query params for original quality
 
+      // Add avatar and product image URLs as references (hidden from UI but used for generation)
+      if (avatarImageUrl) {
+        references.push(avatarImageUrl);
+      }
+      if (productImageUrl) {
+        references.push(productImageUrl);
+      }
+
       // Add all reference files (up to 13 since original + 13 = 14 max for Gemini 3 Pro)
       if (referenceFiles && referenceFiles.length > 0) {
-        for (const file of referenceFiles) {
-          const referenceDataUrl = await fileToDataUrl(file);
-          references.push(referenceDataUrl);
+        for (const referenceItem of referenceFiles) {
+          if (typeof referenceItem === 'string') {
+            // URL string - use directly
+            references.push(referenceItem);
+          } else {
+            // File object - convert to DataURL
+            const referenceDataUrl = await fileToDataUrl(referenceItem);
+            references.push(referenceDataUrl);
+          }
         }
       }
 

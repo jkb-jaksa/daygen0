@@ -156,7 +156,7 @@ function MasterAvatarCreationOptionsComponent({
               {/* Avatar name overlay */}
               <div className="absolute bottom-0 left-0 right-0 z-10">
                 <div className="PromptDescriptionBar rounded-b-2xl px-4 py-2.5">
-                  <div className="flex items-center gap-2 h-[32px]">
+                  <div className="flex items-center gap-2 min-h-[32px]">
                     {isEditingName ? (
                       <>
                         <input
@@ -183,14 +183,16 @@ function MasterAvatarCreationOptionsComponent({
                       </>
                     ) : (
                       <>
-                        <p className="flex-1 h-[32px] flex items-center text-base font-raleway font-normal text-theme-text px-3">
+                        <p
+                          className="flex-1 text-base font-raleway font-normal text-theme-text px-3 break-words line-clamp-2"
+                          title={avatarName}
+                        >
                           {avatarName || "Enter your name..."}
                         </p>
                         <button
                           type="button"
-                          className={`relative z-10 flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-lg text-theme-white/70 hover:text-theme-text hover:bg-theme-white/10 transition-all duration-100 pointer-events-auto ${
-                            showEditIcon ? 'opacity-100' : 'opacity-0'
-                          }`}
+                          className={`relative z-10 flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-lg text-theme-white/70 hover:text-theme-text hover:bg-theme-white/10 transition-all duration-100 pointer-events-auto ${showEditIcon ? 'opacity-100' : 'opacity-0'
+                            }`}
                           onClick={() => setIsEditingName(true)}
                           aria-label="Edit avatar name"
                         >
@@ -218,11 +220,10 @@ function MasterAvatarCreationOptionsComponent({
           <div className="flex flex-col sm:flex-row gap-6 w-full">
             <div className="flex-1">
               <div
-                className={`relative overflow-hidden border-2 border-dashed rounded-2xl p-12 text-center transition-colors duration-200 cursor-pointer ${
-                  isDragging
+                className={`relative overflow-hidden border-2 border-dashed rounded-2xl p-12 text-center transition-colors duration-200 cursor-pointer ${isDragging
                     ? "border-theme-text drag-active"
                     : "border-theme-white/30 hover:border-theme-text/50"
-                }`}
+                  }`}
                 onClick={() => fileInputRef.current?.click()}
                 onDragEnter={handleDragEnter}
                 onDragOver={handleDragOver}
@@ -273,9 +274,8 @@ function MasterAvatarCreationOptionsComponent({
             </div>
             <div className="flex-1">
               <div
-                className={`relative overflow-hidden border-2 border-dashed rounded-2xl p-12 text-center transition-colors duration-200 ${
-                  "border-theme-white/30 hover:border-theme-text/50"
-                }`}
+                className={`relative overflow-hidden border-2 border-dashed rounded-2xl p-12 text-center transition-colors duration-200 ${"border-theme-white/30 hover:border-theme-text/50"
+                  }`}
               >
                 <div className="pointer-events-none absolute -top-24 right-0 h-48 w-48 rounded-full opacity-60 blur-3xl bg-gradient-to-br from-cyan-300 via-cyan-400 to-cyan-500" />
                 <div className="relative z-10">

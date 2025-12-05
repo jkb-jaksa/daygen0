@@ -592,7 +592,7 @@ const FullImageModal = memo(() => {
       return;
     }
 
-    const { prompt, referenceFiles, aspectRatio, batchSize, avatarId, productId, styleId } = options;
+    const { prompt, referenceFiles, aspectRatio, batchSize, avatarId, productId, styleId, avatarImageUrl, productImageUrl } = options;
 
     // Close modal immediately
     setQuickEditModalState(null);
@@ -600,17 +600,31 @@ const FullImageModal = memo(() => {
     // Determine references - start with the original image being edited
     const references: string[] = [fullSizeImage.url.split('?')[0]];
 
+    // Add avatar and product image URLs as references (hidden from UI but used for generation)
+    if (avatarImageUrl) {
+      references.push(avatarImageUrl);
+    }
+    if (productImageUrl) {
+      references.push(productImageUrl);
+    }
+
     // Add all additional reference files (up to 13, since original image + 13 = 14 max for Gemini 3 Pro)
     if (referenceFiles && referenceFiles.length > 0) {
-      for (const referenceFile of referenceFiles) {
+      for (const referenceItem of referenceFiles) {
         try {
-          const base64 = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(referenceFile);
-          });
-          references.push(base64);
+          if (typeof referenceItem === 'string') {
+            // URL string - use directly
+            references.push(referenceItem);
+          } else {
+            // File object - convert to base64
+            const base64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(referenceItem);
+            });
+            references.push(base64);
+          }
         } catch (e) {
           debugError('Failed to convert reference file', e);
         }

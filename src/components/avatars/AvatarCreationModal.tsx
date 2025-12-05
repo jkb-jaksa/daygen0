@@ -40,7 +40,11 @@ function AvatarCreationModalComponent({
   }
 
   return (
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-theme-black/80 px-4 py-4">
+    <div
+      className="fixed inset-0 z-[10000] flex items-center justify-center bg-theme-black/80 px-4 py-4"
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
       <div className={`relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-[32px] shadow-2xl ${glass.promptDark}`}>
         <button
           type="button"
