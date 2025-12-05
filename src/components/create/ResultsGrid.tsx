@@ -31,6 +31,7 @@ const ModelBadge = lazy(() => import('../ModelBadge'));
 const AvatarBadge = lazy(() => import('../avatars/AvatarBadge'));
 const ProductBadge = lazy(() => import('../products/ProductBadge'));
 const StyleBadge = lazy(() => import('../styles/StyleBadge'));
+const AspectRatioBadge = lazy(() => import('../shared/AspectRatioBadge').then(m => ({ default: m.AspectRatioBadge })));
 const PublicBadge = lazy(() => import('./PublicBadge'));
 const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
 import QuickEditModal, { type QuickEditOptions } from './QuickEditModal';
@@ -1289,6 +1290,12 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                         />
                                       </Suspense>
                                     )}
+
+                                    {item.aspectRatio && (
+                                      <Suspense fallback={null}>
+                                        <AspectRatioBadge aspectRatio={item.aspectRatio} size="sm" />
+                                      </Suspense>
+                                    )}
                                   </div>
                                 )}
                               </div>
@@ -1337,6 +1344,12 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                           e.stopPropagation();
                                         }}
                                       />
+                                    </Suspense>
+                                  )}
+
+                                  {item.aspectRatio && (
+                                    <Suspense fallback={null}>
+                                      <AspectRatioBadge aspectRatio={item.aspectRatio} size="sm" />
                                     </Suspense>
                                   )}
 
