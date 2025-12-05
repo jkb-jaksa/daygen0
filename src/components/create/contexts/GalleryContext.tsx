@@ -37,6 +37,7 @@ type GalleryState = {
   isFullSizeOpen: boolean;
   fullSizeImage: GalleryImageLike | GalleryVideoLike | null;
   fullSizeIndex: number;
+  initialVideoTime: number | null;
   folders: Folder[];
   isBulkMode: boolean;
   imageActionMenu: { id: string; anchor: HTMLElement | null } | null;
@@ -67,7 +68,7 @@ type GalleryAction =
   | { type: 'CLEAR_SELECTION' }
   | { type: 'SET_SELECTED_IMAGES_FOR_FOLDER'; payload: string[] }
   | { type: 'SET_FULL_SIZE_OPEN'; payload: boolean }
-  | { type: 'SET_FULL_SIZE_IMAGE'; payload: { image: GalleryImageLike | GalleryVideoLike | null; index: number } }
+  | { type: 'SET_FULL_SIZE_IMAGE'; payload: { image: GalleryImageLike | GalleryVideoLike | null; index: number; initialTime?: number } }
   | { type: 'SET_FOLDERS'; payload: Folder[] }
   | { type: 'ADD_FOLDER'; payload: Folder }
   | { type: 'UPDATE_FOLDER'; payload: { id: string; updates: Partial<Folder> } }
@@ -105,6 +106,7 @@ const initialState: GalleryState = {
   isFullSizeOpen: false,
   fullSizeImage: null,
   fullSizeIndex: 0,
+  initialVideoTime: null,
   folders: [],
   isBulkMode: false,
   imageActionMenu: null,
@@ -311,6 +313,7 @@ function galleryReducer(state: GalleryState, action: GalleryAction): GalleryStat
         ...state,
         fullSizeImage: action.payload.image,
         fullSizeIndex: action.payload.index,
+        initialVideoTime: action.payload.initialTime ?? null,
       };
     case 'SET_SELECTED_IMAGES_FOR_FOLDER':
       return { ...state, selectedImagesForFolder: action.payload };
@@ -372,7 +375,7 @@ type GalleryContextType = {
   clearSelection: () => void;
   setSelectedImagesForFolder: (imageUrls: string[]) => void;
   setFullSizeOpen: (open: boolean) => void;
-  setFullSizeImage: (image: GalleryImageLike | GalleryVideoLike | null, index: number) => void;
+  setFullSizeImage: (image: GalleryImageLike | GalleryVideoLike | null, index: number, initialTime?: number) => void;
   setFolders: (folders: Folder[]) => void;
   addFolder: (folder: Folder) => void;
   updateFolder: (id: string, updates: Partial<Folder>) => void;
@@ -391,7 +394,7 @@ type GalleryContextType = {
   setDownloadConfirmation: (confirmation: DownloadConfirmationState) => void;
   setNewFolderDialog: (open: boolean) => void;
   setAddToFolderDialog: (open: boolean) => void;
-  openFullSize: (item: GalleryImageLike | GalleryVideoLike, index?: number) => void;
+  openFullSize: (item: GalleryImageLike | GalleryVideoLike, index?: number, initialTime?: number) => void;
   openFullSizeById: (identifier: string) => boolean;
   closeFullSize: () => void;
   moveFullSize: (delta: number) => void;
@@ -451,6 +454,15 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     return images.find(image => matchGalleryItemId(image, identifier)) ?? null;
   }, []);
 
+  const findVideoById = useCallback((identifier: string) => {
+    if (!identifier) {
+      return null;
+    }
+
+    const { videos } = stateRef.current;
+    return videos.find(video => matchGalleryItemId(video, identifier)) ?? null;
+  }, []);
+
   const setImages = useCallback((images: GalleryImageLike[]) => {
     dispatch({ type: 'SET_IMAGES', payload: images });
   }, []);
@@ -478,8 +490,12 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
   }, [findImageById, persistImageUpdates]);
 
   const updateVideo = useCallback((id: string, updates: Partial<GalleryVideoLike>) => {
+    const targetVideo = stateRef.current.videos.find(video => matchGalleryItemId(video, id));
+    if (targetVideo) {
+      persistImageUpdates([targetVideo.url], updates as Partial<GalleryImageLike>);
+    }
     dispatch({ type: 'UPDATE_VIDEO', payload: { id, updates } });
-  }, []);
+  }, [persistImageUpdates]);
 
   const removeImage = useCallback(async (id: string) => {
     const targetImage = findImageById(id);
@@ -495,8 +511,13 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const deleteImage = useCallback(async (id: string) => {
+    // Try to find as image first, then as video
     const targetImage = findImageById(id);
-    const apiIdentifier = targetImage?.r2FileId ?? id;
+    const targetVideo = targetImage ? null : findVideoById(id);
+    const targetItem = targetImage ?? targetVideo;
+    const isVideo = targetVideo !== null;
+
+    const apiIdentifier = targetItem?.r2FileId ?? id;
 
     if (!apiIdentifier) {
       return false;
@@ -507,13 +528,18 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
       return false;
     }
 
-    if (targetImage) {
-      persistRemoveImages([targetImage.url]);
+    if (targetItem) {
+      persistRemoveImages([targetItem.url]);
     }
 
-    dispatch({ type: 'REMOVE_IMAGE', payload: id });
+    // Dispatch appropriate action based on item type
+    if (isVideo) {
+      dispatch({ type: 'REMOVE_VIDEO', payload: id });
+    } else {
+      dispatch({ type: 'REMOVE_IMAGE', payload: id });
+    }
     return true;
-  }, [deleteImageFromService, findImageById, persistRemoveImages]);
+  }, [deleteImageFromService, findImageById, findVideoById, persistRemoveImages]);
 
   const setFilters = useCallback((filters: Partial<GalleryFilters>) => {
     dispatch({ type: 'SET_FILTERS', payload: filters });
@@ -544,13 +570,14 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'SET_FULL_SIZE_OPEN', payload: open });
   }, []);
 
-  const setFullSizeImage = useCallback((image: GalleryImageLike | GalleryVideoLike | null, index: number) => {
-    console.log('[GalleryContext] setFullSizeImage', { 
-      hasImage: !!image, 
-      imageUrl: image?.url, 
-      index 
+  const setFullSizeImage = useCallback((image: GalleryImageLike | GalleryVideoLike | null, index: number, initialTime?: number) => {
+    console.log('[GalleryContext] setFullSizeImage', {
+      hasImage: !!image,
+      imageUrl: image?.url,
+      index,
+      initialTime
     });
-    dispatch({ type: 'SET_FULL_SIZE_IMAGE', payload: { image, index } });
+    dispatch({ type: 'SET_FULL_SIZE_IMAGE', payload: { image, index, initialTime } });
   }, []);
 
   useEffect(() => {
@@ -575,7 +602,7 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
   // Load folders from storage on mount
   useEffect(() => {
     if (!storagePrefix || hasFoldersLoadedRef.current) return;
-    
+
     const loadFolders = async () => {
       try {
         const storedFolders = await getPersistedValue<SerializedFolder[]>(storagePrefix, 'folders');
@@ -592,13 +619,13 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
         debugError('Failed to load folders from storage', error);
       }
     };
-    
+
     void loadFolders();
   }, [storagePrefix]);
 
   const persistFolders = useCallback(async (folders: Folder[]) => {
     if (!storagePrefix) return;
-    
+
     try {
       const serialised: SerializedFolder[] = folders.map(folder => ({
         id: folder.id,
@@ -806,7 +833,7 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
             throw new Error(`Failed to fetch image: ${response.status}`);
           }
           blob = await response.blob();
-          
+
           // Successfully fetched, create blob URL and download
           const url = window.URL.createObjectURL(blob);
           const link = document.createElement('a');
@@ -825,14 +852,14 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
         } catch (fetchError) {
           // Fetch failed (likely CORS), try canvas-based download
           debugWarn('Fetch failed, trying canvas-based download:', fetchError);
-          
+
           // For images, use canvas-based approach
           if (!('type' in item && item.type === 'video')) {
             try {
               await new Promise<void>((resolve, reject) => {
                 const img = new Image();
                 img.crossOrigin = 'anonymous';
-                
+
                 img.onload = () => {
                   try {
                     const canvas = document.createElement('canvas');
@@ -844,40 +871,40 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
                       return;
                     }
                     ctx.drawImage(img, 0, 0);
-                    
+
                     canvas.toBlob((blob) => {
                       if (!blob) {
                         reject(new Error('Failed to create blob from canvas'));
                         return;
                       }
-                      
+
                       const url = window.URL.createObjectURL(blob);
                       const link = document.createElement('a');
                       link.href = url;
-                      
+
                       const timestamp = new Date(item.timestamp).toISOString().split('T')[0];
                       const modelSlug = item.model ? `_${item.model.replace(/[^a-zA-Z0-9]/g, '_')}` : '';
                       const extension = item.url.split('.').pop()?.split('?')[0] || 'jpg';
-                      
+
                       link.download = `daygen_${timestamp}${modelSlug}_${index + 1}.${extension}`;
                       document.body.appendChild(link);
                       link.click();
                       document.body.removeChild(link);
                       window.URL.revokeObjectURL(url);
-                      
+
                       resolve();
                     }, 'image/jpeg', 0.95);
                   } catch (canvasError) {
                     reject(canvasError);
                   }
                 };
-                
+
                 img.onerror = () => {
                   reject(new Error('Failed to load image for canvas download'));
                 };
-                
+
                 img.src = item.url;
-                
+
                 // Timeout after 10 seconds
                 setTimeout(() => {
                   reject(new Error('Canvas download timeout'));
@@ -905,7 +932,7 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
             document.body.removeChild(link);
           }
         }
-        
+
         // Add small delay between downloads to avoid browser throttling
         if (index < items.length - 1) {
           await new Promise(resolve => setTimeout(resolve, 200));
@@ -962,25 +989,25 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
 
   const filteredItems = useMemo(() => {
     const allItems = [...state.images, ...state.videos];
-    
+
     return allItems.filter(item => {
       // Filter by liked
       if (state.filters.liked && !item.isPublic) return false;
-      
+
       // Filter by public
       if (state.filters.public && !item.isPublic) return false;
-      
+
       // Filter by models
       if (state.filters.models.length > 0 && item.model && !state.filters.models.includes(item.model)) {
         return false;
       }
-      
+
       // Filter by types
       if (state.filters.types.length > 0) {
         const itemType = 'type' in item ? 'video' : 'image';
         if (!state.filters.types.includes(itemType)) return false;
       }
-      
+
       // Filter by aspect ratios
       if (state.filters.aspectRatios.length > 0) {
         const itemAspectRatio = normalizeAspectRatio(item.aspectRatio);
@@ -1000,22 +1027,22 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
         });
         if (!matchesFilter) return false;
       }
-      
+
       // Filter by folder
       if (state.filters.folder) {
         // This would need to be implemented based on how folders are structured
         // For now, we'll skip this filter
       }
-      
+
       // Filter by avatar
       if (state.filters.avatar && item.avatarId !== state.filters.avatar) return false;
-      
+
       // Filter by product
       if (state.filters.product && item.productId !== state.filters.product) return false;
-      
+
       // Filter by style
       if (state.filters.style && item.styleId !== state.filters.style) return false;
-      
+
       return true;
     });
   }, [state.images, state.videos, state.filters]);
@@ -1259,16 +1286,16 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     setSelectedItems,
     toggleItemSelection,
     clearSelection,
-      setSelectedImagesForFolder,
+    setSelectedImagesForFolder,
     setFullSizeOpen,
     setFullSizeImage,
     setFolders,
     addFolder,
     updateFolder,
     removeFolder,
-      addImagesToFolder,
-      removeImagesFromFolder,
-      toggleImagesInFolder,
+    addImagesToFolder,
+    removeImagesFromFolder,
+    toggleImagesInFolder,
     setBulkMode,
     setImageActionMenu,
     setBulkActionsMenu,
@@ -1289,8 +1316,8 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     hasSelection,
     isLoading: isGalleryLoading,
     error: galleryError,
-      getGalleryItemsByIds,
-      bulkDownloadItems,
+    getGalleryItemsByIds,
+    bulkDownloadItems,
     refresh: fetchGalleryImages,
     hasBase64Images,
     needsMigration,
@@ -1310,16 +1337,16 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     setSelectedItems,
     toggleItemSelection,
     clearSelection,
-      setSelectedImagesForFolder,
+    setSelectedImagesForFolder,
     setFullSizeOpen,
     setFullSizeImage,
     setFolders,
     addFolder,
     updateFolder,
     removeFolder,
-      addImagesToFolder,
-      removeImagesFromFolder,
-      toggleImagesInFolder,
+    addImagesToFolder,
+    removeImagesFromFolder,
+    toggleImagesInFolder,
     setBulkMode,
     setImageActionMenu,
     setBulkActionsMenu,
@@ -1340,8 +1367,8 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     hasSelection,
     isGalleryLoading,
     galleryError,
-      getGalleryItemsByIds,
-      bulkDownloadItems,
+    getGalleryItemsByIds,
+    bulkDownloadItems,
     fetchGalleryImages,
     hasBase64Images,
     needsMigration,

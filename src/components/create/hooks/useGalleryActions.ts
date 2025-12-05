@@ -40,6 +40,7 @@ export function useGalleryActions() {
     removeVideo,
     toggleImagesInFolder,
     updateImage,
+    updateVideo,
     deleteImage: deleteGalleryImage,
     openFullSize,
     filteredItems,
@@ -298,7 +299,16 @@ export function useGalleryActions() {
     const { publishConfirmation } = state;
     try {
       if (publishConfirmation.imageUrl) {
-        await updateImage(publishConfirmation.imageUrl, { isPublic: true });
+        // Check if the item is a video
+        const items = getGalleryItemsByIds([publishConfirmation.imageUrl]);
+        const item = items[0];
+        const isVideo = item && 'type' in item && item.type === 'video';
+
+        if (isVideo) {
+          updateVideo(publishConfirmation.imageUrl, { isPublic: true });
+        } else {
+          await updateImage(publishConfirmation.imageUrl, { isPublic: true });
+        }
         debugLog('Published item:', publishConfirmation.imageUrl);
       }
     } catch (error) {
@@ -306,7 +316,7 @@ export function useGalleryActions() {
     } finally {
       setPublishConfirmation({ show: false, count: 0 });
     }
-  }, [state, updateImage, setPublishConfirmation]);
+  }, [state, updateImage, updateVideo, getGalleryItemsByIds, setPublishConfirmation]);
 
   // Cancel publish
   const cancelPublish = useCallback(() => {
@@ -318,7 +328,16 @@ export function useGalleryActions() {
     const { unpublishConfirmation } = state;
     try {
       if (unpublishConfirmation.imageUrl) {
-        await updateImage(unpublishConfirmation.imageUrl, { isPublic: false });
+        // Check if the item is a video
+        const items = getGalleryItemsByIds([unpublishConfirmation.imageUrl]);
+        const item = items[0];
+        const isVideo = item && 'type' in item && item.type === 'video';
+
+        if (isVideo) {
+          updateVideo(unpublishConfirmation.imageUrl, { isPublic: false });
+        } else {
+          await updateImage(unpublishConfirmation.imageUrl, { isPublic: false });
+        }
         debugLog('Unpublished item:', unpublishConfirmation.imageUrl);
       }
     } catch (error) {
@@ -326,7 +345,7 @@ export function useGalleryActions() {
     } finally {
       setUnpublishConfirmation({ show: false, count: 0 });
     }
-  }, [state, updateImage, setUnpublishConfirmation]);
+  }, [state, updateImage, updateVideo, getGalleryItemsByIds, setUnpublishConfirmation]);
 
   // Cancel unpublish
   const cancelUnpublish = useCallback(() => {
@@ -341,12 +360,17 @@ export function useGalleryActions() {
         debugError('Cannot toggle like: item has no identifier');
         return;
       }
-      await updateImage(itemId, { isLiked: !item.isLiked });
+
+      if ('type' in item && item.type === 'video') {
+        updateVideo(itemId, { isLiked: !item.isLiked });
+      } else {
+        await updateImage(itemId, { isLiked: !item.isLiked });
+      }
       debugLog('Toggled like status for item:', itemId);
     } catch (error) {
       debugError('Error toggling like status:', error);
     }
-  }, [updateImage]);
+  }, [updateImage, updateVideo]);
 
   // Show delete confirmation for bulk delete
   const handleBulkDelete = useCallback((imageIds: string[]) => {

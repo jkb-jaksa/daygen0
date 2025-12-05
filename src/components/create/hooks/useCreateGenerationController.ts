@@ -798,7 +798,6 @@ export function useCreateGenerationController(): CreateGenerationController {
       const startedAt = Date.now();
       const clientJobId = ensureJobId(null);
       let trackedJobId = clientJobId;
-      let isClientJobActive = true;
 
       addActiveJob({
         id: clientJobId,
@@ -832,9 +831,21 @@ export function useCreateGenerationController(): CreateGenerationController {
               typeof update.progress === 'number' ? update.progress : undefined;
 
             if (update.jobId && update.jobId !== trackedJobId) {
+              // Add the new job with the server's ID before removing the old one
+              // This ensures the animation stays visible during the transition
+              addActiveJob({
+                id: update.jobId,
+                prompt: finalPrompt,
+                model: selectedModel,
+                status: nextStatus,
+                progress: nextProgress ?? 1,
+                backendProgress: nextProgress ?? 0,
+                backendProgressUpdatedAt: Date.now(),
+                startedAt,
+                jobId: update.jobId,
+              });
               removeActiveJob(trackedJobId);
               trackedJobId = update.jobId;
-              isClientJobActive = false;
               return;
             }
 
@@ -855,9 +866,8 @@ export function useCreateGenerationController(): CreateGenerationController {
           model: 'gemini-3.0-pro-image',
         });
       } finally {
-        if (isClientJobActive && trackedJobId.startsWith('local-')) {
-          removeActiveJob(trackedJobId);
-        }
+        // Always remove the active job when generation completes
+        removeActiveJob(trackedJobId);
       }
     };
 

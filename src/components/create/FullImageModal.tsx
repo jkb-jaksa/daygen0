@@ -25,13 +25,13 @@ import { getPersistedValue } from '../../lib/clientStorage';
 import { STORAGE_CHANGE_EVENT } from '../../utils/storageEvents';
 import { useBadgeNavigation } from './hooks/useBadgeNavigation';
 import { scrollLockExemptAttr, useGlobalScrollLock } from '../../hooks/useGlobalScrollLock';
-import { useRecraftImageGeneration } from '../../hooks/useRecraftImageGeneration';
 import { useGeminiImageGeneration } from '../../hooks/useGeminiImageGeneration';
 
 // Lazy load VerticalGalleryNav
 const VerticalGalleryNav = lazy(() => import('../shared/VerticalGalleryNav'));
 const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
 const QuickEditModal = lazy(() => import('./QuickEditModal'));
+import type { QuickEditOptions } from './QuickEditModal';
 const MasterSidebar = lazy(() => import('../master/MasterSidebar'));
 // Individual badges are rendered via ImageBadgeRow
 
@@ -94,9 +94,9 @@ const buildModalVariateJobId = (item: GalleryImageLike): string => {
 };
 
 const FullImageModal = memo(() => {
-  const { state, filteredItems, addImage, closeFullSize, moveFullSize, openFullSize } = useGallery();
+  const { state, filteredItems, addImage, closeFullSize, openFullSize } = useGallery();
   const { addActiveJob, updateJobStatus, removeActiveJob } = useGeneration();
-  const { variateImage: variateImageHook } = useRecraftImageGeneration();
+
   const { generateImage: generateGeminiImage } = useGeminiImageGeneration();
   const {
     handleToggleLike,
@@ -129,33 +129,7 @@ const FullImageModal = memo(() => {
   const userKey = user?.id || user?.email || "anon";
   const { savePrompt, isPromptSaved, removePrompt } = useSavedPrompts(userKey);
   const { showToast } = useToast();
-  const startVariateJob = useCallback((image: GalleryImageLike) => {
-    const syntheticId = buildModalVariateJobId(image);
-    const timestamp = Date.now();
 
-    addActiveJob({
-      id: syntheticId,
-      prompt: image.prompt || 'Image variation',
-      model: image.model || 'recraft-variation',
-      status: 'running',
-      progress: 5,
-      backendProgress: 5,
-      backendProgressUpdatedAt: timestamp,
-      startedAt: timestamp,
-      jobId: syntheticId,
-    });
-
-    return syntheticId;
-  }, [addActiveJob]);
-
-  const finalizeVariateJob = useCallback((jobId: string, status: 'completed' | 'failed') => {
-    updateJobStatus(jobId, status, {
-      progress: status === 'completed' ? 100 : undefined,
-      backendProgress: status === 'completed' ? 100 : undefined,
-      backendProgressUpdatedAt: Date.now(),
-    });
-    removeActiveJob(jobId);
-  }, [removeActiveJob, updateJobStatus]);
 
   const startQuickEditJob = useCallback((image: GalleryImageLike, prompt: string) => {
     const syntheticId = buildModalVariateJobId(image); // Reuse ID builder for consistency
@@ -194,7 +168,7 @@ const FullImageModal = memo(() => {
     goToModelGallery,
   } = useBadgeNavigation();
 
-  const { fullSizeImage, fullSizeIndex, isFullSizeOpen } = state;
+  const { fullSizeImage, fullSizeIndex, isFullSizeOpen, initialVideoTime } = state;
   const open = isFullSizeOpen;
   const fullSizeItemType: 'image' | 'video' = getGalleryItemType(fullSizeImage);
   // Identify current item and whether the image action (More) menu is open for it
@@ -249,6 +223,21 @@ const FullImageModal = memo(() => {
     return map;
   }, [storedProducts]);
 
+  // Filter items for the vertical gallery nav based on current category
+  // When in /app/image: show only images
+  // When in /app/video: show only videos
+  // Otherwise (gallery, etc.): show all items
+  const categoryFilteredItems = useMemo(() => {
+    if (activeCategory === 'image') {
+      return filteredItems.filter(item => !('type' in item && item.type === 'video'));
+    }
+    if (activeCategory === 'video') {
+      return filteredItems.filter(item => 'type' in item && item.type === 'video');
+    }
+    // For gallery and other categories, show all items
+    return filteredItems;
+  }, [filteredItems, activeCategory]);
+
   // Handle category selection
   const handleSelectCategory = useCallback((category: string) => {
     navigate(`/app/${category}`);
@@ -261,15 +250,63 @@ const FullImageModal = memo(() => {
     closeFullSize();
   }, [navigate, closeFullSize]);
 
-  // Handle previous image (with wraparound)
+  // Handle previous image (with wraparound within category-filtered items)
   const handlePrevious = useCallback(() => {
-    moveFullSize(-1);
-  }, [moveFullSize]);
+    if (categoryFilteredItems.length <= 1) return;
 
-  // Handle next image (with wraparound)
+    // Find current item's index in categoryFilteredItems
+    const currentId = fullSizeImage?.jobId || fullSizeImage?.r2FileId || fullSizeImage?.url;
+    if (!currentId) return;
+
+    const currentCategoryIndex = categoryFilteredItems.findIndex(
+      item => (item.jobId || item.r2FileId || item.url) === currentId
+    );
+
+    if (currentCategoryIndex === -1) return;
+
+    // Loop to the end if at the beginning
+    const prevCategoryIndex = currentCategoryIndex === 0
+      ? categoryFilteredItems.length - 1
+      : currentCategoryIndex - 1;
+
+    const prevItem = categoryFilteredItems[prevCategoryIndex];
+    if (prevItem) {
+      // Find the actual index in the full filteredItems list for openFullSize
+      const fullIndex = filteredItems.findIndex(
+        item => (item.jobId || item.r2FileId || item.url) === (prevItem.jobId || prevItem.r2FileId || prevItem.url)
+      );
+      openFullSize(prevItem, fullIndex >= 0 ? fullIndex : prevCategoryIndex);
+    }
+  }, [categoryFilteredItems, fullSizeImage, filteredItems, openFullSize]);
+
+  // Handle next image (with wraparound within category-filtered items)
   const handleNext = useCallback(() => {
-    moveFullSize(1);
-  }, [moveFullSize]);
+    if (categoryFilteredItems.length <= 1) return;
+
+    // Find current item's index in categoryFilteredItems
+    const currentId = fullSizeImage?.jobId || fullSizeImage?.r2FileId || fullSizeImage?.url;
+    if (!currentId) return;
+
+    const currentCategoryIndex = categoryFilteredItems.findIndex(
+      item => (item.jobId || item.r2FileId || item.url) === currentId
+    );
+
+    if (currentCategoryIndex === -1) return;
+
+    // Loop to the beginning if at the end
+    const nextCategoryIndex = currentCategoryIndex === categoryFilteredItems.length - 1
+      ? 0
+      : currentCategoryIndex + 1;
+
+    const nextItem = categoryFilteredItems[nextCategoryIndex];
+    if (nextItem) {
+      // Find the actual index in the full filteredItems list for openFullSize
+      const fullIndex = filteredItems.findIndex(
+        item => (item.jobId || item.r2FileId || item.url) === (nextItem.jobId || nextItem.r2FileId || nextItem.url)
+      );
+      openFullSize(nextItem, fullIndex >= 0 ? fullIndex : nextCategoryIndex);
+    }
+  }, [categoryFilteredItems, fullSizeImage, filteredItems, openFullSize]);
 
   // Handle escape key
   useEffect(() => {
@@ -466,64 +503,7 @@ const FullImageModal = memo(() => {
     }
   }, [fullSizeImage, handleTogglePublic]);
 
-  // Handle variate image
-  const handleVariateClick = useCallback(async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
 
-    if (!fullSizeImage || ('type' in fullSizeImage && fullSizeImage.type === 'video')) {
-      return;
-    }
-
-    if (!fullSizeImage.url) {
-      showToast('No image URL available');
-      return;
-    }
-
-    let syntheticJobId: string | null = null;
-
-    const normalizedPrompt = fullSizeImage.prompt?.trim();
-    const promptForRequest = normalizedPrompt && normalizedPrompt.length > 0 ? normalizedPrompt : 'Variation';
-    const modelForRequest = fullSizeImage.model || 'recraft-v3';
-
-    try {
-      syntheticJobId = startVariateJob(fullSizeImage);
-      const variations = await variateImageHook({
-        imageUrl: fullSizeImage.url,
-        prompt: promptForRequest,
-        model: modelForRequest,
-      });
-
-      if (variations.length > 0) {
-        // Add each variation to the gallery
-        for (const variation of variations) {
-          await addImage({
-            url: variation.url,
-            prompt: variation.prompt?.trim() && variation.prompt.trim().length > 0
-              ? variation.prompt.trim()
-              : promptForRequest,
-            model: variation.model || modelForRequest,
-            timestamp: new Date().toISOString(),
-            ownerId: fullSizeImage.ownerId,
-            isLiked: false,
-            isPublic: false,
-            r2FileId: variation.r2FileId,
-          });
-        }
-        showToast(`Generated ${variations.length} variation${variations.length > 1 ? 's' : ''}`);
-        finalizeVariateJob(syntheticJobId, 'completed');
-      } else {
-        showToast('Failed to generate variation');
-        finalizeVariateJob(syntheticJobId, 'failed');
-      }
-    } catch (error) {
-      debugError('Failed to variate image:', error);
-      showToast('Failed to generate variation');
-      if (syntheticJobId) {
-        finalizeVariateJob(syntheticJobId, 'failed');
-      }
-    }
-  }, [fullSizeImage, variateImageHook, addImage, showToast, startVariateJob, finalizeVariateJob]);
 
   // Handle delete
   const handleDeleteClick = useCallback((e: React.MouseEvent) => {
@@ -601,51 +581,80 @@ const FullImageModal = memo(() => {
     if (fullSizeImage) {
       setQuickEditModalState({
         isOpen: true,
-        initialPrompt: fullSizeImage.prompt || '',
+        initialPrompt: '',
       });
     }
   }, [fullSizeImage]);
 
-  const handleQuickEditSubmit = useCallback(async (prompt: string) => {
+  const handleQuickEditSubmit = useCallback(async (options: QuickEditOptions) => {
     if (!fullSizeImage || !fullSizeImage.url) {
       showToast('No image URL available');
       return;
     }
 
+    const { prompt, referenceFiles, aspectRatio, batchSize, avatarId, productId, styleId } = options;
+
     // Close modal immediately
     setQuickEditModalState(null);
 
-    // Start background job
-    const syntheticJobId = startQuickEditJob(fullSizeImage, prompt);
+    // Determine references - start with the original image being edited
+    const references: string[] = [fullSizeImage.url.split('?')[0]];
 
-    // Run generation in background
-    generateGeminiImage({
-      prompt: prompt,
-      references: [fullSizeImage.url.split('?')[0]], // Strip query params for original quality
-      model: 'gemini-3-pro-image-preview',
-      clientJobId: syntheticJobId,
-    }).then(async (result) => {
-      if (result) {
-        await addImage({
-          url: result.url,
-          prompt: result.prompt,
-          model: result.model,
-          timestamp: new Date().toISOString(),
-          ownerId: fullSizeImage.ownerId,
-          isLiked: false,
-          isPublic: false,
-          r2FileId: result.r2FileId,
-        });
-        finalizeQuickEditJob(syntheticJobId, 'completed');
-      } else {
+    // Add all additional reference files (up to 13, since original image + 13 = 14 max for Gemini 3 Pro)
+    if (referenceFiles && referenceFiles.length > 0) {
+      for (const referenceFile of referenceFiles) {
+        try {
+          const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(referenceFile);
+          });
+          references.push(base64);
+        } catch (e) {
+          debugError('Failed to convert reference file', e);
+        }
+      }
+    }
+
+    // Loop for batch size
+    for (let i = 0; i < batchSize; i++) {
+      // Start background job
+      const syntheticJobId = startQuickEditJob(fullSizeImage, prompt);
+
+      // Run generation in background
+      generateGeminiImage({
+        prompt: prompt,
+        references: references,
+        model: 'gemini-3-pro-image-preview',
+        clientJobId: syntheticJobId,
+        aspectRatio: aspectRatio,
+        avatarId,
+        productId,
+        styleId,
+      }).then(async (result) => {
+        if (result) {
+          await addImage({
+            url: result.url,
+            prompt: result.prompt,
+            model: result.model,
+            timestamp: new Date().toISOString(),
+            ownerId: fullSizeImage.ownerId,
+            isLiked: false,
+            isPublic: false,
+            r2FileId: result.r2FileId,
+          });
+          finalizeQuickEditJob(syntheticJobId, 'completed');
+        } else {
+          showToast('Failed to edit image');
+          finalizeQuickEditJob(syntheticJobId, 'failed');
+        }
+      }).catch((error) => {
+        debugError('Failed to quick edit image:', error);
         showToast('Failed to edit image');
         finalizeQuickEditJob(syntheticJobId, 'failed');
-      }
-    }).catch((error) => {
-      debugError('Failed to quick edit image:', error);
-      showToast('Failed to edit image');
-      finalizeQuickEditJob(syntheticJobId, 'failed');
-    });
+      });
+    }
   }, [fullSizeImage, generateGeminiImage, addImage, showToast, startQuickEditJob, finalizeQuickEditJob]);
 
 
@@ -793,7 +802,7 @@ const FullImageModal = memo(() => {
   }
 
   const isVideo = 'type' in fullSizeImage && fullSizeImage.type === 'video';
-  const hasMultipleItems = filteredItems.length > 1;
+  const hasMultipleItems = categoryFilteredItems.length > 1;
   const fullSizeActionTooltipId = fullSizeImage.jobId || fullSizeImage.r2FileId || fullSizeImage.url || 'fullsize';
   const promptText = fullSizeImage.prompt?.trim() ?? '';
   const hasPromptContent = promptText.length > 0;
@@ -938,7 +947,6 @@ const FullImageModal = memo(() => {
                         isFullSize={true}
                         anyMenuOpen={editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId}
                         onMakeVideo={handleVideo}
-                        onMakeVariation={!isVideo ? handleVariateClick : undefined}
                         onQuickEdit={handleQuickEdit}
                       />
                     </Suspense>
@@ -964,7 +972,6 @@ const FullImageModal = memo(() => {
                       isFullSize={true}
                       anyMenuOpen={editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId}
                       onMakeVideo={handleVideo}
-                      onMakeVariation={!isVideo ? handleVariateClick : undefined}
                       onQuickEdit={handleQuickEdit}
                     />
                   </Suspense>
@@ -1066,6 +1073,8 @@ const FullImageModal = memo(() => {
                       onInfoMouseLeave={() => setIsVideoPromptExpanded(false)}
                       showInfoButton={hasPromptContent}
                       isInfoActive={isVideoPromptExpanded}
+                      initialTime={initialVideoTime ?? 0}
+                      autoPlay={true}
                     />
                   </div>
                 ) : (
@@ -1389,7 +1398,7 @@ const FullImageModal = memo(() => {
             ref={sidebarRef}
             className={`${glass.promptDark} w-[200px] rounded-2xl p-4 flex flex-col gap-0 overflow-y-auto fixed z-[120]`}
             style={{
-              right: 'calc(var(--container-inline-padding, clamp(1rem,5vw,6rem)) + 80px)',
+              right: 'calc(var(--container-inline-padding, clamp(1rem,5vw,6rem)) + 72px)',
               top: 'calc(var(--nav-h) + 16px)',
               height: 'calc(100vh - var(--nav-h) - 32px)'
             }}
@@ -1535,15 +1544,30 @@ const FullImageModal = memo(() => {
         )}
 
         {/* Vertical Gallery Navigation */}
-        {hasMultipleItems && (
+        {categoryFilteredItems.length > 1 && (
           <Suspense fallback={null}>
             <VerticalGalleryNav
-              images={filteredItems.map((item) => ({ url: item.url, id: item.jobId || item.r2FileId }))}
-              currentIndex={fullSizeIndex}
+              images={categoryFilteredItems.map((item) => ({
+                url: item.url,
+                id: item.jobId || item.r2FileId,
+                isVideo: 'type' in item && item.type === 'video',
+              }))}
+              currentIndex={(() => {
+                // Find the current item's index in the category-filtered list
+                if (!fullSizeImage) return 0;
+                const currentId = fullSizeImage.jobId || fullSizeImage.r2FileId || fullSizeImage.url;
+                return categoryFilteredItems.findIndex(
+                  item => (item.jobId || item.r2FileId || item.url) === currentId
+                );
+              })()}
               onNavigate={(index) => {
-                const next = filteredItems[index];
+                const next = categoryFilteredItems[index];
                 if (next) {
-                  openFullSize(next, index);
+                  // Find the actual index in the full filteredItems list for openFullSize
+                  const fullIndex = filteredItems.findIndex(
+                    item => (item.jobId || item.r2FileId || item.url) === (next.jobId || next.r2FileId || next.url)
+                  );
+                  openFullSize(next, fullIndex >= 0 ? fullIndex : index);
                 }
               }}
               className="z-[130]"
@@ -1560,6 +1584,7 @@ const FullImageModal = memo(() => {
             onSubmit={handleQuickEditSubmit}
             initialPrompt={quickEditModalState.initialPrompt}
             imageUrl={fullSizeImage.url}
+            item={fullSizeImage}
             isLoading={isLoading}
           />
         </Suspense>

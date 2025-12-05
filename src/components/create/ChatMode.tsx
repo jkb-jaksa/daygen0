@@ -1057,20 +1057,29 @@ const ChatMode: React.FC = () => {
                         : {};
                       
                       return (
-                        <button
+                        <div
                           key={session.id}
-                          type="button"
+                          role="button"
+                          tabIndex={0}
                           onClick={() => {
                             selectSession(session.id);
                             setInput("");
                             setReferencePreviews([]);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              selectSession(session.id);
+                              setInput("");
+                              setReferencePreviews([]);
+                            }
                           }}
                           onMouseDown={() => setPressedSession(session.id)}
                           onMouseUp={() => setPressedSession(null)}
                           onMouseLeave={() => setPressedSession(null)}
                           onTouchStart={() => setPressedSession(session.id)}
                           onTouchEnd={() => setPressedSession(null)}
-                          className={`relative overflow-hidden group w-full rounded-2xl px-3 py-2 text-left transition-colors duration-150 ${
+                          className={`relative overflow-hidden group w-full rounded-2xl px-3 py-2 text-left transition-colors duration-150 cursor-pointer ${
                             isActive
                               ? "border border-theme-dark text-theme-text"
                               : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"
@@ -1112,7 +1121,7 @@ const ChatMode: React.FC = () => {
                               </button>
                             </div>
                           </div>
-                        </button>
+                        </div>
                       );
                     })}
                   </div>
@@ -1887,20 +1896,29 @@ const ChatMode: React.FC = () => {
                         : {};
                       
                       return (
-                        <button
+                        <div
                           key={session.id}
-                          type="button"
+                          role="button"
+                          tabIndex={0}
                           onClick={() => {
                             selectSession(session.id);
                             setInput("");
                             setReferencePreviews([]);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              selectSession(session.id);
+                              setInput("");
+                              setReferencePreviews([]);
+                            }
                           }}
                           onMouseDown={() => setPressedSession(session.id)}
                           onMouseUp={() => setPressedSession(null)}
                           onMouseLeave={() => setPressedSession(null)}
                           onTouchStart={() => setPressedSession(session.id)}
                           onTouchEnd={() => setPressedSession(null)}
-                          className={`relative overflow-hidden group w-full rounded-2xl px-3 py-2 text-left transition-colors duration-150 ${
+                          className={`relative overflow-hidden group w-full rounded-2xl px-3 py-2 text-left transition-colors duration-150 cursor-pointer ${
                             isActive
                               ? "border border-theme-dark text-theme-text"
                               : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"
@@ -1942,7 +1960,7 @@ const ChatMode: React.FC = () => {
                               </button>
                             </div>
                           </div>
-                        </button>
+                        </div>
                       );
                     })}
                   </div>

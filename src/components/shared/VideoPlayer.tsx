@@ -17,6 +17,9 @@ interface VideoPlayerProps {
     onExpand?: () => void;
     objectFit?: 'cover' | 'contain';
     layout?: 'fill' | 'intrinsic';
+    initialTime?: number;
+    externalRef?: React.RefObject<HTMLVideoElement>;
+    forcePause?: boolean;
     onClick?: () => void;
 }
 
@@ -36,8 +39,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     layout = 'fill',
     onClick,
     objectFit = 'contain',
+    initialTime = 0,
+    externalRef,
+    forcePause = false,
 }) => {
-    const videoRef = useRef<HTMLVideoElement>(null);
+    const internalVideoRef = useRef<HTMLVideoElement>(null);
+    const videoRef = externalRef || internalVideoRef;
     const containerRef = useRef<HTMLDivElement>(null);
     const volumeSliderRef = useRef<HTMLDivElement>(null);
     const [isPlaying, setIsPlaying] = useState(autoPlay);
@@ -53,6 +60,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const [hasEnded, setHasEnded] = useState(false);
     const bottomTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const momentaryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const hasSetInitialTime = useRef(false);
 
     const resetBottomTimeout = useCallback((delay = 2000) => {
         setShowBottomControls(true);
@@ -78,7 +86,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             }
         }
         animationFrameRef.current = requestAnimationFrame(updateProgress);
-    }, []);
+    }, [videoRef]);
 
     useEffect(() => {
         if (isPlaying) {
@@ -95,12 +103,27 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         };
     }, [isPlaying, updateProgress]);
 
+    // Handle forcePause
+    useEffect(() => {
+        if (forcePause && isPlaying && videoRef.current) {
+            videoRef.current.pause();
+            setIsPlaying(false);
+            setMomentaryIcon('pause');
+        }
+    }, [forcePause, isPlaying, videoRef]);
+
     useEffect(() => {
         const video = videoRef.current;
         if (!video) return;
 
         const handleLoadedMetadata = () => {
             setDuration(video.duration);
+
+            // Set initial time if provided and not already set
+            if (initialTime > 0 && !hasSetInitialTime.current) {
+                video.currentTime = initialTime;
+                hasSetInitialTime.current = true;
+            }
         };
 
         const handleEnded = () => {
@@ -120,7 +143,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             video.removeEventListener('loadedmetadata', handleLoadedMetadata);
             video.removeEventListener('ended', handleEnded);
         };
-    }, [loop]);
+    }, [loop, initialTime, videoRef]);
 
     const togglePlay = useCallback((e?: React.MouseEvent) => {
         e?.stopPropagation();
@@ -152,7 +175,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 }, (wasInitial || hasEnded) ? 100 : 700);
             }
         }
-    }, [isPlaying, resetBottomTimeout, hasInteracted, hasEnded]);
+    }, [isPlaying, resetBottomTimeout, hasInteracted, hasEnded, videoRef]);
 
     const toggleMute = useCallback((e?: React.SyntheticEvent) => {
         e?.stopPropagation();
@@ -166,7 +189,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 videoRef.current.volume = 1;
             }
         }
-    }, [isMuted]);
+    }, [isMuted, videoRef]);
 
     const handleVolumeChange = useCallback((e: React.MouseEvent<HTMLDivElement> | MouseEvent) => {
         if (!videoRef.current) return;
@@ -188,7 +211,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         setVolume(newVolume);
         setIsMuted(newVolume === 0);
         videoRef.current.muted = newVolume === 0;
-    }, []);
+    }, [videoRef]);
 
     const handleVolumeMouseDown = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
@@ -301,7 +324,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 toggleFullscreen();
                 break;
         }
-    }, [togglePlay, duration, volume, toggleMute, toggleFullscreen]);
+    }, [togglePlay, duration, volume, toggleMute, toggleFullscreen, videoRef]);
 
     const [hoverProgress, setHoverProgress] = useState<number | null>(null);
 
@@ -328,7 +351,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         videoRef.current.currentTime = newTime;
         setProgress(percentage);
         setHasEnded(false);
-    }, [duration]);
+    }, [duration, videoRef]);
 
     const handleMouseMove = useCallback(() => {
         if (isFullscreen) {
@@ -424,13 +447,13 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             >
                 {/* Progress Bar */}
                 <div
-                    className={`relative w-full h-1.5 ${layout === 'intrinsic' ? 'mb-4' : 'mb-2'} cursor-pointer group/progress-wrapper`}
+                    className={`relative w-full h-2 ${layout === 'intrinsic' ? 'mb-4' : 'mb-2'} cursor-pointer group/progress-wrapper`}
                     onClick={handleSeek}
                     onMouseMove={handleProgressBarMouseMove}
                     onMouseLeave={handleProgressBarMouseLeave}
                 >
                     <div
-                        className={`absolute bottom-0 left-0 right-0 h-full group-hover/progress-wrapper:h-2 transition-all duration-200 ease-out ${glass.promptBorderless} rounded-full !overflow-visible`}
+                        className={`absolute bottom-0 left-0 right-0 h-full group-hover/progress-wrapper:h-2.5 transition-all duration-200 ease-out ${glass.promptBorderless} rounded-full !overflow-visible`}
                         style={{
                             '--glass-prompt-bg': 'rgb(var(--n-mid-rgb) / 0.80)',
                             '--glass-prompt-text': 'var(--n-text)'
@@ -491,7 +514,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                                     onMouseDown={handleVolumeMouseDown}
                                     onClick={(e) => e.stopPropagation()}
                                 >
-                                    <div className="w-1 h-16 bg-theme-text/20 rounded-full relative pointer-events-none">
+                                    <div className="w-[4px] h-16 bg-theme-text/20 rounded-full relative pointer-events-none">
                                         <div
                                             className="absolute bottom-0 left-0 w-full bg-theme-text rounded-full"
                                             style={{ height: `${volume * 100}%` }}

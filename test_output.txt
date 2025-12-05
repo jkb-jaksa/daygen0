@@ -1,0 +1,189 @@
+
+> daygen@0.0.0 test /Users/jakubst/Desktop/daygen-project/daygen-frontend
+> NODE_OPTIONS="--max-old-space-size=3072" vitest run --reporter=basic
+
+
+ RUN  v2.1.9 /Users/jakubst/Desktop/daygen-project/daygen-frontend
+
+stdout | src/components/create/__tests__/GalleryDeepLink.test.tsx > Gallery deep link hydration > opens full-size modal when jobId query param targets a jobId
+[GalleryContext] setFullSizeImage { hasImage: true, imageUrl: 'https://example.com/image.jpg', index: 0 }
+[GalleryContext] setFullSizeOpen { open: true }
+
+stdout | src/components/create/__tests__/GalleryDeepLink.test.tsx > Gallery deep link hydration > hydrates modal when query param matches r2FileId
+[GalleryContext] setFullSizeImage {
+  hasImage: true,
+  imageUrl: 'https://example.com/r2-only.jpg',
+  index: 1
+}
+[GalleryContext] setFullSizeOpen { open: true }
+
+stdout | src/components/create/__tests__/GalleryDeepLink.test.tsx > Gallery deep link hydration > hydrates modal when query param encodes image URL
+[GalleryContext] setFullSizeImage {
+  hasImage: true,
+  imageUrl: 'https://example.com/url-only.jpg',
+  index: 2
+}
+[GalleryContext] setFullSizeOpen { open: true }
+
+stdout | src/components/create/__tests__/GalleryDeepLink.test.tsx > Gallery deep link hydration > still hydrates for legacy /job/:jobId routes
+[GalleryContext] setFullSizeImage { hasImage: true, imageUrl: 'https://example.com/image.jpg', index: 0 }
+[GalleryContext] setFullSizeOpen { open: true }
+
+stdout | src/components/create/__tests__/GalleryDeepLink.test.tsx > Gallery action navigation fallbacks > navigates with r2FileId when jobId missing
+[GalleryContext] setFullSizeImage {
+  hasImage: true,
+  imageUrl: 'https://example.com/r2-only.jpg',
+  index: 0
+}
+[GalleryContext] setFullSizeOpen { open: true }
+[GalleryContext] setFullSizeImage {
+  hasImage: true,
+  imageUrl: 'https://example.com/r2-only.jpg',
+  index: 1
+}
+[GalleryContext] setFullSizeOpen { open: true }
+
+stdout | src/components/create/__tests__/GalleryDeepLink.test.tsx > Gallery action navigation fallbacks > encodes URL when neither jobId nor r2FileId exist
+[GalleryContext] setFullSizeImage {
+  hasImage: true,
+  imageUrl: 'https://example.com/url-only.jpg',
+  index: 0
+}
+[GalleryContext] setFullSizeOpen { open: true }
+[GalleryContext] setFullSizeImage {
+  hasImage: true,
+  imageUrl: 'https://example.com/url-only.jpg',
+  index: 2
+}
+[GalleryContext] setFullSizeOpen { open: true }
+
+stdout | src/components/create/__tests__/GalleryDeepLink.test.tsx > Immediate modal open behavior > keeps the modal open while jobId query param is still pending
+[GalleryContext] setFullSizeImage { hasImage: true, imageUrl: 'https://example.com/image.jpg', index: 0 }
+[GalleryContext] setFullSizeOpen { open: true }
+
+stdout | src/components/create/__tests__/GalleryDeepLink.test.tsx > FullImageModal navigation sync > updates the job route when using next arrow navigation
+[FullImageModal] Render {
+  open: false,
+  hasFullSizeImage: false,
+  fullSizeIndex: 0,
+  imageUrl: undefined
+}
+[FullImageModal] Returning null { open: false, hasFullSizeImage: false }
+[FullImageModal] Render {
+  open: false,
+  hasFullSizeImage: false,
+  fullSizeIndex: 0,
+  imageUrl: undefined
+}
+[FullImageModal] Returning null { open: false, hasFullSizeImage: false }
+[GalleryContext] setFullSizeImage { hasImage: true, imageUrl: 'https://example.com/image.jpg', index: 0 }
+[GalleryContext] setFullSizeOpen { open: true }
+[FullImageModal] Render {
+  open: true,
+  hasFullSizeImage: true,
+  fullSizeIndex: 0,
+  imageUrl: 'https://example.com/image.jpg'
+}
+
+stdout | src/components/create/__tests__/GalleryDeepLink.test.tsx > FullImageModal navigation sync > updates the job route when using next arrow navigation
+[FullImageModal] Render {
+  open: true,
+  hasFullSizeImage: true,
+  fullSizeIndex: 0,
+  imageUrl: 'https://example.com/image.jpg'
+}
+
+stdout | src/components/create/__tests__/GalleryDeepLink.test.tsx > FullImageModal navigation sync > updates the job route when using next arrow navigation
+[FullImageModal] Render {
+  open: true,
+  hasFullSizeImage: true,
+  fullSizeIndex: 0,
+  imageUrl: 'https://example.com/image.jpg'
+}
+
+stdout | src/components/create/__tests__/GalleryDeepLink.test.tsx > FullImageModal navigation sync > updates the job route when using next arrow navigation
+[FullImageModal] Render {
+  open: true,
+  hasFullSizeImage: true,
+  fullSizeIndex: 0,
+  imageUrl: 'https://example.com/image.jpg'
+}
+
+stdout | src/components/create/__tests__/GalleryDeepLink.test.tsx > FullImageModal navigation sync > updates the job route when using next arrow navigation
+[GalleryContext] setFullSizeImage {
+  hasImage: true,
+  imageUrl: 'https://example.com/r2-only.jpg',
+  index: 1
+}
+[GalleryContext] setFullSizeOpen { open: true }
+[FullImageModal] Render {
+  open: true,
+  hasFullSizeImage: true,
+  fullSizeIndex: 1,
+  imageUrl: 'https://example.com/r2-only.jpg'
+}
+[FullImageModal] Render {
+  open: true,
+  hasFullSizeImage: true,
+  fullSizeIndex: 1,
+  imageUrl: 'https://example.com/r2-only.jpg'
+}
+
+ ✓ src/components/create/__tests__/GalleryDeepLink.test.tsx (8 tests) 143ms
+ ✓ src/components/create/QuickEditModal.test.tsx (3 tests) 63ms
+ ✓ src/components/create/hooks/usePresetGenerationFlow.test.tsx (2 tests | 1 skipped) 2ms
+ ✓ src/components/create/SettingsMenu.test.tsx (2 tests) 21ms
+ ✓ src/hooks/__tests__/generationJobHelpers.test.ts (6 tests) 3ms
+ ✓ src/test/CircularProgressRing.test.tsx (5 tests) 8ms
+ ❯ src/hooks/useTimelineAudio.test.ts (0 test)
+ ❯ src/stores/timelineStore.test.ts (0 test)
+ ✓ src/components/create/CreateSidebar.test.tsx (2 tests) 73ms
+ ✓ src/components/create/PromptHistoryPanel.test.tsx (1 test) 346ms
+   ✓ PromptHistoryPanel > lazy-loads history chips and wires prompt interactions 346ms
+ ✓ src/utils/__tests__/audioApi.test.ts (3 tests) 1ms
+ ✓ src/components/create/__tests__/ComingSoonCategory.test.tsx (1 test) 1ms
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/hooks/useTimelineAudio.test.ts [ src/hooks/useTimelineAudio.test.ts ]
+Error: Failed to resolve import "zustand" from "src/stores/timelineStore.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/jakubst/Desktop/daygen-project/daygen-frontend/src/stores/timelineStore.ts:1:23
+  1  |  import { create } from "zustand";
+     |                          ^
+  2  |  import { immer } from "zustand/middleware/immer";
+  3  |  export const useTimelineStore = create()(
+ ❯ TransformPluginContext._formatError node_modules/vitest/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:49258:41
+ ❯ TransformPluginContext.error node_modules/vitest/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:49253:16
+ ❯ normalizeUrl node_modules/vitest/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:64306:23
+ ❯ node_modules/vitest/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:64438:39
+ ❯ TransformPluginContext.transform node_modules/vitest/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:64365:7
+ ❯ PluginContainer.transform node_modules/vitest/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:49099:18
+ ❯ loadAndTransform node_modules/vitest/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:51977:27
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/stores/timelineStore.test.ts [ src/stores/timelineStore.test.ts ]
+Error: Failed to resolve import "zustand" from "src/stores/timelineStore.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/jakubst/Desktop/daygen-project/daygen-frontend/src/stores/timelineStore.ts:1:23
+  1  |  import { create } from "zustand";
+     |                          ^
+  2  |  import { immer } from "zustand/middleware/immer";
+  3  |  export const useTimelineStore = create()(
+ ❯ TransformPluginContext._formatError node_modules/vitest/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:49258:41
+ ❯ TransformPluginContext.error node_modules/vitest/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:49253:16
+ ❯ normalizeUrl node_modules/vitest/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:64306:23
+ ❯ node_modules/vitest/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:64438:39
+ ❯ TransformPluginContext.transform node_modules/vitest/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:64365:7
+ ❯ PluginContainer.transform node_modules/vitest/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:49099:18
+ ❯ loadAndTransform node_modules/vitest/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:51977:27
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+ Test Files  2 failed | 10 passed (12)
+      Tests  32 passed | 1 skipped (33)
+   Start at  20:56:26
+   Duration  2.73s (transform 625ms, setup 139ms, collect 702ms, tests 661ms, environment 533ms, prepare 86ms)
+
+ ELIFECYCLE  Test failed. See above for more details.

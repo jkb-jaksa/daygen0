@@ -27,7 +27,6 @@ import {
   Info,
   Trash2,
   Upload,
-  Mic,
 } from 'lucide-react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useCreateGenerationController } from './hooks/useCreateGenerationController';
@@ -239,7 +238,7 @@ const PromptForm = memo<PromptFormProps>(
     const [isAvatarButtonHovered, setIsAvatarButtonHovered] = useState(false);
     const [isProductButtonHovered, setIsProductButtonHovered] = useState(false);
     const [isImageHovered, setIsImageHovered] = useState(false);
-    const [isVoiceButtonHovered, setIsVoiceButtonHovered] = useState(false);
+
     const [isPromptFocused, setIsPromptFocused] = useState(false);
     const [isStyleButtonHovered, setIsStyleButtonHovered] = useState(false);
     const [isDraggingOverAvatarButton, setIsDraggingOverAvatarButton] = useState(false);
@@ -1534,34 +1533,6 @@ const PromptForm = memo<PromptFormProps>(
                     <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
                   </button>
                 )}
-              </div>
-
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => {
-                    // Voice button functionality to be implemented
-                  }}
-                  onMouseEnter={() => setIsVoiceButtonHovered(true)}
-                  onMouseLeave={() => setIsVoiceButtonHovered(false)}
-                  className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid/30 text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
-                  onPointerMove={onPointerMove}
-                  onPointerEnter={onPointerEnter}
-                  onPointerLeave={onPointerLeave}
-                >
-                  <div className="flex-1 flex items-center justify-center lg:mt-3">
-                    {isVoiceButtonHovered ? (
-                      <Plus className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
-                    ) : (
-                      <Mic className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
-                    )}
-                  </div>
-                  <div className="hidden lg:flex items-center gap-1">
-                    <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
-                      Voice
-                    </span>
-                  </div>
-                </button>
               </div>
 
               <div className="relative">

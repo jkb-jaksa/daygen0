@@ -13,7 +13,6 @@ import { useSavedPrompts } from '../../hooks/useSavedPrompts';
 import { useAuth } from '../../auth/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { loadSavedPrompts } from '../../lib/savedPrompts';
-import { useRecraftImageGeneration } from '../../hooks/useRecraftImageGeneration';
 import { useGeminiImageGeneration } from '../../hooks/useGeminiImageGeneration';
 import type { GalleryImageLike, GalleryVideoLike } from './types';
 import type { StoredAvatar } from '../avatars/types';
@@ -34,7 +33,7 @@ const ProductBadge = lazy(() => import('../products/ProductBadge'));
 const StyleBadge = lazy(() => import('../styles/StyleBadge'));
 const PublicBadge = lazy(() => import('./PublicBadge'));
 const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
-const QuickEditModal = lazy(() => import('./QuickEditModal'));
+import QuickEditModal, { type QuickEditOptions } from './QuickEditModal';
 const GenerationProgress = lazy(() => import('./GenerationProgress'));
 
 // Helper to get consistent item identifier for UI actions (jobId → r2FileId → url)
@@ -80,7 +79,7 @@ const renderPlaceholderGrid = (
     message = 'Create something amazing.',
   }: { className?: string; onTileClick?: (() => void) | null; message?: string } = {},
 ) => (
-  <div className={`grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1 w-full p-1 ${className}`}>
+  <div className={`grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 w-full p-1 ${className}`}>
     {Array.from({ length: MAX_GALLERY_TILES }).map((_, idx) => (
       <div
         key={`ph-${idx}`}
@@ -98,11 +97,77 @@ const renderPlaceholderGrid = (
   </div>
 );
 
+
+
+interface GridVideoItemProps {
+  item: GalleryVideoLike;
+  index: number;
+  handleItemClick: (item: GalleryVideoLike, index: number) => void;
+  toggleVideoPrompt: (id: string) => void;
+  setExpandedVideoPrompts: React.Dispatch<React.SetStateAction<Set<string>>>;
+  shouldShowPromptDetails: boolean;
+  isPromptExpanded: boolean;
+  videoRefs: React.MutableRefObject<{ [key: string]: HTMLVideoElement }>;
+  isFullSizeOpen: boolean;
+  baseActionTooltipId: string;
+}
+
+const GridVideoItem = memo<GridVideoItemProps>(({
+  item,
+  index,
+  handleItemClick,
+  toggleVideoPrompt,
+  setExpandedVideoPrompts,
+  shouldShowPromptDetails,
+  isPromptExpanded,
+  videoRefs,
+  isFullSizeOpen,
+  baseActionTooltipId
+}) => {
+  const ref = useMemo(() => ({
+    get current() {
+      return videoRefs.current[baseActionTooltipId] || null;
+    },
+    set current(el: HTMLVideoElement | null) {
+      if (el) {
+        videoRefs.current[baseActionTooltipId] = el;
+      } else {
+        delete videoRefs.current[baseActionTooltipId];
+      }
+    }
+  }), [videoRefs, baseActionTooltipId]);
+
+  return (
+    <VideoPlayer
+      src={item.url}
+      className="relative z-[1] h-full w-full"
+      objectFit="cover"
+      onClick={() => handleItemClick(item, index)}
+      onInfoClick={() => toggleVideoPrompt(baseActionTooltipId)}
+      onInfoMouseEnter={() => setExpandedVideoPrompts(prev => {
+        const next = new Set(prev);
+        next.add(baseActionTooltipId);
+        return next;
+      })}
+      onInfoMouseLeave={() => setExpandedVideoPrompts(prev => {
+        const next = new Set(prev);
+        next.delete(baseActionTooltipId);
+        return next;
+      })}
+      showInfoButton={shouldShowPromptDetails}
+      isInfoActive={isPromptExpanded}
+      externalRef={ref as React.RefObject<HTMLVideoElement>}
+      forcePause={isFullSizeOpen}
+    />
+  );
+});
+
 const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, onFocusPrompt, filterIds }) => {
   const { user, storagePrefix } = useAuth();
   const { showToast } = useToast();
   const { state, toggleItemSelection, isLoading, filteredItems: contextFilteredItems, addImage, openFullSize } = useGallery();
-  const { variateImage: variateImageHook } = useRecraftImageGeneration();
+  const { isFullSizeOpen } = state;
+
   const { generateImage: generateGeminiImage } = useGeminiImageGeneration();
   const {
     handleImageActionMenu,
@@ -124,12 +189,19 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const [expandedVideoPrompts, setExpandedVideoPrompts] = useState<Set<string>>(() => new Set());
   const [quickEditModalState, setQuickEditModalState] = useState<{ isOpen: boolean; initialPrompt: string; item: GalleryImageLike } | null>(null);
   const [isQuickEditLoading] = useState(false);
+  const videoRefs = useRef<{ [key: string]: HTMLVideoElement }>({});
   const {
     goToAvatarProfile,
     goToProductProfile,
     goToPublicGallery,
     goToModelGallery,
   } = useBadgeNavigation();
+
+  console.log('[ResultsGrid] Render state:', {
+    hasQuickEditState: !!quickEditModalState,
+    quickEditItem: quickEditModalState?.item,
+    quickEditUrl: quickEditModalState?.item?.url
+  });
 
   // Apply category-specific filtering
   const filteredItems = useMemo(() => {
@@ -412,7 +484,14 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       lastOpenRef.current = { id: identifier, ts: now };
     }
 
-    openFullSize(item, index);
+    // Get current video time if it's a video
+    let initialTime = 0;
+    const itemId = getItemIdentifier(item);
+    if (itemId && videoRefs.current[itemId]) {
+      initialTime = videoRefs.current[itemId].currentTime;
+    }
+
+    openFullSize(item, index, initialTime);
   }, [openFullSize]);
 
   // Handle item click
@@ -480,33 +559,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     });
   }, []);
 
-  const startVariateJob = useCallback((item: GalleryImageLike) => {
-    const syntheticId = buildSyntheticJobId(item);
-    const timestamp = Date.now();
 
-    addActiveJob({
-      id: syntheticId,
-      prompt: item.prompt || 'Image variation',
-      model: item.model || 'recraft-variation',
-      status: 'running',
-      progress: 5,
-      backendProgress: 5,
-      backendProgressUpdatedAt: timestamp,
-      startedAt: timestamp,
-      jobId: syntheticId,
-    });
-
-    return syntheticId;
-  }, [addActiveJob]);
-
-  const finalizeVariateJob = useCallback((jobId: string, status: 'completed' | 'failed') => {
-    updateJobStatus(jobId, status, {
-      progress: status === 'completed' ? 100 : undefined,
-      backendProgress: status === 'completed' ? 100 : undefined,
-      backendProgressUpdatedAt: Date.now(),
-    });
-    removeActiveJob(jobId);
-  }, [removeActiveJob, updateJobStatus]);
 
   const startQuickEditJob = useCallback((image: GalleryImageLike, prompt: string) => {
     const syntheticId = buildSyntheticJobId(image);
@@ -537,9 +590,10 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   }, [removeActiveJob, updateJobStatus]);
 
   const handleQuickEdit = useCallback((item: GalleryImageLike) => {
+    console.log('[ResultsGrid] handleQuickEdit called with:', item);
     setQuickEditModalState({
       isOpen: true,
-      initialPrompt: item.prompt || '',
+      initialPrompt: '',
       item,
     });
   }, []);
@@ -552,7 +606,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       reader.readAsDataURL(file);
     });
 
-  const handleQuickEditSubmit = useCallback(async (prompt: string, referenceFile?: File) => {
+  const handleQuickEditSubmit = useCallback(async ({ prompt, referenceFiles }: QuickEditOptions) => {
     if (!quickEditModalState?.item || !quickEditModalState.item.url) {
       showToast('No image URL available');
       return;
@@ -569,9 +623,12 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     try {
       const references = [item.url.split('?')[0]]; // Strip query params for original quality
 
-      if (referenceFile) {
-        const referenceDataUrl = await fileToDataUrl(referenceFile);
-        references.push(referenceDataUrl);
+      // Add all reference files (up to 13 since original + 13 = 14 max for Gemini 3 Pro)
+      if (referenceFiles && referenceFiles.length > 0) {
+        for (const file of referenceFiles) {
+          const referenceDataUrl = await fileToDataUrl(file);
+          references.push(referenceDataUrl);
+        }
       }
 
       // Run generation in background
@@ -613,64 +670,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     setQuickEditModalState(null);
   }, []);
 
-  // Handle variate image
-  const handleVariateImage = useCallback(async (e: React.MouseEvent, item: GalleryImageLike | GalleryVideoLike) => {
-    e.stopPropagation();
 
-    // Only variate images, not videos
-    if (isVideo(item)) {
-      return;
-    }
-
-    if (!item.url) {
-      showToast('No image URL available');
-      return;
-    }
-
-    let syntheticJobId: string | null = null;
-
-    const normalizedPrompt = item.prompt?.trim();
-    const promptForRequest = normalizedPrompt && normalizedPrompt.length > 0 ? normalizedPrompt : 'Variation';
-    const modelForRequest = item.model || 'recraft-v3';
-
-    try {
-      syntheticJobId = startVariateJob(item as GalleryImageLike);
-      const variations = await variateImageHook({
-        imageUrl: item.url,
-        prompt: promptForRequest,
-        model: modelForRequest,
-      });
-
-      if (variations.length > 0) {
-        // Add each variation to the gallery
-        for (const variation of variations) {
-          await addImage({
-            url: variation.url,
-            prompt: variation.prompt?.trim() && variation.prompt.trim().length > 0
-              ? variation.prompt.trim()
-              : promptForRequest,
-            model: variation.model || modelForRequest,
-            timestamp: new Date().toISOString(),
-            ownerId: item.ownerId,
-            isLiked: false,
-            isPublic: false,
-            r2FileId: variation.r2FileId,
-          });
-        }
-        showToast(`Generated ${variations.length} variation${variations.length > 1 ? 's' : ''}`);
-        finalizeVariateJob(syntheticJobId, 'completed');
-      } else {
-        showToast('Failed to generate variation');
-        finalizeVariateJob(syntheticJobId, 'failed');
-      }
-    } catch (error) {
-      debugError('Failed to variate image:', error);
-      showToast('Failed to generate variation');
-      if (syntheticJobId) {
-        finalizeVariateJob(syntheticJobId, 'failed');
-      }
-    }
-  }, [isVideo, startVariateJob, variateImageHook, addImage, showToast, finalizeVariateJob]);
 
   if (showLoadingState) {
     return (
@@ -790,18 +790,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   return (
     <>
       {/* Quick Edit Modal */}
-      {quickEditModalState && (
-        <Suspense fallback={null}>
-          <QuickEditModal
-            isOpen={quickEditModalState.isOpen}
-            onClose={handleQuickEditClose}
-            onSubmit={handleQuickEditSubmit}
-            initialPrompt={quickEditModalState.initialPrompt}
-            isLoading={isQuickEditLoading}
-            imageUrl={quickEditModalState.item.url}
-          />
-        </Suspense>
-      )}
+
 
       {/* Save Prompt Modal */}
       {savePromptModalState && createPortal(
@@ -850,7 +839,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       <div className={`space-y-4 ${className}`}>
         {statusBanner}
         {/* Grid */}
-        <div className={`grid ${gridCols} gap-1 w-full p-1`}>
+        <div className={`grid ${gridCols} gap-2 w-full p-1`}>
           {activeJobPlaceholders.map(renderActiveJobCard)}
           {filteredItems.map((item, index) => {
             const isSelected = isItemSelected(item);
@@ -958,7 +947,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                               isGallery={false}
                               anyMenuOpen={isMenuActive}
                               onMakeVideo={handleVideo}
-                              onMakeVariation={!isVideo(item) ? (e) => handleVariateImage(e, item) : undefined}
                               onQuickEdit={() => handleQuickEdit(item as GalleryImageLike)}
                             />
                           </Suspense>
@@ -1063,24 +1051,17 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
 
                   {/* Image/Video */}
                   {isVideoItem ? (
-                    <VideoPlayer
-                      src={item.url}
-                      className="relative z-[1] h-full w-full"
-                      objectFit="cover"
-                      onClick={() => handleItemClick(item, index)}
-                      onInfoClick={() => toggleVideoPrompt(baseActionTooltipId)}
-                      onInfoMouseEnter={() => setExpandedVideoPrompts(prev => {
-                        const next = new Set(prev);
-                        next.add(baseActionTooltipId);
-                        return next;
-                      })}
-                      onInfoMouseLeave={() => setExpandedVideoPrompts(prev => {
-                        const next = new Set(prev);
-                        next.delete(baseActionTooltipId);
-                        return next;
-                      })}
-                      showInfoButton={shouldShowPromptDetails}
-                      isInfoActive={isPromptExpanded}
+                    <GridVideoItem
+                      item={item as GalleryVideoLike}
+                      index={index}
+                      handleItemClick={handleItemClick}
+                      toggleVideoPrompt={toggleVideoPrompt}
+                      setExpandedVideoPrompts={setExpandedVideoPrompts}
+                      shouldShowPromptDetails={shouldShowPromptDetails}
+                      isPromptExpanded={isPromptExpanded}
+                      videoRefs={videoRefs}
+                      isFullSizeOpen={isFullSizeOpen}
+                      baseActionTooltipId={baseActionTooltipId}
                     />
                   ) : (
                     <img
@@ -1534,16 +1515,15 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       </div >
       {/* Quick Edit Modal */}
       {quickEditModalState && (
-        <Suspense fallback={null}>
-          <QuickEditModal
-            isOpen={quickEditModalState.isOpen}
-            onClose={handleQuickEditClose}
-            onSubmit={handleQuickEditSubmit}
-            initialPrompt={quickEditModalState.initialPrompt}
-            isLoading={isQuickEditLoading}
-            imageUrl={quickEditModalState.item.url}
-          />
-        </Suspense>
+        <QuickEditModal
+          isOpen={quickEditModalState.isOpen}
+          onClose={handleQuickEditClose}
+          onSubmit={handleQuickEditSubmit}
+          initialPrompt={quickEditModalState.initialPrompt}
+          isLoading={isQuickEditLoading}
+          imageUrl={quickEditModalState.item.url}
+          item={quickEditModalState.item}
+        />
       )}
     </>
   );

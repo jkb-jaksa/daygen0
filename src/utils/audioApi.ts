@@ -2,12 +2,9 @@ import { apiFetch, getApiUrl } from "./api";
 import { ensureValidToken } from "./tokenManager";
 
 export type ElevenLabsVoiceSummary = {
-  id: string;
+  voice_id: string;
   name: string;
-  category?: string | null;
-  description?: string | null;
-  labels?: Record<string, string>;
-  previewUrl?: string | null;
+  category: string;
 };
 
 export type VoicesResponse = {
@@ -114,6 +111,3 @@ export async function generateElevenLabsSpeech(
     body: payload,
   });
 }
-
-
-

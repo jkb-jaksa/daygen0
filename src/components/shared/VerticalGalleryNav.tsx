@@ -1,13 +1,108 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { Play } from "lucide-react";
 import { glass } from "../../styles/designSystem";
 import { scrollLockExemptAttr } from "../../hooks/useGlobalScrollLock";
 
 interface VerticalGalleryNavProps {
-  images: Array<{ url: string; id?: string }>;
+  images: Array<{ url: string; id?: string; isVideo?: boolean }>;
   currentIndex: number;
   onNavigate: (index: number) => void;
   className?: string;
   onWidthChange?: (width: number) => void;
+}
+
+// Video thumbnail component that captures and displays first frame
+function VideoThumbnail({ src, alt }: { src: string; alt: string }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+
+  const captureFirstFrame = useCallback(() => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Set canvas dimensions to match video
+    canvas.width = video.videoWidth || 48;
+    canvas.height = video.videoHeight || 48;
+
+    // Draw the current frame (should be first frame since currentTime=0)
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Convert to data URL for thumbnail
+    try {
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+      setThumbnailUrl(dataUrl);
+    } catch {
+      // CORS issues may prevent this, fall back to showing video element
+    }
+  }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleLoadedData = () => {
+      // Seek to the first frame
+      video.currentTime = 0;
+    };
+
+    const handleSeeked = () => {
+      // Capture the frame after seeking
+      captureFirstFrame();
+    };
+
+    video.addEventListener("loadeddata", handleLoadedData);
+    video.addEventListener("seeked", handleSeeked);
+
+    return () => {
+      video.removeEventListener("loadeddata", handleLoadedData);
+      video.removeEventListener("seeked", handleSeeked);
+    };
+  }, [captureFirstFrame, src]);
+
+  return (
+    <div className="relative w-full h-full">
+      {/* Hidden video for frame capture */}
+      <video
+        ref={videoRef}
+        src={src}
+        className="hidden"
+        muted
+        playsInline
+        preload="metadata"
+        crossOrigin="anonymous"
+      />
+      {/* Hidden canvas for frame capture */}
+      <canvas ref={canvasRef} className="hidden" />
+
+      {/* Display thumbnail or fallback */}
+      {thumbnailUrl ? (
+        <img
+          src={thumbnailUrl}
+          alt={alt}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        // Fallback: show video element as thumbnail
+        <video
+          src={src}
+          className="w-full h-full object-cover"
+          muted
+          playsInline
+          preload="metadata"
+        />
+      )}
+
+      {/* Play icon overlay */}
+      <div className="absolute inset-0 flex items-center justify-center bg-theme-black/30">
+        <Play className="w-4 h-4 text-theme-white fill-theme-white/80" />
+      </div>
+    </div>
+  );
 }
 
 export function VerticalGalleryNav({
@@ -28,10 +123,10 @@ export function VerticalGalleryNav({
     if (activeThumbnailRef.current && scrollContainerRef.current) {
       const container = scrollContainerRef.current;
       const thumbnail = activeThumbnailRef.current;
-      
+
       const containerRect = container.getBoundingClientRect();
       const thumbnailRect = thumbnail.getBoundingClientRect();
-      
+
       // Check if thumbnail is outside visible area
       if (thumbnailRect.top < containerRect.top || thumbnailRect.bottom > containerRect.bottom) {
         thumbnail.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -189,20 +284,23 @@ export function VerticalGalleryNav({
                 }}
                 onMouseDown={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
-                className={`relative overflow-hidden rounded-lg transition-none focus:outline-none ${
-                  isActive
-                    ? "ring-1 ring-theme-text scale-110"
-                    : "ring-1 ring-theme-mid/30 hover:ring-theme-mid/60 hover:bg-theme-white/10 scale-100"
-                }`}
+                className={`relative overflow-hidden rounded-lg transition-none focus:outline-none ${isActive
+                  ? "ring-1 ring-theme-text scale-110"
+                  : "ring-1 ring-theme-mid/30 hover:ring-theme-mid/60 hover:bg-theme-white/10 scale-100"
+                  }`}
                 style={{ width: "48px", height: "48px", flexShrink: 0 }}
-                aria-label={`View image ${index + 1}${isActive ? " (current)" : ""}`}
+                aria-label={`View ${image.isVideo ? 'video' : 'image'} ${index + 1}${isActive ? " (current)" : ""}`}
               >
-                <img
-                  src={image.url}
-                  alt={`Thumbnail ${index + 1}`}
-                  loading="lazy"
-                  className="w-full h-full object-cover"
-                />
+                {image.isVideo ? (
+                  <VideoThumbnail src={image.url} alt={`Video thumbnail ${index + 1}`} />
+                ) : (
+                  <img
+                    src={image.url}
+                    alt={`Thumbnail ${index + 1}`}
+                    loading="lazy"
+                    className="w-full h-full object-cover"
+                  />
+                )}
               </button>
             );
           })}
