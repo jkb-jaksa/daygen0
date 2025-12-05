@@ -163,9 +163,9 @@ export default function TimelineGenerator() {
                         </div>
 
                         <div className="space-y-2">
-                            <label htmlFor="duration" className="block text-sm font-medium text-theme-white font-raleway ml-1">
+                            <span className="block text-sm font-medium text-theme-white font-raleway ml-1">
                                 Duration
-                            </label>
+                            </span>
                             <div className="grid grid-cols-3 gap-2">
                                 {(['short', 'medium', 'long'] as const).map((d) => (
                                     <button
