@@ -34,6 +34,7 @@ const StyleBadge = lazy(() => import('../styles/StyleBadge'));
 const PublicBadge = lazy(() => import('./PublicBadge'));
 const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
 import QuickEditModal, { type QuickEditOptions } from './QuickEditModal';
+const MakeVideoModal = lazy(() => import('./MakeVideoModal'));
 const GenerationProgress = lazy(() => import('./GenerationProgress'));
 
 // Helper to get consistent item identifier for UI actions (jobId → r2FileId → url)
@@ -188,6 +189,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const lastOpenRef = useRef<{ id: string | null; ts: number }>({ id: null, ts: 0 });
   const [expandedVideoPrompts, setExpandedVideoPrompts] = useState<Set<string>>(() => new Set());
   const [quickEditModalState, setQuickEditModalState] = useState<{ isOpen: boolean; initialPrompt: string; item: GalleryImageLike } | null>(null);
+  const [makeVideoModalState, setMakeVideoModalState] = useState<{ isOpen: boolean; initialPrompt: string; item: GalleryImageLike } | null>(null);
   const [isQuickEditLoading] = useState(false);
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement }>({});
   const {
@@ -210,13 +212,15 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       { threshold: 0.1 }
     );
 
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current);
+    const currentTarget = observerTarget.current;
+
+    if (currentTarget) {
+      observer.observe(currentTarget);
     }
 
     return () => {
-      if (observerTarget.current) {
-        observer.unobserve(observerTarget.current);
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
       }
     };
   }, [hasMore, isLoading, loadMore]);
@@ -445,8 +449,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     const defaultOffset = placement === 'above' ? 28 : 8;
     const offset = options?.offset ?? defaultOffset;
     const top = placement === 'above' ? rect.top - offset : rect.bottom + offset;
-    tooltip.style.top = `${top} px`;
-    tooltip.style.left = `${rect.left + rect.width / 2} px`;
+    tooltip.style.top = `${top}px`;
+    tooltip.style.left = `${rect.left + rect.width / 2}px`;
     tooltip.style.transform = 'translateX(-50%)';
 
     tooltip.classList.remove('opacity-0');
@@ -552,8 +556,16 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     }
   }, [handleDeleteImage]);
 
-  const handleVideo = useCallback(() => {
-    handleMakeVideo();
+  const handleVideo = useCallback((item?: GalleryImageLike) => {
+    if (item) {
+      setMakeVideoModalState({
+        isOpen: true,
+        initialPrompt: item.prompt || '',
+        item,
+      });
+    } else {
+      handleMakeVideo();
+    }
   }, [handleMakeVideo]);
 
   // Check if item is selected
@@ -589,7 +601,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       id: syntheticId,
       prompt: prompt,
       model: 'gemini-3-pro-image-preview',
-      status: 'running',
+      status: 'processing',
       progress: 5,
       backendProgress: 5,
       backendProgressUpdatedAt: timestamp,
@@ -980,7 +992,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                               image={item}
                               isGallery={false}
                               anyMenuOpen={isMenuActive}
-                              onMakeVideo={handleVideo}
+                              onMakeVideo={() => handleVideo(item as GalleryImageLike)}
                               onQuickEdit={() => handleQuickEdit(item as GalleryImageLike)}
                             />
                           </Suspense>
@@ -1003,7 +1015,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                 image={item}
                                 isGallery={true}
                                 anyMenuOpen={isMenuActive}
-                                onMakeVideo={handleVideo}
+                                onMakeVideo={() => handleVideo(item as GalleryImageLike)}
                                 onQuickEdit={() => handleQuickEdit(item as GalleryImageLike)}
                               />
                             </Suspense>
@@ -1340,7 +1352,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                   {/* Tooltips rendered via portal to avoid clipping */}
                   {
                     promptForActions && shouldShowPromptDetails && !isGalleryView && (() => {
-                      const tooltipId = `copy - ${item.jobId || item.r2FileId || index} `;
+                      const tooltipId = `copy-${item.jobId || item.r2FileId || index}`;
                       return (
                         <>
                           {createPortal(
@@ -1355,7 +1367,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                           )}
                           {createPortal(
                             <div
-                              data-tooltip-for={`save - ${tooltipId} `}
+                              data-tooltip-for={`save-${tooltipId}`}
                               className={`${tooltips.base} fixed`}
                               style={{ zIndex: 9999 }}
                             >
@@ -1370,9 +1382,9 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
 
                   {
                     (() => {
-                      const deleteId = `delete -${baseActionTooltipId} `;
-                      const likeId = `like - ${baseActionTooltipId} `;
-                      const moreId = `more - ${baseActionTooltipId} `;
+                      const deleteId = `delete-${baseActionTooltipId}`;
+                      const likeId = `like-${baseActionTooltipId}`;
+                      const moreId = `more-${baseActionTooltipId}`;
                       return (
                         <>
                           {createPortal(
@@ -1457,7 +1469,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                             <p className="leading-relaxed break-words whitespace-pre-wrap max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-theme-mid/40 scrollbar-track-transparent">
                               {promptForDisplay}
                               {promptForActions && (() => {
-                                const tooltipId = `copy - gallery - ${item.jobId || item.r2FileId || index} `;
+                                const tooltipId = `copy-gallery-${item.jobId || item.r2FileId || index}`;
                                 return (
                                   <>
                                     <button
@@ -1483,10 +1495,10 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                         e.stopPropagation();
                                       }}
                                       onMouseEnter={(e) => {
-                                        showHoverTooltip(e.currentTarget, `save - ${tooltipId} `, { placement: 'above', offset: 2 });
+                                        showHoverTooltip(e.currentTarget, `save-${tooltipId}`, { placement: 'above', offset: 2 });
                                       }}
                                       onMouseLeave={() => {
-                                        hideHoverTooltip(`save - ${tooltipId} `);
+                                        hideHoverTooltip(`save-${tooltipId}`);
                                       }}
                                       className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
                                     >
@@ -1510,7 +1522,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                 {/* Tooltips rendered via portal to avoid clipping - Gallery view */}
                 {
                   promptForActions && shouldShowPromptDetails && isGalleryView && (() => {
-                    const tooltipId = `copy - gallery - ${item.jobId || item.r2FileId || index} `;
+                    const tooltipId = `copy-gallery-${item.jobId || item.r2FileId || index}`;
                     return (
                       <>
                         {createPortal(
@@ -1525,7 +1537,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                         )}
                         {createPortal(
                           <div
-                            data-tooltip-for={`save - ${tooltipId} `}
+                            data-tooltip-for={`save-${tooltipId}`}
                             className={`${tooltips.base} fixed`}
                             style={{ zIndex: 9999 }}
                           >
@@ -1569,6 +1581,19 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           imageUrl={quickEditModalState.item.url}
           item={quickEditModalState.item}
         />
+      )}
+
+      {/* Make Video Modal */}
+      {makeVideoModalState && (
+        <Suspense fallback={null}>
+          <MakeVideoModal
+            isOpen={makeVideoModalState.isOpen}
+            onClose={() => setMakeVideoModalState(null)}
+            initialPrompt={makeVideoModalState.initialPrompt}
+            imageUrl={makeVideoModalState.item.url}
+            item={makeVideoModalState.item}
+          />
+        </Suspense>
       )}
     </>
   );

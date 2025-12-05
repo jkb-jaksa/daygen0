@@ -1,23 +1,21 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
-import { X, Sparkles, Edit, Loader2, Plus, Settings, User, Package, Scan, Minus, Palette, LayoutGrid, Copy, Bookmark, BookmarkPlus } from 'lucide-react';
-import { debugLog } from '../../utils/debug';
+import { X, Sparkles, Settings, Plus, Scan, Minus, Video, Copy, Bookmark, BookmarkPlus, User, Package, Palette, LayoutGrid, Loader2 } from 'lucide-react';
 import { glass, buttons, tooltips } from '../../styles/designSystem';
 import { useReferenceHandlers } from './hooks/useReferenceHandlers';
 import { useParallaxHover } from '../../hooks/useParallaxHover';
 import { useAvatarHandlers } from './hooks/useAvatarHandlers';
 import { useProductHandlers } from './hooks/useProductHandlers';
-import { useStyleHandlers } from './hooks/useStyleHandlers';
-import { GEMINI_ASPECT_RATIO_OPTIONS } from '../../data/aspectRatios';
+import { BASIC_ASPECT_RATIO_OPTIONS } from '../../data/aspectRatios';
 import type { GeminiAspectRatio } from '../../types/aspectRatio';
-import AvatarPickerPortal from './AvatarPickerPortal';
 import { useSavedPrompts } from '../../hooks/useSavedPrompts';
 import { useAuth } from '../../auth/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { getStyleThumbnailUrl } from './hooks/useStyleHandlers';
 import type { GalleryImageLike } from './types';
 import type { StoredStyle } from '../styles/types';
+import { useStyleHandlers } from './hooks/useStyleHandlers';
+import AvatarPickerPortal from './AvatarPickerPortal';
 
 // Lazy load components to avoid circular dependencies and reduce bundle size
 const SettingsMenu = lazy(() => import('./SettingsMenu'));
@@ -30,9 +28,8 @@ const AvatarCreationModal = lazy(() => import('../avatars/AvatarCreationModal'))
 const ProductCreationModal = lazy(() => import('../products/ProductCreationModal'));
 
 import ImageBadgeRow from '../shared/ImageBadgeRow';
-import { useBadgeNavigation } from './hooks/useBadgeNavigation';
 
-export interface QuickEditOptions {
+export interface MakeVideoOptions {
     prompt: string;
     referenceFiles?: (File | string)[];
     aspectRatio?: GeminiAspectRatio;
@@ -44,10 +41,10 @@ export interface QuickEditOptions {
     productImageUrl?: string;
 }
 
-interface QuickEditModalProps {
+interface MakeVideoModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (options: QuickEditOptions) => void;
+    onSubmit?: (options: MakeVideoOptions) => void;
     initialPrompt?: string;
     isLoading?: boolean;
     imageUrl: string;
@@ -67,7 +64,7 @@ const TooltipPortal = ({ id, children }: { id: string, children: React.ReactNode
     );
 };
 
-const QuickEditModal: React.FC<QuickEditModalProps> = ({
+const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
     isOpen,
     onClose,
     onSubmit,
@@ -80,20 +77,12 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const modalRef = useRef<HTMLDivElement>(null);
     const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLButtonElement>();
-    const navigate = useNavigate();
     const { user } = useAuth();
     const { showToast } = useToast();
     const userKey = user?.id || user?.email || "anon";
     const { savePrompt, isPromptSaved, removePrompt } = useSavedPrompts(userKey);
     const [savePromptModalState, setSavePromptModalState] = useState<{ prompt: string; originalPrompt: string } | null>(null);
     const savePromptModalRef = useRef<HTMLDivElement>(null);
-
-    const {
-        goToAvatarProfile,
-        goToProductProfile,
-        goToPublicGallery,
-        goToModelGallery,
-    } = useBadgeNavigation();
 
     // Helper to convert styleId to StoredStyle
     const styleIdToStoredStyle = useMemo(() => (styleId: string): StoredStyle | null => {
@@ -116,40 +105,27 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         event.stopPropagation();
         try {
             await navigator.clipboard.writeText(text);
-            showToast('Prompt copied!');
-        } catch {
+            showToast('Prompt copied to clipboard');
+        } catch (err) {
+            console.error('Failed to copy prompt:', err);
             showToast('Failed to copy prompt');
         }
     };
 
     // Load saved prompts to enable unsaving
     useEffect(() => {
-        // This hook already loads prompts, so we just need access to the list if we want to find by text
-        // But useSavedPrompts doesn't expose the list directly in the destructuring above
-        // We need to import loadSavedPrompts helper or check if useSavedPrompts exposes it
-        // Looking at ResultsGrid, it uses loadSavedPrompts(userKey) helper
-    }, []);
+        if (isOpen) {
+            // Logic to load saved prompts if needed, handled by hook
+        }
+    }, [isOpen]);
 
     const handleToggleSavePrompt = (text: string, event: React.MouseEvent) => {
         event.stopPropagation();
-        if (!text) return;
-        try {
-            if (isPromptSaved(text)) {
-                // Find and remove
-                // We need to import loadSavedPrompts to find the ID
-                import('../../lib/savedPrompts').then(({ loadSavedPrompts }) => {
-                    const savedPrompts = loadSavedPrompts(userKey);
-                    const existing = savedPrompts.find(p => p.text.toLowerCase() === text.trim().toLowerCase());
-                    if (existing) {
-                        removePrompt(existing.id);
-                        showToast('Prompt unsaved');
-                    }
-                });
-            } else {
-                setSavePromptModalState({ prompt: text.trim(), originalPrompt: text.trim() });
-            }
-        } catch {
-            showToast('Failed to update prompt');
+        if (isPromptSaved(text)) {
+            removePrompt(text);
+            showToast('Prompt removed from saved');
+        } else {
+            setSavePromptModalState({ prompt: text, originalPrompt: text });
         }
     };
 
@@ -158,14 +134,10 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     };
 
     const handleSavePromptModalSave = () => {
-        if (!savePromptModalState || !savePromptModalState.prompt.trim()) return;
-
-        try {
-            savePrompt(savePromptModalState.prompt.trim());
-            showToast('Prompt saved!');
+        if (savePromptModalState) {
+            savePrompt(savePromptModalState.prompt);
+            showToast('Prompt saved');
             setSavePromptModalState(null);
-        } catch {
-            showToast('Failed to save prompt');
         }
     };
 
@@ -194,9 +166,19 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         };
     }, [savePromptModalState]);
 
+    // New state for advanced features
+    const [selectedModel, setSelectedModel] = useState<string>('veo-3');
+    const [batchSize, setBatchSize] = useState(1);
+    const [aspectRatio, setAspectRatio] = useState<GeminiAspectRatio>('16:9');
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isAspectRatioOpen, setIsAspectRatioOpen] = useState(false);
+    const [isDragActive, setIsDragActive] = useState(false);
+    const settingsButtonRef = useRef<HTMLButtonElement>(null);
+    const aspectRatioButtonRef = useRef<HTMLButtonElement>(null);
+    const styleButtonRef = useRef<HTMLButtonElement>(null);
+
     // Hover states for buttons
     const [isAvatarButtonHovered, setIsAvatarButtonHovered] = useState(false);
-
     const [isProductButtonHovered, setIsProductButtonHovered] = useState(false);
     const [isStyleButtonHovered, setIsStyleButtonHovered] = useState(false);
 
@@ -204,15 +186,14 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     const [isDraggingOverAvatarButton, setIsDraggingOverAvatarButton] = useState(false);
     const [isDraggingOverProductButton, setIsDraggingOverProductButton] = useState(false);
 
-    // New state for advanced features
-    const [batchSize, setBatchSize] = useState(1);
-    const [aspectRatio, setAspectRatio] = useState<GeminiAspectRatio>('1:1');
-    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [isAspectRatioOpen, setIsAspectRatioOpen] = useState(false);
-    const [isDragActive, setIsDragActive] = useState(false);
-    const settingsButtonRef = useRef<HTMLButtonElement>(null);
-    const aspectRatioButtonRef = useRef<HTMLButtonElement>(null);
-    const styleButtonRef = useRef<HTMLButtonElement>(null);
+    // Veo Specific States
+    const [veoGenModel, setVeoGenModel] = useState<'veo-3.1-generate-preview' | 'veo-3.1-fast-generate-preview'>('veo-3.1-generate-preview');
+    const [veoNegativePrompt, setVeoNegativePrompt] = useState('');
+    const [veoSeed, setVeoSeed] = useState<number | undefined>(undefined);
+
+    // Sora Specific States
+    const [soraDuration, setSoraDuration] = useState<number>(5);
+    const [soraWithSound, setSoraWithSound] = useState<boolean>(true);
 
     // Handlers
     const avatarHandlers = useAvatarHandlers();
@@ -302,21 +283,46 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
 
     const handleReferenceAdd = useCallback(() => { }, []);
 
-    // Max 13 references can be added in Quick Edit (original image + 13 = 14 total allowed by Gemini 3 Pro)
-    const MAX_QUICK_EDIT_REFERENCES = 13;
+    // Max 3 references allowed in Make Video
+    const MAX_REFERENCES = 3;
 
     const {
         referenceFiles,
         referencePreviews,
-        handleAddReferenceFiles,
+        // (handleAddReferenceFiles not used directly)
         clearReference,
         openFileInput,
         fileInputRef,
-        handleDragOver,
-        handleDragEnter,
-        handleDragLeave,
-        handleDrop,
-    } = useReferenceHandlers(selectedAvatar, selectedProduct, handleReferenceAdd, MAX_QUICK_EDIT_REFERENCES);
+        handleFileSelected,
+        handleDragOver: hookHandleDragOver,
+        handleDragEnter: hookHandleDragEnter,
+        handleDragLeave: hookHandleDragLeave,
+        handleDrop: hookHandleDrop,
+    } = useReferenceHandlers(selectedAvatar, selectedProduct, handleReferenceAdd, MAX_REFERENCES);
+
+    // Wrap hook drag handlers to manage local state
+    const handleDragOver = useCallback((e: React.DragEvent) => {
+        hookHandleDragOver(e);
+        setIsDragActive(true);
+    }, [hookHandleDragOver]);
+
+    const handleDragEnter = useCallback((e: React.DragEvent) => {
+        hookHandleDragEnter(e);
+        setIsDragActive(true);
+    }, [hookHandleDragEnter]);
+
+    const handleDragLeave = useCallback((e: React.DragEvent) => {
+        hookHandleDragLeave(e);
+        // Only disable if leaving the container
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+            setIsDragActive(false);
+        }
+    }, [hookHandleDragLeave]);
+
+    const handleDrop = useCallback((e: React.DragEvent) => {
+        hookHandleDrop(e);
+        setIsDragActive(false);
+    }, [hookHandleDrop]);
 
     useEffect(() => {
         if (isOpen) {
@@ -327,7 +333,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
             }, 100);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isOpen]); // Removed initialPrompt from dependency to prevent reset
+    }, [isOpen]);
 
     useEffect(() => {
         if (isOpen) {
@@ -354,34 +360,12 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         };
     }, [isOpen, onClose]);
 
-    // Listen for setReferenceImage events from StyleSelectionModal
-    useEffect(() => {
-        if (!isOpen) return;
-
-        const handleSetReferenceImage = (event: Event) => {
-            const customEvent = event as CustomEvent<{ file?: File; url?: string }>;
-            if (customEvent.detail?.url) {
-                debugLog('[QuickEditModal] Received setReferenceImage event (URL):', customEvent.detail.url);
-                handleAddReferenceFiles([customEvent.detail.url]);
-            } else if (customEvent.detail?.file) {
-                debugLog('[QuickEditModal] Received setReferenceImage event (File):', customEvent.detail.file.name);
-                handleAddReferenceFiles([customEvent.detail.file]);
-            }
-        };
-
-        window.addEventListener('setReferenceImage', handleSetReferenceImage);
-
-        return () => {
-            window.removeEventListener('setReferenceImage', handleSetReferenceImage);
-        };
-    }, [isOpen, handleAddReferenceFiles]);
-
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (prompt.trim()) {
+        if (onSubmit) {
             onSubmit({
-                prompt: prompt.trim(),
-                referenceFiles: referenceFiles.length > 0 ? referenceFiles : undefined,
+                prompt,
+                referenceFiles,
                 aspectRatio,
                 batchSize,
                 avatarId: selectedAvatar?.id,
@@ -390,6 +374,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                 avatarImageUrl: selectedAvatar?.imageUrl,
                 productImageUrl: selectedProduct?.imageUrl,
             });
+            onClose();
         }
     };
 
@@ -440,12 +425,22 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         onClose: () => setIsSettingsOpen(false),
         common: {
             batchSize,
-            onBatchSizeChange: setBatchSize,
+            onBatchSizeChange: (val: number) => setBatchSize(val),
             min: 1,
-            max: 4,
+            max: 1, // Restrict to 1 for video for now
         },
         flux: { enabled: false, model: 'flux-2-pro' as const, onModelChange: () => { } },
-        veo: { enabled: false, aspectRatio: '16:9' as const, onAspectRatioChange: () => { }, model: 'veo-3.1-generate-preview' as const, onModelChange: () => { }, negativePrompt: '', onNegativePromptChange: () => { }, seed: undefined, onSeedChange: () => { } },
+        veo: {
+            enabled: selectedModel === 'veo-3',
+            aspectRatio: aspectRatio as '16:9' | '9:16',
+            onAspectRatioChange: (val: '16:9' | '9:16') => setAspectRatio(val),
+            model: veoGenModel,
+            onModelChange: (val: "veo-3.1-generate-preview" | "veo-3.1-fast-generate-preview") => setVeoGenModel(val),
+            negativePrompt: veoNegativePrompt,
+            onNegativePromptChange: (val: string) => setVeoNegativePrompt(val),
+            seed: veoSeed,
+            onSeedChange: (val: number | undefined) => setVeoSeed(val)
+        },
         hailuo: { enabled: false, duration: 6, onDurationChange: () => { }, resolution: '1080P' as const, onResolutionChange: () => { }, promptOptimizer: true, onPromptOptimizerChange: () => { }, fastPretreatment: false, onFastPretreatmentChange: () => { }, watermark: false, onWatermarkChange: () => { }, firstFrame: null, onFirstFrameChange: () => { }, lastFrame: null, onLastFrameChange: () => { } },
         wan: { enabled: false, size: '1280*720', onSizeChange: () => { }, negativePrompt: '', onNegativePromptChange: () => { }, promptExtend: false, onPromptExtendChange: () => { }, watermark: false, onWatermarkChange: () => { }, seed: '', onSeedChange: () => { } },
         seedance: { enabled: false, mode: 't2v' as const, onModeChange: () => { }, ratio: '16:9' as const, onRatioChange: () => { }, duration: 5, onDurationChange: () => { }, resolution: '1080p' as const, onResolutionChange: () => { }, fps: 24, onFpsChange: () => { }, cameraFixed: true, onCameraFixedChange: () => { }, seed: '', onSeedChange: () => { }, firstFrame: null, onFirstFrameChange: () => { }, lastFrame: null, onLastFrameChange: () => { } },
@@ -453,7 +448,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         runway: { enabled: false, model: 'runway-gen4' as const, onModelChange: () => { } },
         grok: { enabled: false, model: 'grok-2-image' as const, onModelChange: () => { } },
         gemini: {
-            enabled: true,
+            enabled: false,
             temperature: 1,
             onTemperatureChange: () => { },
             outputLength: 1024,
@@ -461,16 +456,22 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
             topP: 0.95,
             onTopPChange: () => { },
             aspectRatio,
-            onAspectRatioChange: setAspectRatio,
+            onAspectRatioChange: () => { },
         },
         qwen: { enabled: false, size: '1024*1024', onSizeChange: () => { }, promptExtend: false, onPromptExtendChange: () => { }, watermark: false, onWatermarkChange: () => { } },
         kling: { enabled: false, model: 'kling-v2.1-master' as const, onModelChange: () => { }, aspectRatio: '16:9' as const, onAspectRatioChange: () => { }, duration: 5 as const, onDurationChange: () => { }, mode: 'standard' as const, onModeChange: () => { }, cfgScale: 0.5, onCfgScaleChange: () => { }, negativePrompt: '', onNegativePromptChange: () => { }, cameraType: 'none' as const, onCameraTypeChange: () => { }, cameraConfig: { horizontal: 0, vertical: 0, pan: 0, tilt: 0, roll: 0, zoom: 0 }, onCameraConfigChange: () => { } },
         lumaPhoton: { enabled: false, model: 'luma-photon-1' as const, onModelChange: () => { } },
         lumaRay: { enabled: false, variant: 'luma-ray-2' as const, onVariantChange: () => { } },
-        sora: { enabled: false, aspectRatio: '16:9' as const, onAspectRatioChange: () => { }, duration: 5, onDurationChange: () => { }, withSound: true, onWithSoundChange: () => { } },
-    }), [batchSize, aspectRatio, isSettingsOpen]);
-
-    if (!isOpen) return null;
+        sora: {
+            enabled: selectedModel === 'sora-2',
+            aspectRatio: aspectRatio as '16:9' | '9:16',
+            onAspectRatioChange: (val: '16:9' | '9:16') => setAspectRatio(val),
+            duration: soraDuration,
+            onDurationChange: (val: number) => setSoraDuration(val),
+            withSound: soraWithSound,
+            onWithSoundChange: (val: boolean) => setSoraWithSound(val)
+        }
+    }), [batchSize, aspectRatio, isSettingsOpen, selectedModel, veoGenModel, veoNegativePrompt, veoSeed, soraDuration, soraWithSound]);
 
     if (!isOpen) return null;
 
@@ -554,20 +555,19 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                     <button
                                                         onClick={(e) => void handleCopyPrompt(item.prompt!, e)}
                                                         className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle"
-                                                        onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'quick-edit-copy-prompt')}
-                                                        onMouseLeave={() => hideHoverTooltip('quick-edit-copy-prompt')}
+                                                        onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'make-video-copy-prompt')}
+                                                        onMouseLeave={() => hideHoverTooltip('make-video-copy-prompt')}
                                                     >
                                                         <Copy className="w-3 h-3" />
                                                     </button>
-                                                    <TooltipPortal id="quick-edit-copy-prompt">
+                                                    <TooltipPortal id="make-video-copy-prompt">
                                                         Copy prompt
                                                     </TooltipPortal>
-
                                                     <button
                                                         onClick={(e) => handleToggleSavePrompt(item.prompt!, e)}
                                                         className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle"
-                                                        onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'quick-edit-save-prompt')}
-                                                        onMouseLeave={() => hideHoverTooltip('quick-edit-save-prompt')}
+                                                        onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'make-video-save-prompt')}
+                                                        onMouseLeave={() => hideHoverTooltip('make-video-save-prompt')}
                                                     >
                                                         {isPromptSaved(item.prompt!) ? (
                                                             <Bookmark className="w-3 h-3 fill-current" />
@@ -575,7 +575,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                             <BookmarkPlus className="w-3 h-3" />
                                                         )}
                                                     </button>
-                                                    <TooltipPortal id="quick-edit-save-prompt">
+                                                    <TooltipPortal id="make-video-save-prompt">
                                                         {isPromptSaved(item.prompt!) ? "Prompt saved" : "Save prompt"}
                                                     </TooltipPortal>
                                                 </>
@@ -595,7 +595,6 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                                     className="w-6 h-6 rounded object-cover border border-theme-mid cursor-pointer hover:border-theme-text transition-colors duration-200"
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
-                                                                        window.open(ref, '_blank');
                                                                     }}
                                                                 />
                                                                 <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
@@ -615,13 +614,13 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                 model={{
                                                     name: item.model || 'unknown',
                                                     size: 'md',
-                                                    onClick: () => goToModelGallery(item.model, 'image')
+                                                    onClick: () => { }
                                                 }}
                                                 avatars={
                                                     item.avatarId
                                                         ? (() => {
                                                             const avatarForImage = avatarHandlers.storedAvatars.find(a => a.id === item.avatarId);
-                                                            return avatarForImage ? [{ data: avatarForImage, onClick: () => goToAvatarProfile(avatarForImage) }] : [];
+                                                            return avatarForImage ? [{ data: avatarForImage, onClick: () => { } }] : [];
                                                         })()
                                                         : []
                                                 }
@@ -629,7 +628,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                     item.productId
                                                         ? (() => {
                                                             const productForImage = productHandlers.storedProducts.find(p => p.id === item.productId);
-                                                            return productForImage ? [{ data: productForImage, onClick: () => goToProductProfile(productForImage) }] : [];
+                                                            return productForImage ? [{ data: productForImage, onClick: () => { } }] : [];
                                                         })()
                                                         : []
                                                 }
@@ -643,7 +642,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                 }
                                                 aspectRatio={item.aspectRatio}
                                                 isPublic={item.isPublic}
-                                                onPublicClick={item.isPublic ? () => goToPublicGallery() : undefined}
+                                                onPublicClick={undefined}
                                                 compact={false}
                                             />
                                         </div>
@@ -654,11 +653,11 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                     </div>
 
                     {/* Right Column - Form */}
-                    < div className="w-full md:w-7/12 flex flex-col" >
+                    <div className="w-full md:w-7/12 flex flex-col">
                         <div className="flex items-center justify-between mb-1">
                             <h2 className="text-lg font-raleway text-theme-text flex items-center gap-2">
-                                <Edit className="w-5 h-5 text-theme-text" />
-                                Edit
+                                <Video className="w-5 h-5 text-theme-text" />
+                                Make Video
                             </h2>
                             <button
                                 type="button"
@@ -672,30 +671,18 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
 
                         <form onSubmit={handleSubmit} className="flex flex-col gap-3 flex-1">
                             <div className="flex flex-col gap-2 flex-1">
-                                <label htmlFor="quick-edit-prompt" className="text-sm font-raleway text-theme-white">
+                                <label htmlFor="make-video-prompt" className="text-sm font-raleway text-theme-white">
                                     Enter your prompt
                                 </label>
                                 <div
                                     className={`relative flex flex-col rounded-xl transition-colors duration-200 ${glass.prompt} focus-within:border-theme-mid ${isDragActive ? 'border border-n-text' : ''}`}
-                                    onDragOver={(e) => {
-                                        handleDragOver(e);
-                                        setIsDragActive(true);
-                                    }}
-                                    onDragEnter={(e) => {
-                                        handleDragEnter(e);
-                                        setIsDragActive(true);
-                                    }}
-                                    onDragLeave={(e) => {
-                                        handleDragLeave(e);
-                                        setIsDragActive(false);
-                                    }}
-                                    onDrop={(e) => {
-                                        handleDrop(e);
-                                        setIsDragActive(false);
-                                    }}
+                                    onDragOver={handleDragOver}
+                                    onDragEnter={handleDragEnter}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={handleDrop}
                                 >
                                     <textarea
-                                        id="quick-edit-prompt"
+                                        id="make-video-prompt"
                                         ref={inputRef}
                                         value={prompt}
                                         onChange={(e) => setPrompt(e.target.value)}
@@ -705,7 +692,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                         disabled={isLoading}
                                     />
 
-                                    {/* Second Row: Avatar, Voice, Product, Style */}
+                                    {/* Middle Row: Avatar, Product, Style */}
                                     <div className="flex items-center gap-2 border-t border-n-dark px-3 py-2">
                                         {/* Avatar Button */}
                                         <div className="relative">
@@ -893,30 +880,24 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                     className="hidden"
                                                     accept="image/*"
                                                     multiple
-                                                    onChange={(e) => {
-                                                        const files = Array.from(e.target.files || []);
-                                                        if (files.length > 0) {
-                                                            handleAddReferenceFiles(files);
-                                                        }
-                                                        e.target.value = '';
-                                                    }}
+                                                    onChange={handleFileSelected}
                                                 />
                                                 <div className="relative">
                                                     <button
                                                         type="button"
-                                                        onClick={() => openFileInput()}
+                                                        onClick={openFileInput}
                                                         aria-label="Add reference image"
-                                                        disabled={referenceFiles.length >= MAX_QUICK_EDIT_REFERENCES}
-                                                        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small ${referenceFiles.length >= MAX_QUICK_EDIT_REFERENCES ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                        onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'edit-reference-tooltip')}
-                                                        onMouseLeave={() => hideHoverTooltip('edit-reference-tooltip')}
+                                                        disabled={referenceFiles.length >= MAX_REFERENCES}
+                                                        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small ${referenceFiles.length >= MAX_REFERENCES ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                        onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'make-video-reference-tooltip')}
+                                                        onMouseLeave={() => hideHoverTooltip('make-video-reference-tooltip')}
                                                         onPointerMove={onPointerMove}
                                                         onPointerEnter={onPointerEnter}
                                                         onPointerLeave={onPointerLeave}
                                                     >
                                                         <Plus className="w-4 h-4 flex-shrink-0 text-n-text" />
                                                     </button>
-                                                    <TooltipPortal id="edit-reference-tooltip">
+                                                    <TooltipPortal id="make-video-reference-tooltip">
                                                         Reference Image
                                                     </TooltipPortal>
                                                 </div>
@@ -951,16 +932,16 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                 </div>
                                             )}
 
-                                            {/* Model Selector (Restricted to Nano Banana) */}
+                                            {/* Model Selector (Restricted to Veo 3.1 and Sora 2) */}
                                             <div className="relative">
                                                 <Suspense fallback={null}>
                                                     <ModelSelector
-                                                        selectedModel="gemini-3.0-pro-image"
-                                                        onModelChange={() => { }} // No-op
+                                                        selectedModel={selectedModel}
+                                                        onModelChange={(model) => setSelectedModel(model)}
                                                         isGenerating={isLoading}
-                                                        activeCategory="image"
+                                                        activeCategory="video"
                                                         hasReferences={referenceFiles.length > 0}
-                                                        allowedModels={['gemini-3.0-pro-image']}
+                                                        allowedModels={['veo-3', 'sora-2']}
                                                     />
                                                 </Suspense>
                                             </div>
@@ -970,17 +951,17 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                 <button
                                                     ref={settingsButtonRef}
                                                     type="button"
-                                                    onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                                                    onClick={() => setIsSettingsOpen(prev => !prev)}
                                                     className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small`}
-                                                    onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'edit-settings-tooltip')}
-                                                    onMouseLeave={() => hideHoverTooltip('edit-settings-tooltip')}
+                                                    onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'make-video-settings-tooltip')}
+                                                    onMouseLeave={() => hideHoverTooltip('make-video-settings-tooltip')}
                                                     onPointerMove={onPointerMove}
                                                     onPointerEnter={onPointerEnter}
                                                     onPointerLeave={onPointerLeave}
                                                 >
                                                     <Settings className="w-4 h-4 text-n-text" />
                                                 </button>
-                                                <TooltipPortal id="edit-settings-tooltip">
+                                                <TooltipPortal id="make-video-settings-tooltip">
                                                     Settings
                                                 </TooltipPortal>
                                                 <Suspense fallback={null}>
@@ -993,10 +974,10 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                 <button
                                                     ref={aspectRatioButtonRef}
                                                     type="button"
-                                                    onClick={() => setIsAspectRatioOpen(!isAspectRatioOpen)}
+                                                    onClick={() => setIsAspectRatioOpen(prev => !prev)}
                                                     className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2 parallax-small`}
-                                                    onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'edit-aspect-ratio-tooltip')}
-                                                    onMouseLeave={() => hideHoverTooltip('edit-aspect-ratio-tooltip')}
+                                                    onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'make-video-aspect-ratio-tooltip')}
+                                                    onMouseLeave={() => hideHoverTooltip('make-video-aspect-ratio-tooltip')}
                                                     onPointerMove={onPointerMove}
                                                     onPointerEnter={onPointerEnter}
                                                     onPointerLeave={onPointerLeave}
@@ -1004,7 +985,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                     <Scan className="w-4 h-4 flex-shrink-0 text-n-text" />
                                                     <span className="font-raleway text-sm whitespace-nowrap text-n-text">{aspectRatio}</span>
                                                 </button>
-                                                <TooltipPortal id="edit-aspect-ratio-tooltip">
+                                                <TooltipPortal id="make-video-aspect-ratio-tooltip">
                                                     Aspect Ratio
                                                 </TooltipPortal>
                                                 <Suspense fallback={null}>
@@ -1012,11 +993,10 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         anchorRef={aspectRatioButtonRef}
                                                         open={isAspectRatioOpen}
                                                         onClose={() => setIsAspectRatioOpen(false)}
-                                                        options={GEMINI_ASPECT_RATIO_OPTIONS}
+                                                        options={BASIC_ASPECT_RATIO_OPTIONS}
                                                         selectedValue={aspectRatio}
                                                         onSelect={(val) => {
                                                             setAspectRatio(val as GeminiAspectRatio);
-                                                            setIsAspectRatioOpen(false);
                                                         }}
                                                     />
                                                 </Suspense>
@@ -1025,15 +1005,15 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                             {/* Batch Size (Visible on larger screens) */}
                                             <div
                                                 className="relative hidden lg:flex items-center"
-                                                onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'edit-batch-size-tooltip')}
-                                                onMouseLeave={() => hideHoverTooltip('edit-batch-size-tooltip')}
+                                                onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'make-video-batch-size-tooltip')}
+                                                onMouseLeave={() => hideHoverTooltip('make-video-batch-size-tooltip')}
                                             >
                                                 <div className={`${glass.promptBorderless} flex items-center gap-0 h-8 px-2 rounded-full text-n-text`}>
                                                     <div className="relative">
                                                         <button
                                                             type="button"
-                                                            onClick={() => setBatchSize(Math.max(1, batchSize - 1))}
-                                                            disabled={batchSize === 1}
+                                                            onClick={() => setBatchSize(prev => Math.max(1, prev - 1))}
+                                                            disabled={batchSize <= 1}
                                                             className="grid size-6 place-items-center rounded-full text-n-text transition-colors duration-200 hover:bg-n-text/20 disabled:cursor-not-allowed disabled:opacity-40"
                                                         >
                                                             <Minus className="h-3.5 w-3.5" />
@@ -1045,24 +1025,24 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                     <div className="relative">
                                                         <button
                                                             type="button"
-                                                            onClick={() => setBatchSize(Math.min(4, batchSize + 1))}
-                                                            disabled={batchSize === 4}
+                                                            onClick={() => setBatchSize(prev => Math.min(1, prev + 1))}
+                                                            disabled={batchSize >= 1}
                                                             className="grid size-6 place-items-center rounded-full text-n-text transition-colors duration-200 hover:bg-n-text/20 disabled:cursor-not-allowed disabled:opacity-40"
                                                         >
                                                             <Plus className="h-3.5 w-3.5" />
                                                         </button>
                                                     </div>
                                                 </div>
-                                                <TooltipPortal id="edit-batch-size-tooltip">
-                                                    Batch size
+                                                <TooltipPortal id="make-video-batch-size-tooltip">
+                                                    Batch Size (Max 1 for Video)
                                                 </TooltipPortal>
                                             </div>
                                         </div>
 
                                         <button
                                             type="submit"
-                                            className={`${buttons.primary} px-6 rounded-xl flex items-center gap-2 font-raleway`}
                                             disabled={isLoading || !prompt.trim()}
+                                            className={`${buttons.primary} px-6 rounded-xl flex items-center gap-2 font-raleway`}
                                         >
                                             {isLoading ? (
                                                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -1072,30 +1052,18 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                             Generate
                                         </button>
                                     </div>
-                                </div >
-                            </div >
-                        </form >
-                    </div >
-                </div >
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
                 {/* Avatar Picker Portal */}
-                < AvatarPickerPortal
+                <AvatarPickerPortal
                     anchorRef={avatarButtonRef}
                     open={isAvatarPickerOpen}
                     onClose={() => setIsAvatarPickerOpen(false)}
                 >
                     <div className="min-w-[260px] space-y-2">
-                        <div className="flex items-center justify-between px-1">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setIsAvatarPickerOpen(false);
-                                    navigate('/app/avatars');
-                                }}
-                                className="text-base font-raleway text-theme-text"
-                            >
-                                Your Avatars
-                            </button>
-                        </div>
                         {avatarHandlers.storedAvatars.length > 0 ? (
                             <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
                                 {avatarHandlers.storedAvatars.map(avatar => {
@@ -1133,40 +1101,18 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                         ) : (
                             <div className="py-4 text-center">
                                 <p className="text-sm text-theme-light">No avatars found</p>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setIsAvatarPickerOpen(false);
-                                        navigate('/app/avatars');
-                                    }}
-                                    className="mt-2 text-sm text-theme-text hover:underline"
-                                >
-                                    Create one
-                                </button>
                             </div>
                         )}
                     </div>
-                </AvatarPickerPortal >
+                </AvatarPickerPortal>
 
                 {/* Product Picker Portal */}
-                < AvatarPickerPortal
+                <AvatarPickerPortal
                     anchorRef={productButtonRef}
                     open={isProductPickerOpen}
                     onClose={() => setIsProductPickerOpen(false)}
                 >
                     <div className="min-w-[260px] space-y-2">
-                        <div className="flex items-center justify-between px-1">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setIsProductPickerOpen(false);
-                                    navigate('/app/products');
-                                }}
-                                className="text-base font-raleway text-theme-text"
-                            >
-                                Your Products
-                            </button>
-                        </div>
                         {productHandlers.storedProducts.length > 0 ? (
                             <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
                                 {productHandlers.storedProducts.map(product => {
@@ -1204,34 +1150,22 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                         ) : (
                             <div className="py-4 text-center">
                                 <p className="text-sm text-theme-light">No products found</p>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setIsProductPickerOpen(false);
-                                        navigate('/app/products');
-                                    }}
-                                    className="mt-2 text-sm text-theme-text hover:underline"
-                                >
-                                    Create one
-                                </button>
                             </div>
                         )}
                     </div>
-                </AvatarPickerPortal >
+                </AvatarPickerPortal>
 
                 {/* Style Selection Modal */}
-                {
-                    styleHandlers.isStyleModalOpen && (
-                        <Suspense fallback={null}>
-                            <StyleSelectionModal
-                                open={styleHandlers.isStyleModalOpen}
-                                onClose={styleHandlers.handleStyleModalClose}
-                                styleHandlers={styleHandlers}
-                                onApplySelectedStyles={() => { }}
-                            />
-                        </Suspense>
-                    )
-                }
+                {styleHandlers.isStyleModalOpen && (
+                    <Suspense fallback={null}>
+                        <StyleSelectionModal
+                            open={styleHandlers.isStyleModalOpen}
+                            onClose={styleHandlers.handleStyleModalClose}
+                            styleHandlers={styleHandlers}
+                            onApplySelectedStyles={() => { }}
+                        />
+                    </Suspense>
+                )}
 
                 {/* Hidden File Inputs */}
                 <input
@@ -1250,53 +1184,50 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                 />
 
                 {/* Creation Modals */}
-                {
-                    avatarHandlers.isAvatarCreationModalOpen && (
-                        <Suspense fallback={null}>
-                            <AvatarCreationModal
-                                open={avatarHandlers.isAvatarCreationModalOpen}
-                                selection={avatarHandlers.avatarSelection}
-                                uploadError={avatarHandlers.avatarUploadError}
-                                isDragging={avatarHandlers.isDraggingAvatar}
-                                avatarName={avatarHandlers.avatarName}
-                                disableSave={!avatarHandlers.avatarSelection || !avatarHandlers.avatarName.trim()}
-                                onClose={avatarHandlers.handleAvatarCreationModalClose}
-                                onAvatarNameChange={avatarHandlers.setAvatarName}
-                                onSave={() => avatarHandlers.handleAvatarSave(avatarHandlers.avatarName, avatarHandlers.avatarSelection!)}
-                                onClearSelection={() => avatarHandlers.setAvatarSelection(null)}
-                                onProcessFile={avatarHandlers.processAvatarImageFile}
-                                onDragStateChange={avatarHandlers.setIsDraggingAvatar}
-                                onUploadError={avatarHandlers.setAvatarUploadError}
-                            />
-                        </Suspense>
-                    )
-                }
+                {avatarHandlers.isAvatarCreationModalOpen && (
+                    <Suspense fallback={null}>
+                        <AvatarCreationModal
+                            open={avatarHandlers.isAvatarCreationModalOpen}
+                            selection={avatarHandlers.avatarSelection}
+                            uploadError={avatarHandlers.avatarUploadError}
+                            isDragging={avatarHandlers.isDraggingAvatar}
+                            avatarName={avatarHandlers.avatarName}
+                            disableSave={!avatarHandlers.avatarSelection || !avatarHandlers.avatarName.trim()}
+                            onClose={avatarHandlers.handleAvatarCreationModalClose}
+                            onAvatarNameChange={avatarHandlers.setAvatarName}
+                            onSave={() => avatarHandlers.handleAvatarSave(avatarHandlers.avatarName, avatarHandlers.avatarSelection!)}
+                            onClearSelection={() => avatarHandlers.setAvatarSelection(null)}
+                            onProcessFile={avatarHandlers.processAvatarImageFile}
+                            onDragStateChange={avatarHandlers.setIsDraggingAvatar}
+                            onUploadError={avatarHandlers.setAvatarUploadError}
+                        />
+                    </Suspense>
+                )}
 
-                {
-                    productHandlers.isProductCreationModalOpen && (
-                        <Suspense fallback={null}>
-                            <ProductCreationModal
-                                open={productHandlers.isProductCreationModalOpen}
-                                selection={productHandlers.productSelection}
-                                uploadError={productHandlers.productUploadError}
-                                isDragging={productHandlers.isDraggingProduct}
-                                productName={productHandlers.productName}
-                                disableSave={!productHandlers.productSelection || !productHandlers.productName.trim()}
-                                onClose={productHandlers.handleProductCreationModalClose}
-                                onProductNameChange={productHandlers.setProductName}
-                                onSave={() => productHandlers.handleProductSave(productHandlers.productName, productHandlers.productSelection!)}
-                                onClearSelection={() => productHandlers.setProductSelection(null)}
-                                onProcessFile={productHandlers.processProductImageFile}
-                                onDragStateChange={productHandlers.setIsDraggingProduct}
-                                onUploadError={productHandlers.setProductUploadError}
-                            />
-                        </Suspense>
-                    )
-                }
+                {productHandlers.isProductCreationModalOpen && (
+                    <Suspense fallback={null}>
+                        <ProductCreationModal
+                            open={productHandlers.isProductCreationModalOpen}
+                            selection={productHandlers.productSelection}
+                            uploadError={productHandlers.productUploadError}
+                            isDragging={productHandlers.isDraggingProduct}
+                            productName={productHandlers.productName}
+                            disableSave={!productHandlers.productSelection || !productHandlers.productName.trim()}
+                            onClose={productHandlers.handleProductCreationModalClose}
+                            onProductNameChange={productHandlers.setProductName}
+                            onSave={() => productHandlers.handleProductSave(productHandlers.productName, productHandlers.productSelection!)}
+                            onClearSelection={() => productHandlers.setProductSelection(null)}
+                            onProcessFile={productHandlers.processProductImageFile}
+                            onDragStateChange={productHandlers.setIsDraggingProduct}
+                            onUploadError={productHandlers.setProductUploadError}
+                        />
+                    </Suspense>
+                )}
+
             </div>
         </>,
         document.body
     );
 };
 
-export default QuickEditModal;
+export default MakeVideoModal;

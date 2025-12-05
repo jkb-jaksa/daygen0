@@ -133,6 +133,16 @@ interface LumaRaySettingsProps {
   onVariantChange: (value: "luma-ray-2" | "luma-ray-flash-2") => void;
 }
 
+interface SoraSettingsProps {
+  enabled: boolean;
+  aspectRatio: "16:9" | "9:16";
+  onAspectRatioChange: (value: "16:9" | "9:16") => void;
+  duration: number;
+  onDurationChange: (value: number) => void;
+  withSound: boolean;
+  onWithSoundChange: (value: boolean) => void;
+}
+
 interface CommonSettingsProps {
   batchSize: number;
   onBatchSizeChange: (value: number) => void;
@@ -168,6 +178,7 @@ export interface SettingsMenuProps {
   common: CommonSettingsProps;
   flux: FluxSettingsProps;
   veo: VeoSettingsProps;
+  sora: SoraSettingsProps; // Added Sora settings
   hailuo: HailuoSettingsProps;
   wan: WanSettingsProps;
   seedance: SeedanceSettingsProps;
@@ -303,6 +314,7 @@ export function SettingsMenu({
   common,
   flux,
   veo,
+  sora, // Destructure sora
   hailuo,
   wan,
   seedance,
@@ -430,6 +442,50 @@ export function SettingsMenu({
               placeholder="e.g., 12345"
               className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white placeholder-theme-white/40 focus:ring-2 focus:ring-theme-text focus:border-transparent outline-none"
             />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (sora && sora.enabled) {
+    sections.push(
+      <div key="sora" className="space-y-4">
+        <div className="text-base font-raleway text-theme-text mb-3">Sora 2 Settings</div>
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs font-raleway text-theme-white/80 mb-1">Aspect Ratio</label>
+            <select
+              value={sora.aspectRatio}
+              onChange={event => sora.onAspectRatioChange(event.target.value as "16:9" | "9:16")}
+              className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white focus:ring-2 focus:ring-theme-text focus:border-transparent outline-none"
+            >
+              <option value="16:9">16:9 (Landscape)</option>
+              <option value="9:16">9:16 (Portrait)</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-raleway text-theme-white/80 mb-1">Duration</label>
+            <select
+              value={sora.duration}
+              onChange={event => sora.onDurationChange(parseInt(event.target.value, 10))}
+              className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white focus:ring-2 focus:ring-theme-text focus:border-transparent outline-none"
+            >
+              <option value={5}>5 seconds</option>
+              <option value={10}>10 seconds</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="soraWithSound"
+              checked={sora.withSound}
+              onChange={event => sora.onWithSoundChange(event.target.checked)}
+              className="w-4 h-4 text-theme-text bg-theme-black border-theme-mid rounded focus:ring-theme-text focus:ring-2"
+            />
+            <label htmlFor="soraWithSound" className="text-xs font-raleway text-theme-white/80">
+              Generate with sound
+            </label>
           </div>
         </div>
       </div>
