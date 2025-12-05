@@ -19,6 +19,7 @@ export default function TimelineGenerator() {
     const setMusicUrl = useTimelineStore((state) => state.setMusicUrl);
     const setIsPlaying = useTimelineStore((state) => state.setIsPlaying);
     const setCurrentTime = useTimelineStore((state) => state.setCurrentTime);
+    const setJobId = useTimelineStore((state) => state.setJobId);
 
     useEffect(() => {
         loadHistory();
@@ -40,6 +41,7 @@ export default function TimelineGenerator() {
         }));
 
         setSegments(segmentsWithIds);
+        setJobId(job.id);
 
 
 

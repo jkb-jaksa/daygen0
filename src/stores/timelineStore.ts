@@ -22,8 +22,10 @@ interface TimelineState {
     currentTime: number; // The "Master Clock"
     activeSegmentIndex: number;
     isLoading: boolean;
+    jobId: string | null;
 
     // Actions
+    setJobId: (id: string | null) => void;
     setSegments: (segments: Segment[]) => void;
     setMusicUrl: (url: string | null) => void;
     setIsPlaying: (isPlaying: boolean) => void;
@@ -31,6 +33,8 @@ interface TimelineState {
     setSegmentIndex: (index: number) => void;
     nextSegment: () => void;
     updateSegmentImage: (segmentId: string, newImageUrl: string) => void;
+    updateSegmentScript: (segmentId: string, newScript: string) => void;
+    updateSegmentAudio: (segmentId: string, audioUrl: string, duration: number) => void;
 }
 
 export const useTimelineStore = create<TimelineState>()(
@@ -41,7 +45,9 @@ export const useTimelineStore = create<TimelineState>()(
         currentTime: 0,
         activeSegmentIndex: 0,
         isLoading: false,
+        jobId: null,
 
+        setJobId: (id) => set((state) => { state.jobId = id }),
         setSegments: (segments) => set((state) => {
             state.segments = segments;
             state.activeSegmentIndex = 0;
@@ -71,6 +77,18 @@ export const useTimelineStore = create<TimelineState>()(
         updateSegmentImage: (id, url) => set((state) => {
             const seg = state.segments.find(s => s.id === id);
             if (seg) seg.imageUrl = url;
+        }),
+        updateSegmentScript: (id, script) => set((state) => {
+            const seg = state.segments.find(s => s.id === id);
+            if (seg) seg.script = script;
+        }),
+        updateSegmentAudio: (id, audioUrl, duration) => set((state) => {
+            const seg = state.segments.find(s => s.id === id);
+            if (seg) {
+                seg.audioUrl = audioUrl; // Background music if any? No, voiceUrl usually.
+                seg.voiceUrl = audioUrl; // Mapped to voiceUrl usually
+                seg.duration = duration;
+            }
         }),
     }))
 );
