@@ -798,7 +798,6 @@ export function useCreateGenerationController(): CreateGenerationController {
       const startedAt = Date.now();
       const clientJobId = ensureJobId(null);
       let trackedJobId = clientJobId;
-      let isClientJobActive = true;
 
       addActiveJob({
         id: clientJobId,
@@ -847,7 +846,6 @@ export function useCreateGenerationController(): CreateGenerationController {
               });
               removeActiveJob(trackedJobId);
               trackedJobId = update.jobId;
-              isClientJobActive = false;
               return;
             }
 
