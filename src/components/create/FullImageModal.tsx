@@ -32,6 +32,7 @@ const VerticalGalleryNav = lazy(() => import('../shared/VerticalGalleryNav'));
 const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
 const QuickEditModal = lazy(() => import('./QuickEditModal'));
 import type { QuickEditOptions } from './QuickEditModal';
+const MakeVideoModal = lazy(() => import('./MakeVideoModal'));
 const MasterSidebar = lazy(() => import('../master/MasterSidebar'));
 // Individual badges are rendered via ImageBadgeRow
 
@@ -103,7 +104,6 @@ const FullImageModal = memo(() => {
     handleTogglePublic,
     handleDeleteImage,
     handleEditMenuSelect,
-    handleMakeVideo,
     handleImageActionMenu,
     handleDownloadImage,
     handleAddToFolder,
@@ -123,6 +123,7 @@ const FullImageModal = memo(() => {
   const [storedProducts, setStoredProducts] = useState<StoredProduct[]>([]);
   const [isVideoPromptExpanded, setIsVideoPromptExpanded] = useState(false);
   const [quickEditModalState, setQuickEditModalState] = useState<{ isOpen: boolean; initialPrompt: string } | null>(null);
+  const [makeVideoModalState, setMakeVideoModalState] = useState<{ isOpen: boolean; initialPrompt: string } | null>(null);
 
   // Save prompt functionality
   const { user, storagePrefix } = useAuth();
@@ -139,7 +140,7 @@ const FullImageModal = memo(() => {
       id: syntheticId,
       prompt: prompt,
       model: 'gemini-3-pro-image-preview',
-      status: 'running',
+      status: 'processing',
       progress: 5,
       backendProgress: 5,
       backendProgressUpdatedAt: timestamp,
@@ -569,13 +570,22 @@ const FullImageModal = memo(() => {
 
   const handleMakeVideoClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    handleMakeVideo();
-    closeFullSize();
-  }, [handleMakeVideo, closeFullSize]);
+    if (fullSizeImage) {
+      setMakeVideoModalState({
+        isOpen: true,
+        initialPrompt: fullSizeImage.prompt || '',
+      });
+    }
+  }, [fullSizeImage]);
 
   const handleVideo = useCallback(() => {
-    handleMakeVideo();
-  }, [handleMakeVideo]);
+    if (fullSizeImage) {
+      setMakeVideoModalState({
+        isOpen: true,
+        initialPrompt: fullSizeImage.prompt || '',
+      });
+    }
+  }, [fullSizeImage]);
 
   const handleQuickEdit = useCallback(() => {
     if (fullSizeImage) {
@@ -1599,7 +1609,19 @@ const FullImageModal = memo(() => {
             initialPrompt={quickEditModalState.initialPrompt}
             imageUrl={fullSizeImage.url}
             item={fullSizeImage}
-            isLoading={isLoading}
+          />
+        </Suspense>
+      )}
+
+      {/* Make Video Modal */}
+      {makeVideoModalState && fullSizeImage && (
+        <Suspense fallback={null}>
+          <MakeVideoModal
+            isOpen={makeVideoModalState.isOpen}
+            onClose={() => setMakeVideoModalState(null)}
+            initialPrompt={makeVideoModalState.initialPrompt}
+            imageUrl={fullSizeImage.url}
+            item={fullSizeImage}
           />
         </Suspense>
       )}

@@ -151,6 +151,10 @@ export interface CreateGenerationController {
   setWanPromptExtend: (value: boolean) => void;
   wanWatermark: boolean;
   setWanWatermark: (value: boolean) => void;
+  soraDuration: number;
+  setSoraDuration: (value: number) => void;
+  soraWithSound: boolean;
+  setSoraWithSound: (value: boolean) => void;
   aspectRatioControl: AspectRatioControl | null;
   settingsSections: SettingsSections;
   isGenerating: boolean;
@@ -360,6 +364,8 @@ export function useCreateGenerationController(): CreateGenerationController {
   const [veoModel, setVeoModel] = useState<'veo-3.1-generate-preview' | 'veo-3.1-fast-generate-preview'>('veo-3.1-generate-preview');
   const [veoNegativePrompt, setVeoNegativePrompt] = useState('');
   const [veoSeed, setVeoSeed] = useState<number | undefined>(undefined);
+  const [soraDuration, setSoraDuration] = useState<number>(5);
+  const [soraWithSound, setSoraWithSound] = useState<boolean>(true);
 
   const settingsSections = useMemo<SettingsSections>(() => {
     const isGeminiModel = selectedModel === 'gemini-3.0-pro-image';
@@ -379,6 +385,7 @@ export function useCreateGenerationController(): CreateGenerationController {
     const isLumaRayModel =
       selectedModel === 'luma-ray-2' || selectedModel === 'luma-ray-flash-2';
     const isVeoModel = selectedModel === 'veo-3';
+    const isSoraModel = selectedModel === 'sora-2';
 
     return {
       common: {
@@ -403,6 +410,15 @@ export function useCreateGenerationController(): CreateGenerationController {
         onNegativePromptChange: value => setVeoNegativePrompt(value),
         seed: veoSeed,
         onSeedChange: value => setVeoSeed(value),
+      },
+      sora: {
+        enabled: isSoraModel,
+        aspectRatio: (videoAspectRatio === '9:16' ? '9:16' : '16:9'),
+        onAspectRatioChange: value => setVideoAspectRatio(value),
+        duration: soraDuration,
+        onDurationChange: value => setSoraDuration(value),
+        withSound: soraWithSound,
+        onWithSoundChange: value => setSoraWithSound(value),
       },
       hailuo: {
         enabled: false,
@@ -574,6 +590,10 @@ export function useCreateGenerationController(): CreateGenerationController {
     wanSeed,
     wanSize,
     wanWatermark,
+    soraDuration,
+    soraWithSound,
+    setSoraDuration,
+    setSoraWithSound,
   ]);
   const handleModelChange = useCallback(
     (model: string) => {
@@ -1041,8 +1061,8 @@ export function useCreateGenerationController(): CreateGenerationController {
             prompt: finalPrompt,
             model: 'sora-2',
             aspectRatio: normalizedVeoAspectRatio,
-            durationSeconds: 8,
-            withSound: true,
+            durationSeconds: soraDuration,
+            withSound: soraWithSound,
           });
 
           persistVideoResults(soraVideo, {
@@ -1243,6 +1263,8 @@ export function useCreateGenerationController(): CreateGenerationController {
     updateJobProgress,
     updateJobStatus,
     removeActiveJob,
+    soraDuration,
+    soraWithSound,
   ]);
   const clearError = useCallback(() => {
     setLocalError(null);
@@ -1291,6 +1313,10 @@ export function useCreateGenerationController(): CreateGenerationController {
     setWanPromptExtend,
     wanWatermark,
     setWanWatermark,
+    soraDuration,
+    setSoraDuration,
+    soraWithSound,
+    setSoraWithSound,
     aspectRatioControl,
     settingsSections,
     isGenerating,

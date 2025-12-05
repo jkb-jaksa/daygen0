@@ -7,7 +7,7 @@ import React, {
   useRef,
   useEffect,
 } from 'react';
-import type { ImageGenerationStatus } from '../../hooks/useGeminiImageGeneration';
+import type { ImageGenerationStatus } from '../../../hooks/useGeminiImageGeneration';
 
 type ActiveGenerationJob = {
   id: string;

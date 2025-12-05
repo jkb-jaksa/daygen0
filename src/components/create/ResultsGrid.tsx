@@ -34,6 +34,7 @@ const StyleBadge = lazy(() => import('../styles/StyleBadge'));
 const PublicBadge = lazy(() => import('./PublicBadge'));
 const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
 import QuickEditModal, { type QuickEditOptions } from './QuickEditModal';
+const MakeVideoModal = lazy(() => import('./MakeVideoModal'));
 const GenerationProgress = lazy(() => import('./GenerationProgress'));
 
 // Helper to get consistent item identifier for UI actions (jobId → r2FileId → url)
@@ -188,6 +189,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const lastOpenRef = useRef<{ id: string | null; ts: number }>({ id: null, ts: 0 });
   const [expandedVideoPrompts, setExpandedVideoPrompts] = useState<Set<string>>(() => new Set());
   const [quickEditModalState, setQuickEditModalState] = useState<{ isOpen: boolean; initialPrompt: string; item: GalleryImageLike } | null>(null);
+  const [makeVideoModalState, setMakeVideoModalState] = useState<{ isOpen: boolean; initialPrompt: string; item: GalleryImageLike } | null>(null);
   const [isQuickEditLoading] = useState(false);
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement }>({});
   const {
@@ -210,13 +212,15 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       { threshold: 0.1 }
     );
 
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current);
+    const currentTarget = observerTarget.current;
+
+    if (currentTarget) {
+      observer.observe(currentTarget);
     }
 
     return () => {
-      if (observerTarget.current) {
-        observer.unobserve(observerTarget.current);
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
       }
     };
   }, [hasMore, isLoading, loadMore]);
@@ -556,8 +560,16 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     }
   }, [handleDeleteImage]);
 
-  const handleVideo = useCallback(() => {
-    handleMakeVideo();
+  const handleVideo = useCallback((item?: GalleryImageLike) => {
+    if (item) {
+      setMakeVideoModalState({
+        isOpen: true,
+        initialPrompt: item.prompt || '',
+        item,
+      });
+    } else {
+      handleMakeVideo();
+    }
   }, [handleMakeVideo]);
 
   // Check if item is selected
@@ -593,7 +605,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       id: syntheticId,
       prompt: prompt,
       model: 'gemini-3-pro-image-preview',
-      status: 'running',
+      status: 'processing',
       progress: 5,
       backendProgress: 5,
       backendProgressUpdatedAt: timestamp,
@@ -984,7 +996,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                               image={item}
                               isGallery={false}
                               anyMenuOpen={isMenuActive}
-                              onMakeVideo={handleVideo}
+                              onMakeVideo={() => handleVideo(item as GalleryImageLike)}
                               onQuickEdit={() => handleQuickEdit(item as GalleryImageLike)}
                             />
                           </Suspense>
@@ -1007,7 +1019,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                 image={item}
                                 isGallery={true}
                                 anyMenuOpen={isMenuActive}
-                                onMakeVideo={handleVideo}
+                                onMakeVideo={() => handleVideo(item as GalleryImageLike)}
                                 onQuickEdit={() => handleQuickEdit(item as GalleryImageLike)}
                               />
                             </Suspense>
@@ -1573,6 +1585,19 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           imageUrl={quickEditModalState.item.url}
           item={quickEditModalState.item}
         />
+      )}
+
+      {/* Make Video Modal */}
+      {makeVideoModalState && (
+        <Suspense fallback={null}>
+          <MakeVideoModal
+            isOpen={makeVideoModalState.isOpen}
+            onClose={() => setMakeVideoModalState(null)}
+            initialPrompt={makeVideoModalState.initialPrompt}
+            imageUrl={makeVideoModalState.item.url}
+            item={makeVideoModalState.item}
+          />
+        </Suspense>
       )}
     </>
   );

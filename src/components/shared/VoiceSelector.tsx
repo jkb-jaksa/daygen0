@@ -55,7 +55,7 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [onLoaded]);
 
   const groupedVoices = useMemo(() => {
     const combined = [...voices];

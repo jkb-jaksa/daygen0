@@ -318,374 +318,98 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
             }
           }}
         >
-          {inferredCategory === "video" ? (
-            <>
-              <button
-                onClick={() => {
-                  handleModelSelect("Veo 3.1");
-                  setIsOpen(false);
-                }}
-                className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${selectedModel === "veo-3"
-                  ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
-                  : 'bg-transparent hover:bg-theme-text/20 border-0'
-                  }`}
-              >
-                {hasToolLogo("Veo 3.1") ? (
-                  <img
-                    src={getToolLogo("Veo 3.1")!}
-                    alt="Veo 3.1 logo"
-                    loading="lazy"
-                    className="w-5 h-5 flex-shrink-0 object-contain rounded"
-                  />
-                ) : (
-                  <Film className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${selectedModel === "veo-3" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                    }`} />
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className={`text-sm font-raleway truncate transition-colors duration-100 ${selectedModel === "veo-3" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                    }`}>
-                    Veo 3.1
-                  </div>
-                  <div className={`text-xs font-raleway truncate transition-colors duration-100 ${selectedModel === "veo-3" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
-                    }`}>
-                    Best video model. Great cinematic quality with sound output.
-                  </div>
-                </div>
-                {selectedModel === "veo-3" && (
-                  <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>
-                )}
-              </button>
-              <button
-                onClick={() => {
-                  handleModelSelect("Sora 2");
-                  setIsOpen(false);
-                }}
-                className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${selectedModel === "sora-2"
-                  ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
-                  : 'bg-transparent hover:bg-theme-text/20 border-0'
-                  }`}
-              >
-                {hasToolLogo("Sora 2") ? (
-                  <img
-                    src={getToolLogo("Sora 2")!}
-                    alt="Sora 2 logo"
-                    loading="lazy"
-                    className="w-5 h-5 flex-shrink-0 object-contain rounded"
-                  />
-                ) : (
-                  <VideoIcon
-                    className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${selectedModel === "sora-2" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                      }`}
-                  />
-                )}
-                <div className="flex-1 min-w-0">
-                  <div
-                    className={`text-sm font-raleway truncate transition-colors duration-100 ${selectedModel === "sora-2" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                      }`}
-                  >
-                    Sora 2
-                  </div>
-                  <div
-                    className={`text-xs font-raleway truncate transition-colors duration-100 ${selectedModel === "sora-2" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
-                      }`}
-                  >
-                    OpenAI’s Sora 2 with long-form video and audio support.
-                  </div>
-                </div>
-                {selectedModel === "sora-2" && (
-                  <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>
-                )}
-              </button>
-              <button
-                onClick={() => {
-                  debugLog('[ModelSelector] Selecting Runway video model');
-                  handleModelSelect("Runway Gen-4 (Video)");
-                  setIsOpen(false);
-                }}
-                className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${selectedModel === "runway-video-gen4"
-                  ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
-                  : 'bg-transparent hover:bg-theme-text/20 border-0'
-                  }`}
-              >
-                {hasToolLogo("Runway Gen-4") ? (
-                  <img
-                    src={getToolLogo("Runway Gen-4")!}
-                    alt="Runway logo"
-                    loading="lazy"
-                    className="w-5 h-5 flex-shrink-0 object-contain rounded"
-                  />
-                ) : (
-                  <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${selectedModel === "runway-video-gen4" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                    }`} />
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className={`text-sm font-raleway truncate transition-colors duration-100 ${selectedModel === "runway-video-gen4" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                    }`}>
-                    Runway Gen-4
-                  </div>
-                  <div className={`text-xs font-raleway truncate transition-colors duration-100 ${selectedModel === "runway-video-gen4" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
-                    }`}>
-                    Good video model. Great editing with Runway Aleph.
-                  </div>
-                </div>
-                {selectedModel === "runway-video-gen4" && (
-                  <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>
-                )}
-              </button>
-              {/* Add other video models similarly... */}
-              <button
-                onClick={() => {
-                  handleModelSelect("Hailuo 02");
-                  setIsOpen(false);
-                }}
-                className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${selectedModel === "hailuo-02"
-                  ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
-                  : 'bg-transparent hover:bg-theme-text/20 border-0'
-                  }`}
-              >
-                {hasToolLogo("Hailuo 02") ? (
-                  <img
-                    src={getToolLogo("Hailuo 02")!}
-                    alt="Hailuo 02 logo"
-                    loading="lazy"
-                    className="w-5 h-5 flex-shrink-0 object-contain rounded"
-                  />
-                ) : (
-                  <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${selectedModel === "hailuo-02" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                    }`} />
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className={`text-sm font-raleway truncate transition-colors duration-100 ${selectedModel === "hailuo-02" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                    }`}>
-                    Hailuo 02
-                  </div>
-                  <div className={`text-xs font-raleway truncate transition-colors duration-100 ${selectedModel === "hailuo-02" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
-                    }`}>
-                    MiniMax video with start & end frame control.
-                  </div>
-                </div>
-                {selectedModel === "hailuo-02" && (
-                  <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>
-                )}
-              </button>
-              <button
-                onClick={() => {
-                  handleModelSelect("Seedance 1.0 Pro (Video)");
-                  setIsOpen(false);
-                }}
-                className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${selectedModel === "seedance-1.0-pro"
-                  ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
-                  : 'bg-transparent hover:bg-theme-text/20 border-0'
-                  }`}
-              >
-                {hasToolLogo("Seedance 1.0 Pro (Video)") ? (
-                  <img
-                    src={getToolLogo("Seedance 1.0 Pro (Video)")!}
-                    alt="Seedance 1.0 Pro logo"
-                    loading="lazy"
-                    className="w-5 h-5 flex-shrink-0 object-contain rounded"
-                  />
-                ) : (
-                  <Film className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${selectedModel === "seedance-1.0-pro" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                    }`} />
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className={`text-sm font-raleway truncate transition-colors duration-100 ${selectedModel === "seedance-1.0-pro" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                    }`}>
-                    Seedance 1.0 Pro
-                  </div>
-                  <div className={`text-xs font-raleway truncate transition-colors duration-100 ${selectedModel === "seedance-1.0-pro" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
-                    }`}>
-                    Great quality text-to-image.
-                  </div>
-                </div>
-                {selectedModel === "seedance-1.0-pro" && (
-                  <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>
-                )}
-              </button>
-              <button
-                onClick={() => {
-                  handleModelSelect("Kling");
-                  setIsOpen(false);
-                }}
-                className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${selectedModel === "kling-video"
-                  ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
-                  : 'bg-transparent hover:bg-theme-text/20 border-0'
-                  }`}
-              >
-                {hasToolLogo("Kling") ? (
-                  <img
-                    src={getToolLogo("Kling")!}
-                    alt="Kling logo"
-                    loading="lazy"
-                    className="w-5 h-5 flex-shrink-0 object-contain rounded"
-                  />
-                ) : (
-                  <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${selectedModel === "kling-video" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                    }`} />
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className={`text-sm font-raleway truncate transition-colors duration-100 ${selectedModel === "kling-video" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                    }`}>
-                    Kling
-                  </div>
-                  <div className={`text-xs font-raleway truncate transition-colors duration-100 ${selectedModel === "kling-video" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
-                    }`}>
-                    ByteDance's Kling V2.1 Master with hyper-realistic motion and advanced physics.
-                  </div>
-                </div>
-                {selectedModel === "kling-video" && (
-                  <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>
-                )}
-              </button>
-              <button
-                onClick={() => {
-                  handleModelSelect("Wan 2.2 Video");
-                  setIsOpen(false);
-                }}
-                className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${selectedModel === "wan-video-2.2"
-                  ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
-                  : 'bg-transparent hover:bg-theme-text/20 border-0'
-                  }`}
-              >
-                {hasToolLogo("Wan 2.2 Video") ? (
-                  <img
-                    src={getToolLogo("Wan 2.2 Video")!}
-                    alt="Wan 2.2 Video logo"
-                    loading="lazy"
-                    className="w-5 h-5 flex-shrink-0 object-contain rounded"
-                  />
-                ) : (
-                  <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${selectedModel === "wan-video-2.2" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                    }`} />
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className={`text-sm font-raleway truncate transition-colors duration-100 ${selectedModel === "wan-video-2.2" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                    }`}>
-                    Wan 2.2 Video
-                  </div>
-                  <div className={`text-xs font-raleway truncate transition-colors duration-100 ${selectedModel === "wan-video-2.2" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
-                    }`}>
-                    Alibaba's Wan 2.2 text-to-video model.
-                  </div>
-                </div>
-                {selectedModel === "wan-video-2.2" && (
-                  <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>
-                )}
-              </button>
-              <button
-                onClick={() => {
-                  handleModelSelect("Luma Ray 2");
-                  setIsOpen(false);
-                }}
-                className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${selectedModel === "luma-ray-2"
-                  ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
-                  : 'bg-transparent hover:bg-theme-text/20 border-0'
-                  }`}
-              >
-                {hasToolLogo("Luma Ray 2") ? (
-                  <img
-                    src={getToolLogo("Luma Ray 2")!}
-                    alt="Luma Ray 2 logo"
-                    loading="lazy"
-                    className="w-5 h-5 flex-shrink-0 object-contain rounded"
-                  />
-                ) : (
-                  <VideoIcon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${selectedModel === "luma-ray-2" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                    }`} />
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className={`text-sm font-raleway truncate transition-colors duration-100 ${selectedModel === "luma-ray-2" ? 'text-theme-text' : 'text-theme-text group-hover:text-theme-text'
-                    }`}>
-                    Luma Ray 2
-                  </div>
-                  <div className={`text-xs font-raleway truncate transition-colors duration-100 ${selectedModel === "luma-ray-2" ? 'text-theme-text' : 'text-theme-white group-hover:text-theme-text'
-                    }`}>
-                    Cinematic 4K video with detailed camera control.
-                  </div>
-                </div>
-                {selectedModel === "luma-ray-2" && (
-                  <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>
-                )}
-              </button>
-            </>
-          ) : (
-            AI_MODELS.filter(model => {
-              // Filter by allowedModels if provided
-              if (allowedModels && allowedModels.length > 0) {
-                if (!allowedModels.includes(model.id)) {
-                  return false;
-                }
-              }
-
-              const isVideoModel = isVideoModelId(model.id);
-
-              // Filter by references if enabled
-              if (hasReferences && !REFERENCE_SUPPORTED_MODELS.includes(model.id)) {
+          {AI_MODELS.filter(model => {
+            // Filter by allowedModels if provided
+            if (allowedModels && allowedModels.length > 0) {
+              if (!allowedModels.includes(model.id)) {
                 return false;
               }
+            }
 
-              if (inferredCategory === "image") {
-                return !isVideoModel;
-              }
-              if (inferredCategory === "video") {
-                return isVideoModel;
-              }
-              return true;
-            }).map((model) => {
-              const isSelected = selectedModel === model.id;
-              const isComingSoon = model.id !== "flux-2" && model.id !== "gemini-3.0-pro-image" && model.id !== "grok-2-image" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "reve-image" && model.id !== "recraft" && model.id !== "luma-photon-1" && model.id !== "luma-ray-2" && model.id !== "wan-video-2.2" && model.id !== "hailuo-02" && model.id !== "kling-video" && model.id !== "sora-2";
-              return (
-                <button
-                  key={model.name}
-                  onClick={() => {
-                    if (isComingSoon) {
-                      alert('This model is coming soon! Currently only Gemini 3 Pro, FLUX.2, Grok 2 Image, ChatGPT, Ideogram, Qwen, Runway, Wan 2.2 Video, Hailuo 02, Reve, Recraft, and Luma models are available.');
-                      return;
-                    }
-                    handleModelSelect(model.name);
-                    setIsOpen(false);
-                  }}
-                  className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${isSelected
-                    ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
-                    : isComingSoon
-                      ? "bg-transparent border-theme-mid opacity-60 cursor-not-allowed"
-                      : 'bg-transparent hover:bg-theme-text/20 border-0'
-                    }`}
-                >
-                  {hasToolLogo(model.name) ? (
-                    <img
-                      src={getToolLogo(model.name)!}
-                      alt={`${model.name} logo`}
-                      loading="lazy"
-                      className="w-5 h-5 flex-shrink-0 object-contain rounded"
+            const isVideoModel = isVideoModelId(model.id);
+
+            // Filter by references if enabled
+            if (hasReferences && !REFERENCE_SUPPORTED_MODELS.includes(model.id)) {
+              return false;
+            }
+
+            if (inferredCategory === "image") {
+              return !isVideoModel;
+            }
+            if (inferredCategory === "video") {
+              return isVideoModel;
+            }
+            return true;
+          }).map((model) => {
+            const isSelected = selectedModel === model.id;
+            // Check if currently available (not coming soon)
+            // Only coming soon is Flux 2, Gemini 3, Grok 2, ChatGPT, Ideogram, Qwen, Runway, Reve, Recraft, Luma, Wan, Hailuo, Kling, Sora
+            // Actually logic in original file seemed to list what WAS available in a negative check.
+            // Let's simplify: check if it's in a list of KNOWN available models, or inverted logic as before.
+            // Original logic:
+            // const isComingSoon = model.id !== "flux-2" && model.id !== "gemini-3.0-pro-image" && model.id !== "grok-2-image" && model.id !== "chatgpt-image" && model.id !== "ideogram" && model.id !== "qwen-image" && model.id !== "runway-gen4" && model.id !== "reve-image" && model.id !== "recraft" && model.id !== "luma-photon-1" && model.id !== "luma-ray-2" && model.id !== "wan-video-2.2" && model.id !== "hailuo-02" && model.id !== "kling-video" && model.id !== "sora-2" && model.id !== "veo-3" && model.id !== "seedance-1.0-pro" && model.id !== "runway-video-gen4";
+
+            // We should probably include all the ones we see in AI_MODELS as available if they were available before.
+            // Based on the hardcoded video list, Veo 3, Sora 2, Runway Video, Wan, Hailuo, Seedance, Kling, Luma Ray 2 were all rendered as active buttons.
+            // So we should add them to the "not coming soon" list (or just remove the check if everything in AI_MODELS is actually implemented/intended to be shown).
+            // For safety compatibility with existing code, let's keep the check but update it to include all video models we saw.
+
+            const isAvailable = [
+              "gemini-3.0-pro-image", "flux-2", "reve-image", "ideogram", "recraft", "grok-2-image", "qwen-image", "runway-gen4", "chatgpt-image", "luma-photon-1", // Images
+              "veo-3", "sora-2", "runway-video-gen4", "wan-video-2.2", "hailuo-02", "seedance-1.0-pro", "kling-video", "luma-ray-2" // Videos
+            ].includes(model.id);
+
+            const isComingSoon = !isAvailable;
+
+            return (
+              <button
+                key={model.name}
+                onClick={() => {
+                  if (isComingSoon) {
+                    alert('This model is coming soon!');
+                    return;
+                  }
+                  handleModelSelect(model.name);
+                }}
+                className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${isSelected
+                  ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
+                  : isComingSoon
+                    ? "bg-transparent border-theme-mid opacity-60 cursor-not-allowed"
+                    : 'bg-transparent hover:bg-theme-text/20 border-0'
+                  }`}
+              >
+                {hasToolLogo(model.name) ? (
+                  <img
+                    src={getToolLogo(model.name)!}
+                    alt={`${model.name} logo`}
+                    loading="lazy"
+                    className="w-5 h-5 flex-shrink-0 object-contain rounded"
+                  />
+                ) : (
+                  <model.Icon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${isSelected ? 'text-theme-text' : isComingSoon ? 'text-theme-light' : 'text-theme-text group-hover:text-theme-text'
+                    }`} />
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className={`text-sm font-raleway truncate transition-colors duration-100 flex items-center gap-2 ${isSelected ? 'text-theme-text' : isComingSoon ? 'text-theme-light' : 'text-theme-text group-hover:text-theme-text'
+                    }`}>
+                    {model.name}
+                    <ToolInfoHover
+                      toolName={model.name}
+                      className="shrink-0"
+                      iconClassName={isComingSoon ? undefined : 'group-hover:opacity-100'}
                     />
-                  ) : (
-                    <model.Icon className={`w-5 h-5 flex-shrink-0 transition-colors duration-100 ${isSelected ? 'text-theme-text' : isComingSoon ? 'text-theme-light' : 'text-theme-text group-hover:text-theme-text'
-                      }`} />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className={`text-sm font-raleway truncate transition-colors duration-100 flex items-center gap-2 ${isSelected ? 'text-theme-text' : isComingSoon ? 'text-theme-light' : 'text-theme-text group-hover:text-theme-text'
-                      }`}>
-                      {model.name}
-                      <ToolInfoHover
-                        toolName={model.name}
-                        className="shrink-0"
-                        iconClassName={isComingSoon ? undefined : 'group-hover:opacity-100'}
-                      />
-                    </div>
-                    <div className={`text-xs font-raleway truncate transition-colors duration-100 ${isSelected ? 'text-theme-text' : isComingSoon ? 'text-theme-light' : 'text-theme-white group-hover:text-theme-text'
-                      }`}>
-                      {isComingSoon ? 'Coming soon.' : model.desc}
-                    </div>
                   </div>
-                  {isSelected && (
-                    <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>
-                  )}
-                </button>
-              );
-            })
-          )}
+                  <div className={`text-xs font-raleway truncate transition-colors duration-100 ${isSelected ? 'text-theme-text' : isComingSoon ? 'text-theme-light' : 'text-theme-white group-hover:text-theme-text'
+                    }`}>
+                    {isComingSoon ? 'Coming soon.' : model.desc}
+                  </div>
+                </div>
+                {isSelected && (
+                  <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>
+                )}
+              </button>
+            );
+          })}
         </div>,
         document.body
       )}
