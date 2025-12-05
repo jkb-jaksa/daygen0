@@ -221,11 +221,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     };
   }, [hasMore, isLoading, loadMore]);
 
-  console.log('[ResultsGrid] Render state:', {
-    hasQuickEditState: !!quickEditModalState,
-    quickEditItem: quickEditModalState?.item,
-    quickEditUrl: quickEditModalState?.item?.url
-  });
+
 
   // Apply category-specific filtering
   const filteredItems = useMemo(() => {
@@ -269,7 +265,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
         .filter((jobId): jobId is string => typeof jobId === 'string' && jobId.trim().length > 0),
     );
 
-    return generationState.activeJobs.filter((job) => !completedJobIds.has(job.id));
+    return generationState.activeJobs.filter((job) => !completedJobIds.has(job.id) && job.status !== 'failed');
   }, [filteredItems, generationState.activeJobs, isGenerationCategory]);
 
   const showLoadingState = useMemo(
@@ -614,7 +610,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   }, [removeActiveJob, updateJobStatus]);
 
   const handleQuickEdit = useCallback((item: GalleryImageLike) => {
-    console.log('[ResultsGrid] handleQuickEdit called with:', item);
+
     setQuickEditModalState({
       isOpen: true,
       initialPrompt: '',
