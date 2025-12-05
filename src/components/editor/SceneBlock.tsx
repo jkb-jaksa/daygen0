@@ -89,7 +89,9 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
                     try {
                         const job = await getJob(jobId);
                         if (job.status === 'COMPLETED' && job.metadata?.response) {
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             const segments = (job.metadata.response as any).segments;
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             const matched = segments.find((s: any) => s.id === segment.id);
 
                             if (matched && matched.videoUrl) {
@@ -98,7 +100,7 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
                                 updateSegmentVideo(segment.id, matched.videoUrl);
                             }
                         }
-                    } catch (err) {
+                    } catch {
                         // ignore
                     }
                 }, 3000);

@@ -89,7 +89,9 @@ export function SceneCard({ segment, isActive, onUpdateImage }: SceneCardProps) 
                 try {
                     const job = await getJob(jobId);
                     if (job.status === 'COMPLETED' && job.metadata?.response) {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         const segments = (job.metadata.response as any).segments;
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         const updatedSegment = segments.find((s: any) => s.index === segment.sceneNumber);
 
                         // Check if videoUrl changed OR if status is completed
@@ -99,7 +101,7 @@ export function SceneCard({ segment, isActive, onUpdateImage }: SceneCardProps) 
                             updateSegmentVideo(segment.id, updatedSegment.videoUrl);
                         }
                     }
-                } catch (err) {
+                } catch {
                     // ignore
                 }
             }, 3000);

@@ -53,7 +53,7 @@ export default function TimelineGenerator() {
         setIsPlaying(false);
         setCurrentTime(0);
         navigate('/app/cyran-roll/editor');
-    }, [navigate, setSegments, setIsPlaying, setCurrentTime]);
+    }, [navigate, setSegments, setIsPlaying, setCurrentTime, setJobId, setMusicUrl]);
 
     useEffect(() => {
         if (!activeJobId) return;

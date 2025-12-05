@@ -23,7 +23,9 @@ export async function regenerateSegment(
     motionPrompt?: string,
     regenerateImage?: boolean,
     regenerateVideo?: boolean
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return apiFetch<any>(`/api/timeline/${jobId}/segments/${segmentIndex}/regenerate`, {
         method: 'POST',
         body: { text, prompt, motionPrompt, regenerateImage, regenerateVideo }, // Only send what is defined
