@@ -723,7 +723,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   }
 
   // Empty state check
-  if (filteredItems.length === 0 && activeJobPlaceholders.length === 0) {
+  if (filteredItems.length === 0 && activeJobPlaceholders.length === 0 && !hasMore) {
     // Show placeholder grid ONLY for generation categories (image/video)
     if (isGenerationCategory) {
       const PlaceholderIcon = activeCategory === 'image' ? ImageIcon : VideoIcon;
