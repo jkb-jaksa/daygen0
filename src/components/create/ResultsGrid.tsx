@@ -449,8 +449,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     const defaultOffset = placement === 'above' ? 28 : 8;
     const offset = options?.offset ?? defaultOffset;
     const top = placement === 'above' ? rect.top - offset : rect.bottom + offset;
-    tooltip.style.top = `${top} px`;
-    tooltip.style.left = `${rect.left + rect.width / 2} px`;
+    tooltip.style.top = `${top}px`;
+    tooltip.style.left = `${rect.left + rect.width / 2}px`;
     tooltip.style.transform = 'translateX(-50%)';
 
     tooltip.classList.remove('opacity-0');
@@ -1352,7 +1352,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                   {/* Tooltips rendered via portal to avoid clipping */}
                   {
                     promptForActions && shouldShowPromptDetails && !isGalleryView && (() => {
-                      const tooltipId = `copy - ${item.jobId || item.r2FileId || index} `;
+                      const tooltipId = `copy-${item.jobId || item.r2FileId || index}`;
                       return (
                         <>
                           {createPortal(
@@ -1367,7 +1367,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                           )}
                           {createPortal(
                             <div
-                              data-tooltip-for={`save - ${tooltipId} `}
+                              data-tooltip-for={`save-${tooltipId}`}
                               className={`${tooltips.base} fixed`}
                               style={{ zIndex: 9999 }}
                             >
@@ -1382,9 +1382,9 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
 
                   {
                     (() => {
-                      const deleteId = `delete -${baseActionTooltipId} `;
-                      const likeId = `like - ${baseActionTooltipId} `;
-                      const moreId = `more - ${baseActionTooltipId} `;
+                      const deleteId = `delete-${baseActionTooltipId}`;
+                      const likeId = `like-${baseActionTooltipId}`;
+                      const moreId = `more-${baseActionTooltipId}`;
                       return (
                         <>
                           {createPortal(
@@ -1469,7 +1469,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                             <p className="leading-relaxed break-words whitespace-pre-wrap max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-theme-mid/40 scrollbar-track-transparent">
                               {promptForDisplay}
                               {promptForActions && (() => {
-                                const tooltipId = `copy - gallery - ${item.jobId || item.r2FileId || index} `;
+                                const tooltipId = `copy-gallery-${item.jobId || item.r2FileId || index}`;
                                 return (
                                   <>
                                     <button
@@ -1495,10 +1495,10 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                         e.stopPropagation();
                                       }}
                                       onMouseEnter={(e) => {
-                                        showHoverTooltip(e.currentTarget, `save - ${tooltipId} `, { placement: 'above', offset: 2 });
+                                        showHoverTooltip(e.currentTarget, `save-${tooltipId}`, { placement: 'above', offset: 2 });
                                       }}
                                       onMouseLeave={() => {
-                                        hideHoverTooltip(`save - ${tooltipId} `);
+                                        hideHoverTooltip(`save-${tooltipId}`);
                                       }}
                                       className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
                                     >
@@ -1522,7 +1522,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                 {/* Tooltips rendered via portal to avoid clipping - Gallery view */}
                 {
                   promptForActions && shouldShowPromptDetails && isGalleryView && (() => {
-                    const tooltipId = `copy - gallery - ${item.jobId || item.r2FileId || index} `;
+                    const tooltipId = `copy-gallery-${item.jobId || item.r2FileId || index}`;
                     return (
                       <>
                         {createPortal(
@@ -1537,7 +1537,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                         )}
                         {createPortal(
                           <div
-                            data-tooltip-for={`save - ${tooltipId} `}
+                            data-tooltip-for={`save-${tooltipId}`}
                             className={`${tooltips.base} fixed`}
                             style={{ zIndex: 9999 }}
                           >
