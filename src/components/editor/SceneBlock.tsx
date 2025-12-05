@@ -2,6 +2,7 @@ import React from 'react';
 import { RefreshCw, Image as ImageIcon, Volume2, Loader2 } from 'lucide-react';
 import { useTimelineStore, type Segment } from '../../stores/timelineStore';
 import { regenerateSegment } from '../../api/timeline';
+import { getJob } from '../../api/jobs';
 import clsx from 'clsx';
 
 interface SceneBlockProps {
@@ -14,6 +15,27 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
     const { updateSegmentScript, updateSegmentAudio } = useTimelineStore();
     const [localScript, setLocalScript] = React.useState(segment.script);
     const [isRegeneratingAudio, setIsRegeneratingAudio] = React.useState(false);
+    const [isRegeneratingImage, setIsRegeneratingImage] = React.useState(false);
+    const [isRegeneratingVideo, setIsRegeneratingVideo] = React.useState(false);
+    const [timer, setTimer] = React.useState(0);
+    const { updateSegmentImage, updateSegmentVideo } = useTimelineStore();
+
+    // Timer logic
+    React.useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (isRegeneratingImage || isRegeneratingVideo) {
+            interval = setInterval(() => {
+                setTimer(prev => prev + 1);
+            }, 1000);
+        } else {
+            setTimer(0);
+        }
+        return () => clearInterval(interval);
+    }, [isRegeneratingImage, isRegeneratingVideo]);
+
+    const formatTime = (seconds: number) => {
+        return `${seconds}s`;
+    };
 
     // Reset local script if segment updates externally
     React.useEffect(() => {
@@ -21,6 +43,91 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
     }, [segment.script]);
 
     const jobId = useTimelineStore((state) => state.jobId);
+
+    const handleRegenerate = async (type: 'image' | 'video') => {
+        if (!jobId) {
+            alert("Error: No active Job ID.");
+            return;
+        }
+
+        const isImage = type === 'image';
+        if (isImage) setIsRegeneratingImage(true);
+        else setIsRegeneratingVideo(true);
+
+        let checkInterval: NodeJS.Timeout | null = null;
+        let safetyTimeout: NodeJS.Timeout | null = null;
+
+        const cleanup = () => {
+            if (checkInterval) clearInterval(checkInterval);
+            if (safetyTimeout) clearTimeout(safetyTimeout);
+        };
+
+        try {
+            const index = useTimelineStore.getState().segments.findIndex(s => s.id === segment.id);
+            if (index === -1) throw new Error("Segment not found");
+
+            const res = await regenerateSegment(
+                jobId,
+                index,
+                segment.script, // Pass script
+                segment.visualPrompt,
+                segment.motionPrompt,
+                isImage, // regenerateImage
+                !isImage // regenerateVideo
+            );
+
+            if (isImage && res.imageUrl) {
+                updateSegmentImage(segment.id, res.imageUrl);
+            } else if (!isImage) {
+                // Polling for video
+                checkInterval = setInterval(async () => {
+                    if (!jobId) {
+                        cleanup();
+                        setIsRegeneratingVideo(false);
+                        return;
+                    }
+                    try {
+                        const job = await getJob(jobId);
+                        if (job.status === 'COMPLETED' && job.metadata?.response) {
+                            const segments = (job.metadata.response as any).segments;
+                            const updatedSegment = segments.find((s: any) => s.index === segment.sceneNumber); // sceneNumber matches index property? sceneNumber is typically 1-based or 0-based? 
+                            // In timelineStore: activeSegmentIndex starts at 0. sceneNumber usually 1-based?
+                            // Let's check `segments` in store. TimelineService uses `index` (0-based) for DB and logic. 
+                            // segment.sceneNumber might be display only? 
+                            // In `SceneBlock`, we used `index` from findIndex. 
+                            // `updatedSegment` in backend response has `index`.
+                            // Let's use `index` property if possible. 
+                            // But `segment` interface in frontend has `sceneNumber`. 
+                            // Let's trust `updatedSegment.index` matches `segment.id` lookup or `segment.sceneNumber - 1`.
+                            // Or simpler: match by ID? The `_syncJobMetadata` adds `id`.
+                            const matched = segments.find((s: any) => s.id === segment.id);
+
+                            if (matched && matched.videoUrl) {
+                                cleanup();
+                                setIsRegeneratingVideo(false);
+                                updateSegmentVideo(segment.id, matched.videoUrl);
+                            }
+                        }
+                    } catch (err) {
+                        // ignore
+                    }
+                }, 3000);
+
+                safetyTimeout = setTimeout(() => {
+                    cleanup();
+                    setIsRegeneratingVideo(false);
+                    alert("Video regeneration timed out or takes longer than expected.");
+                }, 120000);
+            }
+        } catch (error) {
+            console.error(error);
+            alert(`Failed to regenerate ${type}: ` + error);
+            if (!isImage) cleanup();
+        } finally {
+            if (isImage) setIsRegeneratingImage(false);
+            // Video flag cleared in polling/timeout if video
+        }
+    };
 
     const handleUpdateAudio = async () => {
         if (!localScript.trim() || localScript === segment.script) return; // No change or empty
@@ -63,7 +170,7 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
     return (
         <div
             className={clsx(
-                "group relative flex flex-col sm:flex-row gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border transition-all duration-200",
+                "group relative flex flex-col sm:flex-row gap-3 sm:gap-4 p-2 sm:p-4 rounded-xl border transition-all duration-200",
                 isActive
                     ? "bg-zinc-900 border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.2)]"
                     : "bg-black border-zinc-800 hover:border-zinc-700"
@@ -98,17 +205,54 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
                     spellCheck="false"
                 />
 
-                {/* Visual Prompt (Debug/Power User view) */}
-                <div className="bg-zinc-950 p-2 rounded text-[10px] sm:text-xs text-zinc-600 font-mono hidden sm:block">
-                    PROMPT: {segment.visualPrompt}
+                {/* Visual Prompt */}
+                <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                        <label className="text-[10px] text-zinc-500 font-mono uppercase">Visual Prompt</label>
+                        <button
+                            onClick={() => handleRegenerate('image')}
+                            disabled={isRegeneratingImage || isRegeneratingVideo}
+                            className="text-[10px] text-zinc-500 hover:text-white flex items-center gap-1 transition-colors"
+                            title="Regenerate Image Only"
+                        >
+                            {isRegeneratingImage && <span className="font-mono">{formatTime(timer)}</span>}
+                            <RefreshCw size={10} className={isRegeneratingImage ? "animate-spin" : ""} /> Regen Image
+                        </button>
+                    </div>
+                    <textarea
+                        value={segment.visualPrompt || ''}
+                        onChange={(e) => useTimelineStore.getState().updateSegmentPrompt(segment.id, 'visualPrompt', e.target.value)}
+                        className="w-full bg-zinc-950/50 border border-zinc-900 rounded p-2 text-xs text-zinc-400 font-mono resize-none focus:outline-none focus:border-zinc-700 focus:ring-0"
+                        style={{ height: '70px' }}
+                        placeholder="Describe the image..."
+                    />
                 </div>
 
-                {/* Controls */}
-                <div className="flex gap-2">
-                    <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 text-xs font-medium text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors">
-                        <RefreshCw size={12} /> <span className="hidden sm:inline">Regenerate Visual</span><span className="sm:hidden">Regen</span>
-                    </button>
+                {/* Motion Prompt */}
+                <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                        <label className="text-[10px] text-blue-900/70 font-mono uppercase">Motion Prompt</label>
+                        <button
+                            onClick={() => handleRegenerate('video')}
+                            disabled={isRegeneratingImage || isRegeneratingVideo}
+                            className="text-[10px] text-blue-900/70 hover:text-blue-400 flex items-center gap-1 transition-colors"
+                            title="Regenerate Video Only"
+                        >
+                            {isRegeneratingVideo && <span className="font-mono">{formatTime(timer)}</span>}
+                            <RefreshCw size={10} className={isRegeneratingVideo ? "animate-spin" : ""} /> Regen Video (Motion)
+                        </button>
+                    </div>
+                    <textarea
+                        value={segment.motionPrompt || ''}
+                        onChange={(e) => useTimelineStore.getState().updateSegmentPrompt(segment.id, 'motionPrompt', e.target.value)}
+                        className="w-full bg-zinc-950/50 border border-zinc-900 rounded p-2 text-xs text-zinc-500/70 focus:text-blue-400 font-mono resize-none focus:outline-none focus:border-blue-900/30 focus:ring-0"
+                        style={{ height: '70px' }}
+                        placeholder="e.g. Fast zoom, pan left..."
+                    />
+                </div>
 
+                {/* Controls (Audio/Script Save) */}
+                <div className="flex gap-2">
                     {localScript !== segment.script && (
                         <button
                             onClick={handleUpdateAudio}
@@ -116,7 +260,7 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30 text-xs font-medium hover:bg-blue-600 hover:text-white transition-colors disabled:opacity-50"
                         >
                             {isRegeneratingAudio ? <Loader2 size={12} className="animate-spin" /> : <Volume2 size={12} />}
-                            <span className="hidden sm:inline">Update Audio</span><span className="sm:hidden">Save</span>
+                            <span className="hidden sm:inline">Update Audio & Script</span><span className="sm:hidden">Save</span>
                         </button>
                     )}
                 </div>

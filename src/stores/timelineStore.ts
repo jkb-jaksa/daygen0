@@ -34,6 +34,7 @@ interface TimelineState {
     setSegmentIndex: (index: number) => void;
     nextSegment: () => void;
     updateSegmentImage: (segmentId: string, newImageUrl: string) => void;
+    updateSegmentVideo: (segmentId: string, newVideoUrl: string) => void;
     updateSegmentScript: (segmentId: string, newScript: string) => void;
     updateSegmentAudio: (segmentId: string, audioUrl: string, duration: number) => void;
     updateSegmentPrompt: (segmentId: string, field: 'script' | 'visualPrompt' | 'motionPrompt', value: string) => void;
@@ -79,6 +80,10 @@ export const useTimelineStore = create<TimelineState>()(
         updateSegmentImage: (id, url) => set((state) => {
             const seg = state.segments.find(s => s.id === id);
             if (seg) seg.imageUrl = url;
+        }),
+        updateSegmentVideo: (id, url) => set((state) => {
+            const seg = state.segments.find(s => s.id === id);
+            if (seg) seg.videoUrl = url;
         }),
         updateSegmentScript: (id, script) => set((state) => {
             const seg = state.segments.find(s => s.id === id);

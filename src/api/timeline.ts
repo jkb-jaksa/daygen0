@@ -15,9 +15,17 @@ export async function generateTimeline(topic: string, style: string, duration: '
     });
 }
 
-export async function regenerateSegment(jobId: string, segmentIndex: number, text?: string, prompt?: string, motionPrompt?: string): Promise<any> {
+export async function regenerateSegment(
+    jobId: string,
+    segmentIndex: number,
+    text?: string,
+    prompt?: string,
+    motionPrompt?: string,
+    regenerateImage?: boolean,
+    regenerateVideo?: boolean
+): Promise<any> {
     return apiFetch<any>(`/api/timeline/${jobId}/segments/${segmentIndex}/regenerate`, {
         method: 'POST',
-        body: { text, prompt, motionPrompt }, // Only send what is defined
+        body: { text, prompt, motionPrompt, regenerateImage, regenerateVideo }, // Only send what is defined
     });
 }
