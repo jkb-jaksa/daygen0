@@ -16,6 +16,7 @@ export default function TimelineGenerator() {
     const [activeJobId, setActiveJobId] = useState<string | null>(null);
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
     const setSegments = useTimelineStore((state) => state.setSegments);
+    const setMusicUrl = useTimelineStore((state) => state.setMusicUrl);
     const setIsPlaying = useTimelineStore((state) => state.setIsPlaying);
     const setCurrentTime = useTimelineStore((state) => state.setCurrentTime);
 
@@ -40,8 +41,12 @@ export default function TimelineGenerator() {
 
         setSegments(segmentsWithIds);
 
-        // Global audioUrl is not supported in the current store structure for multi-segment audio
-        // We rely on segment-level audioUrl
+
+
+        // Extract global musicUrl from response
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const musicUrl = (response as any).musicUrl || null;
+        setMusicUrl(musicUrl);
 
         setIsPlaying(false);
         setCurrentTime(0);

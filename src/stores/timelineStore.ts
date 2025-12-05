@@ -17,6 +17,7 @@ export interface Segment {
 
 interface TimelineState {
     segments: Segment[];
+    musicUrl: string | null;
     isPlaying: boolean;
     currentTime: number; // The "Master Clock"
     activeSegmentIndex: number;
@@ -24,6 +25,7 @@ interface TimelineState {
 
     // Actions
     setSegments: (segments: Segment[]) => void;
+    setMusicUrl: (url: string | null) => void;
     setIsPlaying: (isPlaying: boolean) => void;
     setCurrentTime: (time: number) => void;
     setSegmentIndex: (index: number) => void;
@@ -34,6 +36,7 @@ interface TimelineState {
 export const useTimelineStore = create<TimelineState>()(
     immer((set) => ({
         segments: [],
+        musicUrl: null,
         isPlaying: false,
         currentTime: 0,
         activeSegmentIndex: 0,
@@ -43,6 +46,9 @@ export const useTimelineStore = create<TimelineState>()(
             state.segments = segments;
             state.activeSegmentIndex = 0;
             state.currentTime = 0;
+        }),
+        setMusicUrl: (url) => set((state) => {
+            state.musicUrl = url;
         }),
         setIsPlaying: (isPlaying) => set((state) => { state.isPlaying = isPlaying }),
         setCurrentTime: (time) => set((state) => { state.currentTime = time }),
