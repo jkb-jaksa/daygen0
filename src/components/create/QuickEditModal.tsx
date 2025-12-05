@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, laz
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { X, Sparkles, Edit, Loader2, Plus, Settings, User, Package, Scan, Minus, Palette, LayoutGrid, Copy, Bookmark, BookmarkPlus } from 'lucide-react';
+import { debugLog } from '../../utils/debug';
 import { glass, buttons, tooltips } from '../../styles/designSystem';
 import { useReferenceHandlers } from './hooks/useReferenceHandlers';
 import { useParallaxHover } from '../../hooks/useParallaxHover';
@@ -33,12 +34,14 @@ import { useBadgeNavigation } from './hooks/useBadgeNavigation';
 
 export interface QuickEditOptions {
     prompt: string;
-    referenceFiles?: File[];
+    referenceFiles?: (File | string)[];
     aspectRatio?: GeminiAspectRatio;
     batchSize: number;
     avatarId?: string;
     productId?: string;
     styleId?: string;
+    avatarImageUrl?: string;
+    productImageUrl?: string;
 }
 
 interface QuickEditModalProps {
@@ -197,6 +200,10 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     const [isProductButtonHovered, setIsProductButtonHovered] = useState(false);
     const [isStyleButtonHovered, setIsStyleButtonHovered] = useState(false);
 
+    // Drag states for Avatar/Product buttons
+    const [isDraggingOverAvatarButton, setIsDraggingOverAvatarButton] = useState(false);
+    const [isDraggingOverProductButton, setIsDraggingOverProductButton] = useState(false);
+
     // New state for advanced features
     const [batchSize, setBatchSize] = useState(1);
     const [aspectRatio, setAspectRatio] = useState<GeminiAspectRatio>('1:1');
@@ -225,6 +232,54 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         isProductPickerOpen,
         setIsProductPickerOpen,
     } = productHandlers;
+
+    // Drag handlers for Avatar button
+    const handleAvatarButtonDragOver = useCallback((event: React.DragEvent) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsDraggingOverAvatarButton(true);
+        avatarHandlers.handleAvatarDragOver(event);
+    }, [avatarHandlers]);
+
+    const handleAvatarButtonDragLeave = useCallback((event: React.DragEvent) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsDraggingOverAvatarButton(false);
+        avatarHandlers.handleAvatarDragLeave(event);
+    }, [avatarHandlers]);
+
+    const handleAvatarButtonDrop = useCallback((event: React.DragEvent) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsDraggingOverAvatarButton(false);
+        setIsAvatarPickerOpen(false);
+        setIsProductPickerOpen(false);
+        avatarHandlers.handleAvatarDrop(event);
+    }, [avatarHandlers, setIsAvatarPickerOpen, setIsProductPickerOpen]);
+
+    // Drag handlers for Product button
+    const handleProductButtonDragOver = useCallback((event: React.DragEvent) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsDraggingOverProductButton(true);
+        productHandlers.handleProductDragOver(event);
+    }, [productHandlers]);
+
+    const handleProductButtonDragLeave = useCallback((event: React.DragEvent) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsDraggingOverProductButton(false);
+        productHandlers.handleProductDragLeave(event);
+    }, [productHandlers]);
+
+    const handleProductButtonDrop = useCallback((event: React.DragEvent) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsDraggingOverProductButton(false);
+        setIsProductPickerOpen(false);
+        setIsAvatarPickerOpen(false);
+        productHandlers.handleProductDrop(event);
+    }, [productHandlers, setIsProductPickerOpen, setIsAvatarPickerOpen]);
 
     // Handlers for file inputs
     const handleAvatarQuickUploadInput = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -299,19 +354,41 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         };
     }, [isOpen, onClose]);
 
+    // Listen for setReferenceImage events from StyleSelectionModal
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const handleSetReferenceImage = (event: Event) => {
+            const customEvent = event as CustomEvent<{ file?: File; url?: string }>;
+            if (customEvent.detail?.url) {
+                debugLog('[QuickEditModal] Received setReferenceImage event (URL):', customEvent.detail.url);
+                handleAddReferenceFiles([customEvent.detail.url]);
+            } else if (customEvent.detail?.file) {
+                debugLog('[QuickEditModal] Received setReferenceImage event (File):', customEvent.detail.file.name);
+                handleAddReferenceFiles([customEvent.detail.file]);
+            }
+        };
+
+        window.addEventListener('setReferenceImage', handleSetReferenceImage);
+
+        return () => {
+            window.removeEventListener('setReferenceImage', handleSetReferenceImage);
+        };
+    }, [isOpen, handleAddReferenceFiles]);
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (prompt.trim()) {
-            // Collect all reference files that are File objects
-            const allReferenceFiles = referenceFiles.filter((f): f is File => f instanceof File);
             onSubmit({
                 prompt: prompt.trim(),
-                referenceFiles: allReferenceFiles.length > 0 ? allReferenceFiles : undefined,
+                referenceFiles: referenceFiles.length > 0 ? referenceFiles : undefined,
                 aspectRatio,
                 batchSize,
                 avatarId: selectedAvatar?.id,
                 productId: selectedProduct?.id,
                 styleId: styleHandlers.selectedStylesList[0]?.id,
+                avatarImageUrl: selectedAvatar?.imageUrl,
+                productImageUrl: selectedProduct?.imageUrl,
             });
         }
     };
@@ -821,6 +898,9 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         setIsAvatarPickerOpen(!isAvatarPickerOpen);
                                                     }
                                                 }}
+                                                onDragOver={handleAvatarButtonDragOver}
+                                                onDragLeave={handleAvatarButtonDragLeave}
+                                                onDrop={handleAvatarButtonDrop}
                                                 onMouseEnter={() => {
                                                     setIsAvatarButtonHovered(true);
                                                     showHoverTooltip(avatarButtonRef.current!, 'avatar-tooltip');
@@ -829,7 +909,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                     setIsAvatarButtonHovered(false);
                                                     hideHoverTooltip('avatar-tooltip');
                                                 }}
-                                                className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid ${selectedAvatar ? 'hover:border-n-white' : ''} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                className={`${glass.promptBorderless} ${isDraggingOverAvatarButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : `hover:bg-n-text/20 border border-n-mid ${selectedAvatar ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                                                 onPointerMove={onPointerMove}
                                                 onPointerEnter={onPointerEnter}
                                                 onPointerLeave={onPointerLeave}
@@ -903,6 +983,9 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         setIsProductPickerOpen(!isProductPickerOpen);
                                                     }
                                                 }}
+                                                onDragOver={handleProductButtonDragOver}
+                                                onDragLeave={handleProductButtonDragLeave}
+                                                onDrop={handleProductButtonDrop}
                                                 onMouseEnter={() => {
                                                     setIsProductButtonHovered(true);
                                                     showHoverTooltip(productButtonRef.current!, 'product-tooltip');
@@ -911,7 +994,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                     setIsProductButtonHovered(false);
                                                     hideHoverTooltip('product-tooltip');
                                                 }}
-                                                className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid ${selectedProduct ? 'hover:border-n-white' : ''} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                className={`${glass.promptBorderless} ${isDraggingOverProductButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : `hover:bg-n-text/20 border border-n-mid ${selectedProduct ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                                                 onPointerMove={onPointerMove}
                                                 onPointerEnter={onPointerEnter}
                                                 onPointerLeave={onPointerLeave}

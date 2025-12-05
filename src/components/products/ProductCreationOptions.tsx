@@ -165,11 +165,10 @@ function ProductCreationOptionsComponent({
           </div>
         ) : (
           <div
-            className={`border-2 border-dashed rounded-2xl p-12 text-center transition-colors duration-200 cursor-pointer ${
-              isDragging
+            className={`border-2 border-dashed rounded-2xl p-12 text-center transition-colors duration-200 cursor-pointer ${isDragging
                 ? "border-brand drag-active"
                 : "border-theme-white/30 hover:border-theme-text/50"
-            }`}
+              }`}
             onClick={() => fileInputRef.current?.click()}
             onDragOver={event => {
               event.preventDefault();
@@ -233,7 +232,10 @@ function ProductCreationOptionsComponent({
             type="button"
             className={`${buttons.primary} !w-fit ${disableSave ? "pointer-events-none opacity-50" : ""}`}
             disabled={disableSave}
-            onClick={onSave}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSave();
+            }}
           >
             Save
           </button>

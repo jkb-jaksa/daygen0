@@ -118,6 +118,8 @@ export const AvatarPickerPortal: React.FC<AvatarPickerPortalProps> = ({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchEnd}
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
       onFocus={() => {
         if (menuRef.current) {
           menuRef.current.focus();

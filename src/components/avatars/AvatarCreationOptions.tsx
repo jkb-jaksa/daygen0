@@ -141,7 +141,7 @@ function AvatarCreationOptionsComponent({
               {/* Avatar name overlay */}
               <div className="absolute bottom-0 left-0 right-0 z-10">
                 <div className="PromptDescriptionBar rounded-b-2xl px-4 py-2.5">
-                  <div className="flex items-center gap-2 h-[32px]">
+                  <div className="flex items-center gap-2 min-h-[32px]">
                     {isEditingName ? (
                       <>
                         <input
@@ -168,7 +168,10 @@ function AvatarCreationOptionsComponent({
                       </>
                     ) : (
                       <>
-                        <p className="flex-1 h-[32px] flex items-center text-base font-raleway font-normal text-theme-text px-3">
+                        <p
+                          className="flex-1 text-base font-raleway font-normal text-theme-text px-3 break-words line-clamp-2"
+                          title={avatarName}
+                        >
                           {avatarName || "Enter name..."}
                         </p>
                         <button
@@ -201,11 +204,10 @@ function AvatarCreationOptionsComponent({
           <div className="flex flex-col sm:flex-row gap-6 w-full">
             <div className="flex-1">
               <div
-                className={`relative overflow-hidden border-2 border-dashed rounded-2xl p-12 text-center transition-colors duration-200 cursor-pointer ${
-                  isDragging
-                    ? "border-brand drag-active"
-                    : "border-theme-white/30 hover:border-theme-text/50"
-                }`}
+                className={`relative overflow-hidden border-2 border-dashed rounded-2xl p-12 text-center transition-colors duration-200 cursor-pointer ${isDragging
+                  ? "border-brand drag-active"
+                  : "border-theme-white/30 hover:border-theme-text/50"
+                  }`}
                 onClick={() => fileInputRef.current?.click()}
                 onDragEnter={handleDragEnter}
                 onDragOver={handleDragOver}
@@ -256,9 +258,8 @@ function AvatarCreationOptionsComponent({
             </div>
             <div className="flex-1">
               <div
-                className={`relative overflow-hidden border-2 border-dashed rounded-2xl p-12 text-center transition-colors duration-200 ${
-                  "border-theme-white/30 hover:border-theme-text/50"
-                }`}
+                className={`relative overflow-hidden border-2 border-dashed rounded-2xl p-12 text-center transition-colors duration-200 ${"border-theme-white/30 hover:border-theme-text/50"
+                  }`}
               >
                 <div className="pointer-events-none absolute -top-24 right-0 h-48 w-48 rounded-full opacity-60 blur-3xl bg-gradient-to-br from-cyan-300 via-cyan-400 to-cyan-500" />
                 <div className="relative z-10">
@@ -287,7 +288,10 @@ function AvatarCreationOptionsComponent({
             type="button"
             className={`${buttons.primary} !w-fit ${disableSave ? "pointer-events-none opacity-50" : ""}`}
             disabled={disableSave}
-            onClick={onSave}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSave();
+            }}
           >
             Save
           </button>

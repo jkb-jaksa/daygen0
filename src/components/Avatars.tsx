@@ -1514,7 +1514,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                     event.stopPropagation();
                     handleNavigateToImage(avatar);
                   }}
-                  className={`group/master-action master-action-create-image image-action-btn parallax-large transition-opacity duration-100 text-theme-white ${anyMenuOpen
+                  className={`group/master-action master-action-create-image image-action-btn parallax-large transition-opacity duration-100 text-theme-white ${(avatarMoreMenu?.avatarId === avatar.id || avatarEditMenu?.avatarId === avatar.id)
                     ? 'opacity-100 pointer-events-auto'
                     : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                     }`}
@@ -1538,7 +1538,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                     event.stopPropagation();
                     handleNavigateToVideo(avatar);
                   }}
-                  className={`group/master-action master-action-make-video image-action-btn parallax-large transition-opacity duration-100 text-theme-white ${anyMenuOpen
+                  className={`group/master-action master-action-make-video image-action-btn parallax-large transition-opacity duration-100 text-theme-white ${(avatarMoreMenu?.avatarId === avatar.id || avatarEditMenu?.avatarId === avatar.id)
                     ? 'opacity-100 pointer-events-auto'
                     : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                     }`}
@@ -1569,7 +1569,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                       toggleAvatarEditMenu(avatar.id, event.currentTarget);
                     }
                   }}
-                  className={`image-action-btn parallax-large transition-opacity duration-100 ${anyMenuOpen || (disableModalTrigger
+                  className={`image-action-btn parallax-large transition-opacity duration-100 ${(avatarMoreMenu?.avatarId === avatar.id) || (disableModalTrigger
                     ? (modalAvatarEditMenu?.avatarId === avatar.id)
                     : (avatarEditMenu?.avatarId === avatar.id))
                     ? 'opacity-100 pointer-events-auto'
@@ -1637,7 +1637,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 event.stopPropagation();
                 setAvatarToDelete(avatar);
               }}
-              className={`image-action-btn parallax-large transition-opacity duration-100 ${anyMenuOpen
+              className={`image-action-btn parallax-large transition-opacity duration-100 ${(avatarMoreMenu?.avatarId === avatar.id || avatarEditMenu?.avatarId === avatar.id)
                 ? 'opacity-100 pointer-events-auto'
                 : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                 }`}
@@ -1661,7 +1661,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 event.stopPropagation();
                 toggleAvatarMoreMenu(avatar.id, event.currentTarget);
               }}
-              className={`image-action-btn parallax-large transition-opacity duration-100 ${anyMenuOpen || avatarMoreMenu?.avatarId === avatar.id
+              className={`image-action-btn parallax-large transition-opacity duration-100 ${(avatarMoreMenu?.avatarId === avatar.id || avatarEditMenu?.avatarId === avatar.id)
                 ? 'opacity-100 pointer-events-auto'
                 : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                 }`}
@@ -1781,7 +1781,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
           )}
           <div className="absolute bottom-0 left-0 right-0 z-10 hidden lg:block">
             <div className="PromptDescriptionBar rounded-b-2xl px-4 py-2.5">
-              <div className="flex h-[32px] items-center gap-2">
+              <div className="flex min-h-[32px] items-center gap-2">
                 {editingAvatarId === avatar.id ? (
                   <form
                     className="flex h-full flex-1 items-center gap-2"
@@ -1812,8 +1812,11 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                   </form>
                 ) : (
                   <>
-                    <p className="flex h-full flex-1 items-center px-3 text-base font-raleway font-normal text-theme-text">
-                      {displayName}
+                    <p
+                      className="flex-1 text-base font-raleway font-normal text-theme-text px-3 break-words line-clamp-2"
+                      title={avatar.name}
+                    >
+                      {avatar.name || (isMasterSection ? "Enter your name..." : "Enter name...")}
                     </p>
                     {!disableModalTrigger && (
                       <button
@@ -1846,7 +1849,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
         <div className="lg:hidden space-y-3 px-4 py-4">
           {editingAvatarId === avatar.id ? (
             <form
-              className="PromptDescriptionBar mx-auto flex h-[32px] w-full max-w-xs items-center gap-2 rounded-2xl px-4 py-2.5"
+              className="PromptDescriptionBar mx-auto flex min-h-[32px] w-full max-w-xs items-center gap-2 rounded-2xl px-4 py-2.5"
               onSubmit={submitRename}
               onClick={(event) => event.stopPropagation()}
             >
@@ -1873,9 +1876,12 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               </button>
             </form>
           ) : (
-            <div className="PromptDescriptionBar mx-auto flex h-[32px] w-full max-w-xs items-center gap-2 rounded-2xl px-4 py-2.5">
-              <p className="flex h-full flex-1 items-center px-3 text-base font-raleway font-normal text-theme-text">
-                {displayName}
+            <div className="PromptDescriptionBar mx-auto flex min-h-[32px] w-full max-w-xs items-center gap-2 rounded-2xl px-4 py-2.5">
+              <p
+                className="flex-1 text-base font-raleway font-normal text-theme-text px-3 break-words line-clamp-2"
+                title={avatar.name}
+              >
+                {avatar.name || (isMasterSection ? "Enter your name..." : "Enter name...")}
               </p>
               {!disableModalTrigger && (
                 <button
@@ -1998,7 +2004,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 event.stopPropagation();
                 toggleGalleryEditMenu(image.url, event.currentTarget);
               }}
-              className={`image-action-btn parallax-large transition-opacity duration-100 ${anyMenuOpen || galleryEditMenu?.imageUrl === image.url
+              className={`image-action-btn parallax-large transition-opacity duration-100 ${(galleryEditMenu?.imageUrl === image.url || creationMoreMenu?.imageUrl === image.url)
                 ? 'opacity-100 pointer-events-auto'
                 : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
                 }`}
@@ -2054,7 +2060,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               event.stopPropagation();
               confirmDeleteImage(image);
             }}
-            className={`image-action-btn parallax-large transition-opacity duration-100 ${anyMenuOpen
+            className={`image-action-btn parallax-large transition-opacity duration-100 ${(galleryEditMenu?.imageUrl === image.url || creationMoreMenu?.imageUrl === image.url)
               ? 'opacity-100 pointer-events-auto'
               : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
               }`}
@@ -2069,7 +2075,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               event.stopPropagation();
               toggleCreationMoreMenu(image.url, event.currentTarget);
             }}
-            className={`image-action-btn parallax-large transition-opacity duration-100 ${anyMenuOpen || creationMoreMenu?.imageUrl === image.url
+            className={`image-action-btn parallax-large transition-opacity duration-100 ${(galleryEditMenu?.imageUrl === image.url || creationMoreMenu?.imageUrl === image.url)
               ? 'opacity-100 pointer-events-auto'
               : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
               }`}
