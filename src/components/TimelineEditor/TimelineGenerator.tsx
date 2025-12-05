@@ -69,9 +69,9 @@ export default function TimelineGenerator() {
                     setIsLoading(false);
                     handleLoadJob(job);
                 } else if (job.status === 'FAILED') {
+                    // Silent fail for clean UI, remove from active monitoring
                     setActiveJobId(null);
                     setIsLoading(false);
-                    alert(`Generation failed: ${job.error || 'Unknown error'}`);
                 }
             } catch (error) {
                 console.error('Polling error:', error);
@@ -88,8 +88,10 @@ export default function TimelineGenerator() {
             // Handle both array and object response formats
             const history = Array.isArray(response) ? response : (response as { jobs: Job[] }).jobs || [];
 
-            // Sort by createdAt desc
-            const sorted = history.sort((a: Job, b: Job) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            // Filter out failed jobs and Sort by createdAt desc
+            const sorted = history
+                .filter((j: Job) => j.status !== 'FAILED')
+                .sort((a: Job, b: Job) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
             setJobs(sorted);
         } catch (error) {
             console.error('Failed to load history:', error);
