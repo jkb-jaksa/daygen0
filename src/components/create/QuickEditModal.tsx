@@ -33,7 +33,7 @@ import { useBadgeNavigation } from './hooks/useBadgeNavigation';
 
 export interface QuickEditOptions {
     prompt: string;
-    referenceFile?: File;
+    referenceFiles?: File[];
     aspectRatio?: GeminiAspectRatio;
     batchSize: number;
     avatarId?: string;
@@ -202,6 +202,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     const [aspectRatio, setAspectRatio] = useState<GeminiAspectRatio>('1:1');
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isAspectRatioOpen, setIsAspectRatioOpen] = useState(false);
+    const [isDragActive, setIsDragActive] = useState(false);
     const settingsButtonRef = useRef<HTMLButtonElement>(null);
     const aspectRatioButtonRef = useRef<HTMLButtonElement>(null);
     const styleButtonRef = useRef<HTMLButtonElement>(null);
@@ -246,6 +247,9 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
 
     const handleReferenceAdd = useCallback(() => { }, []);
 
+    // Max 13 references can be added in Quick Edit (original image + 13 = 14 total allowed by Gemini 3 Pro)
+    const MAX_QUICK_EDIT_REFERENCES = 13;
+
     const {
         referenceFiles,
         referencePreviews,
@@ -253,7 +257,11 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         clearReference,
         openFileInput,
         fileInputRef,
-    } = useReferenceHandlers(selectedAvatar, selectedProduct, handleReferenceAdd, 1);
+        handleDragOver,
+        handleDragEnter,
+        handleDragLeave,
+        handleDrop,
+    } = useReferenceHandlers(selectedAvatar, selectedProduct, handleReferenceAdd, MAX_QUICK_EDIT_REFERENCES);
 
     useEffect(() => {
         if (isOpen) {
@@ -294,10 +302,11 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (prompt.trim()) {
-            const referenceFile = referenceFiles.length > 0 && referenceFiles[0] instanceof File ? referenceFiles[0] : undefined;
+            // Collect all reference files that are File objects
+            const allReferenceFiles = referenceFiles.filter((f): f is File => f instanceof File);
             onSubmit({
                 prompt: prompt.trim(),
-                referenceFile,
+                referenceFiles: allReferenceFiles.length > 0 ? allReferenceFiles : undefined,
                 aspectRatio,
                 batchSize,
                 avatarId: selectedAvatar?.id,
@@ -588,7 +597,25 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                 <label htmlFor="quick-edit-prompt" className="text-sm font-raleway text-theme-white">
                                     Enter your prompt
                                 </label>
-                                <div className={`relative flex flex-col rounded-xl transition-colors duration-200 ${glass.prompt} focus-within:border-theme-mid`}>
+                                <div
+                                    className={`relative flex flex-col rounded-xl transition-colors duration-200 ${glass.prompt} focus-within:border-theme-mid ${isDragActive ? 'border border-n-text' : ''}`}
+                                    onDragOver={(e) => {
+                                        handleDragOver(e);
+                                        setIsDragActive(true);
+                                    }}
+                                    onDragEnter={(e) => {
+                                        handleDragEnter(e);
+                                        setIsDragActive(true);
+                                    }}
+                                    onDragLeave={(e) => {
+                                        handleDragLeave(e);
+                                        setIsDragActive(false);
+                                    }}
+                                    onDrop={(e) => {
+                                        handleDrop(e);
+                                        setIsDragActive(false);
+                                    }}
+                                >
                                     <textarea
                                         id="quick-edit-prompt"
                                         ref={inputRef}
@@ -610,6 +637,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                     ref={fileInputRef}
                                                     className="hidden"
                                                     accept="image/*"
+                                                    multiple
                                                     onChange={(e) => {
                                                         const files = Array.from(e.target.files || []);
                                                         if (files.length > 0) {
@@ -623,8 +651,8 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         type="button"
                                                         onClick={() => openFileInput()}
                                                         aria-label="Add reference image"
-                                                        disabled={referenceFiles.length >= 1}
-                                                        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small ${referenceFiles.length >= 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                        disabled={referenceFiles.length >= MAX_QUICK_EDIT_REFERENCES}
+                                                        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small ${referenceFiles.length >= MAX_QUICK_EDIT_REFERENCES ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                         onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'edit-reference-tooltip')}
                                                         onMouseLeave={() => hideHoverTooltip('edit-reference-tooltip')}
                                                         onPointerMove={onPointerMove}

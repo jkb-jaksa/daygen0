@@ -592,25 +592,28 @@ const FullImageModal = memo(() => {
       return;
     }
 
-    const { prompt, referenceFile, aspectRatio, batchSize, avatarId, productId, styleId } = options;
+    const { prompt, referenceFiles, aspectRatio, batchSize, avatarId, productId, styleId } = options;
 
     // Close modal immediately
     setQuickEditModalState(null);
 
-    // Determine references
+    // Determine references - start with the original image being edited
     const references: string[] = [fullSizeImage.url.split('?')[0]];
 
-    if (referenceFile) {
-      try {
-        const base64 = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(referenceFile);
-        });
-        references.push(base64);
-      } catch (e) {
-        debugError('Failed to convert reference file', e);
+    // Add all additional reference files (up to 13, since original image + 13 = 14 max for Gemini 3 Pro)
+    if (referenceFiles && referenceFiles.length > 0) {
+      for (const referenceFile of referenceFiles) {
+        try {
+          const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(referenceFile);
+          });
+          references.push(base64);
+        } catch (e) {
+          debugError('Failed to convert reference file', e);
+        }
       }
     }
 

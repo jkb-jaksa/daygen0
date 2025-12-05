@@ -606,7 +606,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       reader.readAsDataURL(file);
     });
 
-  const handleQuickEditSubmit = useCallback(async ({ prompt, referenceFile }: QuickEditOptions) => {
+  const handleQuickEditSubmit = useCallback(async ({ prompt, referenceFiles }: QuickEditOptions) => {
     if (!quickEditModalState?.item || !quickEditModalState.item.url) {
       showToast('No image URL available');
       return;
@@ -623,9 +623,12 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     try {
       const references = [item.url.split('?')[0]]; // Strip query params for original quality
 
-      if (referenceFile) {
-        const referenceDataUrl = await fileToDataUrl(referenceFile);
-        references.push(referenceDataUrl);
+      // Add all reference files (up to 13 since original + 13 = 14 max for Gemini 3 Pro)
+      if (referenceFiles && referenceFiles.length > 0) {
+        for (const file of referenceFiles) {
+          const referenceDataUrl = await fileToDataUrl(file);
+          references.push(referenceDataUrl);
+        }
       }
 
       // Run generation in background
