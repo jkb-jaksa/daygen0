@@ -345,6 +345,25 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
 
 
 
+    // Global mouse up listener to handle releasing outside canvas
+    useEffect(() => {
+        const handleGlobalMouseUp = () => {
+            if (isDrawing) {
+                stopDrawing();
+            }
+        };
+
+        if (isDrawing) {
+            window.addEventListener('mouseup', handleGlobalMouseUp);
+            window.addEventListener('touchend', handleGlobalMouseUp);
+        }
+
+        return () => {
+            window.removeEventListener('mouseup', handleGlobalMouseUp);
+            window.removeEventListener('touchend', handleGlobalMouseUp);
+        };
+    }, [isDrawing, stopDrawing]);
+
     // Function to redraw the entire canvas with all paths
     const redrawCanvas = useCallback(() => {
         const canvas = canvasRef.current;
@@ -955,7 +974,8 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                 onMouseMove={draw}
                                 onMouseUp={stopDrawing}
                                 onMouseLeave={() => {
-                                    stopDrawing();
+                                    // Don't stop drawing here, just hide preview
+                                    // stopDrawing() is now handled globally
                                     setShowBrushPreview(false);
                                 }}
                                 onTouchStart={startDrawing}
@@ -1096,16 +1116,23 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
 
                         {/* Precise Edit Toolbar - Below Image */}
                         <div className="w-full flex justify-start gap-1 transition-all duration-200 animate-in fade-in slide-in-from-top-2">
-                            <button
-                                onClick={() => {
-                                    if (isMaskToolbarVisible) setIsEraseMode(false);
-                                    setIsMaskToolbarVisible(!isMaskToolbarVisible);
-                                }}
-                                className={`flex items-center gap-1.5 px-3 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)] font-raleway font-normal text-sm ${isMaskToolbarVisible ? 'text-theme-text border-theme-text' : 'text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text'}`}
-                            >
-                                <Wand2 className="w-4 h-4" />
-                                Precise Edit
-                            </button>
+                            <div className="relative">
+                                <button
+                                    onClick={() => {
+                                        if (isMaskToolbarVisible) setIsEraseMode(false);
+                                        setIsMaskToolbarVisible(!isMaskToolbarVisible);
+                                    }}
+                                    className={`flex items-center gap-1.5 px-3 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)] font-raleway font-normal text-sm ${isMaskToolbarVisible ? 'text-theme-text border-theme-text' : 'text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text'}`}
+                                    onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'precise-edit-tooltip')}
+                                    onMouseLeave={() => hideHoverTooltip('precise-edit-tooltip')}
+                                >
+                                    <Wand2 className="w-4 h-4" />
+                                    Precise Edit
+                                </button>
+                                <TooltipPortal id="precise-edit-tooltip">
+                                    Draw a mask
+                                </TooltipPortal>
+                            </div>
 
                             {isMaskToolbarVisible && (
                                 <>
@@ -1174,7 +1201,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                             <Eraser className="w-3.5 h-3.5" />
                                         </button>
                                         <TooltipPortal id="eraser-tooltip">
-                                            {isEraseMode ? "Back to Draw Mode" : "Erase"}
+                                            Erase
                                         </TooltipPortal>
                                     </div>
                                     {/* Reset mask button - only show when mask exists */}
