@@ -5,8 +5,10 @@ import { SceneBlock } from './SceneBlock';
 import { Play, Pause, Download } from 'lucide-react';
 
 export const ReelsEditorLayout = () => {
-    const { segments, isPlaying, setIsPlaying, currentTime, nextSegment } = useTimelineStore();
+    const { segments, isPlaying, setIsPlaying, currentTime, nextSegment, musicUrl, finalVideoUrl } = useTimelineStore();
     const { audioRef } = useAudioSync();
+
+    const musicRef = useRef<HTMLAudioElement | null>(null);
 
     // Ref for the scrollable container to auto-scroll
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -33,6 +35,29 @@ export const ReelsEditorLayout = () => {
             }
         }
     }, [isPlaying, activeSegment]);
+
+    // Sync Background Music
+    useEffect(() => {
+        const music = musicRef.current;
+        if (!music || !musicUrl) return;
+
+        if (isPlaying) {
+            music.play().catch(console.warn);
+        } else {
+            music.pause();
+        }
+    }, [isPlaying, musicUrl]);
+
+    // Ensure music stays synced with timeline
+    useEffect(() => {
+        const music = musicRef.current;
+        if (!music || !musicUrl) return;
+
+        // If desync is > 0.5s, snap it
+        if (Math.abs(music.currentTime - currentTime) > 0.5) {
+            music.currentTime = currentTime;
+        }
+    }, [currentTime, musicUrl]);
 
     // MOCK DATA FOR DEVELOPMENT
     useEffect(() => {
@@ -160,18 +185,34 @@ export const ReelsEditorLayout = () => {
                         {isPlaying ? <><Pause size={18} /> Pause</> : <><Play size={18} /> Play Preview</>}
                     </button>
 
-                    <button className="flex items-center gap-2 px-4 py-2 lg:px-6 lg:py-3 bg-zinc-800 text-white rounded-full font-medium hover:bg-zinc-700 transition-colors text-sm lg:text-base">
+                    <button
+                        onClick={() => {
+                            if (finalVideoUrl) window.open(finalVideoUrl, '_blank');
+                            else alert("Video is not ready yet. Please wait.");
+                        }}
+                        disabled={!finalVideoUrl}
+                        className={`flex items-center gap-2 px-4 py-2 lg:px-6 lg:py-3 rounded-full font-medium transition-colors text-sm lg:text-base ${finalVideoUrl
+                            ? 'bg-zinc-800 text-white hover:bg-zinc-700'
+                            : 'bg-zinc-900 text-zinc-600 cursor-not-allowed'
+                            }`}
+                    >
                         <Download size={18} /> Export Video
                     </button>
                 </div>
 
-                {/* Hidden Audio Element */}
+                {/* Audio Elements */}
                 <audio
                     ref={audioRef}
                     src={activeSegment?.voiceUrl || undefined}
                     onEnded={handleAudioEnded}
                 />
+                <audio
+                    ref={musicRef}
+                    src={musicUrl || undefined}
+                    loop
+                />
             </div>
         </div>
     );
 };
+

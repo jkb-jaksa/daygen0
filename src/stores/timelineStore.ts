@@ -38,12 +38,17 @@ interface TimelineState {
     updateSegmentScript: (segmentId: string, newScript: string) => void;
     updateSegmentAudio: (segmentId: string, audioUrl: string, duration: number) => void;
     updateSegmentPrompt: (segmentId: string, field: 'script' | 'visualPrompt' | 'motionPrompt', value: string) => void;
+
+    // Final Video
+    finalVideoUrl: string | null;
+    setFinalVideoUrl: (url: string | null) => void;
 }
 
 export const useTimelineStore = create<TimelineState>()(
     immer((set) => ({
         segments: [],
         musicUrl: null,
+        finalVideoUrl: null,
         isPlaying: false,
         currentTime: 0,
         activeSegmentIndex: 0,
@@ -58,6 +63,9 @@ export const useTimelineStore = create<TimelineState>()(
         }),
         setMusicUrl: (url) => set((state) => {
             state.musicUrl = url;
+        }),
+        setFinalVideoUrl: (url) => set((state) => {
+            state.finalVideoUrl = url;
         }),
         setIsPlaying: (isPlaying) => set((state) => { state.isPlaying = isPlaying }),
         setCurrentTime: (time) => set((state) => { state.currentTime = time }),

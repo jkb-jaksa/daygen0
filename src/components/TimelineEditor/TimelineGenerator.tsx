@@ -17,6 +17,7 @@ export default function TimelineGenerator() {
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
     const setSegments = useTimelineStore((state) => state.setSegments);
     const setMusicUrl = useTimelineStore((state) => state.setMusicUrl);
+    const setFinalVideoUrl = useTimelineStore((state) => state.setFinalVideoUrl);
     const setIsPlaying = useTimelineStore((state) => state.setIsPlaying);
     const setCurrentTime = useTimelineStore((state) => state.setCurrentTime);
     const setJobId = useTimelineStore((state) => state.setJobId);
@@ -49,6 +50,8 @@ export default function TimelineGenerator() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const musicUrl = (response as any).musicUrl || null;
         setMusicUrl(musicUrl);
+        setFinalVideoUrl(job.resultUrl || null);
+
 
         setIsPlaying(false);
         setCurrentTime(0);
