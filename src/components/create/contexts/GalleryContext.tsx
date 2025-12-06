@@ -987,7 +987,10 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const filteredItems = useMemo(() => {
-    const allItems = [...state.images, ...state.videos];
+    // Merge and sort items by timestamp descending to ensure videos and images are interleaved
+    const allItems = [...state.images, ...state.videos].sort((a, b) => {
+      return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+    });
 
     return allItems.filter(item => {
       // Filter by liked

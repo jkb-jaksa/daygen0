@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Play } from "lucide-react";
 import { glass } from "../../styles/designSystem";
 import { scrollLockExemptAttr } from "../../hooks/useGlobalScrollLock";
 
@@ -97,10 +96,7 @@ function VideoThumbnail({ src, alt }: { src: string; alt: string }) {
         />
       )}
 
-      {/* Play icon overlay */}
-      <div className="absolute inset-0 flex items-center justify-center bg-theme-black/30">
-        <Play className="w-4 h-4 text-theme-white fill-theme-white/80" />
-      </div>
+      {/* Play icon overlay removed as per request */}
     </div>
   );
 }

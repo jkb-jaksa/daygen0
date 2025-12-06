@@ -227,7 +227,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   }, [hasMore, isLoading, loadMore]);
 
 
-
   // Apply category-specific filtering
   const filteredItems = useMemo(() => {
     // For other categories, show all
@@ -236,6 +235,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     if (activeCategory === 'inspirations') {
       items = contextFilteredItems.filter(item => item.savedFrom);
     } else if (activeCategory === 'gallery') {
+      // Show both images and videos in gallery view (unless specific filters are active)
+      // Only exclude saved inspirations which have their own view
       items = contextFilteredItems.filter(item => !item.savedFrom);
     } else if (activeCategory === 'image') {
       items = contextFilteredItems.filter(item => !('type' in item && item.type === 'video'));
@@ -577,7 +578,14 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
 
   // Check if item is video
   const isVideo = useCallback((item: GalleryImageLike | GalleryVideoLike) => {
-    return 'type' in item && item.type === 'video';
+    if ('type' in item && item.type === 'video') {
+      return true;
+    }
+    // Fallback detection for videos that might be misclassified as images
+    if (item.url) {
+      return /\.(mp4|mov|webm|m4v|mkv|avi|wmv)(\?|$)/i.test(item.url);
+    }
+    return false;
   }, []);
 
   const toggleVideoPrompt = useCallback((identifier: string) => {
