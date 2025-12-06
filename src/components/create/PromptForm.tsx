@@ -1194,7 +1194,7 @@ const PromptForm = memo<PromptFormProps>(
         const remaining = Math.max(0, MAX_PARALLEL_GENERATIONS - activeJobs.length);
         return remaining <= 0
           ? `You can run up to ${MAX_PARALLEL_GENERATIONS} generations at once`
-          : `You can only add ${remaining} more generation${remaining === 1 ? '' : 's'} right now`;
+          : `You can only add ${remaining} more generation${remaining === 1 ? 's' : ''} right now`;
       }
       return '';
     }, [activeJobs.length, finalPrompt, hasGenerationCapacity, user?.credits]);
@@ -1569,7 +1569,7 @@ const PromptForm = memo<PromptFormProps>(
                   onDrop={handleAvatarButtonDrop}
                   onMouseEnter={() => setIsAvatarButtonHovered(true)}
                   onMouseLeave={() => setIsAvatarButtonHovered(false)}
-                  className={`${glass.promptBorderless} ${isDraggingOverAvatarButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid/30 ${selectedAvatar ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                  className={`${glass.promptBorderless} ${isDraggingOverAvatarButton || avatarSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid/30 ${selectedAvatar ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                   onPointerMove={onPointerMove}
                   onPointerEnter={onPointerEnter}
                   onPointerLeave={onPointerLeave}
@@ -1589,7 +1589,7 @@ const PromptForm = memo<PromptFormProps>(
                       </div>
                     </>
                   )}
-                  {!selectedAvatar && !avatarDragPreviewUrl && (
+                  {!selectedAvatar && !avatarDragPreviewUrl && !avatarSelection && (
                     <>
                       <div className="flex-1 flex items-center justify-center lg:mt-3">
                         {isAvatarButtonHovered ? (
@@ -1605,24 +1605,24 @@ const PromptForm = memo<PromptFormProps>(
                       </div>
                     </>
                   )}
-                  {selectedAvatar && !avatarDragPreviewUrl && (
+                  {(selectedAvatar || avatarSelection) && !avatarDragPreviewUrl && (
                     <>
                       <img
-                        src={avatarHandlers.selectedAvatarImage?.url ?? selectedAvatar.imageUrl}
-                        alt={selectedAvatar.name}
+                        src={avatarSelection?.imageUrl ?? avatarHandlers.selectedAvatarImage?.url ?? selectedAvatar?.imageUrl}
+                        alt={avatarSelection ? 'Avatar' : (selectedAvatar?.name ?? 'Avatar')}
                         loading="lazy"
-                        className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover"
-                        title={selectedAvatar.name}
+                        className={`absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover ${avatarSelection ? 'opacity-80' : ''}`}
+                        title={avatarSelection ? 'Avatar' : (selectedAvatar?.name ?? 'Avatar')}
                       />
-                      <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
+                      <div className={`hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 ${avatarSelection ? 'z-20' : ''}`}>
                         <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
-                          {selectedAvatar.name}
+                          {avatarSelection ? 'Avatar' : (selectedAvatar?.name ?? 'Avatar')}
                         </span>
                       </div>
                     </>
                   )}
                 </button>
-                {selectedAvatar && (
+                {(selectedAvatar) && (
                   <button
                     type="button"
                     onClick={(e) => {
@@ -1636,6 +1636,7 @@ const PromptForm = memo<PromptFormProps>(
                     <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
                   </button>
                 )}
+
               </div>
 
               <div className="relative">
@@ -1649,7 +1650,7 @@ const PromptForm = memo<PromptFormProps>(
                   onDrop={handleProductButtonDrop}
                   onMouseEnter={() => setIsProductButtonHovered(true)}
                   onMouseLeave={() => setIsProductButtonHovered(false)}
-                  className={`${glass.promptBorderless} ${isDraggingOverProductButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid/30 ${selectedProduct ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                  className={`${glass.promptBorderless} ${isDraggingOverProductButton || productSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid/30 ${selectedProduct || productSelection ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                   onPointerMove={onPointerMove}
                   onPointerEnter={onPointerEnter}
                   onPointerLeave={onPointerLeave}
@@ -1669,7 +1670,7 @@ const PromptForm = memo<PromptFormProps>(
                       </div>
                     </>
                   )}
-                  {!selectedProduct && !productDragPreviewUrl && (
+                  {!selectedProduct && !productDragPreviewUrl && !productSelection && (
                     <>
                       <div className="flex-1 flex items-center justify-center lg:mt-3">
                         {isProductButtonHovered ? (
@@ -1685,18 +1686,18 @@ const PromptForm = memo<PromptFormProps>(
                       </div>
                     </>
                   )}
-                  {selectedProduct && !productDragPreviewUrl && (
+                  {(selectedProduct || productSelection) && !productDragPreviewUrl && (
                     <>
                       <img
-                        src={selectedProduct.imageUrl}
-                        alt={selectedProduct.name}
+                        src={productSelection?.imageUrl ?? selectedProduct?.imageUrl}
+                        alt={productSelection ? 'Product' : (selectedProduct?.name ?? 'Product')}
                         loading="lazy"
-                        className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover"
-                        title={selectedProduct.name}
+                        className={`absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover ${productSelection ? 'opacity-80' : ''}`}
+                        title={productSelection ? 'Product' : (selectedProduct?.name ?? 'Product')}
                       />
-                      <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
+                      <div className={`hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 ${productSelection ? 'z-20' : ''}`}>
                         <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
-                          {selectedProduct.name}
+                          {productSelection ? 'Product' : (selectedProduct?.name ?? 'Product')}
                         </span>
                       </div>
                     </>
