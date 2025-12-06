@@ -300,25 +300,48 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         };
     };
 
-    const undoStroke = () => {
+    const undoStroke = useCallback(() => {
         if (allPaths.length === 0) return;
         const lastPath = allPaths[allPaths.length - 1];
         setAllPaths(prev => prev.slice(0, -1));
         setRedoStack(prev => [...prev, lastPath]);
-    };
+    }, [allPaths]);
 
-    const redoStroke = () => {
+    const redoStroke = useCallback(() => {
         if (redoStack.length === 0) return;
         const pathToRedo = redoStack[redoStack.length - 1];
         setRedoStack(prev => prev.slice(0, -1));
         setAllPaths(prev => [...prev, pathToRedo]);
-    };
+    }, [redoStack]);
 
     const clearMask = () => {
         setAllPaths([]);
         setRedoStack([]);
         setMaskData(null);
     };
+
+    // Keyboard shortcuts for Undo/Redo
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (!isMaskToolbarVisible) return;
+
+            if ((e.metaKey || e.ctrlKey) && (e.key === 'z' || e.key === 'Z')) {
+                e.preventDefault();
+                if (e.shiftKey) {
+                    redoStroke();
+                } else {
+                    undoStroke();
+                }
+            } else if ((e.metaKey || e.ctrlKey) && (e.key === 'y' || e.key === 'Y')) {
+                e.preventDefault();
+                redoStroke();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isMaskToolbarVisible, undoStroke, redoStroke]);
+
 
 
 
@@ -1074,12 +1097,14 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                         {/* Precise Edit Toolbar - Below Image */}
                         <div className="w-full flex justify-start gap-1 transition-all duration-200 animate-in fade-in slide-in-from-top-2">
                             <button
-                                onClick={() => setIsMaskToolbarVisible(!isMaskToolbarVisible)}
+                                onClick={() => {
+                                    if (isMaskToolbarVisible) setIsEraseMode(false);
+                                    setIsMaskToolbarVisible(!isMaskToolbarVisible);
+                                }}
                                 className={`flex items-center gap-1.5 px-3 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)] font-raleway font-normal text-sm ${isMaskToolbarVisible ? 'text-theme-text border-theme-text' : 'text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text'}`}
-                                title="Precise edit"
                             >
                                 <Wand2 className="w-4 h-4" />
-                                Precise edit
+                                Precise Edit
                             </button>
 
                             {isMaskToolbarVisible && (
@@ -1149,7 +1174,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                             <Eraser className="w-3.5 h-3.5" />
                                         </button>
                                         <TooltipPortal id="eraser-tooltip">
-                                            {isEraseMode ? "Switch to draw" : "Eraser"}
+                                            {isEraseMode ? "Back to Draw Mode" : "Erase"}
                                         </TooltipPortal>
                                     </div>
                                     {/* Reset mask button - only show when mask exists */}
@@ -1298,7 +1323,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                     </>
                                                 )}
                                             </button>
-                                            {selectedAvatar && (
+                                            {selectedAvatar && !isDraggingOverAvatarButton && (
                                                 <button
                                                     type="button"
                                                     onClick={(e) => {
@@ -1387,7 +1412,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                     </>
                                                 )}
                                             </button>
-                                            {selectedProduct && (
+                                            {selectedProduct && !isDraggingOverProductButton && (
                                                 <button
                                                     type="button"
                                                     onClick={(e) => {
