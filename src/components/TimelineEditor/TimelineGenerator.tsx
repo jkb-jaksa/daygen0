@@ -4,13 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { generateTimeline, type TimelineResponse } from '../../api/timeline';
 import { useTimelineStore, type Segment } from '../../stores/timelineStore';
 import { fetchJobs, getJob, type Job } from '../../api/jobs';
-import { Loader2, Sparkles, History } from 'lucide-react';
+import { Loader2, Sparkles, History, Volume2, VolumeX } from 'lucide-react';
 
 export default function TimelineGenerator() {
     const navigate = useNavigate();
     const [topic, setTopic] = useState('');
     const [style, setStyle] = useState('Cinematic');
     const [duration, setDuration] = useState<'short' | 'medium' | 'long'>('medium');
+    const [musicVolume, setMusicVolume] = useState(30); // 0-100%
     const [isLoading, setIsLoading] = useState(false);
     const [jobs, setJobs] = useState<Job[]>([]);
     const [activeJobId, setActiveJobId] = useState<string | null>(null);
@@ -21,6 +22,7 @@ export default function TimelineGenerator() {
     const setIsPlaying = useTimelineStore((state) => state.setIsPlaying);
     const setCurrentTime = useTimelineStore((state) => state.setCurrentTime);
     const setJobId = useTimelineStore((state) => state.setJobId);
+    const setMusicVolumeStore = useTimelineStore((state) => state.setMusicVolume);
 
     useEffect(() => {
         loadHistory();
@@ -44,19 +46,27 @@ export default function TimelineGenerator() {
         setSegments(segmentsWithIds);
         setJobId(job.id);
 
+        // Restore music volume if available, or default to 30
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const savedVolume = (job.metadata as any)?.dto?.musicVolume ?? 30;
+        console.log("DEBUG: handleLoadJob - savedVolume:", savedVolume);
+        setMusicVolumeStore(savedVolume);
+        setMusicVolume(savedVolume); // Update local state too
 
 
         // Extract global musicUrl from response
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const musicUrl = (response as any).musicUrl || null;
+        console.log("DEBUG: handleLoadJob - musicUrl:", musicUrl);
         setMusicUrl(musicUrl);
         setFinalVideoUrl(job.resultUrl || null);
 
 
         setIsPlaying(false);
         setCurrentTime(0);
+        setCurrentTime(0);
         navigate('/app/cyran-roll/editor');
-    }, [navigate, setSegments, setIsPlaying, setCurrentTime, setJobId, setMusicUrl]);
+    }, [navigate, setSegments, setIsPlaying, setCurrentTime, setJobId, setMusicUrl, setMusicVolumeStore]);
 
     useEffect(() => {
         if (!activeJobId) return;
@@ -118,7 +128,7 @@ export default function TimelineGenerator() {
 
         setIsLoading(true);
         try {
-            const job = await generateTimeline(topic, style, duration);
+            const job = await generateTimeline(topic, style, duration, musicVolume / 100);
             setJobs(prev => [job, ...prev]);
             setActiveJobId(job.id);
         } catch (error) {
@@ -197,6 +207,24 @@ export default function TimelineGenerator() {
                                 ))}
                             </div>
                         </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-2 mb-2">
+                            {musicVolume === 0 ? <VolumeX className="w-4 h-4 text-theme-white/60" /> : <Volume2 className="w-4 h-4 text-theme-white/60" />}
+                            <label htmlFor="volume" className="text-sm font-medium text-theme-white font-raleway">
+                                Music Volume: {musicVolume}%
+                            </label>
+                        </div>
+                        <input
+                            id="volume"
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={musicVolume}
+                            onChange={(e) => setMusicVolume(parseInt(e.target.value))}
+                            className="w-full h-2 bg-theme-dark rounded-lg appearance-none cursor-pointer accent-theme-mid hover:accent-cyan-400 transition-all"
+                        />
                     </div>
 
                     <button

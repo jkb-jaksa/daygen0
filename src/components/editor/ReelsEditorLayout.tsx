@@ -5,7 +5,7 @@ import { SceneBlock } from './SceneBlock';
 import { Play, Pause, Download } from 'lucide-react';
 
 export const ReelsEditorLayout = () => {
-    const { segments, isPlaying, setIsPlaying, currentTime, nextSegment, musicUrl, finalVideoUrl } = useTimelineStore();
+    const { segments, isPlaying, setIsPlaying, currentTime, nextSegment, musicUrl, finalVideoUrl, musicVolume } = useTimelineStore();
     const { audioRef } = useAudioSync();
 
     const musicRef = useRef<HTMLAudioElement | null>(null);
@@ -36,10 +36,22 @@ export const ReelsEditorLayout = () => {
         }
     }, [isPlaying, activeSegment]);
 
-    // Sync Background Music
+    // Sync Background Music (Play/Pause & Volume)
     useEffect(() => {
         const music = musicRef.current;
+        console.log("DEBUG: ReelsEditorLayout - musicUrl:", musicUrl);
+        console.log("DEBUG: ReelsEditorLayout - musicVolume:", musicVolume);
+
         if (!music || !musicUrl) return;
+
+        // Set Volume
+        // Saved volume seems to be 0-1 range (e.g. 0.16)
+        // Check if value is > 1 to determine if it needs division
+        const rawVolume = musicVolume ?? 30;
+        const normalizedVolume = rawVolume > 1 ? rawVolume / 100 : rawVolume;
+
+        music.volume = Math.min(Math.max(normalizedVolume, 0), 1);
+        console.log("DEBUG: ReelsEditorLayout - normalizedVolume:", normalizedVolume, "final music.volume:", music.volume);
 
         if (isPlaying) {
             music.play().catch(console.warn);

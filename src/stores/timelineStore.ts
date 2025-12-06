@@ -24,6 +24,7 @@ interface TimelineState {
     activeSegmentIndex: number;
     isLoading: boolean;
     jobId: string | null;
+    musicVolume: number; // 0-100
 
     // Actions
     setJobId: (id: string | null) => void;
@@ -38,6 +39,7 @@ interface TimelineState {
     updateSegmentScript: (segmentId: string, newScript: string) => void;
     updateSegmentAudio: (segmentId: string, audioUrl: string, duration: number) => void;
     updateSegmentPrompt: (segmentId: string, field: 'script' | 'visualPrompt' | 'motionPrompt', value: string) => void;
+    setMusicVolume: (volume: number) => void;
 
     // Final Video
     finalVideoUrl: string | null;
@@ -54,6 +56,7 @@ export const useTimelineStore = create<TimelineState>()(
         activeSegmentIndex: 0,
         isLoading: false,
         jobId: null,
+        musicVolume: 30, // Default to 30%
 
         setJobId: (id) => set((state) => { state.jobId = id }),
         setSegments: (segments) => set((state) => {
@@ -112,6 +115,9 @@ export const useTimelineStore = create<TimelineState>()(
                 if (field === 'visualPrompt') seg.visualPrompt = value;
                 if (field === 'motionPrompt') seg.motionPrompt = value;
             }
+        }),
+        setMusicVolume: (volume) => set((state) => {
+            state.musicVolume = volume;
         }),
     }))
 );
