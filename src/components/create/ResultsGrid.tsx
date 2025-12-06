@@ -25,6 +25,7 @@ import { getPersistedValue } from '../../lib/clientStorage';
 import { STORAGE_CHANGE_EVENT } from '../../utils/storageEvents';
 import { CircularProgressRing } from '../CircularProgressRing';
 import { VideoPlayer } from '../shared/VideoPlayer';
+import { setDraggingImageUrl, clearDraggingImageUrl, showFloatingDragImage, updateFloatingDragImage, hideFloatingDragImage } from './utils/dragState';
 
 // Lazy load components
 const ModelBadge = lazy(() => import('../ModelBadge'));
@@ -1123,7 +1124,55 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                       src={item.url}
                       alt={item.prompt || `Generated ${index + 1} `}
                       loading="lazy"
-                      className="relative z-[1] h-full w-full object-cover"
+                      className="relative z-[1] h-full w-full object-cover cursor-grab active:cursor-grabbing"
+                      draggable={true}
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/plain', item.url);
+                        e.dataTransfer.setData('text/uri-list', item.url);
+                        e.dataTransfer.effectAllowed = 'copy';
+
+                        // Store the dragging URL globally for drop target previews
+                        setDraggingImageUrl(item.url);
+
+                        // Show the custom floating drag image
+                        showFloatingDragImage(item.url);
+                        // Position it initially
+                        updateFloatingDragImage(e.clientX, e.clientY);
+
+                        // Create a transparent 1x1 pixel native drag ghost
+                        // (we use our custom floating image instead)
+                        const transparentGhost = document.createElement('div');
+                        transparentGhost.style.width = '1px';
+                        transparentGhost.style.height = '1px';
+                        transparentGhost.style.opacity = '0';
+                        transparentGhost.style.position = 'absolute';
+                        transparentGhost.style.top = '-9999px';
+                        transparentGhost.style.left = '-9999px';
+                        document.body.appendChild(transparentGhost);
+
+                        e.dataTransfer.setDragImage(transparentGhost, 0, 0);
+
+                        // Clean up after browser captures the image
+                        requestAnimationFrame(() => {
+                          setTimeout(() => {
+                            if (transparentGhost.parentNode) {
+                              transparentGhost.parentNode.removeChild(transparentGhost);
+                            }
+                          }, 0);
+                        });
+                      }}
+                      onDrag={(e) => {
+                        // Update the floating image position as we drag
+                        // Note: e.clientX/Y can be 0,0 at the end of drag, so we check
+                        if (e.clientX > 0 || e.clientY > 0) {
+                          updateFloatingDragImage(e.clientX, e.clientY);
+                        }
+                      }}
+                      onDragEnd={() => {
+                        // Clear the global dragging URL and hide floating image
+                        clearDraggingImageUrl();
+                        hideFloatingDragImage();
+                      }}
                     />
                   )
                   }

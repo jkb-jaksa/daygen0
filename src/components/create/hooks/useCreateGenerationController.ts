@@ -58,37 +58,6 @@ const fileToDataUrl = (file: File): Promise<string> =>
     reader.readAsDataURL(file);
   });
 
-const blobToDataUrl = (blob: Blob): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(new Error('Failed to read reference blob.'));
-    reader.readAsDataURL(blob);
-  });
-
-const urlToDataUrl = async (value: string): Promise<string | null> => {
-  const trimmed = value?.trim();
-  if (!trimmed) {
-    return null;
-  }
-
-  if (trimmed.startsWith('data:')) {
-    return trimmed;
-  }
-
-  try {
-    const response = await fetch(trimmed);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch reference (${response.status})`);
-    }
-    const blob = await response.blob();
-    return await blobToDataUrl(blob);
-  } catch (error) {
-    debugError('[create] Failed to convert reference URL to data URL', error);
-    return null;
-  }
-};
-
 const ensureJobId = (candidate?: string | null) => {
   if (candidate && candidate.trim().length > 0) {
     return candidate;
@@ -639,18 +608,23 @@ export function useCreateGenerationController(): CreateGenerationController {
       referenceSources.push(...referenceHandlers.referenceFiles);
     }
 
-    const referencesBase64 = referenceSources.length
+    // Process references: pass URLs directly, convert Files to data URLs
+    // The backend handles URL-to-base64 conversion, avoiding CORS issues
+    const processedReferences = referenceSources.length
       ? await Promise.all(
         referenceSources.map(async (fileOrUrl) => {
           if (typeof fileOrUrl === 'string') {
-            return urlToDataUrl(fileOrUrl);
+            // Pass URLs directly - backend will download them
+            // Only convert if it's already a data URL (starts with 'data:')
+            return fileOrUrl.trim();
           }
+          // Convert File objects to data URLs
           return fileToDataUrl(fileOrUrl);
         }),
       )
       : [];
 
-    const normalizedReferences = referencesBase64
+    const normalizedReferences = processedReferences
       .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
       .filter((value, index, arr) => arr.indexOf(value) === index)
       .slice(0, maxReferences);

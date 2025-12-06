@@ -47,6 +47,7 @@ import { useAuth } from '../../auth/useAuth';
 import { useCreateBridge, createInitialBridgeActions } from './contexts/hooks';
 import { usePresetGenerationFlow } from './hooks/usePresetGenerationFlow';
 import { isVideoModelId, REFERENCE_SUPPORTED_MODELS } from './constants';
+import { getDraggingImageUrl, setFloatingDragImageVisible } from './utils/dragState';
 
 const ModelSelector = lazy(() => import('./ModelSelector'));
 const SettingsMenu = lazy(() => import('./SettingsMenu'));
@@ -243,6 +244,8 @@ const PromptForm = memo<PromptFormProps>(
     const [isStyleButtonHovered, setIsStyleButtonHovered] = useState(false);
     const [isDraggingOverAvatarButton, setIsDraggingOverAvatarButton] = useState(false);
     const [isDraggingOverProductButton, setIsDraggingOverProductButton] = useState(false);
+    const [avatarDragPreviewUrl, setAvatarDragPreviewUrl] = useState<string | null>(null);
+    const [productDragPreviewUrl, setProductDragPreviewUrl] = useState<string | null>(null);
     const {
       storedAvatars,
       selectedAvatar,
@@ -802,18 +805,35 @@ const PromptForm = memo<PromptFormProps>(
       const types = Array.from(dataTransfer.types || []);
       if (types.includes('Files')) return true;
 
+      // Optimistically accept if type exists (during dragover data is hidden)
       if (types.includes('text/uri-list')) {
         const uri = dataTransfer.getData('text/uri-list')?.toLowerCase();
-        if (uri && (uri.startsWith('data:image') || /\.(png|jpe?g|gif|webp|avif|bmp|svg)(\?.*)?$/.test(uri))) {
-          return true;
+        // If we can read data (e.g. on drop), validate it.
+        if (uri) {
+          return uri.startsWith('data:image') || /\.(png|jpe?g|gif|webp|avif|bmp|svg)(\?.*)?$/.test(uri) || uri.startsWith('http');
         }
+        return true; // Optimistic accept during dragover
       }
 
       if (types.includes('text/html')) {
         const html = dataTransfer.getData('text/html');
-        if (html && html.includes('<img')) {
-          return true;
+        if (html) {
+          return html.includes('<img');
         }
+        return true; // Optimistic
+      }
+
+      if (types.includes('text/plain')) {
+        const text = dataTransfer.getData('text/plain');
+        // If data is available, validate it
+        if (text) {
+          return text.startsWith('http') || text.startsWith('data:image');
+        }
+        // If data is empty (dragover), we can optionally accept it.
+        // But validating text/plain blindly might be too noisy.
+        // Since we implemented text/uri-list for our gallery, we can rely on that.
+        // But let's allow it to support external links too?
+        // Let's rely on text/uri-list for our internal feature.
       }
 
       const items = dataTransfer.items ? Array.from(dataTransfer.items) : [];
@@ -979,6 +999,13 @@ const PromptForm = memo<PromptFormProps>(
       event.preventDefault();
       event.stopPropagation();
       setIsDraggingOverAvatarButton(true);
+      // Hide the floating drag image when over the button
+      setFloatingDragImageVisible(false);
+      // Get the dragged image URL for preview
+      const dragUrl = getDraggingImageUrl();
+      if (dragUrl) {
+        setAvatarDragPreviewUrl(dragUrl);
+      }
       avatarHandlers.handleAvatarDragOver(event);
     }, [avatarHandlers]);
 
@@ -986,6 +1013,9 @@ const PromptForm = memo<PromptFormProps>(
       event.preventDefault();
       event.stopPropagation();
       setIsDraggingOverAvatarButton(false);
+      setAvatarDragPreviewUrl(null);
+      // Show the floating drag image again when leaving the button
+      setFloatingDragImageVisible(true);
       avatarHandlers.handleAvatarDragLeave(event);
     }, [avatarHandlers]);
 
@@ -994,6 +1024,9 @@ const PromptForm = memo<PromptFormProps>(
         event.preventDefault();
         event.stopPropagation();
         setIsDraggingOverAvatarButton(false);
+        setAvatarDragPreviewUrl(null);
+        // Show the floating drag image (it will be hidden on dragEnd anyway)
+        setFloatingDragImageVisible(true);
         setIsAvatarPickerOpen(false);
         setIsProductPickerOpen(false);
         avatarHandlers.handleAvatarDrop(event);
@@ -1005,6 +1038,13 @@ const PromptForm = memo<PromptFormProps>(
       event.preventDefault();
       event.stopPropagation();
       setIsDraggingOverProductButton(true);
+      // Hide the floating drag image when over the button
+      setFloatingDragImageVisible(false);
+      // Get the dragged image URL for preview
+      const dragUrl = getDraggingImageUrl();
+      if (dragUrl) {
+        setProductDragPreviewUrl(dragUrl);
+      }
       productHandlers.handleProductDragOver(event);
     }, [productHandlers]);
 
@@ -1012,6 +1052,9 @@ const PromptForm = memo<PromptFormProps>(
       event.preventDefault();
       event.stopPropagation();
       setIsDraggingOverProductButton(false);
+      setProductDragPreviewUrl(null);
+      // Show the floating drag image again when leaving the button
+      setFloatingDragImageVisible(true);
       productHandlers.handleProductDragLeave(event);
     }, [productHandlers]);
 
@@ -1020,6 +1063,9 @@ const PromptForm = memo<PromptFormProps>(
         event.preventDefault();
         event.stopPropagation();
         setIsDraggingOverProductButton(false);
+        setProductDragPreviewUrl(null);
+        // Show the floating drag image (it will be hidden on dragEnd anyway)
+        setFloatingDragImageVisible(true);
         setIsProductPickerOpen(false);
         setIsAvatarPickerOpen(false);
         productHandlers.handleProductDrop(event);
@@ -1486,7 +1532,22 @@ const PromptForm = memo<PromptFormProps>(
                   onPointerEnter={onPointerEnter}
                   onPointerLeave={onPointerLeave}
                 >
-                  {!selectedAvatar && (
+                  {/* Drag preview overlay */}
+                  {avatarDragPreviewUrl && isDraggingOverAvatarButton && (
+                    <>
+                      <img
+                        src={avatarDragPreviewUrl}
+                        alt="Drop to add as avatar"
+                        className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover z-10 opacity-80"
+                      />
+                      <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-20">
+                        <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
+                          Avatar
+                        </span>
+                      </div>
+                    </>
+                  )}
+                  {!selectedAvatar && !avatarDragPreviewUrl && (
                     <>
                       <div className="flex-1 flex items-center justify-center lg:mt-3">
                         {isAvatarButtonHovered ? (
@@ -1502,7 +1563,7 @@ const PromptForm = memo<PromptFormProps>(
                       </div>
                     </>
                   )}
-                  {selectedAvatar && (
+                  {selectedAvatar && !avatarDragPreviewUrl && (
                     <>
                       <img
                         src={avatarHandlers.selectedAvatarImage?.url ?? selectedAvatar.imageUrl}
@@ -1550,7 +1611,22 @@ const PromptForm = memo<PromptFormProps>(
                   onPointerEnter={onPointerEnter}
                   onPointerLeave={onPointerLeave}
                 >
-                  {!selectedProduct && (
+                  {/* Drag preview overlay */}
+                  {productDragPreviewUrl && isDraggingOverProductButton && (
+                    <>
+                      <img
+                        src={productDragPreviewUrl}
+                        alt="Drop to add as product"
+                        className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover z-10 opacity-80"
+                      />
+                      <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-20">
+                        <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
+                          Product
+                        </span>
+                      </div>
+                    </>
+                  )}
+                  {!selectedProduct && !productDragPreviewUrl && (
                     <>
                       <div className="flex-1 flex items-center justify-center lg:mt-3">
                         {isProductButtonHovered ? (
@@ -1566,7 +1642,7 @@ const PromptForm = memo<PromptFormProps>(
                       </div>
                     </>
                   )}
-                  {selectedProduct && (
+                  {selectedProduct && !productDragPreviewUrl && (
                     <>
                       <img
                         src={selectedProduct.imageUrl}

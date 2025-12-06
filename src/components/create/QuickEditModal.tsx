@@ -31,6 +31,7 @@ const ProductCreationModal = lazy(() => import('../products/ProductCreationModal
 
 import ImageBadgeRow from '../shared/ImageBadgeRow';
 import { useBadgeNavigation } from './hooks/useBadgeNavigation';
+import { getDraggingImageUrl, setFloatingDragImageVisible } from './utils/dragState';
 
 export interface QuickEditOptions {
     prompt: string;
@@ -203,6 +204,8 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     // Drag states for Avatar/Product buttons
     const [isDraggingOverAvatarButton, setIsDraggingOverAvatarButton] = useState(false);
     const [isDraggingOverProductButton, setIsDraggingOverProductButton] = useState(false);
+    const [avatarDragPreviewUrl, setAvatarDragPreviewUrl] = useState<string | null>(null);
+    const [productDragPreviewUrl, setProductDragPreviewUrl] = useState<string | null>(null);
 
     // New state for advanced features
     const [batchSize, setBatchSize] = useState(1);
@@ -238,6 +241,13 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         event.preventDefault();
         event.stopPropagation();
         setIsDraggingOverAvatarButton(true);
+        // Hide the floating drag image when over the button
+        setFloatingDragImageVisible(false);
+        // Get the dragged image URL for preview
+        const dragUrl = getDraggingImageUrl();
+        if (dragUrl) {
+            setAvatarDragPreviewUrl(dragUrl);
+        }
         avatarHandlers.handleAvatarDragOver(event);
     }, [avatarHandlers]);
 
@@ -245,6 +255,9 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         event.preventDefault();
         event.stopPropagation();
         setIsDraggingOverAvatarButton(false);
+        setAvatarDragPreviewUrl(null);
+        // Show the floating drag image again when leaving the button
+        setFloatingDragImageVisible(true);
         avatarHandlers.handleAvatarDragLeave(event);
     }, [avatarHandlers]);
 
@@ -252,6 +265,9 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         event.preventDefault();
         event.stopPropagation();
         setIsDraggingOverAvatarButton(false);
+        setAvatarDragPreviewUrl(null);
+        // Show the floating drag image (it will be hidden on dragEnd anyway)
+        setFloatingDragImageVisible(true);
         setIsAvatarPickerOpen(false);
         setIsProductPickerOpen(false);
         avatarHandlers.handleAvatarDrop(event);
@@ -262,6 +278,13 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         event.preventDefault();
         event.stopPropagation();
         setIsDraggingOverProductButton(true);
+        // Hide the floating drag image when over the button
+        setFloatingDragImageVisible(false);
+        // Get the dragged image URL for preview
+        const dragUrl = getDraggingImageUrl();
+        if (dragUrl) {
+            setProductDragPreviewUrl(dragUrl);
+        }
         productHandlers.handleProductDragOver(event);
     }, [productHandlers]);
 
@@ -269,6 +292,9 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         event.preventDefault();
         event.stopPropagation();
         setIsDraggingOverProductButton(false);
+        setProductDragPreviewUrl(null);
+        // Show the floating drag image again when leaving the button
+        setFloatingDragImageVisible(true);
         productHandlers.handleProductDragLeave(event);
     }, [productHandlers]);
 
@@ -276,6 +302,9 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         event.preventDefault();
         event.stopPropagation();
         setIsDraggingOverProductButton(false);
+        setProductDragPreviewUrl(null);
+        // Show the floating drag image (it will be hidden on dragEnd anyway)
+        setFloatingDragImageVisible(true);
         setIsProductPickerOpen(false);
         setIsAvatarPickerOpen(false);
         productHandlers.handleProductDrop(event);
@@ -731,7 +760,22 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                 onPointerEnter={onPointerEnter}
                                                 onPointerLeave={onPointerLeave}
                                             >
-                                                {!selectedAvatar && (
+                                                {/* Drag preview overlay */}
+                                                {avatarDragPreviewUrl && isDraggingOverAvatarButton && (
+                                                    <>
+                                                        <img
+                                                            src={avatarDragPreviewUrl}
+                                                            alt="Drop to add as avatar"
+                                                            className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover z-10 opacity-80"
+                                                        />
+                                                        <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-20">
+                                                            <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
+                                                                Avatar
+                                                            </span>
+                                                        </div>
+                                                    </>
+                                                )}
+                                                {!selectedAvatar && !avatarDragPreviewUrl && (
                                                     <>
                                                         <div className="flex-1 flex items-center justify-center lg:mt-3">
                                                             {isAvatarButtonHovered ? (
@@ -747,7 +791,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         </div>
                                                     </>
                                                 )}
-                                                {selectedAvatar && (
+                                                {selectedAvatar && !avatarDragPreviewUrl && (
                                                     <>
                                                         <img
                                                             src={selectedAvatar.imageUrl}
@@ -804,7 +848,22 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                 onPointerEnter={onPointerEnter}
                                                 onPointerLeave={onPointerLeave}
                                             >
-                                                {!selectedProduct && (
+                                                {/* Drag preview overlay */}
+                                                {productDragPreviewUrl && isDraggingOverProductButton && (
+                                                    <>
+                                                        <img
+                                                            src={productDragPreviewUrl}
+                                                            alt="Drop to add as product"
+                                                            className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover z-10 opacity-80"
+                                                        />
+                                                        <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-20">
+                                                            <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
+                                                                Product
+                                                            </span>
+                                                        </div>
+                                                    </>
+                                                )}
+                                                {!selectedProduct && !productDragPreviewUrl && (
                                                     <>
                                                         <div className="flex-1 flex items-center justify-center lg:mt-3">
                                                             {isProductButtonHovered ? (
@@ -820,7 +879,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         </div>
                                                     </>
                                                 )}
-                                                {selectedProduct && (
+                                                {selectedProduct && !productDragPreviewUrl && (
                                                     <>
                                                         <img
                                                             src={selectedProduct.imageUrl}

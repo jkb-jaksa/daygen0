@@ -8,7 +8,7 @@ import type { StoredAvatar, AvatarSelection } from '../../avatars/types';
 
 export function useAvatarHandlers() {
   const { user, storagePrefix } = useAuth();
-  
+
   // Avatar state
   const [storedAvatars, setStoredAvatars] = useState<StoredAvatar[]>([]);
   const [selectedAvatar, setSelectedAvatar] = useState<StoredAvatar | null>(null);
@@ -17,7 +17,7 @@ export function useAvatarHandlers() {
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
   const [avatarToDelete, setAvatarToDelete] = useState<StoredAvatar | null>(null);
   const [creationsModalAvatar, setCreationsModalAvatar] = useState<StoredAvatar | null>(null);
-  
+
   // Avatar creation modal state
   const [isAvatarCreationModalOpen, setIsAvatarCreationModalOpen] = useState(false);
   const [avatarSelection, setAvatarSelection] = useState<AvatarSelection | null>(null);
@@ -26,11 +26,11 @@ export function useAvatarHandlers() {
   const [isDraggingOverAvatarButton, setIsDraggingOverAvatarButton] = useState(false);
   const [avatarGalleryOpenTrigger, setAvatarGalleryOpenTrigger] = useState(0);
   const [avatarName, setAvatarName] = useState("");
-  
+
   // Refs
   const avatarButtonRef = useRef<HTMLButtonElement | null>(null);
   const avatarQuickUploadInputRef = useRef<HTMLInputElement | null>(null);
-  
+
   // Avatar map for quick lookup
   const avatarMap = useMemo(() => {
     const map = new Map<string, StoredAvatar>();
@@ -39,14 +39,14 @@ export function useAvatarHandlers() {
     }
     return map;
   }, [storedAvatars]);
-  
+
   // Selected avatar image
   const selectedAvatarImage = useMemo(() => {
     if (!selectedAvatar) return null;
     const targetId = selectedAvatarImageId ?? selectedAvatar.primaryImageId;
     return selectedAvatar.images.find(image => image.id === targetId) ?? selectedAvatar.images[0] ?? null;
   }, [selectedAvatar, selectedAvatarImageId]);
-  
+
   // Selected avatar image index
   const selectedAvatarImageIndex = useMemo(() => {
     if (!selectedAvatar) return null;
@@ -54,17 +54,17 @@ export function useAvatarHandlers() {
     const index = selectedAvatar.images.findIndex(image => image.id === activeId);
     return index >= 0 ? index : null;
   }, [selectedAvatar, selectedAvatarImage, selectedAvatarImageId]);
-  
+
   // Active avatar image ID
   const activeAvatarImageId = useMemo(() => {
     if (!selectedAvatar) return null;
     return selectedAvatarImage?.id ?? selectedAvatarImageId ?? selectedAvatar.primaryImageId ?? selectedAvatar.images[0]?.id ?? null;
   }, [selectedAvatar, selectedAvatarImage, selectedAvatarImageId]);
-  
+
   // Load stored avatars
   const loadStoredAvatars = useCallback(async () => {
     if (!storagePrefix) return;
-    
+
     try {
       const stored = await getPersistedValue<StoredAvatar[]>(storagePrefix, 'avatars') ?? [];
       const normalized = normalizeStoredAvatars(stored);
@@ -92,11 +92,11 @@ export function useAvatarHandlers() {
       window.removeEventListener(STORAGE_CHANGE_EVENT, handleStorageChange);
     };
   }, [loadStoredAvatars]);
-  
+
   // Save avatar
   const saveAvatar = useCallback(async (avatar: StoredAvatar) => {
     if (!storagePrefix) return;
-    
+
     try {
       const updated = [...storedAvatars, avatar];
       await setPersistedValue(storagePrefix, 'avatars', updated);
@@ -107,33 +107,33 @@ export function useAvatarHandlers() {
       debugError('[useAvatarHandlers] Error saving avatar:', error);
     }
   }, [storagePrefix, storedAvatars]);
-  
+
   // Delete avatar
   const deleteAvatar = useCallback(async (avatarId: string) => {
     if (!storagePrefix) return;
-    
+
     try {
       const updated = storedAvatars.filter(avatar => avatar.id !== avatarId);
       await setPersistedValue(storagePrefix, 'avatars', updated);
       setStoredAvatars(updated);
       dispatchStorageChange('avatars');
-      
+
       // Clear selection if deleted avatar was selected
       if (selectedAvatar?.id === avatarId) {
         setSelectedAvatar(null);
         setSelectedAvatarImageId(null);
       }
-      
+
       debugLog('[useAvatarHandlers] Deleted avatar:', avatarId);
     } catch (error) {
       debugError('[useAvatarHandlers] Error deleting avatar:', error);
     }
   }, [storagePrefix, storedAvatars, selectedAvatar]);
-  
+
   // Update avatar
   const updateAvatar = useCallback(async (avatarId: string, updates: Partial<StoredAvatar>) => {
     if (!storagePrefix) return;
-    
+
     try {
       const updated = storedAvatars.map(avatar =>
         avatar.id === avatarId ? { ...avatar, ...updates } : avatar
@@ -146,33 +146,33 @@ export function useAvatarHandlers() {
       debugError('[useAvatarHandlers] Error updating avatar:', error);
     }
   }, [storagePrefix, storedAvatars]);
-  
+
   // Handle avatar selection
   const handleAvatarSelect = useCallback((avatar: StoredAvatar | null) => {
     setSelectedAvatar(avatar);
     setSelectedAvatarImageId(null);
   }, []);
-  
+
   // Handle avatar image selection
   const handleAvatarImageSelect = useCallback((imageId: string) => {
     setSelectedAvatarImageId(imageId);
   }, []);
-  
+
   // Handle avatar picker open
   const handleAvatarPickerOpen = useCallback(() => {
     setIsAvatarPickerOpen(true);
   }, []);
-  
+
   // Handle avatar picker close
   const handleAvatarPickerClose = useCallback(() => {
     setIsAvatarPickerOpen(false);
   }, []);
-  
+
   // Handle avatar creation modal open
   const handleAvatarCreationModalOpen = useCallback(() => {
     setIsAvatarCreationModalOpen(true);
   }, []);
-  
+
   // Handle avatar creation modal close
   const handleAvatarCreationModalClose = useCallback(() => {
     setIsAvatarCreationModalOpen(false);
@@ -181,7 +181,7 @@ export function useAvatarHandlers() {
     setAvatarUploadError(null);
     setIsDraggingAvatar(false);
   }, []);
-  
+
   // Handle avatar save
   const handleAvatarSave = useCallback(
     async (name: string, selection: AvatarSelection) => {
@@ -209,30 +209,30 @@ export function useAvatarHandlers() {
     },
     [user?.id, storedAvatars, saveAvatar, handleAvatarCreationModalClose],
   );
-  
+
   // Handle avatar delete
   const handleAvatarDelete = useCallback(async (avatar: StoredAvatar) => {
     await deleteAvatar(avatar.id);
     setAvatarToDelete(null);
   }, [deleteAvatar]);
-  
+
   // Handle avatar drag over
   const handleAvatarDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     setIsDraggingOverAvatarButton(true);
   }, []);
-  
+
   // Handle avatar drag leave
   const handleAvatarDragLeave = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     setIsDraggingOverAvatarButton(false);
   }, []);
-  
+
   // Handle avatar drop
   const handleAvatarDrop = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     setIsDraggingOverAvatarButton(false);
-    
+
     const files = Array.from(event.dataTransfer.files);
     if (files.length > 0) {
       // Process the first image file
@@ -249,16 +249,27 @@ export function useAvatarHandlers() {
         };
         reader.readAsDataURL(imageFile);
       }
+    } else {
+      // Check for URL drop (e.g. from gallery)
+      const url = event.dataTransfer.getData('text/plain') || event.dataTransfer.getData('text/uri-list');
+      if (url && (url.startsWith('http') || url.startsWith('data:image'))) {
+        setAvatarSelection({
+          imageUrl: url,
+          source: 'upload',
+          sourceId: 'gallery-drop',
+        });
+        setIsAvatarCreationModalOpen(true);
+      }
     }
   }, []);
-  
+
   // Process avatar image file
   const processAvatarImageFile = useCallback((file: File) => {
     if (!file.type.startsWith('image/')) {
       setAvatarUploadError('Please select an image file');
       return;
     }
-    
+
     setAvatarUploadError(null);
     const reader = new FileReader();
     reader.onload = () => {
@@ -270,7 +281,7 @@ export function useAvatarHandlers() {
     };
     reader.readAsDataURL(file);
   }, []);
-  
+
   // Reset avatar creation panel
   const resetAvatarCreationPanel = useCallback(() => {
     setIsAvatarCreationModalOpen(false);
@@ -279,7 +290,7 @@ export function useAvatarHandlers() {
     setAvatarUploadError(null);
     setIsDraggingAvatar(false);
   }, []);
-  
+
   return {
     // State
     storedAvatars,
@@ -300,11 +311,11 @@ export function useAvatarHandlers() {
     selectedAvatarImageIndex,
     activeAvatarImageId,
     avatarMap,
-    
+
     // Refs
     avatarButtonRef,
     avatarQuickUploadInputRef,
-    
+
     // Handlers
     loadStoredAvatars,
     saveAvatar,
@@ -323,7 +334,7 @@ export function useAvatarHandlers() {
     handleAvatarDrop,
     processAvatarImageFile,
     resetAvatarCreationPanel,
-    
+
     // Setters
     setSelectedAvatar,
     setSelectedAvatarImageId,
