@@ -995,34 +995,56 @@ const PromptForm = memo<PromptFormProps>(
       };
     }, [applyPromptFromGallery, applyReferenceFromGallery, bridgeActionsRef, focusPromptInput]);
 
+    const avatarDragDepthRef = useRef(0);
+    const productDragDepthRef = useRef(0);
+
+    const handleAvatarButtonDragEnter = useCallback((event: React.DragEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      avatarDragDepthRef.current += 1;
+      if (avatarDragDepthRef.current === 1) {
+        // Explicitly clear Product button drag state to prevent stuck state
+        if (productDragDepthRef.current > 0 || isDraggingOverProductButton) {
+          productDragDepthRef.current = 0;
+          setIsDraggingOverProductButton(false);
+          setProductDragPreviewUrl(null);
+        }
+
+        setIsDraggingOverAvatarButton(true);
+        // Hide the floating drag image when over the button
+        setFloatingDragImageVisible(false);
+        // Get the dragged image URL for preview
+        const dragUrl = getDraggingImageUrl();
+        if (dragUrl) {
+          setAvatarDragPreviewUrl(dragUrl);
+        }
+      }
+    }, []);
+
     const handleAvatarButtonDragOver = useCallback((event: React.DragEvent) => {
       event.preventDefault();
       event.stopPropagation();
-      setIsDraggingOverAvatarButton(true);
-      // Hide the floating drag image when over the button
-      setFloatingDragImageVisible(false);
-      // Get the dragged image URL for preview
-      const dragUrl = getDraggingImageUrl();
-      if (dragUrl) {
-        setAvatarDragPreviewUrl(dragUrl);
-      }
       avatarHandlers.handleAvatarDragOver(event);
     }, [avatarHandlers]);
 
     const handleAvatarButtonDragLeave = useCallback((event: React.DragEvent) => {
       event.preventDefault();
       event.stopPropagation();
-      setIsDraggingOverAvatarButton(false);
-      setAvatarDragPreviewUrl(null);
-      // Show the floating drag image again when leaving the button
-      setFloatingDragImageVisible(true);
-      avatarHandlers.handleAvatarDragLeave(event);
+      avatarDragDepthRef.current = Math.max(0, avatarDragDepthRef.current - 1);
+      if (avatarDragDepthRef.current === 0) {
+        setIsDraggingOverAvatarButton(false);
+        setAvatarDragPreviewUrl(null);
+        // Show the floating drag image again when leaving the button
+        setFloatingDragImageVisible(true);
+        avatarHandlers.handleAvatarDragLeave(event);
+      }
     }, [avatarHandlers]);
 
     const handleAvatarButtonDrop = useCallback(
       (event: React.DragEvent) => {
         event.preventDefault();
         event.stopPropagation();
+        avatarDragDepthRef.current = 0;
         setIsDraggingOverAvatarButton(false);
         setAvatarDragPreviewUrl(null);
         // Show the floating drag image (it will be hidden on dragEnd anyway)
@@ -1034,34 +1056,53 @@ const PromptForm = memo<PromptFormProps>(
       [avatarHandlers, setIsAvatarPickerOpen, setIsProductPickerOpen],
     );
 
+    const handleProductButtonDragEnter = useCallback((event: React.DragEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      productDragDepthRef.current += 1;
+      if (productDragDepthRef.current === 1) {
+        // Explicitly clear Avatar button drag state to prevent stuck state
+        if (avatarDragDepthRef.current > 0 || isDraggingOverAvatarButton) {
+          avatarDragDepthRef.current = 0;
+          setIsDraggingOverAvatarButton(false);
+          setAvatarDragPreviewUrl(null);
+        }
+
+        setIsDraggingOverProductButton(true);
+        // Hide the floating drag image when over the button
+        setFloatingDragImageVisible(false);
+        // Get the dragged image URL for preview
+        const dragUrl = getDraggingImageUrl();
+        if (dragUrl) {
+          setProductDragPreviewUrl(dragUrl);
+        }
+      }
+    }, []);
+
     const handleProductButtonDragOver = useCallback((event: React.DragEvent) => {
       event.preventDefault();
       event.stopPropagation();
-      setIsDraggingOverProductButton(true);
-      // Hide the floating drag image when over the button
-      setFloatingDragImageVisible(false);
-      // Get the dragged image URL for preview
-      const dragUrl = getDraggingImageUrl();
-      if (dragUrl) {
-        setProductDragPreviewUrl(dragUrl);
-      }
       productHandlers.handleProductDragOver(event);
     }, [productHandlers]);
 
     const handleProductButtonDragLeave = useCallback((event: React.DragEvent) => {
       event.preventDefault();
       event.stopPropagation();
-      setIsDraggingOverProductButton(false);
-      setProductDragPreviewUrl(null);
-      // Show the floating drag image again when leaving the button
-      setFloatingDragImageVisible(true);
-      productHandlers.handleProductDragLeave(event);
+      productDragDepthRef.current = Math.max(0, productDragDepthRef.current - 1);
+      if (productDragDepthRef.current === 0) {
+        setIsDraggingOverProductButton(false);
+        setProductDragPreviewUrl(null);
+        // Show the floating drag image again when leaving the button
+        setFloatingDragImageVisible(true);
+        productHandlers.handleProductDragLeave(event);
+      }
     }, [productHandlers]);
 
     const handleProductButtonDrop = useCallback(
       (event: React.DragEvent) => {
         event.preventDefault();
         event.stopPropagation();
+        productDragDepthRef.current = 0;
         setIsDraggingOverProductButton(false);
         setProductDragPreviewUrl(null);
         // Show the floating drag image (it will be hidden on dragEnd anyway)
@@ -1185,7 +1226,7 @@ const PromptForm = memo<PromptFormProps>(
       <>
         <div
           ref={promptBarRef}
-          className={`promptbar fixed z-40 rounded-[16px] transition-colors duration-200 ${glass.prompt} ${promptBarBorderClass} px-4 py-2`}
+          className={`promptbar fixed z-40 rounded-[16px] transition-colors duration-200 ${glass.prompt} ${promptBarBorderClass} ${isDragActive ? 'shadow-[0_0_32px_rgba(255,255,255,0.25)]' : ''} px-4 py-2`}
           onFocusCapture={handlePromptFocus}
           onBlurCapture={handlePromptBlur}
           style={{
@@ -1522,12 +1563,13 @@ const PromptForm = memo<PromptFormProps>(
                   type="button"
                   ref={avatarButtonRef}
                   onClick={handleAvatarButtonClick}
+                  onDragEnter={handleAvatarButtonDragEnter}
                   onDragOver={handleAvatarButtonDragOver}
                   onDragLeave={handleAvatarButtonDragLeave}
                   onDrop={handleAvatarButtonDrop}
                   onMouseEnter={() => setIsAvatarButtonHovered(true)}
                   onMouseLeave={() => setIsAvatarButtonHovered(false)}
-                  className={`${glass.promptBorderless} ${isDraggingOverAvatarButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : `hover:bg-n-text/20 border border-n-mid/30 ${selectedAvatar ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                  className={`${glass.promptBorderless} ${isDraggingOverAvatarButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid/30 ${selectedAvatar ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                   onPointerMove={onPointerMove}
                   onPointerEnter={onPointerEnter}
                   onPointerLeave={onPointerLeave}
@@ -1538,7 +1580,7 @@ const PromptForm = memo<PromptFormProps>(
                       <img
                         src={avatarDragPreviewUrl}
                         alt="Drop to add as avatar"
-                        className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover z-10 opacity-80"
+                        className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover z-10 opacity-80 pointer-events-none"
                       />
                       <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-20">
                         <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
@@ -1601,12 +1643,13 @@ const PromptForm = memo<PromptFormProps>(
                   type="button"
                   ref={productButtonRef}
                   onClick={handleProductButtonClick}
+                  onDragEnter={handleProductButtonDragEnter}
                   onDragOver={handleProductButtonDragOver}
                   onDragLeave={handleProductButtonDragLeave}
                   onDrop={handleProductButtonDrop}
                   onMouseEnter={() => setIsProductButtonHovered(true)}
                   onMouseLeave={() => setIsProductButtonHovered(false)}
-                  className={`${glass.promptBorderless} ${isDraggingOverProductButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : `hover:bg-n-text/20 border border-n-mid/30 ${selectedProduct ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                  className={`${glass.promptBorderless} ${isDraggingOverProductButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid/30 ${selectedProduct ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                   onPointerMove={onPointerMove}
                   onPointerEnter={onPointerEnter}
                   onPointerLeave={onPointerLeave}
@@ -1617,7 +1660,7 @@ const PromptForm = memo<PromptFormProps>(
                       <img
                         src={productDragPreviewUrl}
                         alt="Drop to add as product"
-                        className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover z-10 opacity-80"
+                        className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover z-10 opacity-80 pointer-events-none"
                       />
                       <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-20">
                         <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
