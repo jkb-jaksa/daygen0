@@ -8,7 +8,7 @@ import type { StoredProduct, ProductSelection } from '../../products/types';
 
 export function useProductHandlers() {
   const { user, storagePrefix } = useAuth();
-  
+
   // Product state
   const [storedProducts, setStoredProducts] = useState<StoredProduct[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<StoredProduct | null>(null);
@@ -16,7 +16,7 @@ export function useProductHandlers() {
   const [isProductPickerOpen, setIsProductPickerOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<StoredProduct | null>(null);
   const [creationsModalProduct, setCreationsModalProduct] = useState<StoredProduct | null>(null);
-  
+
   // Product creation modal state
   const [isProductCreationModalOpen, setIsProductCreationModalOpen] = useState(false);
   const [productSelection, setProductSelection] = useState<ProductSelection | null>(null);
@@ -24,11 +24,11 @@ export function useProductHandlers() {
   const [isDraggingProduct, setIsDraggingProduct] = useState(false);
   const [isDraggingOverProductButton, setIsDraggingOverProductButton] = useState(false);
   const [productName, setProductName] = useState("");
-  
+
   // Refs
   const productButtonRef = useRef<HTMLButtonElement | null>(null);
   const productQuickUploadInputRef = useRef<HTMLInputElement | null>(null);
-  
+
   // Product map for quick lookup
   const productMap = useMemo(() => {
     const map = new Map<string, StoredProduct>();
@@ -37,11 +37,11 @@ export function useProductHandlers() {
     }
     return map;
   }, [storedProducts]);
-  
+
   // Load stored products
   const loadStoredProducts = useCallback(async () => {
     if (!storagePrefix) return;
-    
+
     try {
       const stored = await getPersistedValue<StoredProduct[]>(storagePrefix, 'products') ?? [];
       const normalized = normalizeStoredProducts(stored);
@@ -69,11 +69,11 @@ export function useProductHandlers() {
       window.removeEventListener(STORAGE_CHANGE_EVENT, handleStorageChange);
     };
   }, [loadStoredProducts]);
-  
+
   // Save product
   const saveProduct = useCallback(async (product: StoredProduct) => {
     if (!storagePrefix) return;
-    
+
     try {
       const updated = [...storedProducts, product];
       await setPersistedValue(storagePrefix, 'products', updated);
@@ -84,32 +84,32 @@ export function useProductHandlers() {
       debugError('[useProductHandlers] Error saving product:', error);
     }
   }, [storagePrefix, storedProducts]);
-  
+
   // Delete product
   const deleteProduct = useCallback(async (productId: string) => {
     if (!storagePrefix) return;
-    
+
     try {
       const updated = storedProducts.filter(product => product.id !== productId);
       await setPersistedValue(storagePrefix, 'products', updated);
       setStoredProducts(updated);
       dispatchStorageChange('products');
-      
+
       // Clear selection if deleted product was selected
       if (selectedProduct?.id === productId) {
         setSelectedProduct(null);
       }
-      
+
       debugLog('[useProductHandlers] Deleted product:', productId);
     } catch (error) {
       debugError('[useProductHandlers] Error deleting product:', error);
     }
   }, [storagePrefix, storedProducts, selectedProduct]);
-  
+
   // Update product
   const updateProduct = useCallback(async (productId: string, updates: Partial<StoredProduct>) => {
     if (!storagePrefix) return;
-    
+
     try {
       const updated = storedProducts.map(product =>
         product.id === productId ? { ...product, ...updates } : product
@@ -122,27 +122,27 @@ export function useProductHandlers() {
       debugError('[useProductHandlers] Error updating product:', error);
     }
   }, [storagePrefix, storedProducts]);
-  
+
   // Handle product selection
   const handleProductSelect = useCallback((product: StoredProduct | null) => {
     setSelectedProduct(product);
   }, []);
-  
+
   // Handle product picker open
   const handleProductPickerOpen = useCallback(() => {
     setIsProductPickerOpen(true);
   }, []);
-  
+
   // Handle product picker close
   const handleProductPickerClose = useCallback(() => {
     setIsProductPickerOpen(false);
   }, []);
-  
+
   // Handle product creation modal open
   const handleProductCreationModalOpen = useCallback(() => {
     setIsProductCreationModalOpen(true);
   }, []);
-  
+
   // Handle product creation modal close
   const handleProductCreationModalClose = useCallback(() => {
     setIsProductCreationModalOpen(false);
@@ -151,7 +151,7 @@ export function useProductHandlers() {
     setProductUploadError(null);
     setIsDraggingProduct(false);
   }, []);
-  
+
   // Handle product save
   const handleProductSave = useCallback(
     async (name: string, selection: ProductSelection) => {
@@ -179,30 +179,30 @@ export function useProductHandlers() {
     },
     [user?.id, storedProducts, saveProduct, handleProductCreationModalClose],
   );
-  
+
   // Handle product delete
   const handleProductDelete = useCallback(async (product: StoredProduct) => {
     await deleteProduct(product.id);
     setProductToDelete(null);
   }, [deleteProduct]);
-  
+
   // Handle product drag over
   const handleProductDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     setIsDraggingOverProductButton(true);
   }, []);
-  
+
   // Handle product drag leave
   const handleProductDragLeave = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     setIsDraggingOverProductButton(false);
   }, []);
-  
+
   // Handle product drop
   const handleProductDrop = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     setIsDraggingOverProductButton(false);
-    
+
     const files = Array.from(event.dataTransfer.files);
     if (files.length > 0) {
       // Process the first image file
@@ -219,16 +219,27 @@ export function useProductHandlers() {
         };
         reader.readAsDataURL(imageFile);
       }
+    } else {
+      // Check for URL drop (e.g. from gallery)
+      const url = event.dataTransfer.getData('text/plain') || event.dataTransfer.getData('text/uri-list');
+      if (url && (url.startsWith('http') || url.startsWith('data:image'))) {
+        setProductSelection({
+          imageUrl: url,
+          source: 'upload',
+          sourceId: 'gallery-drop',
+        });
+        setIsProductCreationModalOpen(true);
+      }
     }
   }, []);
-  
+
   // Process product image file
   const processProductImageFile = useCallback((file: File) => {
     if (!file.type.startsWith('image/')) {
       setProductUploadError('Please select an image file');
       return;
     }
-    
+
     setProductUploadError(null);
     const reader = new FileReader();
     reader.onload = () => {
@@ -240,7 +251,7 @@ export function useProductHandlers() {
     };
     reader.readAsDataURL(file);
   }, []);
-  
+
   // Reset product creation panel
   const resetProductCreationPanel = useCallback(() => {
     setIsProductCreationModalOpen(false);
@@ -249,7 +260,7 @@ export function useProductHandlers() {
     setProductUploadError(null);
     setIsDraggingProduct(false);
   }, []);
-  
+
   return {
     // State
     storedProducts,
@@ -265,11 +276,11 @@ export function useProductHandlers() {
     isDraggingOverProductButton,
     productName,
     productMap,
-    
+
     // Refs
     productButtonRef,
     productQuickUploadInputRef,
-    
+
     // Handlers
     loadStoredProducts,
     saveProduct,
@@ -287,7 +298,7 @@ export function useProductHandlers() {
     handleProductDrop,
     processProductImageFile,
     resetProductCreationPanel,
-    
+
     // Setters
     setSelectedProduct,
     setPendingProductId,

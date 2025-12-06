@@ -2291,7 +2291,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 </button>
               </div>
             )}
-            <div className={`${isMasterSection ? 'flex flex-wrap gap-1' : 'grid grid-cols-1 gap-0.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-items-start'} ${isMasterSection ? 'mb-0' : ''}`}>
+            <div className={`${isMasterSection ? 'flex flex-wrap gap-2' : 'grid grid-cols-1 gap-0.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-items-start'} ${isMasterSection ? 'mb-0' : ''}`}>
               {avatars.map(avatar => renderAvatarCard(avatar))}
             </div>
           </div>

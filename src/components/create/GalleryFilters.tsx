@@ -1,5 +1,5 @@
 import { memo, useMemo, useState, useEffect } from 'react';
-import { Settings, Heart, Globe, X } from 'lucide-react';
+import { Settings, Heart, Globe, X, Image as ImageIcon, Video as VideoIcon } from 'lucide-react';
 import { glass } from '../../styles/designSystem';
 import { useGallery } from './contexts/GalleryContext';
 import { CustomDropdown } from './shared/CustomDropdown';
@@ -24,14 +24,14 @@ const GalleryFilters = memo(() => {
   // Load avatars and products from storage
   useEffect(() => {
     if (!storagePrefix) return;
-    
+
     const loadData = async () => {
       try {
         const avatars = await getPersistedValue<StoredAvatar[]>(storagePrefix, 'avatars');
         if (avatars) {
           setStoredAvatars(normalizeStoredAvatars(avatars, { ownerId: user?.id }));
         }
-        
+
         const products = await getPersistedValue<StoredProduct[]>(storagePrefix, 'products');
         if (products) {
           setStoredProducts(normalizeStoredProducts(products, { ownerId: user?.id }));
@@ -40,7 +40,7 @@ const GalleryFilters = memo(() => {
         // Silently fail - filters will just be empty
       }
     };
-    
+
     void loadData();
   }, [storagePrefix, user?.id]);
 
@@ -124,71 +124,68 @@ const GalleryFilters = memo(() => {
           </button>
         </div>
 
-        {/* Liked/Public filters */}
+        {/* Status / Modality filters */}
         <div className="mb-3">
-          <label className="text-xs text-theme-white/70 font-raleway mb-1.5 block">Liked/Public</label>
           <div className="flex gap-1 flex-wrap">
             <button
               onClick={handleToggleLiked}
-              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${
-                filters.liked
-                  ? "text-theme-text border-theme-mid bg-theme-white/10"
-                  : "text-theme-white border-theme-dark hover:border-theme-mid hover:text-theme-text"
-              }`}
+              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${filters.liked
+                ? "text-theme-text border-theme-mid bg-theme-white/10"
+                : "text-theme-white border-theme-dark hover:border-theme-mid hover:text-theme-text"
+                }`}
             >
               <Heart className={`w-3.5 h-3.5 ${filters.liked ? "fill-red-500 text-red-500" : "text-current fill-none"}`} />
               <span>Liked</span>
             </button>
             <button
               onClick={handleTogglePublic}
-              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${
-                filters.public
-                  ? "text-theme-text border-theme-mid bg-theme-white/10"
-                  : "text-theme-white border-theme-dark hover:border-theme-mid hover:text-theme-text"
-              }`}
+              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${filters.public
+                ? "text-theme-text border-theme-mid bg-theme-white/10"
+                : "text-theme-white border-theme-dark hover:border-theme-mid hover:text-theme-text"
+                }`}
             >
               <Globe className={`w-3.5 h-3.5 ${filters.public ? "text-theme-text" : "text-current"}`} />
               <span>Public</span>
+            </button>
+
+            {/* Separator */}
+            <div className="w-px h-6 bg-theme-white/10 mx-1 self-center" />
+
+            <button
+              onClick={() => {
+                const newTypes = filters.types.includes('image')
+                  ? filters.types.filter(t => t !== 'image')
+                  : [...filters.types, 'image'];
+                setFilters({ types: newTypes, models: [] });
+              }}
+              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${filters.types.includes('image')
+                ? "text-theme-text border-theme-mid bg-theme-white/10"
+                : "text-theme-white border-theme-dark hover:border-theme-mid hover:text-theme-text"
+                }`}
+            >
+              <ImageIcon className="w-3.5 h-3.5" />
+              <span>Image</span>
+            </button>
+            <button
+              onClick={() => {
+                const newTypes = filters.types.includes('video')
+                  ? filters.types.filter(t => t !== 'video')
+                  : [...filters.types, 'video'];
+                setFilters({ types: newTypes, models: [] });
+              }}
+              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${filters.types.includes('video')
+                ? "text-theme-text border-theme-mid bg-theme-white/10"
+                : "text-theme-white border-theme-dark hover:border-theme-mid hover:text-theme-text"
+                }`}
+            >
+              <VideoIcon className="w-3.5 h-3.5" />
+              <span>Video</span>
             </button>
           </div>
         </div>
 
         {/* Advanced filters grid */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-1">
-          {/* Modality Filter */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-theme-white/70 font-raleway">Modality</label>
-            <CustomMultiSelect
-              values={filters.types}
-              onChange={types => setFilters({ types, models: [] })}
-              options={[
-                { value: "image", label: "Image" },
-                { value: "video", label: "Video" },
-              ]}
-              placeholder="All modalities"
-            />
-            {/* Selected Modality Tags */}
-            {filters.types.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {filters.types.map(type => (
-                  <div
-                    key={type}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-theme-text/20 text-theme-white rounded-full text-xs font-raleway border border-theme-text/30"
-                  >
-                    <span>{type === "image" ? "Image" : "Video"}</span>
-                    <button
-                      type="button"
-                      onClick={() => setFilters({ types: filters.types.filter(t => t !== type), models: [] })}
-                      className="transition-colors duration-200 hover:text-theme-text"
-                      aria-label={`Remove ${type === "image" ? "Image" : "Video"}`}
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-1">
 
           {/* Model Filter */}
           <div className="flex flex-col gap-1.5">

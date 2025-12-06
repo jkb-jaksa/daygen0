@@ -204,12 +204,24 @@ const MODEL_CONFIG = {
     shortName: 'Grok',
     icon: '🤖',
     description: 'Grok - High-quality image generation'
+  },
+  'veo-3.1-generate-preview': {
+    name: 'Veo 3.1',
+    shortName: 'V3.1',
+    icon: '🎬',
+    description: 'Google Veo 3.1 - High-quality video generation with audio'
+  },
+  'veo-3.1-fast-generate-preview': {
+    name: 'Veo 3.1',
+    shortName: 'V3.1',
+    icon: '🎬',
+    description: 'Google Veo 3.1 Fast - Quick video generation with audio'
   }
 } as const;
 
-export const ModelBadge: React.FC<ModelBadgeProps> = ({ 
-  model, 
-  size = 'sm', 
+export const ModelBadge: React.FC<ModelBadgeProps> = ({
+  model,
+  size = 'sm',
   showIcon = true,
   className = '',
   onClick,
@@ -217,55 +229,66 @@ export const ModelBadge: React.FC<ModelBadgeProps> = ({
   // Clean and normalize the model string
   const cleanModel = (model || '').trim();
   const normalizedModel = normalizeModelId(cleanModel);
-  
-  
-  
+
+
+
   // Get the config, with special handling for Reve models
   let config = MODEL_CONFIG[normalizedModel as keyof typeof MODEL_CONFIG];
-  
+
   // Special fallback for Reve models if exact match fails
   if (!config && cleanModel.toLowerCase().includes('reve')) {
     config = MODEL_CONFIG['reve-image-1.0'] || MODEL_CONFIG['reve-image'];
   }
-  
+
   // Special fallback for Recraft models if exact match fails
   if (!config && cleanModel.toLowerCase().includes('recraft')) {
     config = MODEL_CONFIG['recraft-v3'] || MODEL_CONFIG['recraft-v2'] || MODEL_CONFIG['recraft'];
   }
-  
+
   // Special fallback for Ideogram models if exact match fails
   if (!config && cleanModel.toLowerCase().includes('ideogram')) {
     config = MODEL_CONFIG['ideogram'];
   }
-  
+
   // Special fallback for Grok models if exact match fails
   if (!config && cleanModel.toLowerCase().includes('grok')) {
     config = MODEL_CONFIG['grok-2-image-latest'] || MODEL_CONFIG['grok-2-image-1212'] || MODEL_CONFIG['grok-2-image'];
   }
-  
+
   // Special fallback for Luma Photon models if exact match fails
   if (!config && cleanModel.toLowerCase().includes('luma-photon')) {
     config = MODEL_CONFIG['luma-photon-flash-1'] || MODEL_CONFIG['luma-photon-1'];
   }
-  
-  // Final fallback
-  if (!config) {
-    config = {
-      name: 'Gemini 3 Pro (Nano Banana)',
-      shortName: 'G3',
-      icon: '🤖',
-      description: 'Google Gemini 3 Pro - Best for image generation and editing'
-    };
+
+  // Special fallback for Veo models if exact match fails
+  if (!config && cleanModel.toLowerCase().includes('veo')) {
+    if (cleanModel.toLowerCase().includes('fast')) {
+      config = MODEL_CONFIG['veo-3.1-fast-generate-preview'];
+    } else if (cleanModel.includes('3.1')) {
+      config = MODEL_CONFIG['veo-3.1-generate-preview'];
+    } else {
+      config = MODEL_CONFIG['veo-3.0-generate-001'];
+    }
   }
 
-const sizeClasses = {
-  sm: 'px-2 py-1 text-xs',
-  md: 'px-2 py-1 text-xs',
-  lg: 'px-2 py-1 text-xs'
-};
+  // Final fallback - show actual model name if unknown
+  if (!config) {
+    config = {
+      name: cleanModel || 'Unknown Model',
+      shortName: cleanModel.slice(0, 4) || '?',
+      icon: '🤖',
+      description: cleanModel || 'Unknown model'
+    } as typeof MODEL_CONFIG[keyof typeof MODEL_CONFIG];
+  }
+
+  const sizeClasses = {
+    sm: 'px-2 py-1 text-xs',
+    md: 'px-2 py-1 text-xs',
+    lg: 'px-2 py-1 text-xs'
+  };
 
   return (
-    <button 
+    <button
       type="button"
       className={`${badgeBaseClasses} ${sizeClasses[size]} ${className}`}
       title={config.description}

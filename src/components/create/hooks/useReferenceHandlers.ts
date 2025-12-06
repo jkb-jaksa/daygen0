@@ -156,6 +156,12 @@ export function useReferenceHandlers(
     const files = Array.from(event.dataTransfer.files);
     if (files.length > 0) {
       handleAddReferenceFiles(files);
+    } else {
+      // Check for URL drop (e.g. from gallery)
+      const url = event.dataTransfer.getData('text/plain') || event.dataTransfer.getData('text/uri-list');
+      if (url && (url.startsWith('http') || url.startsWith('data:image'))) {
+        handleAddReferenceFiles([url]);
+      }
     }
   }, [handleAddReferenceFiles]);
 

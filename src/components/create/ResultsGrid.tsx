@@ -14,6 +14,7 @@ import { useAuth } from '../../auth/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { loadSavedPrompts } from '../../lib/savedPrompts';
 import { useGeminiImageGeneration } from '../../hooks/useGeminiImageGeneration';
+import { useIdeogramImageGeneration } from '../../hooks/useIdeogramImageGeneration';
 import type { GalleryImageLike, GalleryVideoLike } from './types';
 import type { StoredAvatar } from '../avatars/types';
 import type { StoredProduct } from '../products/types';
@@ -25,12 +26,14 @@ import { getPersistedValue } from '../../lib/clientStorage';
 import { STORAGE_CHANGE_EVENT } from '../../utils/storageEvents';
 import { CircularProgressRing } from '../CircularProgressRing';
 import { VideoPlayer } from '../shared/VideoPlayer';
+import { setDraggingImageUrl, clearDraggingImageUrl, showFloatingDragImage, updateFloatingDragImage, hideFloatingDragImage } from './utils/dragState';
 
 // Lazy load components
 const ModelBadge = lazy(() => import('../ModelBadge'));
 const AvatarBadge = lazy(() => import('../avatars/AvatarBadge'));
 const ProductBadge = lazy(() => import('../products/ProductBadge'));
 const StyleBadge = lazy(() => import('../styles/StyleBadge'));
+const AspectRatioBadge = lazy(() => import('../shared/AspectRatioBadge').then(m => ({ default: m.AspectRatioBadge })));
 const PublicBadge = lazy(() => import('./PublicBadge'));
 const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
 import QuickEditModal, { type QuickEditOptions } from './QuickEditModal';
@@ -170,6 +173,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const { isFullSizeOpen } = state;
 
   const { generateImage: generateGeminiImage } = useGeminiImageGeneration();
+  const { generateImage: generateIdeogramImage } = useIdeogramImageGeneration();
   const {
     handleImageActionMenu,
     handleBulkActionsMenu,
@@ -226,7 +230,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   }, [hasMore, isLoading, loadMore]);
 
 
-
   // Apply category-specific filtering
   const filteredItems = useMemo(() => {
     // For other categories, show all
@@ -235,6 +238,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     if (activeCategory === 'inspirations') {
       items = contextFilteredItems.filter(item => item.savedFrom);
     } else if (activeCategory === 'gallery') {
+      // Show both images and videos in gallery view (unless specific filters are active)
+      // Only exclude saved inspirations which have their own view
       items = contextFilteredItems.filter(item => !item.savedFrom);
     } else if (activeCategory === 'image') {
       items = contextFilteredItems.filter(item => !('type' in item && item.type === 'video'));
@@ -576,7 +581,14 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
 
   // Check if item is video
   const isVideo = useCallback((item: GalleryImageLike | GalleryVideoLike) => {
-    return 'type' in item && item.type === 'video';
+    if ('type' in item && item.type === 'video') {
+      return true;
+    }
+    // Fallback detection for videos that might be misclassified as images
+    if (item.url) {
+      return /\.(mp4|mov|webm|m4v|mkv|avi|wmv)(\?|$)/i.test(item.url);
+    }
+    return false;
   }, []);
 
   const toggleVideoPrompt = useCallback((identifier: string) => {
@@ -638,7 +650,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       reader.readAsDataURL(file);
     });
 
-  const handleQuickEditSubmit = useCallback(async ({ prompt, referenceFiles, avatarImageUrl, productImageUrl }: QuickEditOptions) => {
+  const handleQuickEditSubmit = useCallback(async ({ prompt, referenceFiles, avatarImageUrl, productImageUrl, mask, model }: QuickEditOptions) => {
     if (!quickEditModalState?.item || !quickEditModalState.item.url) {
       showToast('No image URL available');
       return;
@@ -677,40 +689,75 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
         }
       }
 
-      // Run generation in background
-      generateGeminiImage({
-        prompt: prompt,
-        references: references,
-        model: 'gemini-3-pro-image-preview',
-        clientJobId: syntheticJobId,
-      }).then(async (result) => {
-        if (result) {
-          await addImage({
-            url: result.url,
-            prompt: result.prompt,
-            model: result.model,
-            timestamp: new Date().toISOString(),
-            ownerId: item.ownerId,
-            isLiked: false,
-            isPublic: false,
-            r2FileId: result.r2FileId,
-          });
-          finalizeQuickEditJob(syntheticJobId, 'completed');
-        } else {
+      if (model === 'ideogram' && mask) {
+        // Ideogram Masked Edit
+        generateIdeogramImage({
+          prompt: prompt,
+          mask: mask,
+          references: references,
+          // Ideogram specific defaults
+          aspect_ratio: '1:1',
+          rendering_speed: 'DEFAULT',
+          num_images: 1,
+        }).then(async (results) => {
+          if (results && results.length > 0) {
+            const result = results[0];
+            await addImage({
+              url: result.url,
+              prompt: result.prompt,
+              model: result.model,
+              timestamp: new Date().toISOString(),
+              ownerId: item.ownerId,
+              isLiked: false,
+              isPublic: false,
+              jobId: result.jobId,
+            });
+            finalizeQuickEditJob(syntheticJobId, 'completed');
+          } else {
+            showToast('Failed to edit image');
+            finalizeQuickEditJob(syntheticJobId, 'failed');
+          }
+        }).catch((error) => {
+          debugError('Failed to quick edit image (Ideogram):', error);
           showToast('Failed to edit image');
           finalizeQuickEditJob(syntheticJobId, 'failed');
-        }
-      }).catch((error) => {
-        debugError('Failed to quick edit image:', error);
-        showToast('Failed to edit image');
-        finalizeQuickEditJob(syntheticJobId, 'failed');
-      });
+        });
+      } else {
+        // Default Gemini Edit
+        generateGeminiImage({
+          prompt: prompt,
+          references: references,
+          model: 'gemini-3-pro-image-preview',
+          clientJobId: syntheticJobId,
+        }).then(async (result) => {
+          if (result) {
+            await addImage({
+              url: result.url,
+              prompt: result.prompt,
+              model: result.model,
+              timestamp: new Date().toISOString(),
+              ownerId: item.ownerId,
+              isLiked: false,
+              isPublic: false,
+              r2FileId: result.r2FileId,
+            });
+            finalizeQuickEditJob(syntheticJobId, 'completed');
+          } else {
+            showToast('Failed to edit image');
+            finalizeQuickEditJob(syntheticJobId, 'failed');
+          }
+        }).catch((error) => {
+          debugError('Failed to quick edit image:', error);
+          showToast('Failed to edit image');
+          finalizeQuickEditJob(syntheticJobId, 'failed');
+        });
+      }
     } catch (error) {
       debugError('Failed to process quick edit submission:', error);
       showToast('Failed to start edit');
       finalizeQuickEditJob(syntheticJobId, 'failed');
     }
-  }, [quickEditModalState, generateGeminiImage, addImage, showToast, startQuickEditJob, finalizeQuickEditJob]);
+  }, [quickEditModalState, generateGeminiImage, generateIdeogramImage, addImage, showToast, startQuickEditJob, finalizeQuickEditJob]);
 
   const handleQuickEditClose = useCallback(() => {
     setQuickEditModalState(null);
@@ -1114,7 +1161,55 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                       src={item.url}
                       alt={item.prompt || `Generated ${index + 1} `}
                       loading="lazy"
-                      className="relative z-[1] h-full w-full object-cover"
+                      className="relative z-[1] h-full w-full object-cover cursor-grab active:cursor-grabbing"
+                      draggable={true}
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/plain', item.url);
+                        e.dataTransfer.setData('text/uri-list', item.url);
+                        e.dataTransfer.effectAllowed = 'copy';
+
+                        // Store the dragging URL globally for drop target previews
+                        setDraggingImageUrl(item.url);
+
+                        // Show the custom floating drag image
+                        showFloatingDragImage(item.url);
+                        // Position it initially
+                        updateFloatingDragImage(e.clientX, e.clientY);
+
+                        // Create a transparent 1x1 pixel native drag ghost
+                        // (we use our custom floating image instead)
+                        const transparentGhost = document.createElement('div');
+                        transparentGhost.style.width = '1px';
+                        transparentGhost.style.height = '1px';
+                        transparentGhost.style.opacity = '0';
+                        transparentGhost.style.position = 'absolute';
+                        transparentGhost.style.top = '-9999px';
+                        transparentGhost.style.left = '-9999px';
+                        document.body.appendChild(transparentGhost);
+
+                        e.dataTransfer.setDragImage(transparentGhost, 0, 0);
+
+                        // Clean up after browser captures the image
+                        requestAnimationFrame(() => {
+                          setTimeout(() => {
+                            if (transparentGhost.parentNode) {
+                              transparentGhost.parentNode.removeChild(transparentGhost);
+                            }
+                          }, 0);
+                        });
+                      }}
+                      onDrag={(e) => {
+                        // Update the floating image position as we drag
+                        // Note: e.clientX/Y can be 0,0 at the end of drag, so we check
+                        if (e.clientX > 0 || e.clientY > 0) {
+                          updateFloatingDragImage(e.clientX, e.clientY);
+                        }
+                      }}
+                      onDragEnd={() => {
+                        // Clear the global dragging URL and hide floating image
+                        clearDraggingImageUrl();
+                        hideFloatingDragImage();
+                      }}
                     />
                   )
                   }
@@ -1289,6 +1384,12 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                         />
                                       </Suspense>
                                     )}
+
+                                    {item.aspectRatio && (
+                                      <Suspense fallback={null}>
+                                        <AspectRatioBadge aspectRatio={item.aspectRatio} size="sm" />
+                                      </Suspense>
+                                    )}
                                   </div>
                                 )}
                               </div>
@@ -1337,6 +1438,12 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                           e.stopPropagation();
                                         }}
                                       />
+                                    </Suspense>
+                                  )}
+
+                                  {item.aspectRatio && (
+                                    <Suspense fallback={null}>
+                                      <AspectRatioBadge aspectRatio={item.aspectRatio} size="sm" />
                                     </Suspense>
                                   )}
 
