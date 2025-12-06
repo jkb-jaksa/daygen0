@@ -111,3 +111,91 @@ export async function generateElevenLabsSpeech(
     body: payload,
   });
 }
+
+export type CreatePvcResponse = {
+  success: boolean;
+  voiceId: string;
+  verification_text?: string;
+  captcha?: string; // Base64
+};
+
+export type VerifyPvcResponse = {
+  success: boolean;
+  message: string;
+};
+
+export async function createProfessionalVoice(
+  files: File[],
+  options: CloneVoiceOptions = {},
+): Promise<CreatePvcResponse> {
+  if (!files || files.length === 0) {
+    throw new Error("At least one voice sample file is required.");
+  }
+
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append("files", file, file.name);
+  });
+
+  if (options.name) {
+    formData.append("name", options.name);
+  }
+
+  if (options.description) {
+    formData.append("description", options.description);
+  }
+
+  if (options.labels && Object.keys(options.labels).length > 0) {
+    formData.append("labels", JSON.stringify(options.labels));
+  }
+
+  const response = await fetchWithAuthFormData(
+    "/api/audio/pvc/create",
+    formData,
+  );
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message =
+      (payload as { message?: string })?.message ||
+      (payload as { error?: string })?.error ||
+      `Failed to create professional voice (status ${response.status})`;
+    throw new Error(message);
+  }
+
+  return payload as CreatePvcResponse;
+}
+
+export async function verifyProfessionalVoice(
+  file: File | Blob,
+  voiceId: string,
+): Promise<VerifyPvcResponse> {
+  if (!file) {
+    throw new Error("A verification recording is required.");
+  }
+  if (!voiceId) {
+    throw new Error("Voice ID is required.");
+  }
+
+  const formData = new FormData();
+  const fileName =
+    file instanceof File && file.name ? file.name : "verification.webm";
+  formData.append("file", file, fileName);
+  formData.append("voiceId", voiceId);
+
+  const response = await fetchWithAuthFormData(
+    "/api/audio/pvc/verify",
+    formData,
+  );
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message =
+      (payload as { message?: string })?.message ||
+      (payload as { error?: string })?.error ||
+      `Failed to verify voice (status ${response.status})`;
+    throw new Error(message);
+  }
+
+  return payload as VerifyPvcResponse;
+}
