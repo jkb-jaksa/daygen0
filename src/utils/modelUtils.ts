@@ -164,7 +164,7 @@ export const MODEL_INFO: Record<string, ModelInfo> = {
  */
 export const normalizeModelId = (modelId: string): string => {
   if (!modelId || modelId === 'unknown') return 'unknown';
-  
+
   // Handle common model ID variations
   const modelMappings: Record<string, string> = {
     // Gemini 3 Pro image variants
@@ -172,13 +172,18 @@ export const normalizeModelId = (modelId: string): string => {
     'gemini-3.0-pro-exp-01': 'gemini-3.0-pro-image',
     'gemini-3-pro-image': 'gemini-3.0-pro-image',
     'gemini-3-pro': 'gemini-3.0-pro-image',
+    'gemini-3-pro-image-preview': 'gemini-3.0-pro-image',
+
+    // Veo model variants
+    'veo-3.1-generate-preview': 'veo-3.1-generate-preview',
+    'veo-3.1-fast-generate-preview': 'veo-3.1-fast-generate-preview',
     // Runway models
     'gen4_image': 'runway-gen4',
     'gen4_image_turbo': 'runway-gen4-turbo',
     'gen4_turbo': 'runway-gen4-turbo',
     'gen4_aleph': 'runway-gen4',
     'act_two': 'runway-gen4',
-    
+
     // Flux models
     'flux-2-pro': 'flux-2-pro',
     'flux-2-flex': 'flux-2-flex',
@@ -190,11 +195,11 @@ export const normalizeModelId = (modelId: string): string => {
     'flux-pro-1.1-ultra': 'flux-2-flex',
     'flux-kontext-pro': 'flux-2-pro',
     'flux-kontext-max': 'flux-2-flex',
-    
+
     // Reve models
     'reve-image-1.0': 'reve-image-1.0',
     'reve-image': 'reve-image-1.0',
-    
+
     // Other models
     'qwen-image': 'qwen-image',
     'ideogram': 'ideogram',
@@ -222,7 +227,7 @@ export const normalizeModelId = (modelId: string): string => {
     'sora': 'sora-2',
     'openai-sora-2': 'sora-2',
   };
-  
+
   return modelMappings[modelId] || modelId;
 };
 

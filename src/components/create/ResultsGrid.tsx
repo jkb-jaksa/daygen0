@@ -14,6 +14,7 @@ import { useAuth } from '../../auth/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { loadSavedPrompts } from '../../lib/savedPrompts';
 import { useGeminiImageGeneration } from '../../hooks/useGeminiImageGeneration';
+import { useIdeogramImageGeneration } from '../../hooks/useIdeogramImageGeneration';
 import type { GalleryImageLike, GalleryVideoLike } from './types';
 import type { StoredAvatar } from '../avatars/types';
 import type { StoredProduct } from '../products/types';
@@ -172,6 +173,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const { isFullSizeOpen } = state;
 
   const { generateImage: generateGeminiImage } = useGeminiImageGeneration();
+  const { generateImage: generateIdeogramImage } = useIdeogramImageGeneration();
   const {
     handleImageActionMenu,
     handleBulkActionsMenu,
@@ -648,7 +650,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       reader.readAsDataURL(file);
     });
 
-  const handleQuickEditSubmit = useCallback(async ({ prompt, referenceFiles, avatarImageUrl, productImageUrl }: QuickEditOptions) => {
+  const handleQuickEditSubmit = useCallback(async ({ prompt, referenceFiles, avatarImageUrl, productImageUrl, mask, model }: QuickEditOptions) => {
     if (!quickEditModalState?.item || !quickEditModalState.item.url) {
       showToast('No image URL available');
       return;
@@ -687,40 +689,75 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
         }
       }
 
-      // Run generation in background
-      generateGeminiImage({
-        prompt: prompt,
-        references: references,
-        model: 'gemini-3-pro-image-preview',
-        clientJobId: syntheticJobId,
-      }).then(async (result) => {
-        if (result) {
-          await addImage({
-            url: result.url,
-            prompt: result.prompt,
-            model: result.model,
-            timestamp: new Date().toISOString(),
-            ownerId: item.ownerId,
-            isLiked: false,
-            isPublic: false,
-            r2FileId: result.r2FileId,
-          });
-          finalizeQuickEditJob(syntheticJobId, 'completed');
-        } else {
+      if (model === 'ideogram' && mask) {
+        // Ideogram Masked Edit
+        generateIdeogramImage({
+          prompt: prompt,
+          mask: mask,
+          references: references,
+          // Ideogram specific defaults
+          aspect_ratio: '1:1',
+          rendering_speed: 'DEFAULT',
+          num_images: 1,
+        }).then(async (results) => {
+          if (results && results.length > 0) {
+            const result = results[0];
+            await addImage({
+              url: result.url,
+              prompt: result.prompt,
+              model: result.model,
+              timestamp: new Date().toISOString(),
+              ownerId: item.ownerId,
+              isLiked: false,
+              isPublic: false,
+              jobId: result.jobId,
+            });
+            finalizeQuickEditJob(syntheticJobId, 'completed');
+          } else {
+            showToast('Failed to edit image');
+            finalizeQuickEditJob(syntheticJobId, 'failed');
+          }
+        }).catch((error) => {
+          debugError('Failed to quick edit image (Ideogram):', error);
           showToast('Failed to edit image');
           finalizeQuickEditJob(syntheticJobId, 'failed');
-        }
-      }).catch((error) => {
-        debugError('Failed to quick edit image:', error);
-        showToast('Failed to edit image');
-        finalizeQuickEditJob(syntheticJobId, 'failed');
-      });
+        });
+      } else {
+        // Default Gemini Edit
+        generateGeminiImage({
+          prompt: prompt,
+          references: references,
+          model: 'gemini-3-pro-image-preview',
+          clientJobId: syntheticJobId,
+        }).then(async (result) => {
+          if (result) {
+            await addImage({
+              url: result.url,
+              prompt: result.prompt,
+              model: result.model,
+              timestamp: new Date().toISOString(),
+              ownerId: item.ownerId,
+              isLiked: false,
+              isPublic: false,
+              r2FileId: result.r2FileId,
+            });
+            finalizeQuickEditJob(syntheticJobId, 'completed');
+          } else {
+            showToast('Failed to edit image');
+            finalizeQuickEditJob(syntheticJobId, 'failed');
+          }
+        }).catch((error) => {
+          debugError('Failed to quick edit image:', error);
+          showToast('Failed to edit image');
+          finalizeQuickEditJob(syntheticJobId, 'failed');
+        });
+      }
     } catch (error) {
       debugError('Failed to process quick edit submission:', error);
       showToast('Failed to start edit');
       finalizeQuickEditJob(syntheticJobId, 'failed');
     }
-  }, [quickEditModalState, generateGeminiImage, addImage, showToast, startQuickEditJob, finalizeQuickEditJob]);
+  }, [quickEditModalState, generateGeminiImage, generateIdeogramImage, addImage, showToast, startQuickEditJob, finalizeQuickEditJob]);
 
   const handleQuickEditClose = useCallback(() => {
     setQuickEditModalState(null);

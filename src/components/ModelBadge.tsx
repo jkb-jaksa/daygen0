@@ -212,9 +212,9 @@ const MODEL_CONFIG = {
     description: 'Google Veo 3.1 - High-quality video generation with audio'
   },
   'veo-3.1-fast-generate-preview': {
-    name: 'Veo 3.1 Fast',
-    shortName: 'V3.1F',
-    icon: '⚡',
+    name: 'Veo 3.1',
+    shortName: 'V3.1',
+    icon: '🎬',
     description: 'Google Veo 3.1 Fast - Quick video generation with audio'
   }
 } as const;

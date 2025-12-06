@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { X, Sparkles, Edit, Loader2, Plus, Settings, User, Package, Scan, Minus, Palette, LayoutGrid, Copy, Bookmark, BookmarkPlus } from 'lucide-react';
-import { debugLog } from '../../utils/debug';
+import { X, Sparkles, Edit, Loader2, Plus, Settings, User, Package, Scan, Minus, Palette, LayoutGrid, Copy, Bookmark, BookmarkPlus, Wand2, Undo2, Redo2, Eraser, RotateCcw } from 'lucide-react';
+import { debugLog, debugError } from '../../utils/debug';
 import { glass, buttons, tooltips } from '../../styles/designSystem';
 import { useReferenceHandlers } from './hooks/useReferenceHandlers';
 import { useParallaxHover } from '../../hooks/useParallaxHover';
@@ -43,6 +43,8 @@ export interface QuickEditOptions {
     styleId?: string;
     avatarImageUrl?: string;
     productImageUrl?: string;
+    mask?: string;
+    model?: string;
 }
 
 interface QuickEditModalProps {
@@ -88,6 +90,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     const { savePrompt, isPromptSaved, removePrompt } = useSavedPrompts(userKey);
     const [savePromptModalState, setSavePromptModalState] = useState<{ prompt: string; originalPrompt: string } | null>(null);
     const savePromptModalRef = useRef<HTMLDivElement>(null);
+    const [copiedState, setCopiedState] = useState<Record<string, boolean>>({});
 
     const {
         goToAvatarProfile,
@@ -117,6 +120,10 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         event.stopPropagation();
         try {
             await navigator.clipboard.writeText(text);
+            setCopiedState(prev => ({ ...prev, [text]: true }));
+            setTimeout(() => {
+                setCopiedState(prev => ({ ...prev, [text]: false }));
+            }, 2000);
             showToast('Prompt copied!');
         } catch {
             showToast('Failed to copy prompt');
@@ -213,9 +220,201 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isAspectRatioOpen, setIsAspectRatioOpen] = useState(false);
     const [isDragActive, setIsDragActive] = useState(false);
+    const [isMaskToolbarVisible, setIsMaskToolbarVisible] = useState(false);
+    const [showBrushPreview, setShowBrushPreview] = useState(false);
+    const [mousePosition, setMousePosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+    const [isDrawing, setIsDrawing] = useState(false);
+    const [brushSize, setBrushSize] = useState(20);
+    const [isEraseMode, setIsEraseMode] = useState(false);
+    // Drawing history
+    const [allPaths, setAllPaths] = useState<{ points: { x: number; y: number }[]; brushSize: number; isErase: boolean }[]>([]);
+    const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
+    const [redoStack, setRedoStack] = useState<{ points: { x: number; y: number }[]; brushSize: number; isErase: boolean }[]>([]);
+    const [maskData, setMaskData] = useState<string | null>(null);
+
+    const canvasRef = useRef<HTMLCanvasElement>(null);
     const settingsButtonRef = useRef<HTMLButtonElement>(null);
     const aspectRatioButtonRef = useRef<HTMLButtonElement>(null);
     const styleButtonRef = useRef<HTMLButtonElement>(null);
+
+    // Drawing functions
+    const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+
+        setIsDrawing(true);
+        const { x, y } = getCoordinates(e);
+        setCurrentPath([{ x, y }]);
+        // Clear redo stack on new stroke
+        setRedoStack([]);
+    };
+
+    const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+        if (!isMaskToolbarVisible) return;
+        const { x, y } = getCoordinates(e);
+
+        if (isDrawing) {
+            setCurrentPath(prev => [...prev, { x, y }]);
+        }
+
+        // Update brush preview
+        if ('clientX' in e) { // Only for mouse events
+            const rect = e.currentTarget.getBoundingClientRect();
+            const clientX = e.clientX;
+            const clientY = e.clientY;
+            setMousePosition({
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            });
+            setShowBrushPreview(true);
+        }
+    };
+
+    const stopDrawing = () => {
+        if (!isDrawing) return;
+        setIsDrawing(false);
+        if (currentPath.length > 0) {
+            setAllPaths(prev => [...prev, {
+                points: currentPath,
+                brushSize: brushSize,
+                isErase: isEraseMode
+            }]);
+        }
+        setCurrentPath([]);
+    };
+
+    const getCoordinates = (e: React.MouseEvent | React.TouchEvent | React.TouchEvent<HTMLCanvasElement>) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return { x: 0, y: 0 };
+        const rect = canvas.getBoundingClientRect();
+        let clientX, clientY;
+        if ('touches' in e) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = (e as React.MouseEvent).clientX;
+            clientY = (e as React.MouseEvent).clientY;
+        }
+        return {
+            x: (clientX - rect.left) * (canvas.width / rect.width),
+            y: (clientY - rect.top) * (canvas.height / rect.height)
+        };
+    };
+
+    const undoStroke = () => {
+        if (allPaths.length === 0) return;
+        const lastPath = allPaths[allPaths.length - 1];
+        setAllPaths(prev => prev.slice(0, -1));
+        setRedoStack(prev => [...prev, lastPath]);
+    };
+
+    const redoStroke = () => {
+        if (redoStack.length === 0) return;
+        const pathToRedo = redoStack[redoStack.length - 1];
+        setRedoStack(prev => prev.slice(0, -1));
+        setAllPaths(prev => [...prev, pathToRedo]);
+    };
+
+    const clearMask = () => {
+        setAllPaths([]);
+        setRedoStack([]);
+        setMaskData(null);
+    };
+
+
+
+    // Function to redraw the entire canvas with all paths
+    const redrawCanvas = useCallback(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        // Clear the canvas completely
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw all completed paths first
+        ctx.strokeStyle = 'rgba(255, 255, 255, 1)';
+        ctx.lineWidth = brushSize;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.globalCompositeOperation = 'source-over';
+
+        allPaths.forEach(pathData => {
+            if (pathData.points.length > 0) {
+                ctx.lineWidth = pathData.brushSize;
+                if (pathData.isErase) {
+                    // For erase paths, use destination-out to remove pixels
+                    ctx.globalCompositeOperation = 'destination-out';
+                } else {
+                    // For draw paths, use source-over to add pixels
+                    ctx.globalCompositeOperation = 'source-over';
+                }
+
+                ctx.beginPath();
+                ctx.moveTo(pathData.points[0].x, pathData.points[0].y);
+                for (let i = 1; i < pathData.points.length; i++) {
+                    ctx.lineTo(pathData.points[i].x, pathData.points[i].y);
+                }
+                ctx.stroke();
+            }
+        });
+
+        // Draw the current path being drawn
+        if (currentPath.length > 0) {
+            ctx.lineWidth = brushSize;
+            if (isEraseMode) {
+                ctx.globalCompositeOperation = 'destination-out';
+            } else {
+                ctx.globalCompositeOperation = 'source-over';
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(currentPath[0].x, currentPath[0].y);
+            for (let i = 1; i < currentPath.length; i++) {
+                ctx.lineTo(currentPath[i].x, currentPath[i].y);
+            }
+            ctx.stroke();
+        }
+
+        // Apply the mask color to all non-erased areas
+        ctx.globalCompositeOperation = 'source-in';
+        ctx.fillStyle = 'rgba(250, 250, 250, 0.75)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Reset composite operation
+        ctx.globalCompositeOperation = 'source-over';
+    }, [allPaths, currentPath, brushSize, isEraseMode]);
+
+    // Redraw whenever relevant state changes
+    useEffect(() => {
+        redrawCanvas();
+    }, [redrawCanvas]);
+
+    // Update mask data when paths change (Undo/Redo/New Stroke)
+    useEffect(() => {
+
+        if (!canvasRef.current || !modalRef.current) return;
+        const canvas = canvasRef.current;
+        if (allPaths.length === 0) {
+            setMaskData(null); // Clear mask data if no paths
+        } else {
+            setMaskData(canvas.toDataURL());
+        }
+    }, [allPaths]);
+
+    // Initialize canvas on mount or when image changes
+    useEffect(() => {
+        if (canvasRef.current && modalRef.current) {
+            const image = modalRef.current.querySelector('img[alt="Preview"]');
+            if (image) {
+                const rect = image.getBoundingClientRect();
+                canvasRef.current.width = rect.width;
+                canvasRef.current.height = rect.height;
+                redrawCanvas(); // Redraw canvas after resizing
+            }
+        }
+    }, [imageUrl, redrawCanvas]);
 
     // Handlers
     const avatarHandlers = useAvatarHandlers();
@@ -411,6 +610,102 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen, avatarHandlers.loadStoredAvatars, productHandlers.loadStoredProducts]);
 
+    // Helper to generate Ideogram-compatible mask (Black = Edit, White = Keep)
+    const generateIdeogramMask = async (): Promise<string | undefined> => {
+        if (!maskData || !imageUrl) {
+            console.log('[QuickEdit] generateIdeogramMask: maskData or imageUrl missing, returning undefined.');
+            return undefined;
+        }
+
+        return new Promise((resolve, reject) => {
+            (async () => {
+                const originalImg = new Image();
+                let srcUrl = imageUrl;
+                let objectUrlToRevoke: string | undefined;
+                let isBlob = false;
+
+                // Robustly handle image loading by fetching as blob first if needed
+                try {
+                    if (imageUrl.startsWith('http') || imageUrl.startsWith('https')) {
+                        const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+                        const proxyEndpoint = `${apiBase}/api/r2files/proxy`;
+                        const proxyUrl = imageUrl.includes('r2.dev')
+                            ? `${proxyEndpoint}?url=${encodeURIComponent(imageUrl)}`
+                            : imageUrl;
+
+                        console.log('[QuickEdit] Fetching image for mask via proxy:', proxyUrl);
+                        const response = await fetch(proxyUrl);
+                        if (!response.ok) throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+                        const blob = await response.blob();
+
+                        if (blob.type.includes('text/html')) {
+                            throw new Error('Fetched blob is text/html, likely an error page or index.html fallback');
+                        }
+
+                        srcUrl = URL.createObjectURL(blob);
+                        objectUrlToRevoke = srcUrl;
+                        isBlob = true;
+                    }
+                } catch (e) {
+                    console.error('[QuickEdit] Error fetching image for mask generation:', e);
+                }
+
+                if (!isBlob) {
+                    originalImg.crossOrigin = "anonymous";
+                }
+
+                originalImg.onload = () => {
+                    const width = originalImg.naturalWidth;
+                    const height = originalImg.naturalHeight;
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) {
+                        if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
+                        reject(new Error('Could not get canvas context'));
+                        return;
+                    }
+
+                    // 1. Fill White (Keep area)
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(0, 0, width, height);
+
+                    // 2. Load Mask Image
+                    const maskImg = new Image();
+                    maskImg.onload = () => {
+                        // 3. Erase where mask is (turn to transparent)
+                        ctx.globalCompositeOperation = 'destination-out';
+                        ctx.drawImage(maskImg, 0, 0, width, height);
+
+                        // 4. Fill Black behind (turning transparent to Black -> Edit area)
+                        ctx.globalCompositeOperation = 'destination-over';
+                        ctx.fillStyle = '#000000';
+                        ctx.fillRect(0, 0, width, height);
+
+                        if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
+                        const dataUrl = canvas.toDataURL('image/png');
+                        resolve(dataUrl);
+                    };
+                    maskImg.onerror = (e) => {
+                        console.error('[QuickEdit] Error loading mask image:', e);
+                        if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
+                        reject(e);
+                    };
+                    maskImg.src = maskData!;
+                };
+                originalImg.onerror = (e) => {
+                    if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
+                    reject(e);
+                };
+                originalImg.src = srcUrl;
+            })();
+        });
+    };
+
+
+
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
             if (e.key === 'Escape' && isOpen) {
@@ -449,9 +744,20 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         };
     }, [isOpen, handleAddReferenceFiles]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (prompt.trim()) {
+            let finalMask: string | undefined;
+            if (maskData) {
+                showToast('Preparing mask for edit...');
+                try {
+                    finalMask = await generateIdeogramMask();
+                } catch (error) {
+                    debugError('Failed to generate mask:', error);
+                    showToast('Failed to process mask. Submitting without mask.');
+                }
+            }
+
             onSubmit({
                 prompt: prompt.trim(),
                 referenceFiles: referenceFiles.length > 0 ? referenceFiles : undefined,
@@ -462,6 +768,8 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                 styleId: styleHandlers.selectedStylesList[0]?.id,
                 avatarImageUrl: selectedAvatar?.imageUrl,
                 productImageUrl: selectedProduct?.imageUrl,
+                mask: finalMask,
+                model: finalMask ? 'ideogram' : undefined
             });
         }
     };
@@ -605,128 +913,265 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Left Column - Image Preview */}
-                    <div className="w-full md:w-5/12 flex items-center justify-center bg-theme-black/20 rounded-xl overflow-hidden border border-theme-dark relative aspect-square group">
-                        <img
-                            src={imageUrl}
-                            alt="Preview"
-                            className="w-full h-full object-cover absolute inset-0"
-                        />
+                    <div className="w-full md:w-5/12 flex flex-col items-center justify-center gap-4">
+                        <div
+                            className={`flex items-center justify-center bg-theme-black/20 rounded-xl overflow-hidden border border-theme-dark relative aspect-square group transition-all duration-300 w-full`}
+                        >
+                            <img
+                                src={imageUrl}
+                                alt="Preview"
+                                className="w-full h-full object-cover absolute inset-0"
+                            />
 
-                        {/* Prompt Description Bar */}
-                        {item && (
-                            <div
-                                className="PromptDescriptionBar absolute left-4 right-4 rounded-2xl p-4 text-theme-text bottom-4 transition-all duration-150 z-10 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto"
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                <div className="flex items-center justify-center">
-                                    <div className="text-center">
-                                        <div className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
-                                            {item.prompt}
-                                            {item.prompt && (
-                                                <>
-                                                    <button
-                                                        onClick={(e) => void handleCopyPrompt(item.prompt!, e)}
-                                                        className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle"
-                                                        onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'quick-edit-copy-prompt')}
-                                                        onMouseLeave={() => hideHoverTooltip('quick-edit-copy-prompt')}
-                                                    >
-                                                        <Copy className="w-3 h-3" />
-                                                    </button>
-                                                    <TooltipPortal id="quick-edit-copy-prompt">
-                                                        Copy prompt
-                                                    </TooltipPortal>
+                            {/* Precise Edit Canvas */}
 
-                                                    <button
-                                                        onClick={(e) => handleToggleSavePrompt(item.prompt!, e)}
-                                                        className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle"
-                                                        onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'quick-edit-save-prompt')}
-                                                        onMouseLeave={() => hideHoverTooltip('quick-edit-save-prompt')}
-                                                    >
-                                                        {isPromptSaved(item.prompt!) ? (
-                                                            <Bookmark className="w-3 h-3 fill-current" />
-                                                        ) : (
-                                                            <BookmarkPlus className="w-3 h-3" />
-                                                        )}
-                                                    </button>
-                                                    <TooltipPortal id="quick-edit-save-prompt">
-                                                        {isPromptSaved(item.prompt!) ? "Prompt saved" : "Save prompt"}
-                                                    </TooltipPortal>
-                                                </>
-                                            )}
-                                        </div>
-                                        <div className="mt-2 flex flex-col justify-center items-center gap-2">
-                                            {/* Reference images thumbnails */}
-                                            {item.references && item.references.length > 0 && (
-                                                <div className="flex items-center gap-1.5">
-                                                    <div className="flex gap-1">
-                                                        {item.references.map((ref, refIdx) => (
-                                                            <div key={refIdx} className="relative">
-                                                                <img
-                                                                    src={ref}
-                                                                    alt={`Reference ${refIdx + 1}`}
-                                                                    loading="lazy"
-                                                                    className="w-6 h-6 rounded object-cover border border-theme-mid cursor-pointer hover:border-theme-text transition-colors duration-200"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        window.open(ref, '_blank');
-                                                                    }}
-                                                                />
-                                                                <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
-                                                                    {refIdx + 1}
+                            <canvas
+                                ref={canvasRef}
+                                className={`absolute inset-0 w-full h-full z-20 touch-none transition-opacity duration-200 ${isMaskToolbarVisible ? 'cursor-none opacity-100' : 'opacity-0 pointer-events-none'}`}
+                                onMouseDown={startDrawing}
+                                onMouseMove={draw}
+                                onMouseUp={stopDrawing}
+                                onMouseLeave={() => {
+                                    stopDrawing();
+                                    setShowBrushPreview(false);
+                                }}
+                                onTouchStart={startDrawing}
+                                onTouchMove={draw}
+                                onTouchEnd={stopDrawing}
+                            />
+                            {/* Brush preview circle */}
+                            {isMaskToolbarVisible && showBrushPreview && (
+                                <div
+                                    className="absolute pointer-events-none z-30 border-2 border-theme-text rounded-full"
+                                    style={{
+                                        left: mousePosition.x - brushSize / 2,
+                                        top: mousePosition.y - brushSize / 2,
+                                        width: brushSize,
+                                        height: brushSize,
+                                        borderColor: 'rgba(var(--theme-text-rgb), 1)',
+                                        opacity: 0.8
+                                    }}
+                                />
+                            )}
+
+
+                            {/* Prompt Description Bar */}
+                            {item && (
+                                <div
+                                    className={`PromptDescriptionBar absolute left-4 right-4 rounded-2xl p-4 text-theme-text bottom-4 transition-all duration-150 z-10 ${isMaskToolbarVisible ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto'}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <div className="flex items-center justify-center">
+                                        <div className="text-center">
+                                            <div className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
+                                                {item.prompt}
+                                                {item.prompt && (
+                                                    <>
+                                                        <button
+                                                            onClick={(e) => void handleCopyPrompt(item.prompt!, e)}
+                                                            className="inline-flex items-center justify-center ml-2 p-1 hover:bg-theme-text/20 rounded-md transition-colors duration-200 group/copy align-middle"
+                                                            title="Copy prompt"
+                                                        >
+                                                            {copiedState[item.prompt!] ? (
+                                                                <Bookmark className="w-3 h-3 text-theme-text animate-in zoom-in-50 duration-200" />
+                                                            ) : (
+                                                                <Copy className="w-3 h-3 text-theme-text/70 group-hover/copy:text-theme-text transition-colors duration-200" />
+                                                            )}
+                                                        </button>
+                                                        <div className="relative inline-block ml-1 align-middle">
+                                                            <button
+                                                                onClick={(e) => handleToggleSavePrompt(item.prompt!, e)}
+                                                                className="inline-flex items-center justify-center p-1 hover:bg-theme-text/20 rounded-md transition-colors duration-200 group/save"
+                                                                title={isPromptSaved(item.prompt!) ? "Remove saved prompt" : "Save prompt"}
+                                                            >
+                                                                {isPromptSaved(item.prompt!) ? (
+                                                                    <Bookmark className="w-3 h-3 text-theme-text fill-theme-text animate-in zoom-in-50 duration-200" />
+                                                                ) : (
+                                                                    <BookmarkPlus className="w-3 h-3 text-theme-text/70 group-hover/save:text-theme-text transition-colors duration-200" />
+                                                                )}
+                                                            </button>
+                                                            {savePromptModalState?.originalPrompt === item.prompt && (
+                                                                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 pointer-events-none">
+                                                                    <div className="bg-theme-black text-theme-white text-xs py-1 px-2 rounded opacity-0 animate-out fade-out duration-200" />
                                                                 </div>
-                                                            </div>
-                                                        ))}
+                                                            )}
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+                                            <div className="mt-2 flex flex-col justify-center items-center gap-2">
+                                                {/* Reference images thumbnails */}
+                                                {item.references && item.references.length > 0 && (
+                                                    <div className="flex items-center gap-1.5">
+                                                        <div className="flex gap-1">
+                                                            {item.references.map((ref, refIdx) => (
+                                                                <div key={refIdx} className="relative">
+                                                                    <img
+                                                                        src={ref}
+                                                                        alt={`Reference ${refIdx + 1}`}
+                                                                        loading="lazy"
+                                                                        className="w-6 h-6 rounded object-cover border border-theme-mid cursor-pointer hover:border-theme-text transition-colors duration-200"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            window.open(ref, '_blank');
+                                                                        }}
+                                                                    />
+                                                                    <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
+                                                                        {refIdx + 1}
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                        <span className="text-xs font-raleway text-theme-white/70">
+                                                            {item.references.length} ref{item.references.length > 1 ? 's' : ''}
+                                                        </span>
                                                     </div>
-                                                    <span className="text-xs font-raleway text-theme-white/70">
-                                                        {item.references.length} ref{item.references.length > 1 ? 's' : ''}
-                                                    </span>
-                                                </div>
-                                            )}
+                                                )}
 
-                                            <ImageBadgeRow
-                                                align="center"
-                                                model={{
-                                                    name: item.model || 'unknown',
-                                                    size: 'md',
-                                                    onClick: () => goToModelGallery(item.model, 'image')
-                                                }}
-                                                avatars={
-                                                    item.avatarId
-                                                        ? (() => {
-                                                            const avatarForImage = avatarHandlers.storedAvatars.find(a => a.id === item.avatarId);
-                                                            return avatarForImage ? [{ data: avatarForImage, onClick: () => goToAvatarProfile(avatarForImage) }] : [];
-                                                        })()
-                                                        : []
-                                                }
-                                                products={
-                                                    item.productId
-                                                        ? (() => {
-                                                            const productForImage = productHandlers.storedProducts.find(p => p.id === item.productId);
-                                                            return productForImage ? [{ data: productForImage, onClick: () => goToProductProfile(productForImage) }] : [];
-                                                        })()
-                                                        : []
-                                                }
-                                                styles={
-                                                    item.styleId
-                                                        ? (() => {
-                                                            const styleForImage = styleIdToStoredStyle(item.styleId!);
-                                                            return styleForImage ? [{ data: styleForImage }] : [];
-                                                        })()
-                                                        : []
-                                                }
-                                                aspectRatio={item.aspectRatio}
-                                                isPublic={item.isPublic}
-                                                onPublicClick={item.isPublic ? () => goToPublicGallery() : undefined}
-                                                compact={false}
-                                            />
+                                                <ImageBadgeRow
+                                                    align="center"
+                                                    model={{
+                                                        name: item.model || 'unknown',
+                                                        size: 'md',
+                                                        onClick: () => goToModelGallery(item.model, 'image')
+                                                    }}
+                                                    avatars={
+                                                        item.avatarId
+                                                            ? (() => {
+                                                                const avatarForImage = avatarHandlers.storedAvatars.find(a => a.id === item.avatarId);
+                                                                return avatarForImage ? [{ data: avatarForImage, onClick: () => goToAvatarProfile(avatarForImage) }] : [];
+                                                            })()
+                                                            : []
+                                                    }
+                                                    products={
+                                                        item.productId
+                                                            ? (() => {
+                                                                const productForImage = productHandlers.storedProducts.find(p => p.id === item.productId);
+                                                                return productForImage ? [{ data: productForImage, onClick: () => goToProductProfile(productForImage) }] : [];
+                                                            })()
+                                                            : []
+                                                    }
+                                                    styles={
+                                                        item.styleId
+                                                            ? (() => {
+                                                                const styleForImage = styleIdToStoredStyle(item.styleId!);
+                                                                return styleForImage ? [{ data: styleForImage }] : [];
+                                                            })()
+                                                            : []
+                                                    }
+                                                    aspectRatio={item.aspectRatio}
+                                                    isPublic={item.isPublic}
+                                                    onPublicClick={item.isPublic ? () => goToPublicGallery() : undefined}
+                                                    compact={false}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        )}
-                    </div>
+                            )}
+                        </div>
 
-                    {/* Right Column - Form */}
+                        {/* Precise Edit Toolbar - Below Image */}
+                        <div className="w-full flex justify-start gap-1 transition-all duration-200 animate-in fade-in slide-in-from-top-2">
+                            <button
+                                onClick={() => setIsMaskToolbarVisible(!isMaskToolbarVisible)}
+                                className={`flex items-center gap-1.5 px-3 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)] font-raleway font-normal text-sm ${isMaskToolbarVisible ? 'text-theme-text border-theme-text' : 'text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text'}`}
+                                title="Precise edit"
+                            >
+                                <Wand2 className="w-4 h-4" />
+                                Precise edit
+                            </button>
+
+                            {isMaskToolbarVisible && (
+                                <>
+                                    {/* Brush size control */}
+                                    <div className={`flex items-center gap-1.5 px-2 h-8 rounded-lg border border-theme-dark prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)]`}>
+                                        <span className="text-theme-white text-sm font-raleway font-normal">Size:</span>
+                                        <input
+                                            type="range"
+                                            min="2"
+                                            max="200"
+                                            value={brushSize}
+                                            onChange={(e) => setBrushSize(Number(e.target.value))}
+                                            className="w-12 h-1 bg-theme-white rounded-lg appearance-none cursor-pointer"
+                                            style={{
+                                                background: `linear-gradient(to right, rgba(184, 192, 192, 1) 0%, rgba(184, 192, 192, 1) ${(brushSize - 2) / 198 * 100}%, rgba(184, 192, 192, 0.3) ${(brushSize - 2) / 198 * 100}%, rgba(184, 192, 192, 0.3) 100%)`,
+                                                WebkitAppearance: 'none',
+                                                appearance: 'none',
+                                                height: '4px',
+                                                outline: 'none',
+                                                borderRadius: '5px'
+                                            }}
+                                            title="Adjust brush size"
+                                        />
+                                        <div className="flex items-center gap-0.5">
+                                            <input
+                                                type="number"
+                                                min="2"
+                                                max="200"
+                                                value={brushSize || ''}
+                                                onChange={(e) => {
+                                                    const val = e.target.value === '' ? 0 : parseInt(e.target.value);
+                                                    if (!isNaN(val)) setBrushSize(Math.min(val, 200));
+                                                }}
+                                                onBlur={() => {
+                                                    setBrushSize(Math.max(2, brushSize));
+                                                }}
+                                                className="w-6 bg-transparent text-theme-white text-sm font-raleway font-normal text-center focus:outline-none appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                            />
+                                            <span className="text-theme-white text-sm font-raleway font-normal">px</span>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={undoStroke}
+                                        className="flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-theme-white border-theme-dark hover:text-theme-text disabled:opacity-50 disabled:cursor-not-allowed"
+                                        title="Undo last stroke"
+                                        disabled={allPaths.length === 0}
+                                    >
+                                        <Undo2 className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={redoStroke}
+                                        disabled={redoStack.length === 0}
+                                        className="flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-theme-white border-theme-dark hover:text-theme-text disabled:opacity-50 disabled:cursor-not-allowed"
+                                        title="Redo last stroke"
+                                    >
+                                        <Redo2 className="w-4 h-4" />
+                                    </button>
+                                    <div className="relative">
+                                        <button
+                                            onClick={() => setIsEraseMode(!isEraseMode)}
+                                            className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] ${isEraseMode ? 'text-theme-text border-theme-text bg-theme-text/10' : 'text-theme-white border-theme-dark hover:text-theme-text'}`}
+                                            onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'eraser-tooltip')}
+                                            onMouseLeave={() => hideHoverTooltip('eraser-tooltip')}
+                                        >
+                                            <Eraser className="w-3.5 h-3.5" />
+                                        </button>
+                                        <TooltipPortal id="eraser-tooltip">
+                                            {isEraseMode ? "Switch to draw" : "Eraser"}
+                                        </TooltipPortal>
+                                    </div>
+                                    {/* Reset mask button - only show when mask exists */}
+                                    {maskData && (
+                                        <div className="relative">
+                                            <button
+                                                onClick={clearMask}
+                                                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-theme-white border-theme-dark hover:text-theme-text`}
+                                                onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'reset-mask-tooltip')}
+                                                onMouseLeave={() => hideHoverTooltip('reset-mask-tooltip')}
+                                            >
+                                                <RotateCcw className="w-4 h-4" />
+                                            </button>
+                                            <TooltipPortal id="reset-mask-tooltip">
+                                                Reset mask
+                                            </TooltipPortal>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    </div>    {/* Right Column - Form */}
                     < div className="w-full md:w-7/12 flex flex-col" >
                         <div className="flex items-center justify-between mb-1">
                             <h2 className="text-lg font-raleway text-theme-text flex items-center gap-2">
@@ -1127,6 +1572,8 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                 </Suspense>
                                             </div>
 
+
+
                                             {/* Batch Size (Visible on larger screens) */}
                                             <div
                                                 className="relative hidden lg:flex items-center"
@@ -1180,6 +1627,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                 </div >
                             </div >
                         </form >
+
                     </div >
                 </div >
                 {/* Avatar Picker Portal */}
@@ -1202,7 +1650,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                             </button>
                         </div>
                         {avatarHandlers.storedAvatars.length > 0 ? (
-                            <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
+                            <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
                                 {avatarHandlers.storedAvatars.map(avatar => {
                                     const isActive = selectedAvatar?.id === avatar.id;
                                     return (
@@ -1399,6 +1847,9 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                     )
                 }
             </div >
+
+
+
         </>,
         document.body
     );

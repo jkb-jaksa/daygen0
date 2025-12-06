@@ -1891,7 +1891,7 @@ const PromptForm = memo<PromptFormProps>(
               </button>
             </div>
             {storedAvatars.length > 0 ? (
-              <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
+              <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
                 {storedAvatars.map(avatar => {
                   const isActive = selectedAvatar?.id === avatar.id;
                   return (
