@@ -650,7 +650,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       reader.readAsDataURL(file);
     });
 
-  const handleQuickEditSubmit = useCallback(async ({ prompt, referenceFiles, avatarImageUrl, productImageUrl, mask, model }: QuickEditOptions) => {
+  const handleQuickEditSubmit = useCallback(async ({ prompt, referenceFiles, avatarImageUrl, productImageUrl, mask, geminiMask, model }: QuickEditOptions) => {
     if (!quickEditModalState?.item || !quickEditModalState.item.url) {
       showToast('No image URL available');
       return;
@@ -689,8 +689,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
         }
       }
 
-      if (model === 'ideogram' && mask) {
-        // Ideogram Masked Edit
+      if (mask) {
+        // Use Ideogram for mask-based editing (reliable pixel-mask inpainting)
         generateIdeogramImage({
           prompt: prompt,
           mask: mask,
@@ -723,7 +723,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           finalizeQuickEditJob(syntheticJobId, 'failed');
         });
       } else {
-        // Default Gemini Edit
+        // Use Gemini for non-mask editing (references, style transfer, general edits)
         generateGeminiImage({
           prompt: prompt,
           references: references,

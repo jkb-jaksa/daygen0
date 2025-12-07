@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { X, Sparkles, Edit, Loader2, Plus, Settings, User, Package, Scan, Minus, Palette, LayoutGrid, Copy, Bookmark, BookmarkPlus, Wand2, Undo2, Redo2, Eraser, RotateCcw } from 'lucide-react';
+import { X, Sparkles, Edit, Loader2, Plus, Settings, User, Package, Scan, Minus, Palette, LayoutGrid, Copy, Bookmark, BookmarkPlus, Wand2, Undo2, Redo2, Eraser, RotateCcw, HelpCircle } from 'lucide-react';
 import { debugLog, debugError } from '../../utils/debug';
 import { glass, buttons, tooltips } from '../../styles/designSystem';
 import { useReferenceHandlers } from './hooks/useReferenceHandlers';
@@ -44,6 +44,7 @@ export interface QuickEditOptions {
     avatarImageUrl?: string;
     productImageUrl?: string;
     mask?: string;
+    geminiMask?: string;
     model?: string;
 }
 
@@ -232,6 +233,11 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
     const [redoStack, setRedoStack] = useState<{ points: { x: number; y: number }[]; brushSize: number; isErase: boolean }[]>([]);
     const [maskData, setMaskData] = useState<string | null>(null);
+    
+    // Model selection - tracks user's preferred model when Precise Edit is OFF
+    const [userSelectedModel, setUserSelectedModel] = useState<string>('gemini-3.0-pro-image');
+    // Effective model: Ideogram when Precise Edit is ON, otherwise user's selection
+    const effectiveModel = isMaskToolbarVisible ? 'ideogram' : userSelectedModel;
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const settingsButtonRef = useRef<HTMLButtonElement>(null);
@@ -653,6 +659,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     }, [isOpen, avatarHandlers.loadStoredAvatars, productHandlers.loadStoredProducts]);
 
     // Helper to generate Ideogram-compatible mask (Black = Edit, White = Keep)
+    // Note: Ideogram uses Black pixels = areas to edit, White = areas to keep
     const generateIdeogramMask = async (): Promise<string | undefined> => {
         if (!maskData || !imageUrl) {
             console.log('[QuickEdit] generateIdeogramMask: maskData or imageUrl missing, returning undefined.');
@@ -675,7 +682,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                             ? `${proxyEndpoint}?url=${encodeURIComponent(imageUrl)}`
                             : imageUrl;
 
-                        console.log('[QuickEdit] Fetching image for mask via proxy:', proxyUrl);
+                        console.log('[QuickEdit] Fetching image for Ideogram mask via proxy:', proxyUrl);
                         const response = await fetch(proxyUrl);
                         if (!response.ok) throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
                         const blob = await response.blob();
@@ -689,7 +696,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                         isBlob = true;
                     }
                 } catch (e) {
-                    console.error('[QuickEdit] Error fetching image for mask generation:', e);
+                    console.error('[QuickEdit] Error fetching image for Ideogram mask generation:', e);
                 }
 
                 if (!isBlob) {
@@ -710,11 +717,12 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                         return;
                     }
 
-                    // 1. Fill White (Keep area)
+                    // Ideogram mask format: Black = Edit, White = Keep
+                    // 1. Fill White (Keep area - default background)
                     ctx.fillStyle = '#FFFFFF';
                     ctx.fillRect(0, 0, width, height);
 
-                    // 2. Load Mask Image
+                    // 2. Load Mask Image (user's drawn strokes)
                     const maskImg = new Image();
                     maskImg.onload = () => {
                         // 3. Erase where mask is (turn to transparent)
@@ -726,12 +734,28 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                         ctx.fillStyle = '#000000';
                         ctx.fillRect(0, 0, width, height);
 
+                        // 5. Threshold to pure black/white (Ideogram requires strict binary mask)
+                        // This removes any anti-aliasing or semi-transparent pixels
+                        ctx.globalCompositeOperation = 'source-over';
+                        const imageData = ctx.getImageData(0, 0, width, height);
+                        const data = imageData.data;
+                        for (let i = 0; i < data.length; i += 4) {
+                            // If pixel is closer to white (> 128), make it pure white; otherwise pure black
+                            const isWhite = data[i] > 128;
+                            data[i] = isWhite ? 255 : 0;     // R
+                            data[i + 1] = isWhite ? 255 : 0; // G
+                            data[i + 2] = isWhite ? 255 : 0; // B
+                            data[i + 3] = 255;               // A (fully opaque)
+                        }
+                        ctx.putImageData(imageData, 0, 0);
+
                         if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
                         const dataUrl = canvas.toDataURL('image/png');
+                        console.log('[QuickEdit] Ideogram mask generated successfully (binary thresholded)');
                         resolve(dataUrl);
                     };
                     maskImg.onerror = (e) => {
-                        console.error('[QuickEdit] Error loading mask image:', e);
+                        console.error('[QuickEdit] Error loading Ideogram mask image:', e);
                         if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
                         reject(e);
                     };
@@ -746,7 +770,100 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         });
     };
 
+    // Helper to generate Gemini-compatible mask (White = Edit, Black = Keep)
+    const generateGeminiMask = async (): Promise<string | undefined> => {
+        if (!maskData || !imageUrl) {
+            console.log('[QuickEdit] generateGeminiMask: maskData or imageUrl missing, returning undefined.');
+            return undefined;
+        }
 
+        return new Promise((resolve, reject) => {
+            (async () => {
+                const originalImg = new Image();
+                let srcUrl = imageUrl;
+                let objectUrlToRevoke: string | undefined;
+                let isBlob = false;
+
+                // Robustly handle image loading by fetching as blob first if needed
+                try {
+                    if (imageUrl.startsWith('http') || imageUrl.startsWith('https')) {
+                        const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+                        const proxyEndpoint = `${apiBase}/api/r2files/proxy`;
+                        const proxyUrl = imageUrl.includes('r2.dev')
+                            ? `${proxyEndpoint}?url=${encodeURIComponent(imageUrl)}`
+                            : imageUrl;
+
+                        console.log('[QuickEdit] Fetching image for Gemini mask via proxy:', proxyUrl);
+                        const response = await fetch(proxyUrl);
+                        if (!response.ok) throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+                        const blob = await response.blob();
+
+                        if (blob.type.includes('text/html')) {
+                            throw new Error('Fetched blob is text/html, likely an error page or index.html fallback');
+                        }
+
+                        srcUrl = URL.createObjectURL(blob);
+                        objectUrlToRevoke = srcUrl;
+                        isBlob = true;
+                    }
+                } catch (e) {
+                    console.error('[QuickEdit] Error fetching image for Gemini mask generation:', e);
+                }
+
+                if (!isBlob) {
+                    originalImg.crossOrigin = "anonymous";
+                }
+
+                originalImg.onload = () => {
+                    const width = originalImg.naturalWidth;
+                    const height = originalImg.naturalHeight;
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) {
+                        if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
+                        reject(new Error('Could not get canvas context'));
+                        return;
+                    }
+
+                    // Gemini: White = Edit, Black = Keep (opposite of Ideogram)
+                    // 1. Fill Black (Keep area)
+                    ctx.fillStyle = '#000000';
+                    ctx.fillRect(0, 0, width, height);
+
+                    // 2. Load Mask Image
+                    const maskImg = new Image();
+                    maskImg.onload = () => {
+                        // 3. Erase where mask is (turn to transparent)
+                        ctx.globalCompositeOperation = 'destination-out';
+                        ctx.drawImage(maskImg, 0, 0, width, height);
+
+                        // 4. Fill White behind (turning transparent to White -> Edit area)
+                        ctx.globalCompositeOperation = 'destination-over';
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(0, 0, width, height);
+
+                        if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
+                        const dataUrl = canvas.toDataURL('image/png');
+                        resolve(dataUrl);
+                    };
+                    maskImg.onerror = (e) => {
+                        console.error('[QuickEdit] Error loading Gemini mask image:', e);
+                        if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
+                        reject(e);
+                    };
+                    maskImg.src = maskData!;
+                };
+                originalImg.onerror = (e) => {
+                    if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
+                    reject(e);
+                };
+                originalImg.src = srcUrl;
+            })();
+        });
+    };
 
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
@@ -790,10 +907,17 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         e.preventDefault();
         if (prompt.trim()) {
             let finalMask: string | undefined;
+            let finalGeminiMask: string | undefined;
             if (maskData) {
                 showToast('Preparing mask for edit...');
                 try {
-                    finalMask = await generateIdeogramMask();
+                    // Generate both mask formats in parallel
+                    const [ideogramMask, geminiMask] = await Promise.all([
+                        generateIdeogramMask(),
+                        generateGeminiMask()
+                    ]);
+                    finalMask = ideogramMask;
+                    finalGeminiMask = geminiMask;
                 } catch (error) {
                     debugError('Failed to generate mask:', error);
                     showToast('Failed to process mask. Submitting without mask.');
@@ -811,7 +935,9 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                 avatarImageUrl: selectedAvatar?.imageUrl,
                 productImageUrl: selectedProduct?.imageUrl,
                 mask: finalMask,
-                model: finalMask ? 'ideogram' : undefined
+                geminiMask: finalGeminiMask,
+                // Use Gemini for mask editing by default (supports inpainting)
+                model: undefined
             });
         }
     };
@@ -1116,7 +1242,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
 
                         {/* Precise Edit Toolbar - Below Image */}
                         <div className="w-full flex justify-start gap-1 transition-all duration-200 animate-in fade-in slide-in-from-top-2">
-                            <div className="relative">
+                            <div className="relative flex items-center">
                                 <button
                                     onClick={() => {
                                         if (isMaskToolbarVisible) setIsEraseMode(false);
@@ -1127,11 +1253,27 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                     onMouseLeave={() => hideHoverTooltip('precise-edit-tooltip')}
                                 >
                                     <Wand2 className="w-4 h-4" />
-                                    Precise Edit
+                                    Inpaint
                                 </button>
                                 <TooltipPortal id="precise-edit-tooltip">
                                     Draw a mask
                                 </TooltipPortal>
+                                {/* Help icon with info about Ideogram requirement */}
+                                <div className="relative ml-1">
+                                    <button
+                                        type="button"
+                                        className="flex items-center justify-center w-5 h-5 rounded-full text-theme-white/60 hover:text-theme-white transition-colors duration-200"
+                                        onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'precise-edit-info-tooltip')}
+                                        onMouseLeave={() => hideHoverTooltip('precise-edit-info-tooltip')}
+                                    >
+                                        <HelpCircle className="w-3.5 h-3.5" />
+                                    </button>
+                                    <TooltipPortal id="precise-edit-info-tooltip">
+                                        <div className="max-w-[200px] text-center">
+                                            Inpaint uses Ideogram for accurate mask-based inpainting
+                                        </div>
+                                    </TooltipPortal>
+                                </div>
                             </div>
 
                             {isMaskToolbarVisible && (
@@ -1553,16 +1695,30 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                 </div>
                                             )}
 
-                                            {/* Model Selector (Restricted to Nano Banana) */}
+                                            {/* Model Selector - Ideogram only when Precise Edit ON, both available when OFF */}
                                             <div className="relative">
                                                 <Suspense fallback={null}>
                                                     <ModelSelector
-                                                        selectedModel="gemini-3.0-pro-image"
-                                                        onModelChange={() => { }} // No-op
+                                                        selectedModel={effectiveModel}
+                                                        onModelChange={(model) => {
+                                                            // Only allow model change when Precise Edit is OFF
+                                                            if (!isMaskToolbarVisible) {
+                                                                setUserSelectedModel(model);
+                                                            }
+                                                        }}
                                                         isGenerating={isLoading}
                                                         activeCategory="image"
                                                         hasReferences={referenceFiles.length > 0}
-                                                        allowedModels={['gemini-3.0-pro-image']}
+                                                        allowedModels={['ideogram', 'gemini-3.0-pro-image']}
+                                                        disabledModels={isMaskToolbarVisible ? ['gemini-3.0-pro-image'] : undefined}
+                                                        readOnly={isMaskToolbarVisible}
+                                                        customDescriptions={{
+                                                            'gemini-3.0-pro-image': 'Best image editing (text and reference).',
+                                                            'ideogram': 'Best inpainting.',
+                                                        }}
+                                                        customTooltips={{
+                                                            'ideogram': 'Inpaint uses Ideogram for precise editing. If you don\'t want to draw a mask for precise editing, disable Inpaint mode.',
+                                                        }}
                                                     />
                                                 </Suspense>
                                             </div>
