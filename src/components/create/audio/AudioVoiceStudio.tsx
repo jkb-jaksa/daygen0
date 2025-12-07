@@ -1055,11 +1055,12 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
                 onChange={(event) => setModelId(event.target.value)}
                 className="mt-1 w-full rounded-2xl border border-theme-dark bg-theme-black/60 px-4 py-3 text-sm text-theme-white focus:border-theme-text focus:outline-none focus:ring-0"
               >
+                <option value="eleven_v3">Eleven v3 (alpha)</option>
                 <option value="eleven_multilingual_v2">
                   Eleven Multilingual v2
                 </option>
-                <option value="eleven_turbo_v2">Eleven Turbo v2</option>
-                <option value="eleven_english_v1">Eleven English v1</option>
+                <option value="eleven_flash_v2_5">Eleven Flash v2.5</option>
+                <option value="eleven_turbo_v2_5">Eleven Turbo v2.5</option>
               </select>
             </label>
             <label className="block text-sm font-raleway text-theme-text">
