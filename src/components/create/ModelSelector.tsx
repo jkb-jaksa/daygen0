@@ -44,9 +44,12 @@ interface ModelSelectorProps {
   hasReferences?: boolean;
   readOnly?: boolean;
   allowedModels?: string[];
+  disabledModels?: string[]; // Models to show as disabled (visible but not selectable)
+  customDescriptions?: Record<string, string>; // Custom descriptions keyed by model ID
+  customTooltips?: Record<string, string>; // Custom tooltip text keyed by model ID
 }
 
-const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, isGenerating, activeCategory, hasReferences, readOnly, compact, allowedModels }) => {
+const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, isGenerating, activeCategory, hasReferences, readOnly, compact, allowedModels, disabledModels, customDescriptions, customTooltips }) => {
   const { setSelectedModel } = useGeneration();
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -360,12 +363,17 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
             ].includes(model.id);
 
             const isComingSoon = !isAvailable;
+            const isDisabled = disabledModels?.includes(model.id) ?? false;
 
             return (
               <button
                 key={model.name}
                 onClick={() => {
-                  if (isComingSoon) {
+                  if (isComingSoon || isDisabled) {
+                    if (isDisabled) {
+                      // Don't show alert for disabled models, just ignore click
+                      return;
+                    }
                     alert('This model is coming soon!');
                     return;
                   }
@@ -373,8 +381,8 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                 }}
                 className={`w-full px-2 py-2 rounded-lg border transition-all duration-100 text-left flex items-center gap-2 group ${isSelected
                   ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
-                  : isComingSoon
-                    ? "bg-transparent border-theme-mid opacity-60 cursor-not-allowed"
+                  : isComingSoon || isDisabled
+                    ? "bg-transparent border-theme-mid opacity-40 cursor-not-allowed"
                     : 'bg-transparent hover:bg-theme-text/20 border-0'
                   }`}
               >
@@ -397,11 +405,12 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                       toolName={model.name}
                       className="shrink-0"
                       iconClassName={isComingSoon ? undefined : 'group-hover:opacity-100'}
+                      customTooltipText={customTooltips?.[model.id]}
                     />
                   </div>
                   <div className={`text-xs font-raleway truncate transition-colors duration-100 ${isSelected ? 'text-theme-text' : isComingSoon ? 'text-theme-light' : 'text-theme-white group-hover:text-theme-text'
                     }`}>
-                    {isComingSoon ? 'Coming soon.' : model.desc}
+                    {isComingSoon ? 'Coming soon.' : (customDescriptions?.[model.id] ?? model.desc)}
                   </div>
                 </div>
                 {isSelected && (

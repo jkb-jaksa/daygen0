@@ -264,6 +264,7 @@ export interface ImageGenerationOptions {
   imageData?: string; // Base64 encoded image for image-to-image
   imageUrl?: string; // URL for image-to-image (alternative to imageData)
   references?: string[]; // Base64 data URLs for reference images
+  mask?: string; // Base64 data URL for inpainting mask (white = edit, black = keep)
   temperature?: number;
   outputLength?: number; // maps to maxOutputTokens
   topP?: number;
@@ -530,6 +531,7 @@ export const useGeminiImageGeneration = () => {
       imageUrl: options.imageUrl,
       mimeType: 'image/png',
       references: options.references,
+      mask: options.mask, // Inpainting mask (white = edit, black = keep)
       temperature: options.temperature,
       outputLength: options.outputLength,
       topP: options.topP,

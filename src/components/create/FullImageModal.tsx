@@ -26,6 +26,7 @@ import { STORAGE_CHANGE_EVENT } from '../../utils/storageEvents';
 import { useBadgeNavigation } from './hooks/useBadgeNavigation';
 import { scrollLockExemptAttr, useGlobalScrollLock } from '../../hooks/useGlobalScrollLock';
 import { useGeminiImageGeneration } from '../../hooks/useGeminiImageGeneration';
+import { useIdeogramImageGeneration } from '../../hooks/useIdeogramImageGeneration';
 
 // Lazy load VerticalGalleryNav
 const VerticalGalleryNav = lazy(() => import('../shared/VerticalGalleryNav'));
@@ -99,6 +100,7 @@ const FullImageModal = memo(() => {
   const { addActiveJob, updateJobStatus, removeActiveJob } = useGeneration();
 
   const { generateImage: generateGeminiImage } = useGeminiImageGeneration();
+  const { generateImage: generateIdeogramImage } = useIdeogramImageGeneration();
   const {
     handleToggleLike,
     handleTogglePublic,
@@ -602,10 +604,11 @@ const FullImageModal = memo(() => {
       return;
     }
 
-    const { prompt, referenceFiles, aspectRatio, batchSize, avatarId, productId, styleId, avatarImageUrl, productImageUrl } = options;
+    const { prompt, referenceFiles, aspectRatio, batchSize, avatarId, productId, styleId, avatarImageUrl, productImageUrl, mask } = options;
 
-    // Close modal immediately
+    // Close Quick Edit modal and Full Image modal so user sees the generation in progress
     setQuickEditModalState(null);
+    closeFullSize();
 
     // Determine references - start with the original image being edited
     const references: string[] = [fullSizeImage.url.split('?')[0]];
@@ -646,40 +649,74 @@ const FullImageModal = memo(() => {
       // Start background job
       const syntheticJobId = startQuickEditJob(fullSizeImage, prompt);
 
-      // Run generation in background
-      generateGeminiImage({
-        prompt: prompt,
-        references: references,
-        model: 'gemini-3-pro-image-preview',
-        clientJobId: syntheticJobId,
-        aspectRatio: aspectRatio,
-        avatarId,
-        productId,
-        styleId,
-      }).then(async (result) => {
-        if (result) {
-          await addImage({
-            url: result.url,
-            prompt: result.prompt,
-            model: result.model,
-            timestamp: new Date().toISOString(),
-            ownerId: fullSizeImage.ownerId,
-            isLiked: false,
-            isPublic: false,
-            r2FileId: result.r2FileId,
-          });
-          finalizeQuickEditJob(syntheticJobId, 'completed');
-        } else {
+      if (mask) {
+        // Use Ideogram for mask-based editing (reliable pixel-mask inpainting)
+        generateIdeogramImage({
+          prompt: prompt,
+          mask: mask,
+          references: references,
+          aspect_ratio: '1:1',
+          rendering_speed: 'DEFAULT',
+          num_images: 1,
+        }).then(async (results) => {
+          if (results && results.length > 0) {
+            const result = results[0];
+            await addImage({
+              url: result.url,
+              prompt: result.prompt,
+              model: result.model,
+              timestamp: new Date().toISOString(),
+              ownerId: fullSizeImage.ownerId,
+              isLiked: false,
+              isPublic: false,
+              jobId: result.jobId,
+            });
+            finalizeQuickEditJob(syntheticJobId, 'completed');
+          } else {
+            showToast('Failed to edit image');
+            finalizeQuickEditJob(syntheticJobId, 'failed');
+          }
+        }).catch((error) => {
+          debugError('Failed to quick edit image (Ideogram):', error);
           showToast('Failed to edit image');
           finalizeQuickEditJob(syntheticJobId, 'failed');
-        }
-      }).catch((error) => {
-        debugError('Failed to quick edit image:', error);
-        showToast('Failed to edit image');
-        finalizeQuickEditJob(syntheticJobId, 'failed');
-      });
+        });
+      } else {
+        // Use Gemini for non-mask editing (references, style transfer, general edits)
+        generateGeminiImage({
+          prompt: prompt,
+          references: references,
+          model: 'gemini-3-pro-image-preview',
+          clientJobId: syntheticJobId,
+          aspectRatio: aspectRatio,
+          avatarId,
+          productId,
+          styleId,
+        }).then(async (result) => {
+          if (result) {
+            await addImage({
+              url: result.url,
+              prompt: result.prompt,
+              model: result.model,
+              timestamp: new Date().toISOString(),
+              ownerId: fullSizeImage.ownerId,
+              isLiked: false,
+              isPublic: false,
+              r2FileId: result.r2FileId,
+            });
+            finalizeQuickEditJob(syntheticJobId, 'completed');
+          } else {
+            showToast('Failed to edit image');
+            finalizeQuickEditJob(syntheticJobId, 'failed');
+          }
+        }).catch((error) => {
+          debugError('Failed to quick edit image:', error);
+          showToast('Failed to edit image');
+          finalizeQuickEditJob(syntheticJobId, 'failed');
+        });
+      }
     }
-  }, [fullSizeImage, generateGeminiImage, addImage, showToast, startQuickEditJob, finalizeQuickEditJob]);
+  }, [fullSizeImage, generateGeminiImage, generateIdeogramImage, addImage, showToast, startQuickEditJob, finalizeQuickEditJob, closeFullSize]);
 
 
 
