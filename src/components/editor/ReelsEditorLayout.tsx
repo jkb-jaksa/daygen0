@@ -58,7 +58,7 @@ export const ReelsEditorLayout = () => {
         } else {
             music.pause();
         }
-    }, [isPlaying, musicUrl]);
+    }, [isPlaying, musicUrl, musicVolume]);
 
     // Ensure music stays synced with timeline
     useEffect(() => {

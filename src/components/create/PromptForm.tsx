@@ -1019,7 +1019,7 @@ const PromptForm = memo<PromptFormProps>(
           setAvatarDragPreviewUrl(dragUrl);
         }
       }
-    }, []);
+    }, [isDraggingOverProductButton]);
 
     const handleAvatarButtonDragOver = useCallback((event: React.DragEvent) => {
       event.preventDefault();
@@ -1077,7 +1077,7 @@ const PromptForm = memo<PromptFormProps>(
           setProductDragPreviewUrl(dragUrl);
         }
       }
-    }, []);
+    }, [isDraggingOverAvatarButton]);
 
     const handleProductButtonDragOver = useCallback((event: React.DragEvent) => {
       event.preventDefault();

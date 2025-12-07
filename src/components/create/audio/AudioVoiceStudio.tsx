@@ -75,9 +75,7 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
     blob: null,
     error: null,
   });
-  const [recordingIntent, setRecordingIntent] = useState<"idle" | "requesting">(
-    "idle",
-  );
+
   const recordingChunksRef = useRef<BlobPart[]>([]);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordingStreamRef = useRef<MediaStream | null>(null);
@@ -531,7 +529,7 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
 
   const startRecording = useCallback(async () => {
     try {
-      setRecordingIntent("requesting");
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       recordingChunksRef.current = [];
       const mediaRecorder = new MediaRecorder(stream);
@@ -611,8 +609,6 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
             ? error.message
             : "We couldn't access your microphone.",
       });
-    } finally {
-      setRecordingIntent("idle");
     }
   }, [recordingState.audioUrl, stopRecording]);
 

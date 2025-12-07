@@ -269,7 +269,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         }
     };
 
-    const stopDrawing = () => {
+    const stopDrawing = useCallback(() => {
         if (!isDrawing) return;
         setIsDrawing(false);
         if (currentPath.length > 0) {
@@ -280,7 +280,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
             }]);
         }
         setCurrentPath([]);
-    };
+    }, [isDrawing, currentPath, brushSize, isEraseMode]);
 
     const getCoordinates = (e: React.MouseEvent | React.TouchEvent | React.TouchEvent<HTMLCanvasElement>) => {
         const canvas = canvasRef.current;
@@ -504,7 +504,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                 setAvatarDragPreviewUrl(dragUrl);
             }
         }
-    }, []);
+    }, [isDraggingOverProductButton]);
 
     const handleAvatarButtonDragOver = useCallback((event: React.DragEvent) => {
         event.preventDefault();
@@ -561,7 +561,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                 setProductDragPreviewUrl(dragUrl);
             }
         }
-    }, []);
+    }, [isDraggingOverAvatarButton]);
 
     const handleProductButtonDragOver = useCallback((event: React.DragEvent) => {
         event.preventDefault();
