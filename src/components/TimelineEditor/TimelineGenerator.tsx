@@ -112,7 +112,17 @@ export default function TimelineGenerator() {
             const sorted = history
                 .filter((j: Job) => j.status !== 'FAILED')
                 .sort((a: Job, b: Job) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
             setJobs(sorted);
+
+            // Check for any active job (PROCESSING or STITCHING) to resume polling
+            const activeJob = sorted.find(j => j.status === 'PROCESSING' || j.status === 'STITCHING');
+            if (activeJob) {
+                console.log("Resuming polling for job:", activeJob.id);
+                setActiveJobId(activeJob.id);
+                setIsLoading(true);
+            }
+
         } catch (error) {
             console.error('Failed to load history:', error);
         } finally {
@@ -235,7 +245,7 @@ export default function TimelineGenerator() {
                         {isLoading ? (
                             <>
                                 <Loader2 className="w-5 h-5 animate-spin" />
-                                Generating...
+                                {activeJobId ? 'Processing...' : 'Generating...'}
                             </>
                         ) : (
                             <>
@@ -270,12 +280,27 @@ export default function TimelineGenerator() {
                                 disabled={job.status !== 'COMPLETED'}
                                 className={`w-full text-left px-4 py-3 rounded-lg transition-all group flex items-center justify-between ${job.status === 'COMPLETED'
                                     ? 'hover:bg-theme-white/5 cursor-pointer text-theme-text/80 hover:text-theme-text'
-                                    : 'opacity-50 cursor-not-allowed text-theme-text/50'
+                                    : 'opacity-80 cursor-not-allowed text-theme-text/60 bg-theme-white/5'
                                     }`}
                             >
-                                <span className="font-raleway text-sm truncate pr-4">
-                                    {(job.metadata?.topic as string) || (job.metadata?.prompt as string) || 'Untitled Project'}
-                                </span>
+                                <div className="flex flex-col gap-1 w-full mr-4">
+                                    <span className="font-raleway text-sm truncate">
+                                        {(job.metadata?.topic as string) || (job.metadata?.prompt as string) || 'Untitled Project'}
+                                    </span>
+                                    {(job.status === 'PROCESSING' || job.status === 'STITCHING') && (
+                                        <div className="w-full flex items-center gap-2">
+                                            <div className="h-1 flex-1 bg-theme-white/10 rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-theme-mid transition-all duration-500 ease-out"
+                                                    style={{ width: `${job.progress || 0}%` }}
+                                                />
+                                            </div>
+                                            <span className="text-[10px] font-mono text-theme-mid animate-pulse">
+                                                {job.status === 'STITCHING' ? 'STITCHING...' : 'GENERATING...'}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
                                 <span className="text-xs text-theme-white/30 font-mono whitespace-nowrap group-hover:text-theme-white/50 transition-colors">
                                     {new Date(job.createdAt).toLocaleDateString()}
                                 </span>
