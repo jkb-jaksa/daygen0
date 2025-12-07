@@ -552,33 +552,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   }, [handleToggleLike]);
 
 
-  // Handle delete
-  const onDelete = useCallback((event: React.MouseEvent, item: GalleryImageLike | GalleryVideoLike) => {
-    event.stopPropagation();
-    const itemId = getItemIdentifier(item);
-    if (itemId) {
-      void handleDeleteImage(itemId);
-    }
-  }, [handleDeleteImage]);
-
-  const handleVideo = useCallback((item?: GalleryImageLike) => {
-    if (item) {
-      setMakeVideoModalState({
-        isOpen: true,
-        initialPrompt: item.prompt || '',
-        item,
-      });
-    } else {
-      handleMakeVideo();
-    }
-  }, [handleMakeVideo]);
-
-  // Check if item is selected
-  const isItemSelected = useCallback((item: GalleryImageLike | GalleryVideoLike) => {
-    const itemId = getItemIdentifier(item);
-    return itemId ? selectedItems.has(itemId) : false;
-  }, [selectedItems]);
-
   // Check if item is video
   const isVideo = useCallback((item: GalleryImageLike | GalleryVideoLike) => {
     if ('type' in item && item.type === 'video') {
@@ -602,6 +575,35 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       return next;
     });
   }, []);
+
+  // Handle delete
+  const onDelete = useCallback((event: React.MouseEvent, item: GalleryImageLike | GalleryVideoLike) => {
+    event.stopPropagation();
+    const itemId = getItemIdentifier(item);
+    if (itemId) {
+      void handleDeleteImage(itemId, isVideo(item));
+    }
+  }, [handleDeleteImage, isVideo]);
+
+  const handleVideo = useCallback((item?: GalleryImageLike) => {
+    if (item) {
+      setMakeVideoModalState({
+        isOpen: true,
+        initialPrompt: item.prompt || '',
+        item,
+      });
+    } else {
+      handleMakeVideo();
+    }
+  }, [handleMakeVideo]);
+
+  // Check if item is selected
+  const isItemSelected = useCallback((item: GalleryImageLike | GalleryVideoLike) => {
+    const itemId = getItemIdentifier(item);
+    return itemId ? selectedItems.has(itemId) : false;
+  }, [selectedItems]);
+
+
 
 
 

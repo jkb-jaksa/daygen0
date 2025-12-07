@@ -27,6 +27,7 @@ import { useBadgeNavigation } from './hooks/useBadgeNavigation';
 import { scrollLockExemptAttr, useGlobalScrollLock } from '../../hooks/useGlobalScrollLock';
 import { useGeminiImageGeneration } from '../../hooks/useGeminiImageGeneration';
 import { useIdeogramImageGeneration } from '../../hooks/useIdeogramImageGeneration';
+import { useVeoVideoGeneration } from '../../hooks/useVeoVideoGeneration';
 
 // Lazy load VerticalGalleryNav
 const VerticalGalleryNav = lazy(() => import('../shared/VerticalGalleryNav'));
@@ -101,6 +102,7 @@ const FullImageModal = memo(() => {
 
   const { generateImage: generateGeminiImage } = useGeminiImageGeneration();
   const { generateImage: generateIdeogramImage } = useIdeogramImageGeneration();
+  const { startGeneration: startVeoGeneration } = useVeoVideoGeneration();
   const {
     handleToggleLike,
     handleTogglePublic,
@@ -597,6 +599,71 @@ const FullImageModal = memo(() => {
       });
     }
   }, [fullSizeImage]);
+
+  const handleMakeVideoSubmit = useCallback(async (options: any) => {
+    if (!fullSizeImage || !fullSizeImage.url) {
+      showToast('No image URL available');
+      return;
+    }
+
+    const { prompt, referenceFiles, aspectRatio, model } = options;
+
+    // Close modal so user sees the generation in progress
+    setMakeVideoModalState(null);
+    closeFullSize();
+
+    // Prepare references
+    const references: string[] = [];
+
+    // 1. Add initial image as first reference (Veo 3.1 Text-to-Video with image refs)
+    references.push(fullSizeImage.url);
+
+    // 2. Add uploaded reference files
+    if (referenceFiles && referenceFiles.length > 0) {
+      for (const referenceItem of referenceFiles) {
+        try {
+          if (typeof referenceItem === 'string') {
+            references.push(referenceItem);
+          } else {
+            const base64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(referenceItem);
+            });
+            references.push(base64);
+          }
+        } catch (e) {
+          debugError('Failed to convert reference file for video', e);
+        }
+      }
+    }
+
+    // Start Veo generation
+    // IMPORTANT: Treat as Text-to-Video (imageBase64 undefined) with references
+    try {
+      const result = await startVeoGeneration({
+        prompt: prompt,
+        model: model || 'veo-3.1-generate-preview', // Default to standard if not passed
+        aspectRatio: aspectRatio, // '16:9' or '9:16'
+        references: references, // Max 3 total (1 initial + 2 user)
+        // imageBase64: undefined, // Explicitly undefined to ensure T2V path
+      });
+
+      if (result) {
+        // Add job to tracker/gallery via addActiveJob usually happens in hook, 
+        // but if we need to manually add the result to gallery immediately:
+        // The hook runGenerationJob usually handles adding to active jobs if configured.
+        // Let's check useVeoVideoGeneration implementation. 
+        // It calls runGenerationJob which adds to tracker.
+        // So we just need to handle the final success toast or basic feedback if needed.
+        showToast('Video generation started');
+      }
+    } catch (error) {
+      debugError('Failed to start video generation', error);
+      showToast('Failed to start video generation');
+    }
+  }, [fullSizeImage, startVeoGeneration, closeFullSize, showToast]);
 
   const handleQuickEditSubmit = useCallback(async (options: QuickEditOptions) => {
     if (!fullSizeImage || !fullSizeImage.url) {
@@ -1656,6 +1723,7 @@ const FullImageModal = memo(() => {
           <MakeVideoModal
             isOpen={makeVideoModalState.isOpen}
             onClose={() => setMakeVideoModalState(null)}
+            onSubmit={handleMakeVideoSubmit}
             initialPrompt={makeVideoModalState.initialPrompt}
             imageUrl={fullSizeImage.url}
             item={fullSizeImage}

@@ -141,6 +141,7 @@ export type DeleteConfirmationState = {
   uploadId: string | null;
   folderId: string | null;
   source: 'gallery' | 'inspirations' | null;
+  isVideo?: boolean;
 };
 
 export type PublishConfirmationState = {

@@ -1015,13 +1015,15 @@ export function useCreateGenerationController(): CreateGenerationController {
           return;
         }
         case 'veo-3': {
+          // Send all images as references (Text-to-Video with references).
+          // Do not force the first image to be a start frame.
           const veoVideo = await startVeoGeneration({
             prompt: finalPrompt,
             model: veoModel,
             aspectRatio: normalizedVeoAspectRatio,
             negativePrompt: veoNegativePrompt?.trim() || undefined,
             seed: veoSeed,
-            references,
+            references: references,
           });
 
           persistVideoResults(veoVideo, {

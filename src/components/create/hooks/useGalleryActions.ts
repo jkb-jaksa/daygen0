@@ -198,7 +198,7 @@ export function useGalleryActions() {
   }, [bulkDownloadItems]);
 
   // Show delete confirmation for single image
-  const handleDeleteImage = useCallback((imageUrl: string) => {
+  const handleDeleteImage = useCallback((imageUrl: string, isVideo: boolean = false) => {
     setDeleteConfirmation({
       show: true,
       imageUrl,
@@ -206,6 +206,7 @@ export function useGalleryActions() {
       uploadId: null,
       folderId: null,
       source: 'gallery',
+      isVideo,
     });
   }, [setDeleteConfirmation]);
 
@@ -214,13 +215,20 @@ export function useGalleryActions() {
     const { deleteConfirmation } = state;
     try {
       if (deleteConfirmation.imageUrl) {
-        const success = await deleteGalleryImage(deleteConfirmation.imageUrl);
-        if (success) {
-          debugLog('Deleted image:', deleteConfirmation.imageUrl);
+        if (deleteConfirmation.isVideo) {
+          removeVideo(deleteConfirmation.imageUrl);
+          debugLog('Deleted video:', deleteConfirmation.imageUrl);
         } else {
-          debugError('Failed to delete image via API:', deleteConfirmation.imageUrl);
+          const success = await deleteGalleryImage(deleteConfirmation.imageUrl);
+          if (success) {
+            debugLog('Deleted image:', deleteConfirmation.imageUrl);
+          } else {
+            debugError('Failed to delete image via API:', deleteConfirmation.imageUrl);
+          }
         }
       } else if (deleteConfirmation.imageUrls) {
+        // Bulk delete logic - currently only for images in this context,
+        // but could be expanded if needed. For now assuming images.
         const results = await Promise.all(
           deleteConfirmation.imageUrls.map(id => deleteGalleryImage(id))
         );
@@ -233,7 +241,7 @@ export function useGalleryActions() {
         }
       }
     } catch (error) {
-      debugError('Error deleting image:', error);
+      debugError('Error deleting item:', error);
     } finally {
       setDeleteConfirmation({
         show: false,
@@ -242,9 +250,10 @@ export function useGalleryActions() {
         uploadId: null,
         folderId: null,
         source: null,
+        isVideo: false,
       });
     }
-  }, [state, deleteGalleryImage, setDeleteConfirmation]);
+  }, [state, deleteGalleryImage, removeVideo, setDeleteConfirmation]);
 
   // Cancel delete
   const cancelDelete = useCallback(() => {
@@ -255,6 +264,7 @@ export function useGalleryActions() {
       uploadId: null,
       folderId: null,
       source: null,
+      isVideo: false,
     });
   }, [setDeleteConfirmation]);
 

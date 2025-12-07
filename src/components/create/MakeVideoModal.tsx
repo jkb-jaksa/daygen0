@@ -39,6 +39,7 @@ export interface MakeVideoOptions {
     styleId?: string;
     avatarImageUrl?: string;
     productImageUrl?: string;
+    model?: string;
 }
 
 interface MakeVideoModalProps {
@@ -373,6 +374,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                 styleId: styleHandlers.selectedStylesList[0]?.id,
                 avatarImageUrl: selectedAvatar?.imageUrl,
                 productImageUrl: selectedProduct?.imageUrl,
+                model: veoGenModel,
             });
             onClose();
         }

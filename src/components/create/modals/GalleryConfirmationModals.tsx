@@ -132,18 +132,22 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
                     ? 'Delete Folder'
                     : isDeletingUpload
                       ? 'Delete Upload'
-                      : pendingDeleteImageCount > 1
-                        ? `Delete ${pendingDeleteImageCount} Images`
-                        : 'Delete Image'}
+                      : deleteConfirmation.isVideo
+                        ? 'Delete Video'
+                        : pendingDeleteImageCount > 1
+                          ? `Delete ${pendingDeleteImageCount} Images`
+                          : 'Delete Image'}
                 </h3>
                 <p className="text-base font-raleway font-normal text-theme-white">
                   {isDeletingFolder
                     ? 'Are you sure you want to delete this folder? This action cannot be undone.'
                     : isDeletingUpload
                       ? 'Are you sure you want to delete this upload? This action cannot be undone.'
-                      : pendingDeleteImageCount > 1
-                        ? `Are you sure you want to delete these ${pendingDeleteImageCount} images? This action cannot be undone.`
-                        : 'Are you sure you want to delete this image? This action cannot be undone.'}
+                      : deleteConfirmation.isVideo
+                        ? 'Are you sure you want to delete this video? This action cannot be undone.'
+                        : pendingDeleteImageCount > 1
+                          ? `Are you sure you want to delete these ${pendingDeleteImageCount} images? This action cannot be undone.`
+                          : 'Are you sure you want to delete this image? This action cannot be undone.'}
                 </p>
               </div>
               <div className="flex justify-center gap-3">
@@ -181,13 +185,12 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
                   value={newFolderName}
                   onChange={(e) => onNewFolderNameChange(e.target.value)}
                   placeholder="Folder name"
-                  className={`${inputs.compact} text-theme-text ${
-                    folders.some(folder =>
-                      folder.name.toLowerCase() === newFolderName.trim().toLowerCase()
-                    ) && newFolderName.trim()
-                      ? 'border-theme-white focus:border-theme-white'
-                      : 'border-b-mid'
-                  }`}
+                  className={`${inputs.compact} text-theme-text ${folders.some(folder =>
+                    folder.name.toLowerCase() === newFolderName.trim().toLowerCase()
+                  ) && newFolderName.trim()
+                    ? 'border-theme-white focus:border-theme-white'
+                    : 'border-b-mid'
+                    }`}
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
@@ -197,13 +200,13 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
                     }
                   }}
                 />
-                {folders.some(folder => 
+                {folders.some(folder =>
                   folder.name.toLowerCase() === newFolderName.trim().toLowerCase()
                 ) && newFolderName.trim() && (
-                  <p className="text-theme-text text-sm font-raleway">
-                    A folder with this name already exists
-                  </p>
-                )}
+                    <p className="text-theme-text text-sm font-raleway">
+                      A folder with this name already exists
+                    </p>
+                  )}
               </div>
               <div className="flex justify-center gap-3">
                 <button
@@ -214,7 +217,7 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
                 </button>
                 <button
                   onClick={onNewFolderCreate}
-                  disabled={!newFolderName.trim() || folders.some(folder => 
+                  disabled={!newFolderName.trim() || folders.some(folder =>
                     folder.name.toLowerCase() === newFolderName.trim().toLowerCase()
                   )}
                   className={`${buttons.primary} disabled:cursor-not-allowed disabled:opacity-50`}
@@ -238,9 +241,9 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
                   {publishConfirmation.imageUrl ? 'Publish Image' : (publishConfirmation.count === 1 ? 'Publish Image' : `Publish ${publishConfirmation.count} Images`)}
                 </h3>
                 <p className="text-base font-raleway font-normal text-theme-white">
-                  {publishConfirmation.imageUrl 
+                  {publishConfirmation.imageUrl
                     ? 'Are you sure you want to publish this image? It will be visible to other users.'
-                    : (publishConfirmation.count === 1 
+                    : (publishConfirmation.count === 1
                       ? 'Are you sure you want to publish this image? It will be visible to other users.'
                       : `Are you sure you want to publish these ${publishConfirmation.count} images? They will be visible to other users.`)}
                 </p>
@@ -275,9 +278,9 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
                   {unpublishConfirmation.imageUrl ? 'Unpublish Image' : (unpublishConfirmation.count === 1 ? 'Unpublish Image' : `Unpublish ${unpublishConfirmation.count} Images`)}
                 </h3>
                 <p className="text-base font-raleway font-normal text-theme-white">
-                  {unpublishConfirmation.imageUrl 
+                  {unpublishConfirmation.imageUrl
                     ? 'Are you sure you want to unpublish this image? It will no longer be visible to other users.'
-                    : (unpublishConfirmation.count === 1 
+                    : (unpublishConfirmation.count === 1
                       ? 'Are you sure you want to unpublish this image? It will no longer be visible to other users.'
                       : `Are you sure you want to unpublish these ${unpublishConfirmation.count} images? They will no longer be visible to other users.`)}
                 </p>
@@ -312,7 +315,7 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
                   {downloadConfirmation.count === 1 ? 'Download Image' : `Download ${downloadConfirmation.count} Images`}
                 </h3>
                 <p className="text-base font-raleway font-normal text-theme-white">
-                  {downloadConfirmation.count === 1 
+                  {downloadConfirmation.count === 1
                     ? 'Are you sure you want to download this image?'
                     : `Are you sure you want to download these ${downloadConfirmation.count} images?`}
                 </p>
@@ -379,13 +382,12 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
                       return (
                         <div
                           key={folder.id}
-                          className={`w-full p-2 rounded-lg border transition-all duration-200 text-left flex items-center gap-3 ${
-                            isFullyInFolder
-                              ? 'bg-theme-white/10 border-theme-white shadow-lg shadow-theme-white/20'
-                              : isPartiallyInFolder
-                                ? 'bg-theme-white/10 border-theme-white/70'
-                                : 'bg-transparent border-theme-dark hover:bg-theme-dark/40 hover:border-theme-mid'
-                          }`}
+                          className={`w-full p-2 rounded-lg border transition-all duration-200 text-left flex items-center gap-3 ${isFullyInFolder
+                            ? 'bg-theme-white/10 border-theme-white shadow-lg shadow-theme-white/20'
+                            : isPartiallyInFolder
+                              ? 'bg-theme-white/10 border-theme-white/70'
+                              : 'bg-transparent border-theme-dark hover:bg-theme-dark/40 hover:border-theme-mid'
+                            }`}
                         >
                           <label className="flex items-center gap-3 cursor-pointer flex-1 min-w-0">
                             <input
@@ -396,13 +398,12 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
                               className="sr-only"
                             />
                             <div
-                              className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${
-                                isFullyInFolder
-                                  ? 'border-theme-white bg-theme-white'
-                                  : isPartiallyInFolder
-                                    ? 'border-theme-white bg-theme-white/30'
-                                    : 'border-theme-mid hover:border-theme-text/50'
-                              }`}
+                              className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${isFullyInFolder
+                                ? 'border-theme-white bg-theme-white'
+                                : isPartiallyInFolder
+                                  ? 'border-theme-white bg-theme-white/30'
+                                  : 'border-theme-mid hover:border-theme-text/50'
+                                }`}
                             >
                               {isFullyInFolder ? (
                                 <svg className="w-3 h-3 text-theme-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -517,7 +518,7 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
                   Choose a thumbnail for your folder.
                 </p>
               </div>
-              
+
               <div className="mb-6 space-y-4">
                 {/* Upload new image */}
                 <div className="space-y-3">
@@ -587,7 +588,7 @@ export const GalleryConfirmationModals = memo<GalleryConfirmationModalsProps>(({
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex gap-3 justify-center">
                 <button
                   onClick={onFolderThumbnailCancel}
