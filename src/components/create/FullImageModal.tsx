@@ -35,6 +35,7 @@ const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
 const QuickEditModal = lazy(() => import('./QuickEditModal'));
 import type { QuickEditOptions } from './QuickEditModal';
 const MakeVideoModal = lazy(() => import('./MakeVideoModal'));
+import type { MakeVideoOptions } from './MakeVideoModal';
 const MasterSidebar = lazy(() => import('../master/MasterSidebar'));
 // Individual badges are rendered via ImageBadgeRow
 
@@ -600,7 +601,7 @@ const FullImageModal = memo(() => {
     }
   }, [fullSizeImage]);
 
-  const handleMakeVideoSubmit = useCallback(async (options: any) => {
+  const handleMakeVideoSubmit = useCallback(async (options: MakeVideoOptions) => {
     if (!fullSizeImage || !fullSizeImage.url) {
       showToast('No image URL available');
       return;
