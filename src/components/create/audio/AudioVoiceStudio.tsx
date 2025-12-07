@@ -17,11 +17,14 @@ import { useToast } from "../../../hooks/useToast";
 import {
   cloneElevenLabsVoice,
   generateElevenLabsSpeech,
+  createProfessionalVoice,
+  verifyProfessionalVoice,
   type ElevenLabsVoiceSummary,
 } from "../../../utils/audioApi";
 import { VoiceSelector } from "../../shared/VoiceSelector";
+import { VoiceUploader } from "../../shared/VoiceUploader";
 
-type VoiceFlowMode = "menu" | "record" | "design";
+type VoiceFlowMode = "menu" | "record" | "design" | "pvc";
 
 type AudioVoiceStudioProps = {
   onBack?: () => void;
@@ -103,6 +106,13 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
   const [isUploadingVoiceClone, setIsUploadingVoiceClone] = useState(false);
   const [isSavingRecordingClone, setIsSavingRecordingClone] = useState(false);
   const [cloneError, setCloneError] = useState<string | null>(null);
+
+  // PVC State
+  const [isPvcFlow, setIsPvcFlow] = useState(false);
+  const [pvcStep, setPvcStep] = useState<"initial" | "verification" | "complete">("initial");
+  const [pvcCaptcha, setPvcCaptcha] = useState<string | null>(null);
+  const [pvcVoiceId, setPvcVoiceId] = useState<string | null>(null);
+  const [isPvcLoading, setIsPvcLoading] = useState(false);
 
   const stopRecording = useCallback(
     (silent = false) => {
@@ -324,7 +334,78 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
       },
     );
     void cloneVoiceFromSource(recordingFile, "record");
+    void cloneVoiceFromSource(recordingFile, "record");
   }, [cloneVoiceFromSource, recordingState.blob]);
+
+  const handleStartPvc = useCallback(async () => {
+    if (!recordingState.blob) {
+      setCloneError("Record a sample first.");
+      return;
+    }
+    setIsPvcLoading(true);
+    setCloneError(null);
+    try {
+      const recordingFile = new File(
+        [recordingState.blob],
+        `sample-${Date.now()}.webm`,
+        { type: recordingState.blob.type || "audio/webm" }
+      );
+
+      const result = await createProfessionalVoice([recordingFile], {
+        name: voiceName.trim() || undefined,
+        description: voiceDescription.trim() || undefined,
+        labels: { source: "record", type: "pvc", workspace: "daygen" },
+      });
+
+      setPvcVoiceId(result.voiceId);
+      setPvcCaptcha(result.captcha || null); // Base64 string
+      setPvcStep("verification");
+      setIsPvcFlow(true);
+
+      // Reset recording state for the verification step
+      setRecordingState({
+        isRecording: false,
+        durationMs: 0,
+        audioUrl: null,
+        blob: null,
+        error: null,
+      });
+
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to start PVC.";
+      setCloneError(message);
+      showToast(message);
+    } finally {
+      setIsPvcLoading(false);
+    }
+  }, [recordingState.blob, voiceName, voiceDescription, showToast]);
+
+  const handleVerifyPvc = useCallback(async () => {
+    if (!recordingState.blob || !pvcVoiceId) {
+      setCloneError("Record the verification text first.");
+      return;
+    }
+    setIsPvcLoading(true);
+    setCloneError(null);
+    try {
+      const verificationFile = new File(
+        [recordingState.blob],
+        `verification-${Date.now()}.webm`,
+        { type: recordingState.blob.type || "audio/webm" }
+      );
+
+      await verifyProfessionalVoice(verificationFile, pvcVoiceId);
+
+      setPvcStep("complete");
+      showToast("Verification submitted! Training started.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Verification failed.";
+      setCloneError(message);
+      showToast(message);
+    } finally {
+      setIsPvcLoading(false);
+    }
+  }, [recordingState.blob, pvcVoiceId, showToast]);
 
   const handleGenerateSpeech = useCallback(async () => {
     if (!script.trim()) {
@@ -594,6 +675,13 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
             <Sparkles className="size-4" />
             Design
           </button>
+          <button
+            className={`${buttons.pillWarm} inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 border-none`}
+            onClick={() => setMode("pvc")}
+          >
+            <Sparkles className="size-4" />
+            Professional Clone
+          </button>
         </div>
         <div className="w-full max-w-6xl space-y-2">
           <label className="block text-left text-sm font-raleway text-theme-text">
@@ -751,36 +839,10 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
           <div className="text-4xl font-mono text-theme-text">
             {formatDuration(recordingState.durationMs)}
           </div>
-          <div className="flex flex-wrap justify-center gap-4">
-            {!recordingState.isRecording && (
-              <button
-                className={`${buttons.primary} inline-flex items-center gap-2`}
-                onClick={startRecording}
-                disabled={recordingIntent === "requesting"}
-              >
-                {recordingIntent === "requesting" ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" />
-                    Starting…
-                  </>
-                ) : (
-                  <>
-                    <Activity className="size-4" />
-                    Start Recording
-                  </>
-                )}
-              </button>
-            )}
-            {recordingState.isRecording && (
-              <button
-                className="inline-flex items-center gap-2 rounded-full bg-red-500 px-6 py-3 text-sm font-raleway text-white transition-colors duration-200 hover:bg-red-600"
-                onClick={() => stopRecording()}
-              >
-                <SquareIcon />
-                Stop Recording
-              </button>
-            )}
-            {recordingState.audioUrl && (
+        </div>
+        {recordingState.audioUrl && !isPvcFlow && (
+          <div className="flex flex-col gap-4 mt-4">
+            <div className="flex justify-center gap-4">
               <button
                 className={`${buttons.secondary} inline-flex items-center gap-2`}
                 onClick={() => {
@@ -792,59 +854,157 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
                 <PenTool className="size-4" />
                 Add script notes
               </button>
-            )}
-          </div>
-          {recordingState.audioUrl && (
-            <div className="mt-6 w-full rounded-3xl border border-theme-dark bg-theme-black/40 p-6">
-              <audio
-                src={recordingState.audioUrl}
-                controls
-                className="w-full"
-                style={{ borderRadius: "12px", height: "46px" }}
-              />
-            </div>
-          )}
-          {recordingState.audioUrl && (
-            <div className="flex flex-col items-center gap-3 text-center">
               <button
                 className={`${buttons.pillWarm} inline-flex items-center gap-2`}
-                onClick={handleRecordingClone}
-                disabled={isSavingRecordingClone}
+                onClick={handleStartPvc}
+                disabled={isPvcLoading}
               >
-                {isSavingRecordingClone ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" />
-                    Saving voice…
-                  </>
+                {isPvcLoading ? (
+                  <Loader2 className="size-4 animate-spin" />
                 ) : (
-                  <>
-                    <Sparkles className="size-4" />
-                    Save to ElevenLabs
-                  </>
+                  <Sparkles className="size-4" />
                 )}
+                Create Professional Voice
               </button>
-              <p className="text-xs font-raleway text-theme-white/60">
-                Upload this recording to ElevenLabs as a reference voice.
-              </p>
             </div>
-          )}
-        </div>
+            <p className="text-xs text-theme-white/60 max-w-md mx-auto">
+              Professional Voice Cloning creates a high-fidelity clone. Requires verification.
+            </p>
+          </div>
+        )}
+        {isPvcFlow && pvcStep === "verification" && (
+          <div className="mt-6 w-full max-w-2xl space-y-6 rounded-3xl border border-theme-dark bg-theme-black/40 p-6">
+            <div className="text-left space-y-4">
+              <h3 className="text-lg font-raleway text-theme-text">Voice Verification</h3>
+              <p className="text-sm text-theme-white/80">
+                To verify your voice, please read the text in the image below clearly.
+              </p>
+
+              {pvcCaptcha && (
+                <div className="bg-white p-4 rounded-xl flex justify-center">
+                  {/* Assuming captcha is base64 image data */}
+                  <img src={`data:image/png;base64,${pvcCaptcha}`} alt="Verification Captcha" className="max-h-32" />
+                </div>
+              )}
+
+              <div className="flex flex-col items-center gap-4 pt-4">
+                <div className="flex items-center gap-3 rounded-full border border-theme-dark bg-theme-black/50 px-4 py-2 text-sm font-raleway text-theme-text">
+                  <span
+                    className={`size-2 rounded-full ${recordingState.isRecording ? "animate-pulse bg-red-500" : "bg-theme-white/50"
+                      }`}
+                  />
+                  <span>{recordingStatusLabel}</span>
+                </div>
+
+                {!recordingState.isRecording && !recordingState.audioUrl && (
+                  <button
+                    className={`${buttons.primary} inline-flex items-center gap-2`}
+                    onClick={startRecording}
+                  >
+                    <Mic className="size-4" />
+                    Record Verification
+                  </button>
+                )}
+
+                {recordingState.isRecording && (
+                  <button
+                    className="inline-flex items-center gap-2 rounded-full bg-red-500 px-6 py-3 text-sm font-raleway text-white transition-colors duration-200 hover:bg-red-600"
+                    onClick={() => stopRecording()}
+                  >
+                    <SquareIcon />
+                    Stop Recording
+                  </button>
+                )}
+
+                {recordingState.audioUrl && (
+                  <div className="flex gap-4">
+                    <button
+                      className={`${buttons.secondary} inline-flex items-center gap-2`}
+                      onClick={() => {
+                        setRecordingState(prev => ({ ...prev, audioUrl: null, blob: null }));
+                      }}
+                    >
+                      Re-record
+                    </button>
+                    <button
+                      className={`${buttons.pillWarm} inline-flex items-center gap-2`}
+                      onClick={handleVerifyPvc}
+                      disabled={isPvcLoading}
+                    >
+                      {isPvcLoading ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
+                      Submit Verification
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        {isPvcFlow && pvcStep === "complete" && (
+          <div className="mt-6 w-full max-w-md rounded-3xl border border-green-500/30 bg-green-500/10 p-6">
+            <h3 className="text-lg font-raleway text-green-400 mb-2">Training Started!</h3>
+            <p className="text-sm text-theme-white/80">
+              Your professional voice clone is now training. This process may take several hours.
+              You will be notified when it is ready.
+            </p>
+            <button
+              className={`${buttons.secondary} mt-4`}
+              onClick={handleReturnToMenu}
+            >
+              Return to Menu
+            </button>
+          </div>
+        )}
+        {recordingState.audioUrl && (
+          <div className="mt-6 w-full rounded-3xl border border-theme-dark bg-theme-black/40 p-6">
+            <audio
+              src={recordingState.audioUrl}
+              controls
+              className="w-full"
+              style={{ borderRadius: "12px", height: "46px" }}
+            />
+          </div>
+        )}
+        {recordingState.audioUrl && (
+          <div className="flex flex-col items-center gap-3 text-center">
+            <button
+              className={`${buttons.pillWarm} inline-flex items-center gap-2`}
+              onClick={handleRecordingClone}
+              disabled={isSavingRecordingClone}
+            >
+              {isSavingRecordingClone ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Saving voice…
+                </>
+              ) : (
+                <>
+                  <Sparkles className="size-4" />
+                  Save to ElevenLabs
+                </>
+              )}
+            </button>
+            <p className="text-xs font-raleway text-theme-white/60">
+              Upload this recording to ElevenLabs as a reference voice.
+            </p>
+          </div>
+        )}
+        {cloneError && (
+          <p className="mt-6 text-center text-sm font-raleway text-red-400">
+            {cloneError}
+          </p>
+        )}
+        {recentVoice && (
+          <div className="mt-6 rounded-3xl border border-theme-dark bg-theme-black/40 p-6 text-left">
+            <p className="text-sm font-raleway text-theme-text">
+              Last saved voice: {recentVoice.name}
+            </p>
+            <p className="text-xs font-mono text-theme-white/60">
+              Voice ID: {recentVoice.voice_id}
+            </p>
+          </div>
+        )}
       </div>
-      {cloneError && (
-        <p className="mt-6 text-center text-sm font-raleway text-red-400">
-          {cloneError}
-        </p>
-      )}
-      {recentVoice && (
-        <div className="mt-6 rounded-3xl border border-theme-dark bg-theme-black/40 p-6 text-left">
-          <p className="text-sm font-raleway text-theme-text">
-            Last saved voice: {recentVoice.name}
-          </p>
-          <p className="text-xs font-mono text-theme-white/60">
-            Voice ID: {recentVoice.voice_id}
-          </p>
-        </div>
-      )}
     </div>
   );
 
@@ -1042,6 +1202,20 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
       </div>
     </div>
   );
+
+  if (mode === "pvc") {
+    return (
+      <div className="w-full max-w-2xl mx-auto py-10">
+        <button
+          onClick={handleReturnToMenu}
+          className="mb-6 text-sm text-gray-400 hover:text-white flex items-center gap-2"
+        >
+          ← Back to Menu
+        </button>
+        <VoiceUploader onSuccess={() => setMode("menu")} />
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full h-full">
