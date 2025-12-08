@@ -15,6 +15,7 @@ import { useToast } from '../../hooks/useToast';
 import { loadSavedPrompts } from '../../lib/savedPrompts';
 import { useGeminiImageGeneration } from '../../hooks/useGeminiImageGeneration';
 import { useIdeogramImageGeneration } from '../../hooks/useIdeogramImageGeneration';
+import { useVeoVideoGeneration } from '../../hooks/useVeoVideoGeneration';
 import type { GalleryImageLike, GalleryVideoLike } from './types';
 import type { StoredAvatar } from '../avatars/types';
 import type { StoredProduct } from '../products/types';
@@ -38,6 +39,7 @@ const PublicBadge = lazy(() => import('./PublicBadge'));
 const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
 import QuickEditModal, { type QuickEditOptions } from './QuickEditModal';
 const MakeVideoModal = lazy(() => import('./MakeVideoModal'));
+import type { MakeVideoOptions } from './MakeVideoModal';
 const GenerationProgress = lazy(() => import('./GenerationProgress'));
 
 // Helper to get consistent item identifier for UI actions (jobId → r2FileId → url)
@@ -169,11 +171,12 @@ const GridVideoItem = memo<GridVideoItemProps>(({
 const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, onFocusPrompt, filterIds }) => {
   const { user, storagePrefix } = useAuth();
   const { showToast } = useToast();
-  const { state, toggleItemSelection, isLoading, filteredItems: contextFilteredItems, addImage, openFullSize, loadMore, hasMore } = useGallery();
+  const { state, toggleItemSelection, isLoading, filteredItems: contextFilteredItems, addImage, addVideo, openFullSize, loadMore, hasMore } = useGallery();
   const { isFullSizeOpen } = state;
 
   const { generateImage: generateGeminiImage } = useGeminiImageGeneration();
   const { generateImage: generateIdeogramImage } = useIdeogramImageGeneration();
+  const { startGeneration: startVeoGeneration } = useVeoVideoGeneration();
   const {
     handleImageActionMenu,
     handleBulkActionsMenu,
@@ -765,7 +768,75 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     setQuickEditModalState(null);
   }, []);
 
+  // Handler for Make Video modal submission
+  const handleMakeVideoSubmit = useCallback(async (options: MakeVideoOptions) => {
+    if (!makeVideoModalState?.item || !makeVideoModalState.item.url) {
+      showToast('No image URL available');
+      return;
+    }
 
+    const { prompt, referenceFiles, aspectRatio, model } = options;
+    const item = makeVideoModalState.item;
+
+    // Close modal so user sees the generation in progress
+    setMakeVideoModalState(null);
+
+    // Prepare references - pass URLs directly, backend handles downloading
+    const references: string[] = [];
+
+    // 1. Add initial image URL as first reference
+    references.push(item.url);
+
+    // 2. Add uploaded reference files (convert Files to data URLs)
+    if (referenceFiles && referenceFiles.length > 0) {
+      for (const referenceItem of referenceFiles) {
+        try {
+          if (typeof referenceItem === 'string') {
+            // Pass URLs/data URLs directly
+            references.push(referenceItem.trim());
+          } else {
+            // Convert File objects to data URLs
+            const base64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(referenceItem);
+            });
+            references.push(base64);
+          }
+        } catch (e) {
+          debugError('Failed to convert reference file for video', e);
+        }
+      }
+    }
+
+    // Start Veo generation
+    try {
+      const result = await startVeoGeneration({
+        prompt: prompt,
+        model: model as 'veo-3.1-generate-preview' | 'veo-3.1-fast-generate-preview' || 'veo-3.1-generate-preview',
+        aspectRatio: aspectRatio as '16:9' | '9:16',
+        references: references,
+      });
+
+      if (result && result.url) {
+        // Add video to gallery
+        addVideo({
+          url: result.url,
+          prompt: prompt,
+          model: result.model || model || 'veo-3.1-generate-preview',
+          timestamp: result.timestamp || new Date().toISOString(),
+          jobId: result.jobId,
+          type: 'video',
+          aspectRatio: aspectRatio as string,
+        });
+        showToast('Video generation complete!');
+      }
+    } catch (error) {
+      debugError('Failed to start video generation', error);
+      showToast('Failed to start video generation');
+    }
+  }, [makeVideoModalState, startVeoGeneration, showToast, addVideo]);
 
   if (showLoadingState) {
     return (
@@ -1698,6 +1769,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           <MakeVideoModal
             isOpen={makeVideoModalState.isOpen}
             onClose={() => setMakeVideoModalState(null)}
+            onSubmit={handleMakeVideoSubmit}
             initialPrompt={makeVideoModalState.initialPrompt}
             imageUrl={makeVideoModalState.item.url}
             item={makeVideoModalState.item}

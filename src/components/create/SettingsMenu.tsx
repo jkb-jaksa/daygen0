@@ -178,7 +178,7 @@ export interface SettingsMenuProps {
   common: CommonSettingsProps;
   flux: FluxSettingsProps;
   veo: VeoSettingsProps;
-  sora: SoraSettingsProps; // Added Sora settings
+  sora?: SoraSettingsProps; // Optional Sora settings
   hailuo: HailuoSettingsProps;
   wan: WanSettingsProps;
   seedance: SeedanceSettingsProps;
