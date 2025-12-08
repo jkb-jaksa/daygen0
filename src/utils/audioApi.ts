@@ -199,3 +199,44 @@ export async function verifyProfessionalVoice(
 
   return payload as VerifyPvcResponse;
 }
+
+export type UploadRecordingResponse = {
+  success: boolean;
+  url: string;
+};
+
+/**
+ * Upload a recorded voice file to R2 storage.
+ * @param file - The recorded audio blob or file
+ * @param filename - Optional custom filename
+ * @returns The public URL of the uploaded file
+ */
+export async function uploadRecordedVoice(
+  file: File | Blob,
+  filename?: string,
+): Promise<UploadRecordingResponse> {
+  if (!file) {
+    throw new Error("A recording file is required.");
+  }
+
+  const formData = new FormData();
+  const resolvedFilename = filename || `recording-${Date.now()}.webm`;
+  formData.append("file", file, resolvedFilename);
+  formData.append("folder", "recorded-voices");
+
+  const response = await fetchWithAuthFormData(
+    "/api/audio/upload-recording",
+    formData,
+  );
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message =
+      (payload as { message?: string })?.message ||
+      (payload as { error?: string })?.error ||
+      `Failed to upload recording (status ${response.status})`;
+    throw new Error(message);
+  }
+
+  return payload as UploadRecordingResponse;
+}

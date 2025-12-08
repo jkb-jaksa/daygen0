@@ -1,17 +1,13 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
-import { buttons, inputs, text } from "../../../styles/designSystem";
+import { buttons } from "../../../styles/designSystem";
 import {
   Mic,
-  Upload,
   PenTool,
-  Wand2,
   Sparkles,
-  Activity,
   Loader2,
   Download,
   Play,
   Pause,
-  CheckCircle2,
 } from "lucide-react";
 import { useToast } from "../../../hooks/useToast";
 import {
@@ -19,6 +15,7 @@ import {
   generateElevenLabsSpeech,
   createProfessionalVoice,
   verifyProfessionalVoice,
+  uploadRecordedVoice,
   type ElevenLabsVoiceSummary,
 } from "../../../utils/audioApi";
 import { VoiceSelector } from "../../shared/VoiceSelector";
@@ -38,7 +35,7 @@ type RecordingState = {
   error: string | null;
 };
 
-const MAX_RECORDING_MINUTES = 5;
+const MAX_RECORDING_MINUTES = 30;
 
 const formatDuration = (ms: number) => {
   const totalSeconds = Math.floor(ms / 1000);
@@ -46,7 +43,8 @@ const formatDuration = (ms: number) => {
   const seconds = totalSeconds % 60;
   return `${minutes.toString().padStart(2, "0")}:${seconds
     .toString()
-    .padStart(2, "0")}`;
+    .padStart(2, "0")
+    } `;
 };
 
 const base64ToBlob = (base64: string, contentType: string) => {
@@ -65,8 +63,7 @@ type GeneratedVariation = {
 };
 
 export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
-  const [mode, setMode] = useState<VoiceFlowMode>("menu");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [mode, setMode] = useState<VoiceFlowMode>("design");
   const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
   const [recordingState, setRecordingState] = useState<RecordingState>({
     isRecording: false,
@@ -82,14 +79,10 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
   const recordingIntervalRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scriptInputRef = useRef<HTMLTextAreaElement>(null);
-  const voiceModalityTextRef = useRef<HTMLTextAreaElement>(null);
   const [script, setScript] = useState("");
-  const [voiceModalityText, setVoiceModalityText] = useState("");
   const [modelId, setModelId] = useState("eleven_multilingual_v2");
   const [voiceName, setVoiceName] = useState("My Digital Voice");
-  const [voiceDescription, setVoiceDescription] = useState(
-    "Digital copy voice sample",
-  );
+  const voiceDescription = "Digital copy voice sample";
   const { showToast } = useToast();
   // recentVoice is used to locally cache a newly created voice so it appears in the list immediately
   const [recentVoice, setRecentVoice] =
@@ -101,7 +94,6 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
   const [playingVariationId, setPlayingVariationId] = useState<string | null>(null);
   const audioRefs = useRef<Record<string, HTMLAudioElement | null>>({});
   const [designError, setDesignError] = useState<string | null>(null);
-  const [isUploadingVoiceClone, setIsUploadingVoiceClone] = useState(false);
   const [isSavingRecordingClone, setIsSavingRecordingClone] = useState(false);
   const [cloneError, setCloneError] = useState<string | null>(null);
 
@@ -174,7 +166,6 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
   }, [designError, script]);
 
   const resetUpload = useCallback(() => {
-    setSelectedFile(null);
     if (filePreviewUrl) {
       URL.revokeObjectURL(filePreviewUrl);
     }
@@ -225,60 +216,9 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
     [selectedVoiceId],
   );
 
-  const handleFileSelect = useCallback(
-    (file: File | null) => {
-      if (!file) {
-        resetUpload();
-        return;
-      }
-      if (!file.type.startsWith("audio/")) {
-        setRecordingState((prev) => ({
-          ...prev,
-          error: "Please choose a valid audio file.",
-        }));
-        resetUpload();
-        return;
-      }
-
-      setRecordingState((prev) => ({ ...prev, error: null }));
-      setSelectedFile(file);
-      const objectUrl = URL.createObjectURL(file);
-      if (filePreviewUrl) {
-        URL.revokeObjectURL(filePreviewUrl);
-      }
-      setFilePreviewUrl(objectUrl);
-    },
-    [filePreviewUrl, resetUpload],
-  );
-
-  const handleFileInputChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
-      handleFileSelect(file ?? null);
-    },
-    [handleFileSelect],
-  );
-
-  const handleDrop = useCallback(
-    (event: React.DragEvent<HTMLDivElement>) => {
-      event.preventDefault();
-      event.stopPropagation();
-      const files = Array.from(event.dataTransfer.files);
-      if (!files.length) {
-        return;
-      }
-      handleFileSelect(files[0]);
-    },
-    [handleFileSelect],
-  );
-
   const cloneVoiceFromSource = useCallback(
     async (file: File | Blob, source: "upload" | "record") => {
-      const setLoading =
-        source === "upload"
-          ? setIsUploadingVoiceClone
-          : setIsSavingRecordingClone;
-      setLoading(true);
+      setIsSavingRecordingClone(true);
       setCloneError(null);
 
       try {
@@ -305,19 +245,11 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
         setCloneError(message);
         showToast(message);
       } finally {
-        setLoading(false);
+        setIsSavingRecordingClone(false);
       }
     },
     [showToast, voiceDescription, voiceName],
   );
-
-  const handleUploadClone = useCallback(() => {
-    if (!selectedFile) {
-      setCloneError("Please choose an audio file first.");
-      return;
-    }
-    void cloneVoiceFromSource(selectedFile, "upload");
-  }, [cloneVoiceFromSource, selectedFile]);
 
   const handleRecordingClone = useCallback(() => {
     if (!recordingState.blob) {
@@ -326,7 +258,7 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
     }
     const recordingFile = new File(
       [recordingState.blob],
-      `recording-${Date.now()}.webm`,
+      `recording - ${Date.now()}.webm`,
       {
         type: recordingState.blob.type || "audio/webm",
       },
@@ -345,7 +277,7 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
     try {
       const recordingFile = new File(
         [recordingState.blob],
-        `sample-${Date.now()}.webm`,
+        `sample - ${Date.now()}.webm`,
         { type: recordingState.blob.type || "audio/webm" }
       );
 
@@ -388,7 +320,7 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
     try {
       const verificationFile = new File(
         [recordingState.blob],
-        `verification-${Date.now()}.webm`,
+        `verification - ${Date.now()}.webm`,
         { type: recordingState.blob.type || "audio/webm" }
       );
 
@@ -432,7 +364,7 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
       const results = await Promise.all(promises);
 
       const newVariations: GeneratedVariation[] = results.map((result, index) => {
-        console.log(`Variation ${index} received:`, {
+        console.log(`Variation ${index} received: `, {
           contentType: result.contentType,
           base64Length: result.audioBase64?.length,
           base64Prefix: result.audioBase64?.substring(0, 50)
@@ -440,7 +372,7 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
 
         const blob = base64ToBlob(result.audioBase64, result.contentType);
         return {
-          id: `var-${Date.now()}-${index}`,
+          id: `var-${Date.now()} -${index} `,
           url: URL.createObjectURL(blob),
           blob,
         };
@@ -512,20 +444,13 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
 
     const a = document.createElement('a');
     a.href = selected.url;
-    a.download = `generated-voice-${Date.now()}.mp3`;
+    a.download = `generated - voice - ${Date.now()}.mp3`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
   };
 
-  const handleClearScript = useCallback(() => {
-    setScript("");
-    variations.forEach((v) => URL.revokeObjectURL(v.url));
-    setVariations([]);
-    setSelectedVariationId(null);
-    setPlayingVariationId(null);
-    setDesignError(null);
-  }, [variations]);
+
 
   const startRecording = useCallback(async () => {
     try {
@@ -565,6 +490,35 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
           window.clearInterval(recordingIntervalRef.current);
           recordingIntervalRef.current = null;
         }
+
+        // Auto-download the recording to user's device
+        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+        const filename = `daygen - recording - ${timestamp}.webm`;
+        const downloadLink = document.createElement("a");
+        downloadLink.href = objectUrl;
+        downloadLink.download = filename;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+
+        // Upload to R2 storage (fire and forget, show toast on completion)
+        const file = new File([blob], filename, {
+          type: mediaRecorder.mimeType || "audio/webm",
+        });
+        console.log("Uploading recording to R2:", {
+          filename,
+          size: blob.size,
+          type: mediaRecorder.mimeType || "audio/webm",
+        });
+        uploadRecordedVoice(file, filename)
+          .then((result) => {
+            console.log("R2 upload successful:", result);
+            showToast("Recording saved to cloud storage.");
+          })
+          .catch((err) => {
+            console.error("Failed to upload recording to R2:", err);
+            showToast("Recording downloaded, but cloud upload failed.");
+          });
       };
 
       mediaRecorder.start();
@@ -588,7 +542,7 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
             return {
               ...prev,
               durationMs: maxDuration,
-              error: `Recording limit reached (${MAX_RECORDING_MINUTES} minutes).`,
+              error: `Recording limit reached(${MAX_RECORDING_MINUTES} minutes).`,
             };
           }
           return {
@@ -610,7 +564,7 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
             : "We couldn't access your microphone.",
       });
     }
-  }, [recordingState.audioUrl, stopRecording]);
+  }, [recordingState.audioUrl, stopRecording, showToast]);
 
   const recordingStatusLabel = useMemo(() => {
     if (recordingState.error) {
@@ -624,177 +578,6 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
     }
     return "Click start to begin recording.";
   }, [recordingState]);
-
-  const renderMenu = () => (
-    <div
-      className="relative w-full h-full flex items-center justify-center"
-      onDragOver={(event) => {
-        event.preventDefault();
-        event.stopPropagation();
-      }}
-      onDragLeave={(event) => {
-        event.preventDefault();
-        event.stopPropagation();
-      }}
-      onDrop={handleDrop}
-    >
-      <div className="flex flex-col items-center gap-8 text-center w-full px-2">
-        <div className="space-y-2">
-          <h2 className={`${text.sectionHeading} text-theme-text`}>
-            Upload your voice recording
-          </h2>
-          <p className="max-w-4xl text-sm font-raleway text-theme-white">
-            Click anywhere or drag and drop to get started. You can record a new
-            clip, upload an existing file, or design a custom voice with
-            ElevenLabs.
-          </p>
-        </div>
-        <div className="flex flex-wrap justify-center gap-4">
-          <button
-            className={`${buttons.primary} inline-flex items-center gap-2`}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Upload className="size-4" />
-            Upload
-          </button>
-          <button
-            className={`${buttons.secondary} inline-flex items-center gap-2`}
-            onClick={() => setMode("record")}
-          >
-            <Activity className="size-4" />
-            Record
-          </button>
-          <button
-            className={`${buttons.pillWarm} inline-flex items-center gap-2`}
-            onClick={() => setMode("design")}
-          >
-            <Sparkles className="size-4" />
-            Design
-          </button>
-          <button
-            className={`${buttons.pillWarm} inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 border-none`}
-            onClick={() => setMode("pvc")}
-          >
-            <Sparkles className="size-4" />
-            Professional Clone
-          </button>
-        </div>
-        <div className="w-full max-w-6xl space-y-2">
-          <label className="block text-left text-sm font-raleway text-theme-text">
-            Text for Voice Modality
-            <textarea
-              ref={voiceModalityTextRef}
-              value={voiceModalityText}
-              onChange={(event) => setVoiceModalityText(event.target.value)}
-              style={{ resize: 'none' }}
-              className={`${inputs.textarea} resize-none mt-2`}
-              placeholder="Enter text that can be used in Voice Modality..."
-              rows={4}
-            />
-          </label>
-        </div>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="audio/*"
-          onChange={handleFileInputChange}
-          className="hidden"
-        />
-        {selectedFile && filePreviewUrl && (
-          <div className="mt-8 w-full space-y-6">
-            <div className="grid gap-4 md:grid-cols-2">
-              <label className="flex flex-col text-left text-sm font-raleway text-theme-text">
-                Voice name
-                <input
-                  type="text"
-                  value={voiceName}
-                  onChange={(event) => setVoiceName(event.target.value)}
-                  className="mt-2 w-full rounded-2xl border border-theme-dark bg-theme-black/60 px-4 py-3 text-sm text-theme-white focus:border-theme-text focus:outline-none focus:ring-0"
-                  placeholder="Digital Copy Voice"
-                />
-              </label>
-              <label className="md:col-span-2 flex flex-col text-left text-sm font-raleway text-theme-text">
-                Notes for ElevenLabs
-                <textarea
-                  value={voiceDescription}
-                  onChange={(event) => setVoiceDescription(event.target.value)}
-                  className="mt-2 h-28 w-full resize-none rounded-2xl border border-theme-dark bg-theme-black/60 px-4 py-3 text-sm text-theme-white focus:border-theme-text focus:outline-none focus:ring-0"
-                  placeholder="What makes this voice unique? Mention accent, pacing, or context."
-                />
-              </label>
-            </div>
-            <div className="rounded-3xl border border-theme-dark bg-theme-black/40 p-6">
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <Mic className="size-5 text-cyan-300" />
-                    <div className="text-left">
-                      <p className="text-sm font-raleway text-theme-text">
-                        {selectedFile.name}
-                      </p>
-                      <p className="text-xs font-raleway text-theme-white/60">
-                        {Math.round(selectedFile.size / 1024)} KB
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleFileSelect(null)}
-                    className="text-xs font-raleway text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
-                  >
-                    Remove
-                  </button>
-                </div>
-                <audio
-                  src={filePreviewUrl}
-                  controls
-                  className="w-full"
-                  style={{ borderRadius: "12px", height: "46px" }}
-                />
-              </div>
-            </div>
-            <div className="flex flex-col items-center gap-3 text-center">
-              <button
-                className={`${buttons.pillWarm} inline-flex items-center gap-2`}
-                onClick={handleUploadClone}
-                disabled={isUploadingVoiceClone}
-              >
-                {isUploadingVoiceClone ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" />
-                    Saving voice…
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="size-4" />
-                    Save to ElevenLabs
-                  </>
-                )}
-              </button>
-              <p className="text-xs font-raleway text-theme-white/60">
-                We'll create a private voice profile in ElevenLabs with this
-                sample.
-              </p>
-            </div>
-            {cloneError && (
-              <p className="text-center text-sm font-raleway text-red-400">
-                {cloneError}
-              </p>
-            )}
-            {recentVoice && (
-              <div className="rounded-3xl border border-theme-dark bg-theme-black/40 p-6 text-left">
-                <p className="text-sm font-raleway text-theme-text">
-                  Last saved voice: {recentVoice.name}
-                </p>
-                <p className="text-xs font-mono text-theme-white/60">
-                  Voice ID: {recentVoice.voice_id}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
 
 
   const renderRecording = () => (
@@ -827,8 +610,8 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
         <div className="flex flex-col items-center gap-4">
           <div className="flex items-center gap-3 rounded-full border border-theme-dark bg-theme-black/50 px-4 py-2 text-sm font-raleway text-theme-text">
             <span
-              className={`size-2 rounded-full ${recordingState.isRecording ? "animate-pulse bg-red-500" : "bg-theme-white/50"
-                }`}
+              className={`size - 2 rounded - full ${recordingState.isRecording ? "animate-pulse bg-red-500" : "bg-theme-white/50"
+                } `}
             />
             <span>{recordingStatusLabel}</span>
           </div>
@@ -840,7 +623,7 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
           <div className="flex flex-col gap-4 mt-4">
             <div className="flex justify-center gap-4">
               <button
-                className={`${buttons.secondary} inline-flex items-center gap-2`}
+                className={`${buttons.secondary} inline - flex items - center gap - 2`}
                 onClick={() => {
                   if (scriptInputRef.current) {
                     scriptInputRef.current.focus({ preventScroll: true });
@@ -851,7 +634,7 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
                 Add script notes
               </button>
               <button
-                className={`${buttons.pillWarm} inline-flex items-center gap-2`}
+                className={`${buttons.pillWarm} inline - flex items - center gap - 2`}
                 onClick={handleStartPvc}
                 disabled={isPvcLoading}
               >
@@ -879,22 +662,22 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
               {pvcCaptcha && (
                 <div className="bg-white p-4 rounded-xl flex justify-center">
                   {/* Assuming captcha is base64 image data */}
-                  <img src={`data:image/png;base64,${pvcCaptcha}`} alt="Verification Captcha" className="max-h-32" />
+                  <img src={`data: image / png; base64, ${pvcCaptcha} `} alt="Verification Captcha" className="max-h-32" />
                 </div>
               )}
 
               <div className="flex flex-col items-center gap-4 pt-4">
                 <div className="flex items-center gap-3 rounded-full border border-theme-dark bg-theme-black/50 px-4 py-2 text-sm font-raleway text-theme-text">
                   <span
-                    className={`size-2 rounded-full ${recordingState.isRecording ? "animate-pulse bg-red-500" : "bg-theme-white/50"
-                      }`}
+                    className={`size - 2 rounded - full ${recordingState.isRecording ? "animate-pulse bg-red-500" : "bg-theme-white/50"
+                      } `}
                   />
                   <span>{recordingStatusLabel}</span>
                 </div>
 
                 {!recordingState.isRecording && !recordingState.audioUrl && (
                   <button
-                    className={`${buttons.primary} inline-flex items-center gap-2`}
+                    className={`${buttons.primary} inline - flex items - center gap - 2`}
                     onClick={startRecording}
                   >
                     <Mic className="size-4" />
@@ -915,7 +698,7 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
                 {recordingState.audioUrl && (
                   <div className="flex gap-4">
                     <button
-                      className={`${buttons.secondary} inline-flex items-center gap-2`}
+                      className={`${buttons.secondary} inline - flex items - center gap - 2`}
                       onClick={() => {
                         setRecordingState(prev => ({ ...prev, audioUrl: null, blob: null }));
                       }}
@@ -923,7 +706,7 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
                       Re-record
                     </button>
                     <button
-                      className={`${buttons.pillWarm} inline-flex items-center gap-2`}
+                      className={`${buttons.pillWarm} inline - flex items - center gap - 2`}
                       onClick={handleVerifyPvc}
                       disabled={isPvcLoading}
                     >
@@ -944,7 +727,7 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
               You will be notified when it is ready.
             </p>
             <button
-              className={`${buttons.secondary} mt-4`}
+              className={`${buttons.secondary} mt - 4`}
               onClick={handleReturnToMenu}
             >
               Return to Menu
@@ -964,7 +747,7 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
         {recordingState.audioUrl && (
           <div className="flex flex-col items-center gap-3 text-center">
             <button
-              className={`${buttons.pillWarm} inline-flex items-center gap-2`}
+              className={`${buttons.pillWarm} inline - flex items - center gap - 2`}
               onClick={handleRecordingClone}
               disabled={isSavingRecordingClone}
             >
@@ -1006,173 +789,261 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
 
   const renderDesign = () => (
     <div className="relative w-full">
-      <button
-        onClick={handleReturnToMenu}
-        className="mb-6 inline-flex items-center gap-2 text-sm font-raleway text-theme-white/80 transition-colors duration-200 hover:text-theme-text"
-      >
-        ← Back
-      </button>
-      <div className="flex flex-col gap-8">
-        <header className="space-y-3 text-center">
-          <div className="mx-auto grid size-14 place-items-center rounded-3xl border border-white/10 bg-theme-black/40">
-            <Wand2 className="size-6 text-amber-300" />
-          </div>
-          <h2 className="text-3xl font-raleway text-theme-text">
-            Design a custom voice
+      <div className="flex flex-col gap-4">
+        <header className="text-center">
+          <h2 className="text-2xl font-raleway text-theme-text">
+            Create your voice
           </h2>
-          <p className="mx-auto max-w-2xl text-sm font-raleway text-theme-white/80">
-            Convert your script into a lifelike narration powered by ElevenLabs.
-            Choose a base model, tweak the tone, and add reference notes to
-            tailor the delivery.
-          </p>
         </header>
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="space-y-4">
-            <label className="block text-sm font-raleway text-theme-text">
-              Voice name
-              <input
-                type="text"
-                value={voiceName}
-                onChange={(event) => setVoiceName(event.target.value)}
-                className="mt-1 w-full rounded-2xl border border-theme-dark bg-theme-black/60 px-4 py-3 text-sm text-theme-white focus:border-theme-text focus:outline-none focus:ring-0"
-                placeholder="My Digital Voice"
-              />
-            </label>
-            <label className="block text-sm font-raleway text-theme-text">
-              Voice preset
-              <VoiceSelector
-                value={selectedVoiceId ?? ""}
-                onChange={setSelectedVoiceId}
-                className="mt-1 w-full"
-                recentVoice={recentVoice}
-                onLoaded={handleVoicesLoaded}
-              />
-            </label>
-            <label className="block text-sm font-raleway text-theme-text">
-              Base model
-              <select
-                value={modelId}
-                onChange={(event) => setModelId(event.target.value)}
-                className="mt-1 w-full rounded-2xl border border-theme-dark bg-theme-black/60 px-4 py-3 text-sm text-theme-white focus:border-theme-text focus:outline-none focus:ring-0"
-              >
-                <option value="eleven_v3">Eleven v3 (alpha)</option>
-                <option value="eleven_multilingual_v2">
-                  Eleven Multilingual v2
-                </option>
-                <option value="eleven_flash_v2_5">Eleven Flash v2.5</option>
-                <option value="eleven_turbo_v2_5">Eleven Turbo v2.5</option>
-              </select>
-            </label>
-            <label className="block text-sm font-raleway text-theme-text">
-              Delivery style
-              <select
-                className="mt-1 w-full rounded-2xl border border-theme-dark bg-theme-black/60 px-4 py-3 text-sm text-theme-white focus:border-theme-text focus:outline-none focus:ring-0"
-              >
-                <option value="balanced">Balanced</option>
-                <option value="narration">Narration</option>
-                <option value="engaging">Engaging</option>
-                <option value="conversational">Conversational</option>
-              </select>
-            </label>
+
+        {/* Main content grid: Record | Script | Professional Clone */}
+        <div className="grid gap-4 md:grid-cols-[200px_2fr_200px]">
+          {/* Record Section - Left */}
+          <div className="rounded-3xl border border-theme-dark bg-theme-black/40 p-4">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <div className="grid size-14 place-items-center rounded-full border border-white/10 bg-theme-black/40">
+                <Mic className="size-6 text-cyan-300" />
+              </div>
+              <h3 className="text-lg font-raleway text-theme-text">Record Voice</h3>
+              <p className="text-xs font-raleway text-theme-white/60">
+                Record up to {MAX_RECORDING_MINUTES} min per session
+              </p>
+
+              {/* Recording status */}
+              <div className="flex items-center gap-2 rounded-full border border-theme-dark bg-theme-black/50 px-3 py-1 text-xs font-raleway text-theme-text">
+                <span
+                  className={`size - 2 rounded - full ${recordingState.isRecording ? "animate-pulse bg-red-500" : "bg-theme-white/50"} `}
+                />
+                <span>{formatDuration(recordingState.durationMs)}</span>
+              </div>
+
+              {/* Recording controls */}
+              {!recordingState.isRecording && !recordingState.audioUrl && (
+                <button
+                  className={`${buttons.primary} inline - flex items - center gap - 2`}
+                  onClick={startRecording}
+                >
+                  <Mic className="size-4" />
+                  Start Recording
+                </button>
+              )}
+
+              {recordingState.isRecording && (
+                <button
+                  className="inline-flex items-center gap-2 rounded-full bg-red-500 px-6 py-3 text-sm font-raleway text-white transition-colors duration-200 hover:bg-red-600"
+                  onClick={() => stopRecording()}
+                >
+                  <SquareIcon />
+                  Stop
+                </button>
+              )}
+
+              {recordingState.audioUrl && (
+                <div className="w-full space-y-3">
+                  <audio
+                    src={recordingState.audioUrl}
+                    controls
+                    className="w-full"
+                    style={{ borderRadius: "12px", height: "40px" }}
+                  />
+                  <button
+                    className={`${buttons.secondary} w - full inline - flex items - center justify - center gap - 2 text - sm`}
+                    onClick={() => {
+                      if (recordingState.audioUrl) {
+                        URL.revokeObjectURL(recordingState.audioUrl);
+                      }
+                      setRecordingState({
+                        isRecording: false,
+                        durationMs: 0,
+                        audioUrl: null,
+                        blob: null,
+                        error: null,
+                      });
+                    }}
+                  >
+                    Clear & Record Again
+                  </button>
+                </div>
+              )}
+
+              {recordingState.error && (
+                <p className="text-xs font-raleway text-red-400">
+                  {recordingState.error}
+                </p>
+              )}
+            </div>
           </div>
+
+          {/* Script Section - Center */}
           <div className="space-y-4">
-            <label className="block text-sm font-raleway text-theme-text">
-              Script
-              <textarea
-                ref={scriptInputRef}
-                value={script}
-                onChange={(event) => setScript(event.target.value)}
-                className="mt-1 h-40 w-full resize-none rounded-2xl border border-theme-dark bg-theme-black/60 px-4 py-3 text-sm text-theme-white focus:border-theme-text focus:outline-none focus:ring-0"
-                placeholder="Write the words you would like your voice to speak…"
-              />
-            </label>
-            <div className="space-y-2 text-left">
-              <p className="text-xs font-raleway uppercase tracking-[0.2em] text-theme-white/40">
-                Optional notes
+            <textarea
+              ref={scriptInputRef}
+              value={script}
+              onChange={(event) => setScript(event.target.value)}
+              className="h-72 w-full resize-none rounded-2xl border border-theme-dark bg-theme-black/60 px-4 py-3 text-sm text-theme-white focus:border-theme-text focus:outline-none focus:ring-0"
+              placeholder="Write the words you would like your voice to speak…"
+            />
+          </div>
+
+          {/* Professional Voice Clone Section - Right */}
+          <div className="rounded-3xl border border-purple-500/30 bg-gradient-to-r from-purple-500/10 to-pink-500/10 p-4">
+            <div className="flex flex-col items-center gap-4 text-center h-full justify-center">
+              <div className="grid size-14 place-items-center rounded-full border border-purple-500/30 bg-theme-black/40">
+                <Sparkles className="size-6 text-purple-400" />
+              </div>
+              <h3 className="text-lg font-raleway text-theme-text">Professional Clone</h3>
+              <p className="text-xs font-raleway text-theme-white/60">
+                Requires 30+ minutes of audio for best results
               </p>
-              <p className="text-sm font-raleway text-theme-white/70">
-                Mention pacing, pronunciation, or emotional cues. You can attach
-                a reference recording from the upload or recording steps.
-              </p>
+              <button
+                className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-3 text-sm font-raleway font-medium text-white transition-all hover:opacity-90"
+                onClick={() => setMode("pvc")}
+              >
+                <Sparkles className="size-4" />
+                Create Clone
+              </button>
             </div>
           </div>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3 text-sm font-raleway text-theme-white/70">
-            <PenTool className="size-4 text-theme-white/60" />
-            <span>Powered by ElevenLabs text-to-speech</span>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <button
-              className={`${buttons.secondary} inline-flex items-center gap-2`}
-              onClick={handleClearScript}
+
+        {/* Voice Settings Row */}
+        <div className="grid gap-4 md:grid-cols-4">
+          <label className="block text-sm font-raleway text-theme-text">
+            Voice name
+            <input
+              type="text"
+              value={voiceName}
+              onChange={(event) => setVoiceName(event.target.value)}
+              className="mt-1 w-full rounded-2xl border border-theme-dark bg-theme-black/60 px-4 py-3 text-sm text-theme-white focus:border-theme-text focus:outline-none focus:ring-0"
+              placeholder="My Digital Voice"
+            />
+          </label>
+          <label className="block text-sm font-raleway text-theme-text">
+            Voice preset
+            <VoiceSelector
+              value={selectedVoiceId ?? ""}
+              onChange={setSelectedVoiceId}
+              className="mt-1 w-full"
+              recentVoice={recentVoice}
+              onLoaded={handleVoicesLoaded}
+            />
+          </label>
+          <label className="block text-sm font-raleway text-theme-text">
+            Base model
+            <select
+              value={modelId}
+              onChange={(event) => setModelId(event.target.value)}
+              className="mt-1 w-full rounded-2xl border border-theme-dark bg-theme-black/60 px-4 py-3 text-sm text-theme-white focus:border-theme-text focus:outline-none focus:ring-0"
             >
-              Clear script
-            </button>
-            <button
-              className={`${buttons.primary} inline-flex items-center gap-2`}
-              onClick={handleGenerateSpeech}
-              disabled={!script.trim() || isGeneratingSpeech}
+              <option value="eleven_v3">Eleven v3 (alpha)</option>
+              <option value="eleven_multilingual_v2">
+                Eleven Multilingual v2
+              </option>
+              <option value="eleven_flash_v2_5">Eleven Flash v2.5</option>
+              <option value="eleven_turbo_v2_5">Eleven Turbo v2.5</option>
+            </select>
+          </label>
+          <label className="block text-sm font-raleway text-theme-text">
+            Delivery style
+            <select
+              className="mt-1 w-full rounded-2xl border border-theme-dark bg-theme-black/60 px-4 py-3 text-sm text-theme-white focus:border-theme-text focus:outline-none focus:ring-0"
             >
-              {isGeneratingSpeech ? (
-                <>
-                  <Loader2 className="size-4 animate-spin" />
-                  Generating…
-                </>
-              ) : (
-                <>
-                  <Sparkles className="size-4" />
-                  Generate preview
-                </>
-              )}
-            </button>
-          </div>
+              <option value="balanced">Balanced</option>
+              <option value="narration">Narration</option>
+              <option value="engaging">Engaging</option>
+              <option value="conversational">Conversational</option>
+            </select>
+          </label>
+        </div>
+
+        {/* Generate Actions */}
+        <div className="flex justify-center">
+          <button
+            className={`${buttons.primary} inline-flex items-center gap-2`}
+            onClick={handleGenerateSpeech}
+            disabled={!script.trim() || isGeneratingSpeech}
+          >
+            {isGeneratingSpeech ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Generating…
+              </>
+            ) : (
+              <>
+                <Sparkles className="size-4" />
+                Generate preview
+              </>
+            )}
+          </button>
         </div>
         {designError && (
           <p className="text-center text-sm font-raleway text-red-400">
             {designError}
           </p>
         )}
+
+        {/* Generated Samples */}
         {variations.length > 0 && (
-          <div className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-3">
+          <div className="space-y-3">
+            <div className="grid gap-3 md:grid-cols-2">
               {variations.map((variation, index) => (
                 <div
                   key={variation.id}
-                  className={`relative flex flex-col gap-3 rounded-3xl border p-4 transition-all duration-200 ${selectedVariationId === variation.id
-                    ? "border-cyan-400 bg-theme-black/60 shadow-[0_0_20px_-5px_rgba(34,211,238,0.3)]"
-                    : "border-theme-dark bg-theme-black/40 hover:border-theme-white/30"
-                    }`}
-                  onClick={() => setSelectedVariationId(variation.id)}
+                  className="flex items-center gap-3 rounded-3xl border border-theme-dark bg-theme-black/40 p-4 hover:border-theme-white/20 transition-all"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-raleway font-bold text-theme-white/80">
-                      Variation {index + 1}
-                    </span>
-                    {selectedVariationId === variation.id && (
-                      <CheckCircle2 className="size-4 text-cyan-400" />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      togglePlayVariation(variation.id);
+                    }}
+                    className="grid size-12 shrink-0 place-items-center rounded-full bg-theme-white text-theme-black transition-colors hover:bg-theme-white/90"
+                  >
+                    {playingVariationId === variation.id ? (
+                      <Pause className="size-5 fill-current" />
+                    ) : (
+                      <Play className="size-5 fill-current ml-0.5" />
                     )}
-                  </div>
+                  </button>
 
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        togglePlayVariation(variation.id);
-                      }}
-                      className="grid size-10 place-items-center rounded-full bg-theme-white/10 text-theme-white transition-colors hover:bg-theme-white/20"
-                    >
-                      {playingVariationId === variation.id ? (
-                        <Pause className="size-4 fill-current" />
-                      ) : (
-                        <Play className="size-4 fill-current ml-0.5" />
-                      )}
-                    </button>
-                    <div className="h-1 flex-1 overflow-hidden rounded-full bg-theme-white/10">
-                      {/* Simple visualizer placeholder */}
-                      <div className="h-full w-2/3 bg-gradient-to-r from-cyan-500 to-blue-500 opacity-50" />
+                  <div className="flex-1 space-y-1">
+                    <span className="block text-xs font-raleway font-medium text-theme-white/60">
+                      Sample {index + 1}
+                    </span>
+                    <div className="h-8 flex items-center">
+                      <div className="flex gap-0.5 items-center h-full">
+                        {Array.from({ length: 40 }).map((_, i) => (
+                          <div
+                            key={i}
+                            className="w-0.5 bg-theme-white/40 rounded-full"
+                            style={{ height: `${Math.random() * 60 + 20}%` }}
+                          />
+                        ))}
+                      </div>
                     </div>
                   </div>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Share functionality placeholder
+                    }}
+                    className="grid size-9 shrink-0 place-items-center rounded-full bg-theme-white/10 text-theme-white transition-colors hover:bg-theme-white/20"
+                  >
+                    <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                    </svg>
+                  </button>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedVariationId(variation.id);
+                      handleDownload();
+                    }}
+                    className="grid size-9 shrink-0 place-items-center rounded-full bg-theme-white/10 text-theme-white transition-colors hover:bg-theme-white/20"
+                  >
+                    <Download className="size-4" />
+                  </button>
 
                   <audio
                     ref={(el) => { audioRefs.current[variation.id] = el; }}
@@ -1182,17 +1053,6 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
                   />
                 </div>
               ))}
-            </div>
-
-            <div className="flex justify-center pt-2">
-              <button
-                className={`${buttons.primary} inline-flex items-center gap-2`}
-                onClick={handleDownload}
-                disabled={!selectedVariationId}
-              >
-                <Download className="size-4" />
-                Download Selected MP3
-              </button>
             </div>
           </div>
         )}
@@ -1204,19 +1064,18 @@ export function AudioVoiceStudio({ onBack }: AudioVoiceStudioProps) {
     return (
       <div className="w-full max-w-2xl mx-auto py-10">
         <button
-          onClick={handleReturnToMenu}
+          onClick={() => setMode("design")}
           className="mb-6 text-sm text-gray-400 hover:text-white flex items-center gap-2"
         >
-          ← Back to Menu
+          ← Back to Design
         </button>
-        <VoiceUploader onSuccess={() => setMode("menu")} />
+        <VoiceUploader onSuccess={() => setMode("design")} />
       </div>
     );
   }
 
   return (
     <div className="relative w-full h-full">
-      {mode === "menu" && renderMenu()}
       {mode === "record" && renderRecording()}
       {mode === "design" && renderDesign()}
     </div>
