@@ -1122,6 +1122,7 @@ const FullImageModal = memo(() => {
                         anyMenuOpen={editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId}
                         onMakeVideo={handleVideo}
                         onChangeAngle={handleChangeAngle}
+                        onResize={handleResize}
                         onQuickEdit={handleQuickEdit}
                       />
                     </Suspense>
@@ -1148,6 +1149,7 @@ const FullImageModal = memo(() => {
                       anyMenuOpen={editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId}
                       onMakeVideo={handleVideo}
                       onChangeAngle={handleChangeAngle}
+                      onResize={handleResize}
                       onQuickEdit={handleQuickEdit}
                     />
                   </Suspense>
