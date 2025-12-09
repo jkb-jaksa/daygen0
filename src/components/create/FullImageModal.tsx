@@ -36,6 +36,10 @@ const QuickEditModal = lazy(() => import('./QuickEditModal'));
 import type { QuickEditOptions } from './QuickEditModal';
 const MakeVideoModal = lazy(() => import('./MakeVideoModal'));
 import type { MakeVideoOptions } from './MakeVideoModal';
+const ChangeAngleModal = lazy(() => import('./ChangeAngleModal'));
+import type { AngleOption } from './hooks/useAngleHandlers';
+const ResizeModal = lazy(() => import('./ResizeModal'));
+import type { GeminiAspectRatio } from '../../types/aspectRatio';
 const MasterSidebar = lazy(() => import('../master/MasterSidebar'));
 // Individual badges are rendered via ImageBadgeRow
 
@@ -108,7 +112,6 @@ const FullImageModal = memo(() => {
     handleToggleLike,
     handleTogglePublic,
     handleDeleteImage,
-    handleEditMenuSelect,
     handleImageActionMenu,
     handleDownloadImage,
     handleAddToFolder,
@@ -129,6 +132,8 @@ const FullImageModal = memo(() => {
   const [isVideoPromptExpanded, setIsVideoPromptExpanded] = useState(false);
   const [quickEditModalState, setQuickEditModalState] = useState<{ isOpen: boolean; initialPrompt: string } | null>(null);
   const [makeVideoModalState, setMakeVideoModalState] = useState<{ isOpen: boolean; initialPrompt: string } | null>(null);
+  const [changeAngleModalState, setChangeAngleModalState] = useState<{ isOpen: boolean; selectedAngle: AngleOption | null } | null>(null);
+  const [resizeModalState, setResizeModalState] = useState<{ isOpen: boolean } | null>(null);
 
   // Save prompt functionality
   const { user, storagePrefix } = useAuth();
@@ -565,20 +570,14 @@ const FullImageModal = memo(() => {
     }
   }, [fullSizeImage, handleAddToFolder]);
 
-  // Edit menu actions
-  const handleEditImageClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (fullSizeImage) {
-      handleEditMenuSelect(fullSizeImage);
-    }
-  }, [fullSizeImage, handleEditMenuSelect]);
+
 
   const handleMakeVideoClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     if (fullSizeImage) {
       setMakeVideoModalState({
         isOpen: true,
-        initialPrompt: fullSizeImage.prompt || '',
+        initialPrompt: '',
       });
     }
   }, [fullSizeImage]);
@@ -587,7 +586,7 @@ const FullImageModal = memo(() => {
     if (fullSizeImage) {
       setMakeVideoModalState({
         isOpen: true,
-        initialPrompt: fullSizeImage.prompt || '',
+        initialPrompt: '',
       });
     }
   }, [fullSizeImage]);
@@ -600,6 +599,46 @@ const FullImageModal = memo(() => {
       });
     }
   }, [fullSizeImage]);
+
+  const handleChangeAngle = useCallback(() => {
+    if (fullSizeImage) {
+      setChangeAngleModalState({
+        isOpen: true,
+        selectedAngle: null,
+      });
+    }
+  }, [fullSizeImage]);
+
+  const handleResize = useCallback(() => {
+    if (fullSizeImage) {
+      setResizeModalState({
+        isOpen: true,
+      });
+    }
+  }, [fullSizeImage]);
+
+  const handleChangeAngleClose = useCallback(() => {
+    setChangeAngleModalState(null);
+  }, []);
+
+  const handleAngleSelect = useCallback((angle: AngleOption) => {
+    setChangeAngleModalState(prev => prev ? { ...prev, selectedAngle: prev.selectedAngle?.id === angle.id ? null : angle } : null);
+  }, []);
+
+  const handleAngleApply = useCallback(() => {
+    // TODO: Implement angle application logic
+    setChangeAngleModalState(null);
+  }, []);
+
+  const handleResizeClose = useCallback(() => {
+    setResizeModalState(null);
+  }, []);
+
+  const handleResizeSubmit = useCallback((aspectRatio: GeminiAspectRatio) => {
+    // TODO: Implement resize logic
+    console.log('[FullImageModal] Resize requested:', aspectRatio);
+    setResizeModalState(null);
+  }, []);
 
   const handleMakeVideoSubmit = useCallback(async (options: MakeVideoOptions) => {
     if (!fullSizeImage || !fullSizeImage.url) {
@@ -1068,7 +1107,7 @@ const FullImageModal = memo(() => {
                   } transition-opacity duration-100`}
               >
                 {/* Edit button - Non-gallery only */}
-                {activeCategory !== 'gallery' && (
+                {activeCategory !== 'gallery' && !isVideo && (
                   <div
                     className={`${editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}`
                       ? 'opacity-100'
@@ -1082,6 +1121,7 @@ const FullImageModal = memo(() => {
                         isFullSize={true}
                         anyMenuOpen={editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId}
                         onMakeVideo={handleVideo}
+                        onChangeAngle={handleChangeAngle}
                         onQuickEdit={handleQuickEdit}
                       />
                     </Suspense>
@@ -1099,7 +1139,7 @@ const FullImageModal = memo(() => {
                   } transition-opacity duration-100`}
               >
                 {/* Edit button - Gallery only */}
-                {activeCategory === 'gallery' && (
+                {activeCategory === 'gallery' && !isVideo && (
                   <Suspense fallback={null}>
                     <EditButtonMenu
                       menuId={`fullsize-edit-${fullSizeImage.jobId}`}
@@ -1107,6 +1147,7 @@ const FullImageModal = memo(() => {
                       isFullSize={true}
                       anyMenuOpen={editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId}
                       onMakeVideo={handleVideo}
+                      onChangeAngle={handleChangeAngle}
                       onQuickEdit={handleQuickEdit}
                     />
                   </Suspense>
@@ -1657,24 +1698,26 @@ const FullImageModal = memo(() => {
             </div>
 
             {/* Edit actions */}
-            <div className="flex flex-col gap-0 mt-2">
-              <button
-                type="button"
-                onClick={handleEditImageClick}
-                className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
-              >
-                <EditIcon className="w-4 h-4 flex-shrink-0 text-theme-text" />
-                Edit image
-              </button>
-              <button
-                type="button"
-                onClick={handleMakeVideoClick}
-                className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
-              >
-                <Camera className="w-4 h-4 flex-shrink-0 text-theme-text" />
-                Make video
-              </button>
-            </div>
+            {!isVideo && (
+              <div className="flex flex-col gap-0 mt-2">
+                <button
+                  type="button"
+                  onClick={handleQuickEdit}
+                  className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
+                >
+                  <EditIcon className="w-4 h-4 flex-shrink-0 text-theme-text" />
+                  Edit image
+                </button>
+                <button
+                  type="button"
+                  onClick={handleMakeVideoClick}
+                  className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
+                >
+                  <Camera className="w-4 h-4 flex-shrink-0 text-theme-text" />
+                  Make video
+                </button>
+              </div>
+            )}
           </aside>
         )}
 
@@ -1737,6 +1780,32 @@ const FullImageModal = memo(() => {
           />
         </Suspense>
       )}
+
+      {/* Change Angle Modal */}
+      {changeAngleModalState && fullSizeImage && (
+        <Suspense fallback={null}>
+          {changeAngleModalState && (
+            <ChangeAngleModal
+              open={changeAngleModalState.isOpen}
+              onClose={handleChangeAngleClose}
+              selectedAngle={changeAngleModalState.selectedAngle}
+              onSelectAngle={handleAngleSelect}
+              onApply={handleAngleApply}
+            />
+          )}
+        </Suspense>
+      )}
+
+      <Suspense fallback={null}>
+        {resizeModalState && (
+          <ResizeModal
+            open={resizeModalState.isOpen}
+            onClose={handleResizeClose}
+            image={fullSizeImage}
+            onResize={handleResizeSubmit}
+          />
+        )}
+      </Suspense>
     </>
   );
 });

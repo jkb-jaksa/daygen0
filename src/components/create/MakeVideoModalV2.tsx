@@ -45,6 +45,7 @@ export interface MakeVideoOptions {
 interface MakeVideoModalProps {
     isOpen: boolean;
     onClose: () => void;
+    onGenerateVideo?: (options: MakeVideoOptions) => void;
     onSubmit?: (options: MakeVideoOptions) => void;
     initialPrompt?: string;
     isLoading?: boolean;
@@ -68,6 +69,7 @@ const TooltipPortal = ({ id, children }: { id: string, children: React.ReactNode
 const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
     isOpen,
     onClose,
+    onGenerateVideo,
     onSubmit,
     initialPrompt = '',
     isLoading = false,
@@ -192,6 +194,10 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
     const [veoNegativePrompt, setVeoNegativePrompt] = useState('');
     const [veoSeed, setVeoSeed] = useState<number | undefined>(undefined);
 
+    // Sora Specific States
+    const [soraDuration, setSoraDuration] = useState<number>(5);
+    const [soraWithSound, setSoraWithSound] = useState<boolean>(true);
+
     // Handlers
     const avatarHandlers = useAvatarHandlers();
     const productHandlers = useProductHandlers();
@@ -280,8 +286,8 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
 
     const handleReferenceAdd = useCallback(() => { }, []);
 
-    // Max 3 references allowed in Make Video
-    const MAX_REFERENCES = 3;
+    // Max 2 allowed in Make Video (plus the original image makes 3)
+    const MAX_REFERENCES = 2;
 
     const {
         referenceFiles,
@@ -359,8 +365,11 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (onSubmit) {
-            onSubmit({
+        const handler = onGenerateVideo || onSubmit;
+        showToast(`Debug: Submit. Handler: ${typeof handler}`);
+
+        if (handler) {
+            handler({
                 prompt,
                 referenceFiles,
                 aspectRatio,
@@ -373,6 +382,8 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                 model: veoGenModel,
             });
             onClose();
+        } else {
+            showToast("Debug: Handler IS MISSING (checked both onGenerateVideo and onSubmit)");
         }
     };
 
@@ -460,7 +471,16 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
         kling: { enabled: false, model: 'kling-v2.1-master' as const, onModelChange: () => { }, aspectRatio: '16:9' as const, onAspectRatioChange: () => { }, duration: 5 as const, onDurationChange: () => { }, mode: 'standard' as const, onModeChange: () => { }, cfgScale: 0.5, onCfgScaleChange: () => { }, negativePrompt: '', onNegativePromptChange: () => { }, cameraType: 'none' as const, onCameraTypeChange: () => { }, cameraConfig: { horizontal: 0, vertical: 0, pan: 0, tilt: 0, roll: 0, zoom: 0 }, onCameraConfigChange: () => { } },
         lumaPhoton: { enabled: false, model: 'luma-photon-1' as const, onModelChange: () => { } },
         lumaRay: { enabled: false, variant: 'luma-ray-2' as const, onVariantChange: () => { } },
-    }), [batchSize, aspectRatio, isSettingsOpen, selectedModel, veoGenModel, veoNegativePrompt, veoSeed]);
+        sora: {
+            enabled: selectedModel === 'sora-2',
+            aspectRatio: aspectRatio as '16:9' | '9:16',
+            onAspectRatioChange: (val: '16:9' | '9:16') => setAspectRatio(val),
+            duration: soraDuration,
+            onDurationChange: (val: number) => setSoraDuration(val),
+            withSound: soraWithSound,
+            onWithSoundChange: (val: boolean) => setSoraWithSound(val)
+        }
+    }), [batchSize, aspectRatio, isSettingsOpen, selectedModel, veoGenModel, veoNegativePrompt, veoSeed, soraDuration, soraWithSound]);
 
     if (!isOpen) return null;
 
@@ -510,7 +530,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
             )}
 
             <div
-                className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/75 px-4 pt-20 pb-6 backdrop-blur-sm"
+                className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/75 px-4 py-6 backdrop-blur-sm"
                 onClick={(e) => {
                     e.stopPropagation();
                     onClose();
@@ -518,133 +538,131 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
             >
                 <div
                     ref={modalRef}
-                    className={`${glass.promptDark} w-full max-w-[96vw] rounded-3xl border border-theme-dark p-6 shadow-2xl flex flex-col md:flex-row gap-6 transition-all duration-200`}
+                    className={`${glass.promptDark} w-full max-w-6xl rounded-3xl border border-theme-dark p-6 shadow-2xl flex flex-col md:flex-row gap-6 transition-all duration-200`}
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Left Column - Image Preview */}
-                    <div className="w-fit min-w-0 flex items-center justify-center">
-                        <div className="flex items-center justify-center bg-theme-black/20 rounded-xl overflow-hidden border border-theme-dark relative group w-fit h-fit mx-auto">
-                            <img
-                                src={imageUrl}
-                                alt="Preview"
-                                className="max-w-full max-h-[70vh] w-auto h-auto object-contain"
-                            />
+                    <div className="w-full md:w-5/12 flex items-center justify-center bg-theme-black/20 rounded-xl overflow-hidden border border-theme-dark relative aspect-square group">
+                        <img
+                            src={imageUrl}
+                            alt="Preview"
+                            className="w-full h-full object-cover absolute inset-0"
+                        />
 
-                            {/* Prompt Description Bar */}
-                            {item && (
-                                <div
-                                    className="PromptDescriptionBar absolute left-4 right-4 rounded-2xl p-4 text-theme-text bottom-4 transition-all duration-150 z-10 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto"
-                                    onClick={(e) => e.stopPropagation()}
-                                >
-                                    <div className="flex items-center justify-center">
-                                        <div className="text-center">
-                                            <div className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
-                                                {item.prompt}
-                                                {item.prompt && (
-                                                    <>
-                                                        <button
-                                                            onClick={(e) => void handleCopyPrompt(item.prompt!, e)}
-                                                            className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle"
-                                                            onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'make-video-copy-prompt')}
-                                                            onMouseLeave={() => hideHoverTooltip('make-video-copy-prompt')}
-                                                        >
-                                                            <Copy className="w-3 h-3" />
-                                                        </button>
-                                                        <TooltipPortal id="make-video-copy-prompt">
-                                                            Copy prompt
-                                                        </TooltipPortal>
-                                                        <button
-                                                            onClick={(e) => handleToggleSavePrompt(item.prompt!, e)}
-                                                            className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle"
-                                                            onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'make-video-save-prompt')}
-                                                            onMouseLeave={() => hideHoverTooltip('make-video-save-prompt')}
-                                                        >
-                                                            {isPromptSaved(item.prompt!) ? (
-                                                                <Bookmark className="w-3 h-3 fill-current" />
-                                                            ) : (
-                                                                <BookmarkPlus className="w-3 h-3" />
-                                                            )}
-                                                        </button>
-                                                        <TooltipPortal id="make-video-save-prompt">
-                                                            {isPromptSaved(item.prompt!) ? "Prompt saved" : "Save prompt"}
-                                                        </TooltipPortal>
-                                                    </>
-                                                )}
-                                            </div>
-                                            <div className="mt-2 flex flex-col justify-center items-center gap-2">
-                                                {/* Reference images thumbnails */}
-                                                {item.references && item.references.length > 0 && (
-                                                    <div className="flex items-center gap-1.5">
-                                                        <div className="flex gap-1">
-                                                            {item.references.map((ref, refIdx) => (
-                                                                <div key={refIdx} className="relative">
-                                                                    <img
-                                                                        src={ref}
-                                                                        alt={`Reference ${refIdx + 1}`}
-                                                                        loading="lazy"
-                                                                        className="w-6 h-6 rounded object-cover border border-theme-mid cursor-pointer hover:border-theme-text transition-colors duration-200"
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                        }}
-                                                                    />
-                                                                    <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
-                                                                        {refIdx + 1}
-                                                                    </div>
+                        {/* Prompt Description Bar */}
+                        {item && (
+                            <div
+                                className="PromptDescriptionBar absolute left-4 right-4 rounded-2xl p-4 text-theme-text bottom-4 transition-all duration-150 z-10 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <div className="flex items-center justify-center">
+                                    <div className="text-center">
+                                        <div className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
+                                            {item.prompt}
+                                            {item.prompt && (
+                                                <>
+                                                    <button
+                                                        onClick={(e) => void handleCopyPrompt(item.prompt!, e)}
+                                                        className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle"
+                                                        onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'make-video-copy-prompt')}
+                                                        onMouseLeave={() => hideHoverTooltip('make-video-copy-prompt')}
+                                                    >
+                                                        <Copy className="w-3 h-3" />
+                                                    </button>
+                                                    <TooltipPortal id="make-video-copy-prompt">
+                                                        Copy prompt
+                                                    </TooltipPortal>
+                                                    <button
+                                                        onClick={(e) => handleToggleSavePrompt(item.prompt!, e)}
+                                                        className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle"
+                                                        onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'make-video-save-prompt')}
+                                                        onMouseLeave={() => hideHoverTooltip('make-video-save-prompt')}
+                                                    >
+                                                        {isPromptSaved(item.prompt!) ? (
+                                                            <Bookmark className="w-3 h-3 fill-current" />
+                                                        ) : (
+                                                            <BookmarkPlus className="w-3 h-3" />
+                                                        )}
+                                                    </button>
+                                                    <TooltipPortal id="make-video-save-prompt">
+                                                        {isPromptSaved(item.prompt!) ? "Prompt saved" : "Save prompt"}
+                                                    </TooltipPortal>
+                                                </>
+                                            )}
+                                        </div>
+                                        <div className="mt-2 flex flex-col justify-center items-center gap-2">
+                                            {/* Reference images thumbnails */}
+                                            {item.references && item.references.length > 0 && (
+                                                <div className="flex items-center gap-1.5">
+                                                    <div className="flex gap-1">
+                                                        {item.references.map((ref, refIdx) => (
+                                                            <div key={refIdx} className="relative">
+                                                                <img
+                                                                    src={ref}
+                                                                    alt={`Reference ${refIdx + 1}`}
+                                                                    loading="lazy"
+                                                                    className="w-6 h-6 rounded object-cover border border-theme-mid cursor-pointer hover:border-theme-text transition-colors duration-200"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                    }}
+                                                                />
+                                                                <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
+                                                                    {refIdx + 1}
                                                                 </div>
-                                                            ))}
-                                                        </div>
-                                                        <span className="text-xs font-raleway text-theme-white/70">
-                                                            {item.references.length} ref{item.references.length > 1 ? 's' : ''}
-                                                        </span>
+                                                            </div>
+                                                        ))}
                                                     </div>
-                                                )}
+                                                    <span className="text-xs font-raleway text-theme-white/70">
+                                                        {item.references.length} ref{item.references.length > 1 ? 's' : ''}
+                                                    </span>
+                                                </div>
+                                            )}
 
-                                                <ImageBadgeRow
-                                                    align="center"
-                                                    model={{
-                                                        name: item.model || 'unknown',
-                                                        size: 'md',
-                                                        onClick: () => { }
-                                                    }}
-                                                    avatars={
-                                                        item.avatarId
-                                                            ? (() => {
-                                                                const avatarForImage = avatarHandlers.storedAvatars.find(a => a.id === item.avatarId);
-                                                                return avatarForImage ? [{ data: avatarForImage, onClick: () => { } }] : [];
-                                                            })()
-                                                            : []
-                                                    }
-                                                    products={
-                                                        item.productId
-                                                            ? (() => {
-                                                                const productForImage = productHandlers.storedProducts.find(p => p.id === item.productId);
-                                                                return productForImage ? [{ data: productForImage, onClick: () => { } }] : [];
-                                                            })()
-                                                            : []
-                                                    }
-                                                    styles={
-                                                        item.styleId
-                                                            ? (() => {
-                                                                const styleForImage = styleIdToStoredStyle(item.styleId!);
-                                                                return styleForImage ? [{ data: styleForImage }] : [];
-                                                            })()
-                                                            : []
-                                                    }
-                                                    aspectRatio={item.aspectRatio}
-                                                    isPublic={item.isPublic}
-                                                    onPublicClick={undefined}
-                                                    compact={false}
-                                                />
-                                            </div>
+                                            <ImageBadgeRow
+                                                align="center"
+                                                model={{
+                                                    name: item.model || 'unknown',
+                                                    size: 'md',
+                                                    onClick: () => { }
+                                                }}
+                                                avatars={
+                                                    item.avatarId
+                                                        ? (() => {
+                                                            const avatarForImage = avatarHandlers.storedAvatars.find(a => a.id === item.avatarId);
+                                                            return avatarForImage ? [{ data: avatarForImage, onClick: () => { } }] : [];
+                                                        })()
+                                                        : []
+                                                }
+                                                products={
+                                                    item.productId
+                                                        ? (() => {
+                                                            const productForImage = productHandlers.storedProducts.find(p => p.id === item.productId);
+                                                            return productForImage ? [{ data: productForImage, onClick: () => { } }] : [];
+                                                        })()
+                                                        : []
+                                                }
+                                                styles={
+                                                    item.styleId
+                                                        ? (() => {
+                                                            const styleForImage = styleIdToStoredStyle(item.styleId!);
+                                                            return styleForImage ? [{ data: styleForImage }] : [];
+                                                        })()
+                                                        : []
+                                                }
+                                                aspectRatio={item.aspectRatio}
+                                                isPublic={item.isPublic}
+                                                onPublicClick={undefined}
+                                                compact={false}
+                                            />
                                         </div>
                                     </div>
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Right Column - Form */}
-                    <div className="flex-1 w-full md:min-w-[720px] flex flex-col">
+                    <div className="w-full md:w-7/12 flex flex-col">
                         <div className="flex items-center justify-between mb-1">
                             <h2 className="text-lg font-raleway text-theme-text flex items-center gap-2">
                                 <Video className="w-5 h-5 text-theme-text" />
@@ -932,7 +950,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                         isGenerating={isLoading}
                                                         activeCategory="video"
                                                         hasReferences={referenceFiles.length > 0}
-                                                        allowedModels={['veo-3', 'sora-2']}
+                                                        allowedModels={['veo-3']}
                                                     />
                                                 </Suspense>
                                             </div>

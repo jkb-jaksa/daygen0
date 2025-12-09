@@ -233,7 +233,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
     const [redoStack, setRedoStack] = useState<{ points: { x: number; y: number }[]; brushSize: number; isErase: boolean }[]>([]);
     const [maskData, setMaskData] = useState<string | null>(null);
-    
+
     // Model selection - tracks user's preferred model when Precise Edit is OFF
     const [userSelectedModel, setUserSelectedModel] = useState<string>('gemini-3.0-pro-image');
     // Effective model: Ideogram when Precise Edit is ON, otherwise user's selection
@@ -463,6 +463,18 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
             }
         }
     }, [imageUrl, redrawCanvas]);
+
+    const handleImageLoad = useCallback(() => {
+        if (canvasRef.current && modalRef.current) {
+            const image = modalRef.current.querySelector('img[alt="Preview"]');
+            if (image) {
+                const rect = image.getBoundingClientRect();
+                canvasRef.current.width = rect.width;
+                canvasRef.current.height = rect.height;
+                redrawCanvas();
+            }
+        }
+    }, [redrawCanvas]);
 
     // Handlers
     const avatarHandlers = useAvatarHandlers();
@@ -1069,7 +1081,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
             )}
 
             <div
-                className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/75 px-4 py-6 backdrop-blur-sm"
+                className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/75 px-4 pt-20 pb-6 backdrop-blur-sm"
                 onClick={(e) => {
                     e.stopPropagation();
                     onClose();
@@ -1077,18 +1089,19 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
             >
                 <div
                     ref={modalRef}
-                    className={`${glass.promptDark} w-full max-w-6xl rounded-3xl border border-theme-dark p-6 shadow-2xl flex flex-col md:flex-row gap-6 transition-all duration-200`}
+                    className={`${glass.promptDark} w-full max-w-[96vw] rounded-3xl border border-theme-dark p-6 shadow-2xl flex flex-col md:flex-row gap-6 transition-all duration-200`}
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Left Column - Image Preview */}
-                    <div className="w-full md:w-5/12 flex flex-col items-center justify-center gap-4">
+                    <div className="w-fit min-w-0 flex flex-col items-start justify-center gap-4">
                         <div
-                            className={`flex items-center justify-center bg-theme-black/20 rounded-xl overflow-hidden border border-theme-dark relative aspect-square group transition-all duration-300 w-full`}
+                            className="flex items-center justify-center bg-theme-black/20 rounded-xl overflow-hidden border border-theme-dark relative group transition-all duration-300 w-fit h-fit mx-auto"
                         >
                             <img
                                 src={imageUrl}
                                 alt="Preview"
-                                className="w-full h-full object-cover absolute inset-0"
+                                onLoad={handleImageLoad}
+                                className="max-w-full max-h-[70vh] w-auto h-auto object-contain"
                             />
 
                             {/* Precise Edit Canvas */}
@@ -1366,7 +1379,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                             )}
                         </div>
                     </div>    {/* Right Column - Form */}
-                    < div className="w-full md:w-7/12 flex flex-col" >
+                    <div className="flex-1 w-full md:min-w-[720px] flex flex-col">
                         <div className="flex items-center justify-between mb-1">
                             <h2 className="text-lg font-raleway text-theme-text flex items-center gap-2">
                                 <Edit className="w-5 h-5 text-theme-text" />
