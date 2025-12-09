@@ -38,6 +38,8 @@ const MakeVideoModal = lazy(() => import('./MakeVideoModal'));
 import type { MakeVideoOptions } from './MakeVideoModal';
 const ChangeAngleModal = lazy(() => import('./ChangeAngleModal'));
 import type { AngleOption } from './hooks/useAngleHandlers';
+const ResizeModal = lazy(() => import('./ResizeModal'));
+import type { GeminiAspectRatio } from '../../types/aspectRatio';
 const MasterSidebar = lazy(() => import('../master/MasterSidebar'));
 // Individual badges are rendered via ImageBadgeRow
 
@@ -131,6 +133,7 @@ const FullImageModal = memo(() => {
   const [quickEditModalState, setQuickEditModalState] = useState<{ isOpen: boolean; initialPrompt: string } | null>(null);
   const [makeVideoModalState, setMakeVideoModalState] = useState<{ isOpen: boolean; initialPrompt: string } | null>(null);
   const [changeAngleModalState, setChangeAngleModalState] = useState<{ isOpen: boolean; selectedAngle: AngleOption | null } | null>(null);
+  const [resizeModalState, setResizeModalState] = useState<{ isOpen: boolean } | null>(null);
 
   // Save prompt functionality
   const { user, storagePrefix } = useAuth();
@@ -606,6 +609,14 @@ const FullImageModal = memo(() => {
     }
   }, [fullSizeImage]);
 
+  const handleResize = useCallback(() => {
+    if (fullSizeImage) {
+      setResizeModalState({
+        isOpen: true,
+      });
+    }
+  }, [fullSizeImage]);
+
   const handleChangeAngleClose = useCallback(() => {
     setChangeAngleModalState(null);
   }, []);
@@ -617,6 +628,16 @@ const FullImageModal = memo(() => {
   const handleAngleApply = useCallback(() => {
     // TODO: Implement angle application logic
     setChangeAngleModalState(null);
+  }, []);
+
+  const handleResizeClose = useCallback(() => {
+    setResizeModalState(null);
+  }, []);
+
+  const handleResizeSubmit = useCallback((aspectRatio: GeminiAspectRatio) => {
+    // TODO: Implement resize logic
+    console.log('[FullImageModal] Resize requested:', aspectRatio);
+    setResizeModalState(null);
   }, []);
 
   const handleMakeVideoSubmit = useCallback(async (options: MakeVideoOptions) => {
@@ -1763,15 +1784,28 @@ const FullImageModal = memo(() => {
       {/* Change Angle Modal */}
       {changeAngleModalState && fullSizeImage && (
         <Suspense fallback={null}>
-          <ChangeAngleModal
-            open={changeAngleModalState.isOpen}
-            onClose={handleChangeAngleClose}
-            selectedAngle={changeAngleModalState.selectedAngle}
-            onSelectAngle={handleAngleSelect}
-            onApply={handleAngleApply}
-          />
+          {changeAngleModalState && (
+            <ChangeAngleModal
+              open={changeAngleModalState.isOpen}
+              onClose={handleChangeAngleClose}
+              selectedAngle={changeAngleModalState.selectedAngle}
+              onSelectAngle={handleAngleSelect}
+              onApply={handleAngleApply}
+            />
+          )}
         </Suspense>
       )}
+
+      <Suspense fallback={null}>
+        {resizeModalState && (
+          <ResizeModal
+            open={resizeModalState.isOpen}
+            onClose={handleResizeClose}
+            image={fullSizeImage}
+            onResize={handleResizeSubmit}
+          />
+        )}
+      </Suspense>
     </>
   );
 });
