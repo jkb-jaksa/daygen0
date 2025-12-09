@@ -98,7 +98,7 @@ const buildModalVariateJobId = (item: GalleryImageLike): string => {
 };
 
 const FullImageModal = memo(() => {
-  const { state, filteredItems, addImage, closeFullSize, openFullSize } = useGallery();
+  const { state, filteredItems, addImage, addVideo, closeFullSize, openFullSize } = useGallery();
   const { addActiveJob, updateJobStatus, removeActiveJob } = useGeneration();
 
   const { generateImage: generateGeminiImage } = useGeminiImageGeneration();
@@ -613,19 +613,21 @@ const FullImageModal = memo(() => {
     setMakeVideoModalState(null);
     closeFullSize();
 
-    // Prepare references
+    // Prepare references - pass URLs directly, backend handles downloading
     const references: string[] = [];
 
-    // 1. Add initial image as first reference (Veo 3.1 Text-to-Video with image refs)
+    // 1. Add initial image URL as first reference
     references.push(fullSizeImage.url);
 
-    // 2. Add uploaded reference files
+    // 2. Add uploaded reference files (convert Files to data URLs)
     if (referenceFiles && referenceFiles.length > 0) {
       for (const referenceItem of referenceFiles) {
         try {
           if (typeof referenceItem === 'string') {
-            references.push(referenceItem);
+            // Pass URLs/data URLs directly
+            references.push(referenceItem.trim());
           } else {
+            // Convert File objects to data URLs
             const base64 = await new Promise<string>((resolve, reject) => {
               const reader = new FileReader();
               reader.onload = () => resolve(reader.result as string);
@@ -640,31 +642,35 @@ const FullImageModal = memo(() => {
       }
     }
 
-    // Start Veo generation
-    // IMPORTANT: Treat as Text-to-Video (imageBase64 undefined) with references
-    try {
-      const result = await startVeoGeneration({
-        prompt: prompt,
-        model: model || 'veo-3.1-generate-preview', // Default to standard if not passed
-        aspectRatio: aspectRatio, // '16:9' or '9:16'
-        references: references, // Max 3 total (1 initial + 2 user)
-        // imageBase64: undefined, // Explicitly undefined to ensure T2V path
-      });
-
-      if (result) {
-        // Add job to tracker/gallery via addActiveJob usually happens in hook, 
-        // but if we need to manually add the result to gallery immediately:
-        // The hook runGenerationJob usually handles adding to active jobs if configured.
-        // Let's check useVeoVideoGeneration implementation. 
-        // It calls runGenerationJob which adds to tracker.
-        // So we just need to handle the final success toast or basic feedback if needed.
-        showToast('Video generation started');
+    // Start Veo generation (Fire and forget, handle result in background)
+    startVeoGeneration({
+      prompt: prompt,
+      model: (model as 'veo-3.1-generate-preview' | 'veo-3.1-fast-generate-preview') || 'veo-3.1-generate-preview',
+      aspectRatio: aspectRatio as '16:9' | '9:16',
+      references: references,
+    }).then((result) => {
+      if (result && result.url) {
+        // Add video to gallery when done
+        addVideo({
+          url: result.url,
+          prompt: prompt,
+          model: result.model || model || 'veo-3.1-generate-preview',
+          timestamp: result.timestamp || new Date().toISOString(),
+          jobId: result.jobId,
+          type: 'video',
+          aspectRatio: aspectRatio as string,
+        });
+        showToast('Video generation complete!');
       }
-    } catch (error) {
+    }).catch((error) => {
       debugError('Failed to start video generation', error);
-      showToast('Failed to start video generation');
-    }
-  }, [fullSizeImage, startVeoGeneration, closeFullSize, showToast]);
+      showToast('Failed to generate video');
+    });
+
+    // Immediate feedback and redirect
+    showToast('Video generation started');
+    navigate('/app/video');
+  }, [fullSizeImage, startVeoGeneration, closeFullSize, showToast, addVideo, navigate]);
 
   const handleQuickEditSubmit = useCallback(async (options: QuickEditOptions) => {
     if (!fullSizeImage || !fullSizeImage.url) {

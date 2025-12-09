@@ -139,7 +139,7 @@ function CreateRefactoredView() {
   const [pendingFolderChanges, setPendingFolderChanges] = useState<Map<string, Set<string>>>(new Map());
 
   // Audio mode state
-  const [audioMode, setAudioMode] = useState<'menu' | 'design' | 'upload' | 'record'>('menu');
+  const [audioMode, setAudioMode] = useState<'menu' | 'design' | 'upload' | 'record'>('design');
 
   // Development-only: Add dummy image for testing
   const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -1066,56 +1066,14 @@ function CreateRefactoredView() {
                     transform: 'translateX(-50%)',
                   }}
                 >
-                  {audioMode === 'menu' && (
-                    <div className="flex flex-col items-center justify-center h-full gap-8">
-                      <h2 className="text-3xl font-raleway font-light text-theme-white">Upload your voice recording</h2>
-                      <div className="grid grid-cols-3 gap-6 w-full max-w-3xl">
-                        <button
-                          onClick={() => setAudioMode('upload')}
-                          className={`${glass.surface} aspect-square rounded-3xl flex flex-col items-center justify-center gap-4 hover:bg-theme-white/5 transition-colors border border-theme-white/10`}
-                        >
-                          <div className="w-12 h-12 rounded-full bg-theme-white/10 flex items-center justify-center">
-                            <svg className="w-6 h-6 text-theme-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                            </svg>
-                          </div>
-                          <span className="text-theme-white font-raleway">Upload</span>
-                        </button>
-                        
-                        <button
-                          onClick={() => setAudioMode('record')}
-                          className={`${glass.surface} aspect-square rounded-3xl flex flex-col items-center justify-center gap-4 hover:bg-theme-white/5 transition-colors border border-theme-white/10`}
-                        >
-                          <div className="w-12 h-12 rounded-full bg-theme-white/10 flex items-center justify-center">
-                            <svg className="w-6 h-6 text-theme-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                            </svg>
-                          </div>
-                          <span className="text-theme-white font-raleway">Record</span>
-                        </button>
-
-                        <button
-                          onClick={() => setAudioMode('design')}
-                          className={`${glass.surface} aspect-square rounded-3xl flex flex-col items-center justify-center gap-4 hover:bg-theme-white/5 transition-colors border border-theme-white/10`}
-                        >
-                          <div className="w-12 h-12 rounded-full bg-theme-white/10 flex items-center justify-center">
-                            <svg className="w-6 h-6 text-theme-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                            </svg>
-                          </div>
-                          <span className="text-theme-white font-raleway">Design</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
                   {audioMode === 'design' && (
                     <Suspense fallback={null}>
-                      <AudioVoiceStudio onBack={() => setAudioMode('menu')} />
+                      <AudioVoiceStudio onBack={() => navigate('/app/image')} />
                     </Suspense>
                   )}
                   {audioMode === 'upload' && (
                     <div className={`${glass.surface} rounded-3xl p-8 flex flex-col items-center justify-center h-full relative`}>
-                      <button 
+                      <button
                         onClick={() => setAudioMode('menu')}
                         className="absolute top-6 left-6 p-2 rounded-full hover:bg-theme-white/10 transition-colors text-theme-white/60 hover:text-theme-white"
                       >
@@ -1129,7 +1087,7 @@ function CreateRefactoredView() {
                   )}
                   {audioMode === 'record' && (
                     <div className={`${glass.surface} rounded-3xl p-8 flex flex-col items-center justify-center h-full relative`}>
-                      <button 
+                      <button
                         onClick={() => setAudioMode('menu')}
                         className="absolute top-6 left-6 p-2 rounded-full hover:bg-theme-white/10 transition-colors text-theme-white/60 hover:text-theme-white"
                       >

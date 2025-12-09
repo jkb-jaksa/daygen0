@@ -192,10 +192,6 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
     const [veoNegativePrompt, setVeoNegativePrompt] = useState('');
     const [veoSeed, setVeoSeed] = useState<number | undefined>(undefined);
 
-    // Sora Specific States
-    const [soraDuration, setSoraDuration] = useState<number>(5);
-    const [soraWithSound, setSoraWithSound] = useState<boolean>(true);
-
     // Handlers
     const avatarHandlers = useAvatarHandlers();
     const productHandlers = useProductHandlers();
@@ -464,16 +460,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
         kling: { enabled: false, model: 'kling-v2.1-master' as const, onModelChange: () => { }, aspectRatio: '16:9' as const, onAspectRatioChange: () => { }, duration: 5 as const, onDurationChange: () => { }, mode: 'standard' as const, onModeChange: () => { }, cfgScale: 0.5, onCfgScaleChange: () => { }, negativePrompt: '', onNegativePromptChange: () => { }, cameraType: 'none' as const, onCameraTypeChange: () => { }, cameraConfig: { horizontal: 0, vertical: 0, pan: 0, tilt: 0, roll: 0, zoom: 0 }, onCameraConfigChange: () => { } },
         lumaPhoton: { enabled: false, model: 'luma-photon-1' as const, onModelChange: () => { } },
         lumaRay: { enabled: false, variant: 'luma-ray-2' as const, onVariantChange: () => { } },
-        sora: {
-            enabled: selectedModel === 'sora-2',
-            aspectRatio: aspectRatio as '16:9' | '9:16',
-            onAspectRatioChange: (val: '16:9' | '9:16') => setAspectRatio(val),
-            duration: soraDuration,
-            onDurationChange: (val: number) => setSoraDuration(val),
-            withSound: soraWithSound,
-            onWithSoundChange: (val: boolean) => setSoraWithSound(val)
-        }
-    }), [batchSize, aspectRatio, isSettingsOpen, selectedModel, veoGenModel, veoNegativePrompt, veoSeed, soraDuration, soraWithSound]);
+    }), [batchSize, aspectRatio, isSettingsOpen, selectedModel, veoGenModel, veoNegativePrompt, veoSeed]);
 
     if (!isOpen) return null;
 
