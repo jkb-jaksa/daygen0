@@ -1093,9 +1093,9 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Left Column - Image Preview */}
-                    <div className="flex-1 min-w-0 flex flex-col items-center justify-center gap-4">
+                    <div className="w-fit min-w-0 flex flex-col items-start justify-center gap-4">
                         <div
-                            className={`flex items-center justify-center bg-theme-black/20 rounded-xl overflow-hidden border border-theme-dark relative group transition-all duration-300 w-full`}
+                            className="flex items-center justify-center bg-theme-black/20 rounded-xl overflow-hidden border border-theme-dark relative group transition-all duration-300 w-fit h-fit mx-auto"
                         >
                             <img
                                 src={imageUrl}
@@ -1379,7 +1379,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                             )}
                         </div>
                     </div>    {/* Right Column - Form */}
-                    < div className="w-full md:w-[720px] flex-shrink-0 flex flex-col" >
+                    <div className="flex-1 w-full md:min-w-[720px] flex flex-col">
                         <div className="flex items-center justify-between mb-1">
                             <h2 className="text-lg font-raleway text-theme-text flex items-center gap-2">
                                 <Edit className="w-5 h-5 text-theme-text" />

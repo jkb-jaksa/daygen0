@@ -578,7 +578,7 @@ const FullImageModal = memo(() => {
     if (fullSizeImage) {
       setMakeVideoModalState({
         isOpen: true,
-        initialPrompt: fullSizeImage.prompt || '',
+        initialPrompt: '',
       });
     }
   }, [fullSizeImage]);
@@ -587,7 +587,7 @@ const FullImageModal = memo(() => {
     if (fullSizeImage) {
       setMakeVideoModalState({
         isOpen: true,
-        initialPrompt: fullSizeImage.prompt || '',
+        initialPrompt: '',
       });
     }
   }, [fullSizeImage]);
@@ -1068,7 +1068,7 @@ const FullImageModal = memo(() => {
                   } transition-opacity duration-100`}
               >
                 {/* Edit button - Non-gallery only */}
-                {activeCategory !== 'gallery' && (
+                {activeCategory !== 'gallery' && !isVideo && (
                   <div
                     className={`${editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}`
                       ? 'opacity-100'
@@ -1099,7 +1099,7 @@ const FullImageModal = memo(() => {
                   } transition-opacity duration-100`}
               >
                 {/* Edit button - Gallery only */}
-                {activeCategory === 'gallery' && (
+                {activeCategory === 'gallery' && !isVideo && (
                   <Suspense fallback={null}>
                     <EditButtonMenu
                       menuId={`fullsize-edit-${fullSizeImage.jobId}`}
@@ -1657,24 +1657,26 @@ const FullImageModal = memo(() => {
             </div>
 
             {/* Edit actions */}
-            <div className="flex flex-col gap-0 mt-2">
-              <button
-                type="button"
-                onClick={handleEditImageClick}
-                className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
-              >
-                <EditIcon className="w-4 h-4 flex-shrink-0 text-theme-text" />
-                Edit image
-              </button>
-              <button
-                type="button"
-                onClick={handleMakeVideoClick}
-                className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
-              >
-                <Camera className="w-4 h-4 flex-shrink-0 text-theme-text" />
-                Make video
-              </button>
-            </div>
+            {!isVideo && (
+              <div className="flex flex-col gap-0 mt-2">
+                <button
+                  type="button"
+                  onClick={handleQuickEdit}
+                  className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
+                >
+                  <EditIcon className="w-4 h-4 flex-shrink-0 text-theme-text" />
+                  Edit image
+                </button>
+                <button
+                  type="button"
+                  onClick={handleMakeVideoClick}
+                  className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
+                >
+                  <Camera className="w-4 h-4 flex-shrink-0 text-theme-text" />
+                  Make video
+                </button>
+              </div>
+            )}
           </aside>
         )}
 
