@@ -642,17 +642,15 @@ const FullImageModal = memo(() => {
       }
     }
 
-    // Start Veo generation
-    try {
-      const result = await startVeoGeneration({
-        prompt: prompt,
-        model: (model as 'veo-3.1-generate-preview' | 'veo-3.1-fast-generate-preview') || 'veo-3.1-generate-preview',
-        aspectRatio: aspectRatio as '16:9' | '9:16',
-        references: references,
-      });
-
+    // Start Veo generation (Fire and forget, handle result in background)
+    startVeoGeneration({
+      prompt: prompt,
+      model: (model as 'veo-3.1-generate-preview' | 'veo-3.1-fast-generate-preview') || 'veo-3.1-generate-preview',
+      aspectRatio: aspectRatio as '16:9' | '9:16',
+      references: references,
+    }).then((result) => {
       if (result && result.url) {
-        // Add video to gallery
+        // Add video to gallery when done
         addVideo({
           url: result.url,
           prompt: prompt,
@@ -664,11 +662,15 @@ const FullImageModal = memo(() => {
         });
         showToast('Video generation complete!');
       }
-    } catch (error) {
+    }).catch((error) => {
       debugError('Failed to start video generation', error);
-      showToast('Failed to start video generation');
-    }
-  }, [fullSizeImage, startVeoGeneration, closeFullSize, showToast, addVideo]);
+      showToast('Failed to generate video');
+    });
+
+    // Immediate feedback and redirect
+    showToast('Video generation started');
+    navigate('/app/video');
+  }, [fullSizeImage, startVeoGeneration, closeFullSize, showToast, addVideo, navigate]);
 
   const handleQuickEditSubmit = useCallback(async (options: QuickEditOptions) => {
     if (!fullSizeImage || !fullSizeImage.url) {

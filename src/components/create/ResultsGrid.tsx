@@ -1,6 +1,7 @@
 import React, { memo, useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { Heart, MoreHorizontal, Check, Image as ImageIcon, Video as VideoIcon, Copy, BookmarkPlus, Bookmark, Square, Trash2, FileText } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
@@ -171,6 +172,7 @@ const GridVideoItem = memo<GridVideoItemProps>(({
 const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, onFocusPrompt, filterIds }) => {
   const { user, storagePrefix } = useAuth();
   const { showToast } = useToast();
+  const navigate = useNavigate();
   const { state, toggleItemSelection, isLoading, filteredItems: contextFilteredItems, addImage, addVideo, openFullSize, loadMore, hasMore } = useGallery();
   const { isFullSizeOpen } = state;
 
@@ -810,17 +812,15 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       }
     }
 
-    // Start Veo generation
-    try {
-      const result = await startVeoGeneration({
-        prompt: prompt,
-        model: model as 'veo-3.1-generate-preview' | 'veo-3.1-fast-generate-preview' || 'veo-3.1-generate-preview',
-        aspectRatio: aspectRatio as '16:9' | '9:16',
-        references: references,
-      });
-
+    // Start Veo generation (Fire and forget, handle result in background)
+    startVeoGeneration({
+      prompt: prompt,
+      model: model as 'veo-3.1-generate-preview' | 'veo-3.1-fast-generate-preview' || 'veo-3.1-generate-preview',
+      aspectRatio: aspectRatio as '16:9' | '9:16',
+      references: references,
+    }).then((result) => {
       if (result && result.url) {
-        // Add video to gallery
+        // Add video to gallery when done
         addVideo({
           url: result.url,
           prompt: prompt,
@@ -832,11 +832,15 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
         });
         showToast('Video generation complete!');
       }
-    } catch (error) {
+    }).catch((error) => {
       debugError('Failed to start video generation', error);
-      showToast('Failed to start video generation');
-    }
-  }, [makeVideoModalState, startVeoGeneration, showToast, addVideo]);
+      showToast('Failed to generate video');
+    });
+
+    // Immediate feedback and redirect
+    showToast('Video generation started');
+    navigate('/app/video');
+  }, [makeVideoModalState, startVeoGeneration, showToast, addVideo, navigate]);
 
   if (showLoadingState) {
     return (
