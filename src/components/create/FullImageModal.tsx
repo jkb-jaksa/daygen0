@@ -609,13 +609,15 @@ const FullImageModal = memo(() => {
     }
   }, [fullSizeImage]);
 
-  const handleResize = useCallback(() => {
+  /*
+  const _handleResize = useCallback(() => {
     if (fullSizeImage) {
       setResizeModalState({
         isOpen: true,
       });
     }
   }, [fullSizeImage]);
+  */
 
   const handleChangeAngleClose = useCallback(() => {
     setChangeAngleModalState(null);
