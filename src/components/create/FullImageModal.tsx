@@ -110,7 +110,6 @@ const FullImageModal = memo(() => {
     handleToggleLike,
     handleTogglePublic,
     handleDeleteImage,
-    handleEditMenuSelect,
     handleImageActionMenu,
     handleDownloadImage,
     handleAddToFolder,
@@ -568,13 +567,7 @@ const FullImageModal = memo(() => {
     }
   }, [fullSizeImage, handleAddToFolder]);
 
-  // Edit menu actions
-  const handleEditImageClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (fullSizeImage) {
-      handleEditMenuSelect(fullSizeImage);
-    }
-  }, [fullSizeImage, handleEditMenuSelect]);
+
 
   const handleMakeVideoClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
