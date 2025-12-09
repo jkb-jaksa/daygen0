@@ -78,7 +78,13 @@ export const useTimelineStore = create<TimelineState>()(
                 state.finalVideoUrl = url;
             }),
             setIsPlaying: (isPlaying) => set((state) => { state.isPlaying = isPlaying }),
-            setCurrentTime: (time) => set((state) => { state.currentTime = time }),
+            setCurrentTime: (time) => set((state) => {
+                state.currentTime = time;
+                const index = state.segments.findIndex(s => time >= s.startTime && time < s.endTime);
+                if (index !== -1) {
+                    state.activeSegmentIndex = index;
+                }
+            }),
             setSegmentIndex: (index) => set((state) => {
                 if (index >= 0 && index < state.segments.length) {
                     state.activeSegmentIndex = index;

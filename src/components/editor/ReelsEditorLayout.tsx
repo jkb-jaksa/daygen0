@@ -79,17 +79,21 @@ export const ReelsEditorLayout = () => {
 
                     // If completed, do the final cleanup/setting
                     if (job.status === 'COMPLETED') {
-                        // Restore music volume if available
-                        const savedVolume = (job.metadata as { dto?: { musicVolume?: number } })?.dto?.musicVolume ?? 30;
-                        setMusicVolume(savedVolume);
+                        // Only perform reset if we haven't already processed this completion (i.e., finalVideoUrl changed or wasn't set)
+                        // This prevents the polling loop from resetting isPlaying/currentTime every 2 seconds
+                        if (job.resultUrl !== finalVideoUrl) {
+                            // Restore music volume if available
+                            const savedVolume = (job.metadata as { dto?: { musicVolume?: number } })?.dto?.musicVolume ?? 30;
+                            setMusicVolume(savedVolume);
 
-                        // Extract global musicUrl from response
-                        const musicUrl = (response as JobResponse).musicUrl || null;
-                        setMusicUrl(musicUrl);
-                        setFinalVideoUrl(job.resultUrl || null);
+                            // Extract global musicUrl from response
+                            const musicUrl = (response as JobResponse).musicUrl || null;
+                            setMusicUrl(musicUrl);
+                            setFinalVideoUrl(job.resultUrl || null);
 
-                        setIsPlaying(false);
-                        setCurrentTime(0);
+                            setIsPlaying(false);
+                            setCurrentTime(0);
+                        }
                     }
                 } else if (job.status === 'FAILED') {
                     console.error("Job failed", job.error);
@@ -161,6 +165,24 @@ export const ReelsEditorLayout = () => {
             music.currentTime = currentTime;
         }
     }, [currentTime, musicUrl]);
+
+    // Ensure Voiceover Audio stays synced with timeline (handle Seeking)
+    useEffect(() => {
+        const audio = audioRef.current;
+        const segment = activeSegment;
+        if (!audio || !segment) return;
+
+        // Calculate where the audio SHOULD be based on global currentTime
+        const localTime = currentTime - segment.startTime;
+
+        // If discrepancy is large (e.g. user sought manually), force audio to sync.
+        // We check if localTime is non-negative to avoid setting negative time.
+        // We use a threshold (0.25s) safely larger than frame time to avoid fight with useAudioSync loop.
+        if (localTime >= 0 && Math.abs(audio.currentTime - localTime) > 0.25) {
+            // console.log("Syncing audio to", localTime);
+            audio.currentTime = localTime;
+        }
+    }, [currentTime, activeSegment]); // audioRef is stable from hook
 
     // MOCK DATA REMOVED
     // The placeholder logic handles the loading state now.

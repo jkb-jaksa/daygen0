@@ -6,6 +6,7 @@ import { regenerateSegment } from '../../api/timeline';
 import { getJob } from '../../api/jobs';
 import clsx from 'clsx';
 
+
 interface SceneBlockProps {
     segment: Segment;
     isActive: boolean;
@@ -13,7 +14,8 @@ interface SceneBlockProps {
 }
 
 export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, currentTime }) => {
-    const { updateSegmentScript, updateSegmentAudio } = useTimelineStore();
+    const { updateSegmentScript, updateSegmentAudio, setCurrentTime } = useTimelineStore();
+    const progressRef = React.useRef<HTMLDivElement>(null);
     const [localScript, setLocalScript] = React.useState(segment.script);
     const [isRegeneratingAudio, setIsRegeneratingAudio] = React.useState(false);
     const [isRegeneratingImage, setIsRegeneratingImage] = React.useState(false);
@@ -177,21 +179,50 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
     const elapsed = Math.max(0, currentTime - segment.startTime);
     const progress = isActive ? Math.min(elapsed / duration, 1) : (currentTime > segment.endTime ? 1 : 0);
 
+    const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+        e.stopPropagation();
+        if (!progressRef.current) return;
+
+        const rect = progressRef.current.getBoundingClientRect();
+        const isVertical = window.innerWidth >= 640;
+
+        // Calculate percentage based on orientation
+        let percentage = 0;
+        if (isVertical) {
+            percentage = (e.clientY - rect.top) / rect.height;
+        } else {
+            percentage = (e.clientX - rect.left) / rect.width;
+        }
+
+        // Clamp 0-1
+        percentage = Math.max(0, Math.min(1, percentage));
+
+        const newTime = segment.startTime + (percentage * (segment.endTime - segment.startTime));
+        setCurrentTime(newTime);
+    };
+
     return (
         <div
+            onClick={() => setCurrentTime(segment.startTime)}
             className={clsx(
-                "group relative flex flex-col sm:flex-row gap-3 sm:gap-4 p-2 sm:p-4 rounded-2xl border transition-all duration-200",
+                "group relative flex flex-col sm:flex-row gap-3 sm:gap-4 p-2 sm:p-4 rounded-2xl border transition-all duration-300 cursor-pointer overflow-hidden",
                 isActive
-                    ? "bg-zinc-900 border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.2)]"
-                    : "bg-black border-zinc-800 hover:border-zinc-700"
+                    ? "bg-theme-black/60 border-theme-mid shadow-[0_0_20px_rgba(var(--theme-mid-rgb),0.2)] backdrop-blur-md"
+                    : "bg-theme-black/20 border-theme-dark/50 hover:bg-theme-black/40 hover:border-theme-mid/50 backdrop-blur-sm"
             )}
         >
             {/* Time Indicator */}
-            <div className="flex flex-row sm:flex-col items-center sm:pt-1 min-w-[3rem] gap-2 sm:gap-0">
-                <span className="text-xs font-mono text-zinc-500">{segment.startTime.toFixed(1)}s</span>
-                <div className="h-1 sm:h-auto w-full sm:w-1 grow sm:mt-2 rounded-full bg-zinc-800 overflow-hidden relative">
+            <div className="flex flex-row sm:flex-col items-center sm:pt-1 min-w-[3rem] gap-2 sm:gap-0 z-10">
+                <span className={clsx("text-xs font-mono mb-1", isActive ? "text-theme-mid font-bold" : "text-theme-white/40")}>
+                    {segment.startTime.toFixed(1)}s
+                </span>
+                <div
+                    ref={progressRef}
+                    onClick={handleSeek}
+                    className="h-1.5 sm:h-auto w-full sm:w-1.5 grow sm:mt-1 rounded-full bg-theme-white/5 border border-theme-white/10 overflow-hidden relative hover:bg-theme-white/10 transition-colors"
+                >
                     <div
-                        className="absolute top-0 left-0 h-full sm:w-full bg-green-500 transition-all duration-100 ease-linear"
+                        className="absolute top-0 left-0 h-full sm:w-full bg-theme-mid shadow-[0_0_10px_rgba(var(--theme-mid-rgb),0.5)] transition-all duration-100 ease-linear"
                         style={{
                             width: window.innerWidth < 640 ? `${progress * 100}%` : '100%',
                             height: window.innerWidth >= 640 ? `${progress * 100}%` : '100%'
@@ -205,17 +236,18 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
                 {/* Script Input (Editable in future, static for now) */}
                 {/* Script Input */}
                 {(!segment.script && segment.status === 'pending') ? (
-                    <div className="w-full h-16 flex items-center justify-center gap-2 bg-zinc-900/50 rounded-lg border border-zinc-800/50">
-                        <Loader2 className="w-4 h-4 animate-spin text-zinc-500" />
-                        <span className="text-xs text-zinc-500 font-mono">Generating Script...</span>
+                    <div className="w-full h-16 flex items-center justify-center gap-2 bg-theme-black/40 rounded-lg border border-theme-dark/50">
+                        <Loader2 className="w-4 h-4 animate-spin text-theme-white/40" />
+                        <span className="text-xs text-theme-white/40 font-mono">Generating Script...</span>
                     </div>
                 ) : (
                     <textarea
                         value={localScript}
                         onChange={(e) => setLocalScript(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
                         className={clsx(
-                            "w-full bg-transparent border-0 p-0 resize-none focus:ring-0 text-base sm:text-lg leading-relaxed transition-colors h-auto min-h-[4rem]",
-                            isActive ? "text-white placeholder:text-white/30" : "text-zinc-400 placeholder:text-zinc-600"
+                            "w-full bg-transparent border-0 p-0 resize-none focus:ring-0 text-base sm:text-lg leading-relaxed transition-colors h-auto min-h-[4rem] font-raleway",
+                            isActive ? "text-theme-text placeholder:text-theme-white/30" : "text-theme-text/60 placeholder:text-theme-white/20"
                         )}
                         placeholder="Enter script here..."
                         spellCheck="false"
@@ -225,11 +257,11 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
                 {/* Visual Prompt */}
                 <div className="space-y-1">
                     <div className="flex justify-between items-center">
-                        <label className="text-[10px] text-zinc-500 font-mono uppercase">Visual Prompt</label>
+                        <label className="text-[10px] text-theme-white/70 font-mono uppercase tracking-wider font-bold">Visual Prompt</label>
                         <button
-                            onClick={() => handleRegenerate('image')}
+                            onClick={(e) => { e.stopPropagation(); handleRegenerate('image'); }}
                             disabled={isRegeneratingImage || isRegeneratingVideo}
-                            className="text-[10px] text-zinc-500 hover:text-white flex items-center gap-1 transition-colors"
+                            className="text-[10px] text-theme-white/70 hover:text-white flex items-center gap-1 transition-colors font-bold"
                             title="Regenerate Image Only"
                         >
                             {isRegeneratingImage && <span className="font-mono">{formatTime(timer)}</span>}
@@ -239,7 +271,8 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
                     <textarea
                         value={segment.visualPrompt || ''}
                         onChange={(e) => useTimelineStore.getState().updateSegmentPrompt(segment.id, 'visualPrompt', e.target.value)}
-                        className="w-full bg-zinc-950/50 border border-zinc-900 rounded p-2 text-xs text-zinc-400 font-mono resize-none focus:outline-none focus:border-zinc-700 focus:ring-0"
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full bg-theme-black/30 border border-theme-dark rounded-lg p-3 text-xs text-theme-text/80 font-raleway resize-none focus:outline-none focus:border-theme-mid focus:ring-1 focus:ring-theme-mid/50 transition-all placeholder:text-theme-white/20"
                         style={{ height: '70px' }}
                         placeholder="Describe the image..."
                     />
@@ -248,21 +281,22 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
                 {/* Motion Prompt */}
                 <div className="space-y-1">
                     <div className="flex justify-between items-center">
-                        <label className="text-[10px] text-blue-900/70 font-mono uppercase">Motion Prompt</label>
+                        <label className="text-[10px] text-theme-white/70 font-mono uppercase tracking-wider font-bold">Motion Prompt</label>
                         <button
-                            onClick={() => handleRegenerate('video')}
+                            onClick={(e) => { e.stopPropagation(); handleRegenerate('video'); }}
                             disabled={isRegeneratingImage || isRegeneratingVideo}
-                            className="text-[10px] text-blue-900/70 hover:text-blue-400 flex items-center gap-1 transition-colors"
+                            className="text-[10px] text-theme-white/70 hover:text-white flex items-center gap-1 transition-colors font-bold"
                             title="Regenerate Video Only"
                         >
                             {isRegeneratingVideo && <span className="font-mono">{formatTime(timer)}</span>}
-                            <RefreshCw size={10} className={isRegeneratingVideo ? "animate-spin" : ""} /> Regen Video (Motion)
+                            <RefreshCw size={10} className={isRegeneratingVideo ? "animate-spin" : ""} /> Regen Motion
                         </button>
                     </div>
                     <textarea
                         value={segment.motionPrompt || ''}
                         onChange={(e) => useTimelineStore.getState().updateSegmentPrompt(segment.id, 'motionPrompt', e.target.value)}
-                        className="w-full bg-zinc-950/50 border border-zinc-900 rounded p-2 text-xs text-zinc-500/70 focus:text-blue-400 font-mono resize-none focus:outline-none focus:border-blue-900/30 focus:ring-0"
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full bg-theme-black/30 border border-theme-mid/30 rounded-lg p-3 text-xs text-theme-mid font-raleway resize-none focus:outline-none focus:border-theme-mid focus:ring-1 focus:ring-theme-mid/50 transition-all placeholder:text-theme-mid/30"
                         style={{ height: '70px' }}
                         placeholder="e.g. Fast zoom, pan left..."
                     />
@@ -272,9 +306,9 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
                 <div className="flex gap-2">
                     {localScript !== segment.script && (
                         <button
-                            onClick={handleUpdateAudio}
+                            onClick={(e) => { e.stopPropagation(); handleUpdateAudio(); }}
                             disabled={isRegeneratingAudio}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30 text-xs font-medium hover:bg-blue-600 hover:text-white transition-colors disabled:opacity-50"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-theme-mid/10 text-theme-mid border border-theme-mid/30 text-xs font-medium hover:bg-theme-mid hover:text-theme-black transition-colors disabled:opacity-50"
                         >
                             {isRegeneratingAudio ? <Loader2 size={12} className="animate-spin" /> : <Volume2 size={12} />}
                             <span className="hidden sm:inline">Update Audio & Script</span><span className="sm:hidden">Save</span>
@@ -284,7 +318,7 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
             </div>
 
             {/* Thumbnail (Small Preview) */}
-            <div className="w-full sm:w-[20%] sm:min-w-[80px] sm:max-w-[120px] aspect-[16/9] sm:aspect-[9/16] shrink-0 rounded-lg overflow-hidden bg-zinc-950 border border-zinc-800 order-1 sm:order-2 sm:self-start relative group-image">
+            <div className="w-full sm:w-[20%] sm:min-w-[80px] sm:max-w-[120px] aspect-[16/9] sm:aspect-[9/16] shrink-0 rounded-lg overflow-hidden bg-theme-black/40 border border-theme-dark order-1 sm:order-2 sm:self-start relative group-image">
                 {segment.imageUrl ? (
                     <>
                         <img src={segment.imageUrl} alt="Scene preview" className="w-full h-full object-cover" />
@@ -309,10 +343,10 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
                             progress={simulatedProgress}
                             size={32}
                             showPercentage={false}
-                            progressColor="#a1a1aa"
-                            baseColor="rgba(161,161,170,0.2)"
+                            progressColor="rgba(var(--theme-white-rgb), 0.2)"
+                            baseColor="rgba(var(--theme-white-rgb),0.1)"
                         />
-                        <span className="text-[10px] text-zinc-500 font-mono text-center leading-tight">Generating Image...</span>
+                        <span className="text-[10px] text-theme-white/40 font-mono text-center leading-tight">Generating Image...</span>
                     </div>
                 )}
             </div>
