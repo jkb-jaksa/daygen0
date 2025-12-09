@@ -45,6 +45,7 @@ export interface MakeVideoOptions {
 interface MakeVideoModalProps {
     isOpen: boolean;
     onClose: () => void;
+    onGenerateVideo?: (options: MakeVideoOptions) => void;
     onSubmit?: (options: MakeVideoOptions) => void;
     initialPrompt?: string;
     isLoading?: boolean;
@@ -68,6 +69,7 @@ const TooltipPortal = ({ id, children }: { id: string, children: React.ReactNode
 const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
     isOpen,
     onClose,
+    onGenerateVideo,
     onSubmit,
     initialPrompt = '',
     isLoading = false,
@@ -192,6 +194,10 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
     const [veoNegativePrompt, setVeoNegativePrompt] = useState('');
     const [veoSeed, setVeoSeed] = useState<number | undefined>(undefined);
 
+    // Sora Specific States
+    const [soraDuration, setSoraDuration] = useState<number>(5);
+    const [soraWithSound, setSoraWithSound] = useState<boolean>(true);
+
     // Handlers
     const avatarHandlers = useAvatarHandlers();
     const productHandlers = useProductHandlers();
@@ -280,8 +286,8 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
 
     const handleReferenceAdd = useCallback(() => { }, []);
 
-    // Max 3 references allowed in Make Video
-    const MAX_REFERENCES = 3;
+    // Max 2 allowed in Make Video (plus the original image makes 3)
+    const MAX_REFERENCES = 2;
 
     const {
         referenceFiles,
@@ -359,8 +365,11 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (onSubmit) {
-            onSubmit({
+        const handler = onGenerateVideo || onSubmit;
+        showToast(`Debug: Submit. Handler: ${typeof handler}`);
+
+        if (handler) {
+            handler({
                 prompt,
                 referenceFiles,
                 aspectRatio,
@@ -373,6 +382,8 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                 model: veoGenModel,
             });
             onClose();
+        } else {
+            showToast("Debug: Handler IS MISSING (checked both onGenerateVideo and onSubmit)");
         }
     };
 
@@ -460,7 +471,16 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
         kling: { enabled: false, model: 'kling-v2.1-master' as const, onModelChange: () => { }, aspectRatio: '16:9' as const, onAspectRatioChange: () => { }, duration: 5 as const, onDurationChange: () => { }, mode: 'standard' as const, onModeChange: () => { }, cfgScale: 0.5, onCfgScaleChange: () => { }, negativePrompt: '', onNegativePromptChange: () => { }, cameraType: 'none' as const, onCameraTypeChange: () => { }, cameraConfig: { horizontal: 0, vertical: 0, pan: 0, tilt: 0, roll: 0, zoom: 0 }, onCameraConfigChange: () => { } },
         lumaPhoton: { enabled: false, model: 'luma-photon-1' as const, onModelChange: () => { } },
         lumaRay: { enabled: false, variant: 'luma-ray-2' as const, onVariantChange: () => { } },
-    }), [batchSize, aspectRatio, isSettingsOpen, selectedModel, veoGenModel, veoNegativePrompt, veoSeed]);
+        sora: {
+            enabled: selectedModel === 'sora-2',
+            aspectRatio: aspectRatio as '16:9' | '9:16',
+            onAspectRatioChange: (val: '16:9' | '9:16') => setAspectRatio(val),
+            duration: soraDuration,
+            onDurationChange: (val: number) => setSoraDuration(val),
+            withSound: soraWithSound,
+            onWithSoundChange: (val: boolean) => setSoraWithSound(val)
+        }
+    }), [batchSize, aspectRatio, isSettingsOpen, selectedModel, veoGenModel, veoNegativePrompt, veoSeed, soraDuration, soraWithSound]);
 
     if (!isOpen) return null;
 
@@ -510,7 +530,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
             )}
 
             <div
-                className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/75 px-4 pt-20 pb-6 backdrop-blur-sm"
+                className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/75 px-4 py-6 backdrop-blur-sm"
                 onClick={(e) => {
                     e.stopPropagation();
                     onClose();
@@ -518,15 +538,15 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
             >
                 <div
                     ref={modalRef}
-                    className={`${glass.promptDark} w-full max-w-[96vw] rounded-3xl border border-theme-dark p-6 shadow-2xl flex flex-col md:flex-row gap-6 transition-all duration-200`}
+                    className={`${glass.promptDark} w-full max-w-6xl rounded-3xl border border-theme-dark p-6 shadow-2xl flex flex-col md:flex-row gap-6 transition-all duration-200`}
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Left Column - Image Preview */}
-                    <div className="flex-1 min-w-0 flex items-center justify-center bg-theme-black/20 rounded-xl overflow-hidden border border-theme-dark relative group">
+                    <div className="w-full md:w-5/12 flex items-center justify-center bg-theme-black/20 rounded-xl overflow-hidden border border-theme-dark relative aspect-square group">
                         <img
                             src={imageUrl}
                             alt="Preview"
-                            className="max-w-full max-h-[70vh] w-auto h-auto object-contain"
+                            className="w-full h-full object-cover absolute inset-0"
                         />
 
                         {/* Prompt Description Bar */}
@@ -642,7 +662,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                     </div>
 
                     {/* Right Column - Form */}
-                    <div className="w-full md:w-[720px] flex-shrink-0 flex flex-col">
+                    <div className="w-full md:w-7/12 flex flex-col">
                         <div className="flex items-center justify-between mb-1">
                             <h2 className="text-lg font-raleway text-theme-text flex items-center gap-2">
                                 <Video className="w-5 h-5 text-theme-text" />
@@ -930,7 +950,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                         isGenerating={isLoading}
                                                         activeCategory="video"
                                                         hasReferences={referenceFiles.length > 0}
-                                                        allowedModels={['veo-3', 'sora-2']}
+                                                        allowedModels={['veo-3']}
                                                     />
                                                 </Suspense>
                                             </div>
