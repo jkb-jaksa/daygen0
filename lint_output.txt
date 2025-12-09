@@ -1,0 +1,15 @@
+
+> daygen@0.0.0 lint
+> eslint .
+
+
+/Users/dominiknowak/code/daygen0/src/components/editor/ReelsEditorLayout.tsx
+  33:63  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+  36:75  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+  52:62  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+  56:55  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+  72:9   error    'intervalId' is never reassigned. Use 'const' instead                                                        prefer-const
+  75:8   warning  React Hook useEffect has a missing dependency: 'segments'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+✖ 6 problems (5 errors, 1 warning)
+

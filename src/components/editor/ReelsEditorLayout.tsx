@@ -1,10 +1,25 @@
 import { useRef, useEffect, useState } from 'react';
-import { useTimelineStore } from '../../stores/timelineStore';
+import { useTimelineStore, type Segment } from '../../stores/timelineStore';
 import { useAudioSync } from '../../hooks/useAudioSync';
 import { SceneBlock } from './SceneBlock';
 import { PlaceholderScene } from './PlaceholderScene';
 import { getJob } from '../../api/jobs';
 import { Play, Pause, Download } from 'lucide-react';
+
+interface SegmentResponse {
+    id?: string;
+    voiceUrl?: string;
+    videoUrl?: string;
+    startTime?: number;
+    endTime?: number;
+    [key: string]: unknown;
+}
+
+interface JobResponse {
+    segments?: SegmentResponse[];
+    musicUrl?: string;
+    [key: string]: unknown;
+}
 
 export const ReelsEditorLayout = () => {
     const { segments, isPlaying, setIsPlaying, currentTime, nextSegment, musicUrl, finalVideoUrl, musicVolume, jobId, jobDuration, setSegments, setMusicUrl, setFinalVideoUrl, setCurrentTime, setMusicVolume } = useTimelineStore();
@@ -21,8 +36,6 @@ export const ReelsEditorLayout = () => {
     useEffect(() => {
         if (!jobId || segments.length > 0) return;
 
-        let intervalId: NodeJS.Timeout;
-
         const checkJob = async () => {
             try {
                 const job = await getJob(jobId);
@@ -30,10 +43,10 @@ export const ReelsEditorLayout = () => {
 
                 // Check for partial or full segments available in metadata response
                 if (job.metadata?.response) {
-                    const response = job.metadata.response as any;
+                    const response = job.metadata.response as JobResponse;
 
                     if (response.segments && Array.isArray(response.segments)) {
-                        const segmentsWithIds = response.segments.map((s: any, i: number) => ({
+                        const segmentsWithIds = response.segments.map((s, i: number) => ({
                             ...s,
                             id: s.id || `segment-${i}-${Date.now()}`,
                             voiceUrl: s.voiceUrl
@@ -42,18 +55,18 @@ export const ReelsEditorLayout = () => {
                         // Only update if count changed or significantly different (deep check might be expensive, so we just set it)
                         // Ideally we check if segments.length changed or if the last segment has more data
                         if (segmentsWithIds.length > segments.length || (segmentsWithIds.length > 0 && segmentsWithIds.length === segments.length && segmentsWithIds[segmentsWithIds.length - 1].videoUrl !== segments[segmentsWithIds.length - 1].videoUrl)) {
-                            setSegments(segmentsWithIds);
+                            setSegments(segmentsWithIds as unknown as Segment[]);
                         }
                     }
 
                     // If completed, do the final cleanup/setting
                     if (job.status === 'COMPLETED') {
                         // Restore music volume if available
-                        const savedVolume = (job.metadata as any)?.dto?.musicVolume ?? 30;
+                        const savedVolume = (job.metadata as { dto?: { musicVolume?: number } })?.dto?.musicVolume ?? 30;
                         setMusicVolume(savedVolume);
 
                         // Extract global musicUrl from response
-                        const musicUrl = (response as any).musicUrl || null;
+                        const musicUrl = (response as JobResponse).musicUrl || null;
                         setMusicUrl(musicUrl);
                         setFinalVideoUrl(job.resultUrl || null);
 
@@ -69,10 +82,10 @@ export const ReelsEditorLayout = () => {
         };
 
         checkJob(); // immediate check
-        intervalId = setInterval(checkJob, 2000);
+        const intervalId = setInterval(checkJob, 2000);
 
         return () => clearInterval(intervalId);
-    }, [jobId, segments.length, setSegments, setMusicVolume, setMusicUrl, setFinalVideoUrl, setIsPlaying, setCurrentTime]);
+    }, [jobId, segments, setSegments, setMusicVolume, setMusicUrl, setFinalVideoUrl, setIsPlaying, setCurrentTime]);
 
     // Find active segment for the main preview
     const activeSegment = segments.find(
