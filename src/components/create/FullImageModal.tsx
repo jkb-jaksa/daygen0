@@ -36,6 +36,8 @@ const QuickEditModal = lazy(() => import('./QuickEditModal'));
 import type { QuickEditOptions } from './QuickEditModal';
 const MakeVideoModal = lazy(() => import('./MakeVideoModal'));
 import type { MakeVideoOptions } from './MakeVideoModal';
+const ChangeAngleModal = lazy(() => import('./ChangeAngleModal'));
+import type { AngleOption } from './hooks/useAngleHandlers';
 const MasterSidebar = lazy(() => import('../master/MasterSidebar'));
 // Individual badges are rendered via ImageBadgeRow
 
@@ -129,6 +131,7 @@ const FullImageModal = memo(() => {
   const [isVideoPromptExpanded, setIsVideoPromptExpanded] = useState(false);
   const [quickEditModalState, setQuickEditModalState] = useState<{ isOpen: boolean; initialPrompt: string } | null>(null);
   const [makeVideoModalState, setMakeVideoModalState] = useState<{ isOpen: boolean; initialPrompt: string } | null>(null);
+  const [changeAngleModalState, setChangeAngleModalState] = useState<{ isOpen: boolean; selectedAngle: AngleOption | null } | null>(null);
 
   // Save prompt functionality
   const { user, storagePrefix } = useAuth();
@@ -600,6 +603,28 @@ const FullImageModal = memo(() => {
       });
     }
   }, [fullSizeImage]);
+
+  const handleChangeAngle = useCallback(() => {
+    if (fullSizeImage) {
+      setChangeAngleModalState({
+        isOpen: true,
+        selectedAngle: null,
+      });
+    }
+  }, [fullSizeImage]);
+
+  const handleChangeAngleClose = useCallback(() => {
+    setChangeAngleModalState(null);
+  }, []);
+
+  const handleAngleSelect = useCallback((angle: AngleOption) => {
+    setChangeAngleModalState(prev => prev ? { ...prev, selectedAngle: prev.selectedAngle?.id === angle.id ? null : angle } : null);
+  }, []);
+
+  const handleAngleApply = useCallback(() => {
+    // TODO: Implement angle application logic
+    setChangeAngleModalState(null);
+  }, []);
 
   const handleMakeVideoSubmit = useCallback(async (options: MakeVideoOptions) => {
     if (!fullSizeImage || !fullSizeImage.url) {
@@ -1082,6 +1107,7 @@ const FullImageModal = memo(() => {
                         isFullSize={true}
                         anyMenuOpen={editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId}
                         onMakeVideo={handleVideo}
+                        onChangeAngle={handleChangeAngle}
                         onQuickEdit={handleQuickEdit}
                       />
                     </Suspense>
@@ -1107,6 +1133,7 @@ const FullImageModal = memo(() => {
                       isFullSize={true}
                       anyMenuOpen={editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId}
                       onMakeVideo={handleVideo}
+                      onChangeAngle={handleChangeAngle}
                       onQuickEdit={handleQuickEdit}
                     />
                   </Suspense>
@@ -1736,6 +1763,19 @@ const FullImageModal = memo(() => {
             initialPrompt={makeVideoModalState.initialPrompt}
             imageUrl={fullSizeImage.url}
             item={fullSizeImage}
+          />
+        </Suspense>
+      )}
+
+      {/* Change Angle Modal */}
+      {changeAngleModalState && fullSizeImage && (
+        <Suspense fallback={null}>
+          <ChangeAngleModal
+            open={changeAngleModalState.isOpen}
+            onClose={handleChangeAngleClose}
+            selectedAngle={changeAngleModalState.selectedAngle}
+            onSelectAngle={handleAngleSelect}
+            onApply={handleAngleApply}
           />
         </Suspense>
       )}

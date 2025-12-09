@@ -1,6 +1,6 @@
 import React, { memo, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Edit, Camera } from 'lucide-react';
+import { Edit, Camera, RotateCw } from 'lucide-react';
 
 import { tooltips } from '../../styles/designSystem';
 import type { GalleryImageLike, GalleryVideoLike } from './types';
@@ -12,6 +12,7 @@ interface EditButtonMenuProps {
   isGallery?: boolean;
   anyMenuOpen?: boolean;
   onMakeVideo: () => void;
+  onChangeAngle?: () => void;
   onQuickEdit?: () => void;
 }
 
@@ -22,10 +23,12 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
   isGallery = false,
   anyMenuOpen = false,
   onMakeVideo,
+  onChangeAngle,
   onQuickEdit,
 }) => {
   const tooltipBaseId = useMemo(() => image.jobId || image.r2FileId || image.url || menuId, [image, menuId]);
   const makeVideoTooltipId = `${tooltipBaseId}-make-video`;
+  const changeAngleTooltipId = `${tooltipBaseId}-change-angle`;
   const editTooltipId = `${tooltipBaseId}-edit`;
 
   const showTooltip = useCallback((target: HTMLElement, tooltipId: string) => {
@@ -53,6 +56,13 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
     event.stopPropagation();
     onMakeVideo();
   }, [onMakeVideo]);
+
+  const handleChangeAngleClick = useCallback((event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (onChangeAngle) {
+      onChangeAngle();
+    }
+  }, [onChangeAngle]);
 
   return (
     <>
@@ -96,6 +106,23 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
         >
           <Edit className="w-4 h-4 text-theme-white transition-colors duration-100 group-hover/edit-action:text-red-500" />
         </button>
+        <button
+          type="button"
+          className={`image-action-btn ${isFullSize ? 'image-action-btn--fullsize' : isGallery ? 'image-action-btn--gallery' : ''} parallax-large transition-opacity duration-100 hover:text-purple-500 text-theme-white ${anyMenuOpen
+            ? 'opacity-100 pointer-events-auto'
+            : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+            }`}
+          aria-label="Change angle"
+          onClick={handleChangeAngleClick}
+          onMouseEnter={(e) => {
+            showTooltip(e.currentTarget, changeAngleTooltipId);
+          }}
+          onMouseLeave={() => {
+            hideTooltip(changeAngleTooltipId);
+          }}
+        >
+          <RotateCw className="w-3 h-3" />
+        </button>
       </div>
       {createPortal(
         <div
@@ -104,6 +131,16 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
           style={{ zIndex: 9999 }}
         >
           Make video
+        </div>,
+        document.body,
+      )}
+      {createPortal(
+        <div
+          data-tooltip-for={changeAngleTooltipId}
+          className={`${tooltips.base} fixed`}
+          style={{ zIndex: 9999 }}
+        >
+          Change angle
         </div>,
         document.body,
       )}
@@ -124,8 +161,4 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
 EditButtonMenu.displayName = 'EditButtonMenu';
 
 export default EditButtonMenu;
-
-
-
-
 

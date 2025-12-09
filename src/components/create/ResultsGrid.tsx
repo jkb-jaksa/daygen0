@@ -41,6 +41,8 @@ const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
 import QuickEditModal, { type QuickEditOptions } from './QuickEditModal';
 const MakeVideoModal = lazy(() => import('./MakeVideoModal'));
 import type { MakeVideoOptions } from './MakeVideoModal';
+const ChangeAngleModal = lazy(() => import('./ChangeAngleModal'));
+import type { AngleOption } from './hooks/useAngleHandlers';
 const GenerationProgress = lazy(() => import('./GenerationProgress'));
 
 // Helper to get consistent item identifier for UI actions (jobId → r2FileId → url)
@@ -199,6 +201,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const [expandedVideoPrompts, setExpandedVideoPrompts] = useState<Set<string>>(() => new Set());
   const [quickEditModalState, setQuickEditModalState] = useState<{ isOpen: boolean; initialPrompt: string; item: GalleryImageLike } | null>(null);
   const [makeVideoModalState, setMakeVideoModalState] = useState<{ isOpen: boolean; initialPrompt: string; item: GalleryImageLike } | null>(null);
+  const [changeAngleModalState, setChangeAngleModalState] = useState<{ isOpen: boolean; item: GalleryImageLike; selectedAngle: AngleOption | null } | null>(null);
   const [isQuickEditLoading] = useState(false);
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement }>({});
   const {
@@ -641,12 +644,32 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   }, [removeActiveJob, updateJobStatus]);
 
   const handleQuickEdit = useCallback((item: GalleryImageLike) => {
-
     setQuickEditModalState({
       isOpen: true,
       initialPrompt: '',
       item,
     });
+  }, []);
+
+  const handleChangeAngle = useCallback((item: GalleryImageLike) => {
+    setChangeAngleModalState({
+      isOpen: true,
+      item,
+      selectedAngle: null,
+    });
+  }, []);
+
+  const handleChangeAngleClose = useCallback(() => {
+    setChangeAngleModalState(null);
+  }, []);
+
+  const handleAngleSelect = useCallback((angle: AngleOption) => {
+    setChangeAngleModalState(prev => prev ? { ...prev, selectedAngle: prev.selectedAngle?.id === angle.id ? null : angle } : null);
+  }, []);
+
+  const handleAngleApply = useCallback(() => {
+    // TODO: Implement angle application logic
+    setChangeAngleModalState(null);
   }, []);
 
   const fileToDataUrl = (file: File): Promise<string> =>
@@ -1117,6 +1140,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                               isGallery={false}
                               anyMenuOpen={isMenuActive}
                               onMakeVideo={() => handleVideo(item as GalleryImageLike)}
+                              onChangeAngle={() => handleChangeAngle(item as GalleryImageLike)}
                               onQuickEdit={() => handleQuickEdit(item as GalleryImageLike)}
                             />
                           </Suspense>
@@ -1140,6 +1164,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                 isGallery={true}
                                 anyMenuOpen={isMenuActive}
                                 onMakeVideo={() => handleVideo(item as GalleryImageLike)}
+                                onChangeAngle={() => handleChangeAngle(item as GalleryImageLike)}
                                 onQuickEdit={() => handleQuickEdit(item as GalleryImageLike)}
                               />
                             </Suspense>
@@ -1777,6 +1802,19 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
             initialPrompt={makeVideoModalState.initialPrompt}
             imageUrl={makeVideoModalState.item.url}
             item={makeVideoModalState.item}
+          />
+        </Suspense>
+      )}
+
+      {/* Change Angle Modal */}
+      {changeAngleModalState && (
+        <Suspense fallback={null}>
+          <ChangeAngleModal
+            open={changeAngleModalState.isOpen}
+            onClose={handleChangeAngleClose}
+            selectedAngle={changeAngleModalState.selectedAngle}
+            onSelectAngle={handleAngleSelect}
+            onApply={handleAngleApply}
           />
         </Suspense>
       )}
