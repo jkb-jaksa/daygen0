@@ -15,6 +15,7 @@ export interface Segment {
     startTime: number; // Seconds
     endTime: number; // Seconds
     duration: number;
+    status?: 'pending' | 'generating' | 'completed' | 'failed';
 }
 
 interface TimelineState {

@@ -1,5 +1,6 @@
 import React from 'react';
-import { RefreshCw, Image as ImageIcon, Volume2, Loader2 } from 'lucide-react';
+import { RefreshCw, Volume2, Loader2 } from 'lucide-react';
+import { CircularProgressRing } from '../CircularProgressRing';
 import { useTimelineStore, type Segment } from '../../stores/timelineStore';
 import { regenerateSegment } from '../../api/timeline';
 import { getJob } from '../../api/jobs';
@@ -20,10 +21,10 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
     const [timer, setTimer] = React.useState(0);
     const { updateSegmentImage, updateSegmentVideo } = useTimelineStore();
 
-    // Timer logic
+    // Timer logic and Simulated Progress
     React.useEffect(() => {
         let interval: NodeJS.Timeout;
-        if (isRegeneratingImage || isRegeneratingVideo) {
+        if (isRegeneratingImage || isRegeneratingVideo || (!segment.imageUrl && segment.status === 'generating') || (!segment.videoUrl && segment.status === 'generating')) {
             interval = setInterval(() => {
                 setTimer(prev => prev + 1);
             }, 1000);
@@ -31,7 +32,24 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
             setTimer(0);
         }
         return () => clearInterval(interval);
-    }, [isRegeneratingImage, isRegeneratingVideo]);
+    }, [isRegeneratingImage, isRegeneratingVideo, segment.imageUrl, segment.videoUrl, segment.status]);
+
+    // Simulated progress hook logic (inline for now)
+    const [simulatedProgress, setSimulatedProgress] = React.useState(0);
+    React.useEffect(() => {
+        const isGenerating = isRegeneratingImage || isRegeneratingVideo || segment.status === 'generating';
+        if (!isGenerating) {
+            setSimulatedProgress(0);
+            return;
+        }
+        const interval = setInterval(() => {
+            setSimulatedProgress(prev => {
+                if (prev >= 90) return prev;
+                return prev + (90 - prev) * 0.05;
+            });
+        }, 800);
+        return () => clearInterval(interval);
+    }, [isRegeneratingImage, isRegeneratingVideo, segment.status]);
 
     const formatTime = (seconds: number) => {
         return `${seconds}s`;
@@ -162,7 +180,7 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
     return (
         <div
             className={clsx(
-                "group relative flex flex-col sm:flex-row gap-3 sm:gap-4 p-2 sm:p-4 rounded-xl border transition-all duration-200",
+                "group relative flex flex-col sm:flex-row gap-3 sm:gap-4 p-2 sm:p-4 rounded-2xl border transition-all duration-200",
                 isActive
                     ? "bg-zinc-900 border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.2)]"
                     : "bg-black border-zinc-800 hover:border-zinc-700"
@@ -186,16 +204,23 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
             <div className="flex-1 space-y-2 sm:space-y-3 order-2 sm:order-1">
                 {/* Script Input (Editable in future, static for now) */}
                 {/* Script Input */}
-                <textarea
-                    value={localScript}
-                    onChange={(e) => setLocalScript(e.target.value)}
-                    className={clsx(
-                        "w-full bg-transparent border-0 p-0 resize-none focus:ring-0 text-base sm:text-lg leading-relaxed transition-colors h-auto min-h-[4rem]",
-                        isActive ? "text-white placeholder:text-white/30" : "text-zinc-400 placeholder:text-zinc-600"
-                    )}
-                    placeholder="Enter script here..."
-                    spellCheck="false"
-                />
+                {(!segment.script && segment.status === 'pending') ? (
+                    <div className="w-full h-16 flex items-center justify-center gap-2 bg-zinc-900/50 rounded-lg border border-zinc-800/50">
+                        <Loader2 className="w-4 h-4 animate-spin text-zinc-500" />
+                        <span className="text-xs text-zinc-500 font-mono">Generating Script...</span>
+                    </div>
+                ) : (
+                    <textarea
+                        value={localScript}
+                        onChange={(e) => setLocalScript(e.target.value)}
+                        className={clsx(
+                            "w-full bg-transparent border-0 p-0 resize-none focus:ring-0 text-base sm:text-lg leading-relaxed transition-colors h-auto min-h-[4rem]",
+                            isActive ? "text-white placeholder:text-white/30" : "text-zinc-400 placeholder:text-zinc-600"
+                        )}
+                        placeholder="Enter script here..."
+                        spellCheck="false"
+                    />
+                )}
 
                 {/* Visual Prompt */}
                 <div className="space-y-1">
@@ -259,12 +284,35 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
             </div>
 
             {/* Thumbnail (Small Preview) */}
-            <div className="w-full sm:w-[20%] sm:min-w-[80px] sm:max-w-[120px] aspect-[16/9] sm:aspect-[9/16] shrink-0 rounded-lg overflow-hidden bg-zinc-900 border border-zinc-800 order-1 sm:order-2 sm:self-start">
+            <div className="w-full sm:w-[20%] sm:min-w-[80px] sm:max-w-[120px] aspect-[16/9] sm:aspect-[9/16] shrink-0 rounded-lg overflow-hidden bg-zinc-950 border border-zinc-800 order-1 sm:order-2 sm:self-start relative group-image">
                 {segment.imageUrl ? (
-                    <img src={segment.imageUrl} alt="Scene preview" className="w-full h-full object-cover" />
+                    <>
+                        <img src={segment.imageUrl} alt="Scene preview" className="w-full h-full object-cover" />
+
+                        {/* Video Generating Overlay */}
+                        {(!segment.videoUrl && segment.status === 'generating') && (
+                            <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-2 backdrop-blur-[1px]">
+                                <CircularProgressRing
+                                    progress={simulatedProgress}
+                                    size={32}
+                                    showPercentage={false}
+                                    progressColor="#60a5fa"
+                                    baseColor="rgba(96,165,250,0.2)"
+                                />
+                                <span className="text-[10px] text-blue-300 font-mono animate-pulse">Animating...</span>
+                            </div>
+                        )}
+                    </>
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center text-zinc-700">
-                        <ImageIcon size={16} />
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-2 p-2">
+                        <CircularProgressRing
+                            progress={simulatedProgress}
+                            size={32}
+                            showPercentage={false}
+                            progressColor="#a1a1aa"
+                            baseColor="rgba(161,161,170,0.2)"
+                        />
+                        <span className="text-[10px] text-zinc-500 font-mono text-center leading-tight">Generating Image...</span>
                     </div>
                 )}
             </div>

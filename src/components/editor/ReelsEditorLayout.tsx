@@ -10,6 +10,9 @@ interface SegmentResponse {
     id?: string;
     voiceUrl?: string;
     videoUrl?: string;
+    imageUrl?: string;
+    script?: string;
+    status?: string;
     startTime?: number;
     endTime?: number;
     [key: string]: unknown;
@@ -34,7 +37,7 @@ export const ReelsEditorLayout = () => {
 
     // Polling for Job Completion
     useEffect(() => {
-        if (!jobId || segments.length > 0) return;
+        if (!jobId) return;
 
         const checkJob = async () => {
             try {
@@ -49,12 +52,27 @@ export const ReelsEditorLayout = () => {
                         const segmentsWithIds = response.segments.map((s, i: number) => ({
                             ...s,
                             id: s.id || `segment-${i}-${Date.now()}`,
-                            voiceUrl: s.voiceUrl
+                            voiceUrl: s.voiceUrl,
+                            status: s.status || 'completed' // Default to completed if not present for now, or 'pending'
                         }));
 
-                        // Only update if count changed or significantly different (deep check might be expensive, so we just set it)
-                        // Ideally we check if segments.length changed or if the last segment has more data
-                        if (segmentsWithIds.length > segments.length || (segmentsWithIds.length > 0 && segmentsWithIds.length === segments.length && segmentsWithIds[segmentsWithIds.length - 1].videoUrl !== segments[segmentsWithIds.length - 1].videoUrl)) {
+                        // Check for ANY changes in segments (deep comparison of relevant fields)
+                        const hasChanges = segmentsWithIds.length !== segments.length || segmentsWithIds.some((s, i) => {
+                            const current = segments[i];
+                            if (!current) return true;
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            const sAny = s as any;
+                            return (
+                                sAny.script !== current.script || // Check script
+                                s.voiceUrl !== current.voiceUrl ||
+                                s.videoUrl !== current.videoUrl ||
+                                s.imageUrl !== current.imageUrl ||
+                                s.status !== current.status
+                            );
+                        });
+
+                        if (hasChanges) {
+                            // console.log("Segments updated", segmentsWithIds);
                             setSegments(segmentsWithIds as unknown as Segment[]);
                         }
                     }
@@ -168,7 +186,7 @@ export const ReelsEditorLayout = () => {
                     <h1 className="text-xl lg:text-2xl font-bold mb-4 lg:mb-8">Script & Visuals</h1>
 
                     {(() => {
-                        const totalExpected = jobDuration === 'short' ? 3 : jobDuration === 'long' ? 12 : 6;
+                        const totalExpected = jobDuration === 'short' ? 3 : jobDuration === 'medium' ? 6 : jobDuration === 'long' ? 12 : 6;
                         // For the mixed list:
                         // 1. Map existing segments to SceneBlock
                         // 2. Fill the rest up to totalExpected with PlaceholderScene
@@ -193,7 +211,6 @@ export const ReelsEditorLayout = () => {
                                 items.push(
                                     <PlaceholderScene
                                         key={`placeholder-${i}`}
-                                        index={i}
                                         isActive={i === segments.length} // Highlight the next one being generated
                                         estimatedProgress={progress}
                                     />
