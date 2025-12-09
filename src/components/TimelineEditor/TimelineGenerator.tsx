@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { generateTimeline, type TimelineResponse } from '../../api/timeline';
 import { useTimelineStore, type Segment } from '../../stores/timelineStore';
-import { fetchJobs, getJob, type Job } from '../../api/jobs';
+import { fetchJobs, type Job } from '../../api/jobs';
 import { Loader2, Sparkles, History, Volume2, VolumeX } from 'lucide-react';
 
 export default function TimelineGenerator() {
@@ -14,7 +14,6 @@ export default function TimelineGenerator() {
     const [musicVolume, setMusicVolume] = useState(30); // 0-100%
     const [isLoading, setIsLoading] = useState(false);
     const [jobs, setJobs] = useState<Job[]>([]);
-    const [activeJobId, setActiveJobId] = useState<string | null>(null);
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
     const setSegments = useTimelineStore((state) => state.setSegments);
     const setMusicUrl = useTimelineStore((state) => state.setMusicUrl);
@@ -22,6 +21,7 @@ export default function TimelineGenerator() {
     const setIsPlaying = useTimelineStore((state) => state.setIsPlaying);
     const setCurrentTime = useTimelineStore((state) => state.setCurrentTime);
     const setJobId = useTimelineStore((state) => state.setJobId);
+    const setJobDuration = useTimelineStore((state) => state.setJobDuration);
     const setMusicVolumeStore = useTimelineStore((state) => state.setMusicVolume);
 
     useEffect(() => {
@@ -29,8 +29,17 @@ export default function TimelineGenerator() {
     }, []);
 
     const handleLoadJob = useCallback((job: Job) => {
+        // Allow loading processing jobs
+        if (job.status === 'PROCESSING' || job.status === 'STITCHING' || job.status === 'PENDING') {
+            setJobId(job.id);
+            setJobDuration(duration); // We might need to save duration in metadata to recover it correctly here
+            // Navigate to editor to let it poll
+            navigate('/app/cyran-roll/editor');
+            return;
+        }
+
         if (job.status !== 'COMPLETED' || !job.metadata?.response) {
-            alert('This job is not completed or has no data.');
+            alert('This job failed or has no data.');
             return;
         }
 
@@ -66,40 +75,12 @@ export default function TimelineGenerator() {
         setCurrentTime(0);
         setCurrentTime(0);
         navigate('/app/cyran-roll/editor');
-    }, [navigate, setSegments, setIsPlaying, setCurrentTime, setJobId, setMusicUrl, setMusicVolumeStore, setFinalVideoUrl]);
+    }, [navigate, setSegments, setIsPlaying, setCurrentTime, setJobId, setMusicUrl, setMusicVolumeStore, setFinalVideoUrl, duration, setJobDuration]);
 
+    // Local polling removed - responsibility moved to Editor
     useEffect(() => {
-        if (!activeJobId) return;
-
-        const interval = setInterval(async () => {
-            try {
-                const job = await getJob(activeJobId);
-
-                // Update in history list
-                setJobs(prev => {
-                    const exists = prev.find(j => j.id === job.id);
-                    if (exists) {
-                        return prev.map(j => j.id === job.id ? job : j);
-                    }
-                    return [job, ...prev];
-                });
-
-                if (job.status === 'COMPLETED') {
-                    setActiveJobId(null);
-                    setIsLoading(false);
-                    handleLoadJob(job);
-                } else if (job.status === 'FAILED') {
-                    // Silent fail for clean UI, remove from active monitoring
-                    setActiveJobId(null);
-                    setIsLoading(false);
-                }
-            } catch (error) {
-                console.error('Polling error:', error);
-            }
-        }, 2000);
-
-        return () => clearInterval(interval);
-    }, [activeJobId, handleLoadJob]);
+        // No-op or removed
+    }, []);
 
     const loadHistory = async () => {
         setIsLoadingHistory(true);
@@ -115,12 +96,11 @@ export default function TimelineGenerator() {
 
             setJobs(sorted);
 
-            // Check for any active job (PROCESSING or STITCHING) to resume polling
-            const activeJob = sorted.find(j => j.status === 'PROCESSING' || j.status === 'STITCHING');
+            // Check for any active job to update status but DO NOT redirect automatically
+            const activeJob = sorted.find(j => j.status === 'PROCESSING' || j.status === 'STITCHING' || j.status === 'PENDING');
             if (activeJob) {
-                console.log("Resuming polling for job:", activeJob.id);
-                setActiveJobId(activeJob.id);
-                setIsLoading(true);
+                // Just let the history list show the status
+                console.log("Found active job:", activeJob.id);
             }
 
         } catch (error) {
@@ -138,9 +118,19 @@ export default function TimelineGenerator() {
 
         setIsLoading(true);
         try {
+            // Clear existing data before starting new job
+            setSegments([]);
+            setMusicUrl(null);
+            setFinalVideoUrl(null);
+
             const job = await generateTimeline(topic, style, duration, musicVolume / 100);
-            setJobs(prev => [job, ...prev]);
-            setActiveJobId(job.id);
+
+            // Set Job ID and navigate immediately
+            setJobId(job.id);
+            setJobDuration(duration); // Store duration for placeholders
+            setMusicVolumeStore(musicVolume); // Store the requested volume
+
+            navigate('/app/cyran-roll/editor');
         } catch (error) {
             console.error('Failed to generate timeline:', error);
             alert('Failed to generate timeline. Please try again.');
@@ -245,7 +235,7 @@ export default function TimelineGenerator() {
                         {isLoading ? (
                             <>
                                 <Loader2 className="w-5 h-5 animate-spin" />
-                                {activeJobId ? 'Processing...' : 'Generating...'}
+                                {isLoading ? 'Processing...' : 'Generating...'}
                             </>
                         ) : (
                             <>
@@ -277,8 +267,8 @@ export default function TimelineGenerator() {
                             <button
                                 key={job.id}
                                 onClick={() => handleLoadJob(job)}
-                                disabled={job.status !== 'COMPLETED'}
-                                className={`w-full text-left px-4 py-3 rounded-lg transition-all group flex items-center justify-between ${job.status === 'COMPLETED'
+                                disabled={job.status === 'FAILED'}
+                                className={`w-full text-left px-4 py-3 rounded-lg transition-all group flex items-center justify-between ${job.status !== 'FAILED'
                                     ? 'hover:bg-theme-white/5 cursor-pointer text-theme-text/80 hover:text-theme-text'
                                     : 'opacity-80 cursor-not-allowed text-theme-text/60 bg-theme-white/5'
                                     }`}

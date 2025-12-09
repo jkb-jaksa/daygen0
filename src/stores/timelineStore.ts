@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
+import { persist } from 'zustand/middleware';
 
 export interface Segment {
     id: string; // UUID from backend
@@ -25,9 +26,11 @@ interface TimelineState {
     isLoading: boolean;
     jobId: string | null;
     musicVolume: number; // 0-100
+    jobDuration: 'short' | 'medium' | 'long' | null;
 
     // Actions
     setJobId: (id: string | null) => void;
+    setJobDuration: (duration: 'short' | 'medium' | 'long' | null) => void;
     setSegments: (segments: Segment[]) => void;
     setMusicUrl: (url: string | null) => void;
     setIsPlaying: (isPlaying: boolean) => void;
@@ -47,77 +50,93 @@ interface TimelineState {
 }
 
 export const useTimelineStore = create<TimelineState>()(
-    immer((set) => ({
-        segments: [],
-        musicUrl: null,
-        finalVideoUrl: null,
-        isPlaying: false,
-        currentTime: 0,
-        activeSegmentIndex: 0,
-        isLoading: false,
-        jobId: null,
-        musicVolume: 30, // Default to 30%
+    persist(
+        immer((set) => ({
+            segments: [],
+            musicUrl: null,
+            finalVideoUrl: null,
+            isPlaying: false,
+            currentTime: 0,
+            activeSegmentIndex: 0,
+            isLoading: false,
+            jobId: null,
+            musicVolume: 30, // Default to 30%
+            jobDuration: null,
 
-        setJobId: (id) => set((state) => { state.jobId = id }),
-        setSegments: (segments) => set((state) => {
-            state.segments = segments;
-            state.activeSegmentIndex = 0;
-            state.currentTime = 0;
-        }),
-        setMusicUrl: (url) => set((state) => {
-            state.musicUrl = url;
-        }),
-        setFinalVideoUrl: (url) => set((state) => {
-            state.finalVideoUrl = url;
-        }),
-        setIsPlaying: (isPlaying) => set((state) => { state.isPlaying = isPlaying }),
-        setCurrentTime: (time) => set((state) => { state.currentTime = time }),
-        setSegmentIndex: (index) => set((state) => {
-            if (index >= 0 && index < state.segments.length) {
-                state.activeSegmentIndex = index;
-                // When jumping to a segment, set time to its start
-                state.currentTime = state.segments[index].startTime;
-            }
-        }),
-        nextSegment: () => set((state) => {
-            if (state.activeSegmentIndex < state.segments.length - 1) {
-                state.activeSegmentIndex += 1;
-                // Time update will happen via audio sync, but we can pre-set it
-                state.currentTime = state.segments[state.activeSegmentIndex].startTime;
-            } else {
-                state.isPlaying = false; // End of timeline
-            }
-        }),
-        updateSegmentImage: (id, url) => set((state) => {
-            const seg = state.segments.find(s => s.id === id);
-            if (seg) seg.imageUrl = url;
-        }),
-        updateSegmentVideo: (id, url) => set((state) => {
-            const seg = state.segments.find(s => s.id === id);
-            if (seg) seg.videoUrl = url;
-        }),
-        updateSegmentScript: (id, script) => set((state) => {
-            const seg = state.segments.find(s => s.id === id);
-            if (seg) seg.script = script;
-        }),
-        updateSegmentAudio: (id, audioUrl, duration) => set((state) => {
-            const seg = state.segments.find(s => s.id === id);
-            if (seg) {
-                seg.audioUrl = audioUrl; // Background music if any? No, voiceUrl usually.
-                seg.voiceUrl = audioUrl; // Mapped to voiceUrl usually
-                seg.duration = duration;
-            }
-        }),
-        updateSegmentPrompt: (id, field, value) => set((state) => {
-            const seg = state.segments.find(s => s.id === id);
-            if (seg) {
-                if (field === 'script') seg.script = value;
-                if (field === 'visualPrompt') seg.visualPrompt = value;
-                if (field === 'motionPrompt') seg.motionPrompt = value;
-            }
-        }),
-        setMusicVolume: (volume) => set((state) => {
-            state.musicVolume = volume;
-        }),
-    }))
+            setJobId: (id) => set((state) => { state.jobId = id }),
+            setJobDuration: (duration) => set((state) => { state.jobDuration = duration }),
+            setSegments: (segments) => set((state) => {
+                state.segments = segments;
+                state.activeSegmentIndex = 0;
+                state.currentTime = 0;
+            }),
+            setMusicUrl: (url) => set((state) => {
+                state.musicUrl = url;
+            }),
+            setFinalVideoUrl: (url) => set((state) => {
+                state.finalVideoUrl = url;
+            }),
+            setIsPlaying: (isPlaying) => set((state) => { state.isPlaying = isPlaying }),
+            setCurrentTime: (time) => set((state) => { state.currentTime = time }),
+            setSegmentIndex: (index) => set((state) => {
+                if (index >= 0 && index < state.segments.length) {
+                    state.activeSegmentIndex = index;
+                    // When jumping to a segment, set time to its start
+                    state.currentTime = state.segments[index].startTime;
+                }
+            }),
+            nextSegment: () => set((state) => {
+                if (state.activeSegmentIndex < state.segments.length - 1) {
+                    state.activeSegmentIndex += 1;
+                    // Time update will happen via audio sync, but we can pre-set it
+                    state.currentTime = state.segments[state.activeSegmentIndex].startTime;
+                } else {
+                    state.isPlaying = false; // End of timeline
+                }
+            }),
+            updateSegmentImage: (id, url) => set((state) => {
+                const seg = state.segments.find(s => s.id === id);
+                if (seg) seg.imageUrl = url;
+            }),
+            updateSegmentVideo: (id, url) => set((state) => {
+                const seg = state.segments.find(s => s.id === id);
+                if (seg) seg.videoUrl = url;
+            }),
+            updateSegmentScript: (id, script) => set((state) => {
+                const seg = state.segments.find(s => s.id === id);
+                if (seg) seg.script = script;
+            }),
+            updateSegmentAudio: (id, audioUrl, duration) => set((state) => {
+                const seg = state.segments.find(s => s.id === id);
+                if (seg) {
+                    seg.audioUrl = audioUrl; // Background music if any? No, voiceUrl usually.
+                    seg.voiceUrl = audioUrl; // Mapped to voiceUrl usually
+                    seg.duration = duration;
+                }
+            }),
+            updateSegmentPrompt: (id, field, value) => set((state) => {
+                const seg = state.segments.find(s => s.id === id);
+                if (seg) {
+                    if (field === 'script') seg.script = value;
+                    if (field === 'visualPrompt') seg.visualPrompt = value;
+                    if (field === 'motionPrompt') seg.motionPrompt = value;
+                }
+            }),
+            setMusicVolume: (volume) => set((state) => {
+                state.musicVolume = volume;
+            }),
+        })),
+        {
+            name: 'timeline-storage',
+            partialize: (state) => ({
+                jobId: state.jobId,
+                musicUrl: state.musicUrl,
+                finalVideoUrl: state.finalVideoUrl,
+                segments: state.segments,
+                musicVolume: state.musicVolume,
+                jobDuration: state.jobDuration,
+                // Don't persist isPlaying or currentTime ideally, but maybe currentTime if needed
+            }),
+        }
+    )
 );

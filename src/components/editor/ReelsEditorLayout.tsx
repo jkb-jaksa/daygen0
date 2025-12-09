@@ -1,11 +1,13 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useTimelineStore } from '../../stores/timelineStore';
 import { useAudioSync } from '../../hooks/useAudioSync';
 import { SceneBlock } from './SceneBlock';
+import { PlaceholderScene } from './PlaceholderScene';
+import { getJob } from '../../api/jobs';
 import { Play, Pause, Download } from 'lucide-react';
 
 export const ReelsEditorLayout = () => {
-    const { segments, isPlaying, setIsPlaying, currentTime, nextSegment, musicUrl, finalVideoUrl, musicVolume } = useTimelineStore();
+    const { segments, isPlaying, setIsPlaying, currentTime, nextSegment, musicUrl, finalVideoUrl, musicVolume, jobId, jobDuration, setSegments, setMusicUrl, setFinalVideoUrl, setCurrentTime, setMusicVolume } = useTimelineStore();
     const { audioRef } = useAudioSync();
 
     const musicRef = useRef<HTMLAudioElement | null>(null);
@@ -13,6 +15,64 @@ export const ReelsEditorLayout = () => {
     // Ref for the scrollable container to auto-scroll
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
+    const [progress, setProgress] = useState(0);
+
+    // Polling for Job Completion
+    useEffect(() => {
+        if (!jobId || segments.length > 0) return;
+
+        let intervalId: NodeJS.Timeout;
+
+        const checkJob = async () => {
+            try {
+                const job = await getJob(jobId);
+                setProgress(job.progress || 0);
+
+                // Check for partial or full segments available in metadata response
+                if (job.metadata?.response) {
+                    const response = job.metadata.response as any;
+
+                    if (response.segments && Array.isArray(response.segments)) {
+                        const segmentsWithIds = response.segments.map((s: any, i: number) => ({
+                            ...s,
+                            id: s.id || `segment-${i}-${Date.now()}`,
+                            voiceUrl: s.voiceUrl
+                        }));
+
+                        // Only update if count changed or significantly different (deep check might be expensive, so we just set it)
+                        // Ideally we check if segments.length changed or if the last segment has more data
+                        if (segmentsWithIds.length > segments.length || (segmentsWithIds.length > 0 && segmentsWithIds.length === segments.length && segmentsWithIds[segmentsWithIds.length - 1].videoUrl !== segments[segmentsWithIds.length - 1].videoUrl)) {
+                            setSegments(segmentsWithIds);
+                        }
+                    }
+
+                    // If completed, do the final cleanup/setting
+                    if (job.status === 'COMPLETED') {
+                        // Restore music volume if available
+                        const savedVolume = (job.metadata as any)?.dto?.musicVolume ?? 30;
+                        setMusicVolume(savedVolume);
+
+                        // Extract global musicUrl from response
+                        const musicUrl = (response as any).musicUrl || null;
+                        setMusicUrl(musicUrl);
+                        setFinalVideoUrl(job.resultUrl || null);
+
+                        setIsPlaying(false);
+                        setCurrentTime(0);
+                    }
+                } else if (job.status === 'FAILED') {
+                    console.error("Job failed", job.error);
+                }
+            } catch (e) {
+                console.error("Polling error", e);
+            }
+        };
+
+        checkJob(); // immediate check
+        intervalId = setInterval(checkJob, 2000);
+
+        return () => clearInterval(intervalId);
+    }, [jobId, segments.length, setSegments, setMusicVolume, setMusicUrl, setFinalVideoUrl, setIsPlaying, setCurrentTime]);
 
     // Find active segment for the main preview
     const activeSegment = segments.find(
@@ -71,51 +131,15 @@ export const ReelsEditorLayout = () => {
         }
     }, [currentTime, musicUrl]);
 
-    // MOCK DATA FOR DEVELOPMENT
-    useEffect(() => {
-        if (segments.length === 0) {
-            useTimelineStore.getState().setSegments([
-                {
-                    id: '1',
-                    sceneNumber: 1,
-                    script: "Welcome to the future of digital identity. This is a test of the Cyran Roll editor.",
-                    visualPrompt: "Futuristic digital identity interface, glowing blue lines, dark background",
-                    voiceUrl: "",
-                    imageUrl: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1080&auto=format&fit=crop",
-                    startTime: 0,
-                    endTime: 5,
-                    duration: 5
-                },
-                {
-                    id: '2',
-                    sceneNumber: 2,
-                    script: "We are building a world where your digital self is as real as you are.",
-                    visualPrompt: "Digital avatar forming from particles, high tech, cinematic",
-                    voiceUrl: "",
-                    imageUrl: "https://images.unsplash.com/photo-1535295972055-1c762f4483e5?q=80&w=1080&auto=format&fit=crop",
-                    startTime: 5,
-                    endTime: 10,
-                    duration: 5
-                },
-                {
-                    id: '3',
-                    sceneNumber: 3,
-                    script: "Join us on this journey.",
-                    visualPrompt: "Abstract network connections, global map, connecting people",
-                    voiceUrl: "",
-                    imageUrl: "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1080&auto=format&fit=crop",
-                    startTime: 10,
-                    endTime: 15,
-                    duration: 5
-                }
-            ]);
-        }
-    }, [segments.length]);
+    // MOCK DATA REMOVED
+    // The placeholder logic handles the loading state now.
 
-    if (segments.length === 0) {
+    // If no segments and NO job is running, show generic loading or empty state
+    // If job is running (jobId exists), we want to fall through to render placeholders
+    if (segments.length === 0 && !jobId) {
         return (
             <div className="w-full h-screen flex items-center justify-center text-zinc-500 bg-black">
-                Loading preview...
+                Loading...
             </div>
         );
     }
@@ -130,14 +154,42 @@ export const ReelsEditorLayout = () => {
                 <div className="max-w-2xl mx-auto p-4 lg:p-8 space-y-4">
                     <h1 className="text-xl lg:text-2xl font-bold mb-4 lg:mb-8">Script & Visuals</h1>
 
-                    {segments.map((segment) => (
-                        <SceneBlock
-                            key={segment.id}
-                            segment={segment}
-                            isActive={currentTime >= segment.startTime && currentTime < segment.endTime}
-                            currentTime={currentTime}
-                        />
-                    ))}
+                    {(() => {
+                        const totalExpected = jobDuration === 'short' ? 3 : jobDuration === 'long' ? 12 : 6;
+                        // For the mixed list:
+                        // 1. Map existing segments to SceneBlock
+                        // 2. Fill the rest up to totalExpected with PlaceholderScene
+
+                        const items = [];
+
+                        // Render available segments
+                        segments.forEach((segment) => {
+                            items.push(
+                                <SceneBlock
+                                    key={segment.id}
+                                    segment={segment}
+                                    isActive={currentTime >= segment.startTime && currentTime < segment.endTime}
+                                    currentTime={currentTime}
+                                />
+                            );
+                        });
+
+                        // Render remaining placeholders if job is active
+                        if (jobId && segments.length < totalExpected) {
+                            for (let i = segments.length; i < totalExpected; i++) {
+                                items.push(
+                                    <PlaceholderScene
+                                        key={`placeholder-${i}`}
+                                        index={i}
+                                        isActive={i === segments.length} // Highlight the next one being generated
+                                        estimatedProgress={progress}
+                                    />
+                                );
+                            }
+                        }
+
+                        return items;
+                    })()}
 
                     <div className="h-[50vh]" /> {/* Spacer for bottom scrolling */}
                 </div>
