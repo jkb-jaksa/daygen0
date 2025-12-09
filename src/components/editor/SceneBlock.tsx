@@ -296,7 +296,7 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
                         value={segment.motionPrompt || ''}
                         onChange={(e) => useTimelineStore.getState().updateSegmentPrompt(segment.id, 'motionPrompt', e.target.value)}
                         onClick={(e) => e.stopPropagation()}
-                        className="w-full bg-theme-black/30 border border-theme-mid/30 rounded-lg p-3 text-xs text-theme-mid font-raleway resize-none focus:outline-none focus:border-theme-mid focus:ring-1 focus:ring-theme-mid/50 transition-all placeholder:text-theme-mid/30"
+                        className="w-full bg-theme-black/30 border border-theme-mid/50 rounded-lg p-3 text-xs text-theme-text/80 font-raleway resize-none focus:outline-none focus:border-theme-mid focus:ring-1 focus:ring-theme-mid/50 transition-all placeholder:text-theme-white/30"
                         style={{ height: '70px' }}
                         placeholder="e.g. Fast zoom, pan left..."
                     />

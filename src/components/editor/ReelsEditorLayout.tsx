@@ -4,7 +4,7 @@ import { useAudioSync } from '../../hooks/useAudioSync';
 import { SceneBlock } from './SceneBlock';
 import { PlaceholderScene } from './PlaceholderScene';
 import { getJob } from '../../api/jobs';
-import { Play, Pause, Download } from 'lucide-react';
+import { Play, Pause, Download, Loader2 } from 'lucide-react';
 
 interface SegmentResponse {
     id?: string;
@@ -191,8 +191,12 @@ export const ReelsEditorLayout = () => {
     // If job is running (jobId exists), we want to fall through to render placeholders
     if (segments.length === 0 && !jobId) {
         return (
-            <div className="w-full h-screen flex items-center justify-center text-zinc-500 bg-black">
-                Loading...
+            <div className="w-full h-screen flex flex-col gap-4 items-center justify-center text-theme-white/40 bg-black font-raleway">
+                <div className="relative">
+                    <div className="absolute inset-0 bg-cyan-500/20 blur-xl rounded-full animate-pulse" />
+                    <Loader2 className="w-10 h-10 animate-spin text-cyan-500 relative z-10" />
+                </div>
+                <span className="tracking-widest text-sm uppercase">Initializing Studio...</span>
             </div>
         );
     }
