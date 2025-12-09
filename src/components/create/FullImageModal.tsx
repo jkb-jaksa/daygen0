@@ -609,15 +609,14 @@ const FullImageModal = memo(() => {
     }
   }, [fullSizeImage]);
 
-  /*
-  const _handleResize = useCallback(() => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleResize = useCallback(() => {
     if (fullSizeImage) {
       setResizeModalState({
         isOpen: true,
       });
     }
   }, [fullSizeImage]);
-  */
 
   const handleChangeAngleClose = useCallback(() => {
     setChangeAngleModalState(null);
