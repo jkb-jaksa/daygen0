@@ -1,10 +1,11 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { generateTimeline, type TimelineResponse } from '../../api/timeline';
 import { useTimelineStore, type Segment } from '../../stores/timelineStore';
 import { fetchJobs, type Job } from '../../api/jobs';
-import { Loader2, Sparkles, History, Volume2, VolumeX } from 'lucide-react';
+import { Loader2, Sparkles, History, Volume2, VolumeX, Upload, X } from 'lucide-react';
+import { uploadToR2 } from '../../utils/uploadToR2';
 
 export default function TimelineGenerator() {
     const navigate = useNavigate();
@@ -23,6 +24,12 @@ export default function TimelineGenerator() {
     const setJobId = useTimelineStore((state) => state.setJobId);
     const setJobDuration = useTimelineStore((state) => state.setJobDuration);
     const setMusicVolumeStore = useTimelineStore((state) => state.setMusicVolume);
+
+    const [referenceImages, setReferenceImages] = useState<string[]>([]);
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const [isDragging, setIsDragging] = useState(false);
 
     useEffect(() => {
         loadHistory();
@@ -110,6 +117,62 @@ export default function TimelineGenerator() {
         }
     };
 
+    const processFiles = async (files: File[]) => {
+        if (!files.length) return;
+        setIsUploadingImage(true);
+        try {
+            const uploadPromises = files.map(async (file) => {
+                try {
+                    const result = await uploadToR2(file, file.name, file.type, 'cyran-roll-images');
+                    if (result.success && result.publicUrl) {
+                        return result.publicUrl;
+                    }
+                    throw new Error(result.error || 'Upload failed');
+                } catch (err) {
+                    console.error(`Failed to upload file ${file.name}:`, err);
+                    throw err; // Re-throw to be caught by Promise.all
+                }
+            });
+
+            const results = await Promise.all(uploadPromises);
+            setReferenceImages(prev => [...prev, ...results]);
+        } catch (error) {
+            console.error('Failed to upload one or more images:', error);
+            alert(`Failed to upload images: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        } finally {
+            setIsUploadingImage(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files?.length) return;
+        await processFiles(Array.from(e.target.files));
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
+
+    const handleDrop = async (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+
+        if (e.dataTransfer.files?.length) {
+            await processFiles(Array.from(e.dataTransfer.files));
+        }
+    };
+
+    const removeImage = (index: number) => {
+        setReferenceImages(prev => prev.filter((_, i) => i !== index));
+    };
+
 
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -123,7 +186,7 @@ export default function TimelineGenerator() {
             setMusicUrl(null);
             setFinalVideoUrl(null);
 
-            const job = await generateTimeline(topic, style, duration, musicVolume / 100);
+            const job = await generateTimeline(topic, style, duration, musicVolume / 100, referenceImages);
 
             // Set Job ID and navigate immediately
             setJobId(job.id);
@@ -150,11 +213,73 @@ export default function TimelineGenerator() {
                     </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6 bg-theme-black/20 p-8 rounded-3xl border border-theme-dark backdrop-blur-sm">
-                    <div className="space-y-2">
-                        <label htmlFor="topic" className="block text-sm font-medium text-theme-white font-raleway ml-1">
-                            What video do you want to make?
-                        </label>
+                <form
+                    onSubmit={handleSubmit}
+                    className={`space-y-6 bg-theme-black/20 p-8 rounded-3xl border backdrop-blur-sm transition-all relative ${isDragging
+                        ? 'border-theme-mid bg-theme-mid/5 ring-2 ring-theme-mid/20'
+                        : 'border-theme-dark'
+                        }`}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                >
+                    {isDragging && (
+                        <div className="absolute inset-0 bg-theme-mid/10 backdrop-blur-sm rounded-3xl flex items-center justify-center z-50 animate-in fade-in duration-200">
+                            <div className="bg-theme-black/90 p-6 rounded-2xl border border-theme-mid/50 shadow-2xl flex flex-col items-center gap-3">
+                                <Upload className="w-10 h-10 text-theme-mid animate-bounce" />
+                                <p className="text-lg font-bold text-theme-mid font-raleway">Drop images here</p>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                            <label htmlFor="topic" className="text-sm font-medium text-theme-white font-raleway ml-1">
+                                What video do you want to make?
+                            </label>
+                            <div className="flex items-center gap-2">
+                                {referenceImages.length > 0 && (
+                                    <div className="flex items-center gap-2 mr-2">
+                                        {referenceImages.map((url, i) => (
+                                            <div key={i} className="relative w-8 h-8 rounded overflow-hidden group border border-theme-white/20">
+                                                <img src={url} className="w-full h-full object-cover" alt={`Ref ${i}`} />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeImage(i)}
+                                                    className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    <X size={10} className="text-white" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                <div className="relative">
+                                    <button
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        disabled={isUploadingImage}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-theme-white/5 hover:bg-theme-white/10 border border-theme-white/10 rounded-lg text-xs font-raleway text-theme-white/70 transition-all hover:text-theme-white disabled:opacity-50"
+                                    >
+                                        {isUploadingImage ? (
+                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                        ) : (
+                                            <Upload className="w-3.5 h-3.5" />
+                                        )}
+                                        {isUploadingImage ? 'Uploading...' : 'Add Reference'}
+                                    </button>
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        onChange={handleImageUpload}
+                                        className="hidden"
+                                        accept="image/*"
+                                        multiple
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
                         <textarea
                             id="topic"
                             value={topic}

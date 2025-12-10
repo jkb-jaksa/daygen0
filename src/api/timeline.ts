@@ -8,10 +8,16 @@ export interface TimelineResponse {
 }
 
 
-export async function generateTimeline(topic: string, style: string, duration: 'short' | 'medium' | 'long' = 'medium', musicVolume: number = 0.3): Promise<Job> {
+export async function generateTimeline(
+    topic: string,
+    style: string,
+    duration: 'short' | 'medium' | 'long' = 'medium',
+    musicVolume: number = 0.3,
+    referenceImageUrls?: string[]
+): Promise<Job> {
     return apiFetch<Job>('/api/timeline/generate', {
         method: 'POST',
-        body: { topic, style, duration, musicVolume },
+        body: { topic, style, duration, musicVolume, referenceImageUrls },
     });
 }
 
