@@ -49,7 +49,7 @@ export async function uploadToR2(
     }
 
     const presignedData: PresignedUrlResponse = await presignedResponse.json();
-    
+
     if (!presignedData.success) {
       throw new Error('Failed to get presigned URL from backend');
     }
@@ -92,7 +92,7 @@ export async function uploadProfilePictureToR2(
     const { supabase } = await import('../lib/supabase');
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token || '';
-    
+
     console.log('Supabase session:', session);
     console.log('Access token:', token);
     console.log('Token length:', token.length);
@@ -110,7 +110,7 @@ export async function uploadProfilePictureToR2(
       },
       body: formData,
     });
-    
+
     console.log('Upload response status:', uploadResponse.status);
     console.log('Upload response headers:', Object.fromEntries(uploadResponse.headers.entries()));
 
@@ -120,7 +120,7 @@ export async function uploadProfilePictureToR2(
     }
 
     const uploadData = await uploadResponse.json();
-    
+
     if (!uploadData.success) {
       throw new Error('Failed to upload profile picture to backend');
     }
@@ -131,6 +131,83 @@ export async function uploadProfilePictureToR2(
     };
   } catch (error) {
     console.error('Profile picture upload to R2 failed:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown upload error',
+    };
+  }
+}
+
+export interface UploadBase64Result {
+  success: boolean;
+  url?: string;
+  mimeType?: string;
+  error?: string;
+}
+
+/**
+ * Upload a base64/data URL image to R2 via the backend
+ * Used for cropped images that don't need AI processing
+ */
+export async function uploadBase64ToR2(
+  dataUrl: string,
+  options?: {
+    folder?: string;
+    prompt?: string;
+    model?: string;
+  }
+): Promise<UploadBase64Result> {
+  try {
+    // Get auth token from Supabase session
+    const { supabase } = await import('../lib/supabase');
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token || '';
+
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+
+    // Extract base64 data and mime type from data URL
+    const match = dataUrl.match(/^data:([^;]+);base64,(.*)$/);
+    if (!match) {
+      throw new Error('Invalid data URL format');
+    }
+    const [, mimeType, base64Data] = match;
+
+    // Upload via backend
+    const response = await fetch(getApiUrl('/api/upload/base64'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        base64Data,
+        mimeType,
+        folder: options?.folder || 'cropped-images',
+        prompt: options?.prompt,
+        model: options?.model,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Upload failed: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error('Backend returned success=false');
+    }
+
+    return {
+      success: true,
+      url: result.url,
+      mimeType: result.mimeType,
+    };
+  } catch (error) {
+    console.error('Base64 upload to R2 failed:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown upload error',

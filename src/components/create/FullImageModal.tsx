@@ -40,6 +40,8 @@ const ChangeAngleModal = lazy(() => import('./ChangeAngleModal'));
 import type { AngleOption } from './hooks/useAngleHandlers';
 const ResizeModal = lazy(() => import('./ResizeModal'));
 import type { GeminiAspectRatio } from '../../types/aspectRatio';
+import { renderComposedCanvas, generateExtensionPrompt } from './utils/resizeUtils';
+import { uploadBase64ToR2 } from '../../utils/uploadToR2';
 const MasterSidebar = lazy(() => import('../master/MasterSidebar'));
 // Individual badges are rendered via ImageBadgeRow
 
@@ -635,11 +637,200 @@ const FullImageModal = memo(() => {
     setResizeModalState(null);
   }, []);
 
-  const handleResizeSubmit = useCallback((aspectRatio: GeminiAspectRatio) => {
-    // TODO: Implement resize logic
-    console.log('[FullImageModal] Resize requested:', aspectRatio);
+  const startResizeJob = useCallback((image: GalleryImageLike, prompt: string) => {
+    const syntheticId = buildModalVariateJobId(image);
+    const timestamp = Date.now();
+
+    addActiveJob({
+      id: syntheticId,
+      prompt: prompt,
+      model: 'gemini-3-pro-image-preview',
+      status: 'processing',
+      progress: 5,
+      backendProgress: 5,
+      backendProgressUpdatedAt: timestamp,
+      startedAt: timestamp,
+      jobId: syntheticId,
+    });
+
+    return syntheticId;
+  }, [addActiveJob]);
+
+  const finalizeResizeJob = useCallback((jobId: string, status: 'completed' | 'failed') => {
+    updateJobStatus(jobId, status, {
+      progress: status === 'completed' ? 100 : undefined,
+      backendProgress: status === 'completed' ? 100 : undefined,
+      backendProgressUpdatedAt: Date.now(),
+    });
+    removeActiveJob(jobId);
+  }, [removeActiveJob, updateJobStatus]);
+
+  const handleResizeSubmit = useCallback(async (
+    aspectRatio: GeminiAspectRatio,
+    position: { x: number; y: number },
+    scale: number,
+    userPrompt: string
+  ) => {
+    if (!fullSizeImage || !fullSizeImage.url) {
+      showToast('No image available for resize');
+      return;
+    }
+
+    // Close modals immediately
     setResizeModalState(null);
-  }, []);
+    closeFullSize();
+
+    // Track job ID for error handling
+    let syntheticJobId: string | null = null;
+
+    try {
+      // Render the composed canvas with positioned image
+      console.log('[Resize] Rendering composed canvas...');
+      const { dataUrl: composedImageDataUrl, isPureCrop } = await renderComposedCanvas({
+        imageUrl: fullSizeImage.url,
+        targetAspectRatio: aspectRatio,
+        position,
+        scale,
+      });
+      console.log('[Resize] Canvas rendered, isPureCrop:', isPureCrop, 'dataUrl length:', composedImageDataUrl.length);
+
+      // If this is a pure crop AND no user prompt, skip AI and upload directly
+      const hasUserPrompt = userPrompt.trim().length > 0;
+
+      if (isPureCrop && !hasUserPrompt) {
+        console.log('[Resize] Pure crop detected - uploading directly without AI');
+        showToast('Cropping image...');
+
+        // Upload cropped image directly to R2
+        const uploadResult = await uploadBase64ToR2(composedImageDataUrl, {
+          folder: 'cropped-images',
+          prompt: `Cropped to ${aspectRatio}`,
+          model: 'crop',
+        });
+
+        if (uploadResult.success && uploadResult.url) {
+          await addImage({
+            url: uploadResult.url,
+            prompt: `Cropped to ${aspectRatio}`,
+            model: 'crop',
+            timestamp: new Date().toISOString(),
+            ownerId: fullSizeImage.ownerId,
+            isLiked: false,
+            isPublic: false,
+          });
+          showToast('Image cropped successfully!');
+        } else {
+          showToast(`Failed to crop: ${uploadResult.error || 'Unknown error'}`);
+        }
+        return;
+      }
+
+      // Generate the smart extension prompt (for AI generation)
+      const extensionPrompt = generateExtensionPrompt({
+        position,
+        scale,
+        targetRatio: aspectRatio,
+        userPrompt: userPrompt.trim() || undefined,
+      });
+
+      // Start the resize job for tracking
+      syntheticJobId = startResizeJob(fullSizeImage, extensionPrompt);
+      console.log('[Resize] Job started:', syntheticJobId);
+
+      // Call Gemini with the composed image as reference
+      console.log('[Resize] Calling Gemini for AI extension...');
+      generateGeminiImage({
+        prompt: extensionPrompt,
+        references: [composedImageDataUrl],
+        model: 'gemini-3-pro-image-preview',
+        aspectRatio: aspectRatio,
+        clientJobId: syntheticJobId,
+      }).then(async (result) => {
+        console.log('[Resize] Gemini result:', result);
+        if (result) {
+          await addImage({
+            url: result.url,
+            prompt: extensionPrompt,
+            model: result.model,
+            timestamp: new Date().toISOString(),
+            ownerId: fullSizeImage.ownerId,
+            isLiked: false,
+            isPublic: false,
+            r2FileId: result.r2FileId,
+          });
+          finalizeResizeJob(syntheticJobId!, 'completed');
+          showToast('Image extended successfully!');
+        } else {
+          showToast('Failed to extend image');
+          finalizeResizeJob(syntheticJobId!, 'failed');
+        }
+      }).catch((error) => {
+        console.error('[Resize] Gemini error:', error);
+        debugError('Failed to extend image:', error);
+        showToast('Failed to extend image');
+        finalizeResizeJob(syntheticJobId!, 'failed');
+      });
+    } catch (error) {
+      console.error('[Resize] Process error:', error);
+      debugError('Failed to process resize:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      showToast(`Failed to resize: ${errorMessage}`);
+      // Finalize the job if it was started
+      if (syntheticJobId) {
+        finalizeResizeJob(syntheticJobId, 'failed');
+      }
+    }
+  }, [fullSizeImage, generateGeminiImage, addImage, showToast, startResizeJob, finalizeResizeJob, closeFullSize]);
+
+  // Handle crop submit - free crop without AI
+  const handleCropSubmit = useCallback(async (cropAreaParam: { x: number; y: number; width: number; height: number }) => {
+    if (!fullSizeImage || !fullSizeImage.url) {
+      showToast('No image available for crop');
+      return;
+    }
+
+    setResizeModalState(null);
+    closeFullSize();
+    showToast('Cropping image...');
+
+    try {
+      // Import cropImage dynamically to use the proxy-based loader
+      const { cropImage } = await import('./utils/resizeUtils');
+
+      // Crop the image using proxy to bypass CORS
+      const cropResult = await cropImage({
+        imageUrl: fullSizeImage.url,
+        cropArea: cropAreaParam,
+      });
+
+      // Upload to R2
+      const uploadResult = await uploadBase64ToR2(cropResult.dataUrl, {
+        folder: 'cropped-images',
+        prompt: 'Free crop',
+        model: 'crop',
+      });
+
+      if (uploadResult.success && uploadResult.url) {
+        await addImage({
+          url: uploadResult.url,
+          prompt: 'Free crop',
+          model: 'crop',
+          timestamp: new Date().toISOString(),
+          ownerId: fullSizeImage.ownerId,
+          isLiked: false,
+          isPublic: false,
+        });
+        showToast('Image cropped successfully!');
+      } else {
+        showToast(`Failed to crop: ${uploadResult.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('[Crop] Error:', error);
+      debugError('Failed to crop image:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      showToast(`Failed to crop: ${errorMessage}`);
+    }
+  }, [fullSizeImage, addImage, showToast, closeFullSize]);
 
   const handleMakeVideoSubmit = useCallback(async (options: MakeVideoOptions) => {
     if (!fullSizeImage || !fullSizeImage.url) {
@@ -1806,6 +1997,7 @@ const FullImageModal = memo(() => {
             onClose={handleResizeClose}
             image={fullSizeImage}
             onResize={handleResizeSubmit}
+            onCrop={handleCropSubmit}
           />
         )}
       </Suspense>
