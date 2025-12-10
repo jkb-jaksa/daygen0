@@ -25,7 +25,7 @@ interface JobResponse {
 }
 
 export const ReelsEditorLayout = () => {
-    const { segments, isPlaying, setIsPlaying, currentTime, nextSegment, musicUrl, finalVideoUrl, musicVolume, jobId, jobDuration, setSegments, setMusicUrl, setFinalVideoUrl, setCurrentTime, setMusicVolume } = useTimelineStore();
+    const { segments, isPlaying, setIsPlaying, currentTime, nextSegment, musicUrl, finalVideoUrl, musicVolume, jobId, jobDuration, setSegments, syncSegments, setMusicUrl, setFinalVideoUrl, setCurrentTime, setMusicVolume } = useTimelineStore();
     const { audioRef } = useAudioSync();
 
     const musicRef = useRef<HTMLAudioElement | null>(null);
@@ -51,7 +51,7 @@ export const ReelsEditorLayout = () => {
                     if (response.segments && Array.isArray(response.segments)) {
                         const segmentsWithIds = response.segments.map((s, i: number) => ({
                             ...s,
-                            id: s.id || `segment-${i}-${Date.now()}`,
+                            id: s.id || `segment-${i}`,
                             voiceUrl: s.voiceUrl,
                             status: s.status || 'completed' // Default to completed if not present for now, or 'pending'
                         }));
@@ -73,7 +73,7 @@ export const ReelsEditorLayout = () => {
 
                         if (hasChanges) {
                             // console.log("Segments updated", segmentsWithIds);
-                            setSegments(segmentsWithIds as unknown as Segment[]);
+                            syncSegments(segmentsWithIds as unknown as Segment[]);
                         }
                     }
 
@@ -107,7 +107,7 @@ export const ReelsEditorLayout = () => {
         const intervalId = setInterval(checkJob, 2000);
 
         return () => clearInterval(intervalId);
-    }, [jobId, segments, setSegments, setMusicVolume, setMusicUrl, setFinalVideoUrl, setIsPlaying, setCurrentTime]);
+    }, [jobId, segments, setSegments, syncSegments, setMusicVolume, setMusicUrl, setFinalVideoUrl, setIsPlaying, setCurrentTime]);
 
     // Find active segment for the main preview
     const activeSegment = segments.find(

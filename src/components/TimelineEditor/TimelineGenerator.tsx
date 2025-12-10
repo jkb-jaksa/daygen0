@@ -275,7 +275,7 @@ export default function TimelineGenerator() {
                             >
                                 <div className="flex flex-col gap-1 w-full mr-4">
                                     <span className="font-raleway text-sm truncate">
-                                        {(job.metadata?.topic as string) || (job.metadata?.prompt as string) || 'Untitled Project'}
+                                        {(job.metadata?.title as string) || (job.metadata?.topic as string) || (job.metadata?.prompt as string) || 'Untitled Project'}
                                     </span>
                                     {(job.status === 'PROCESSING' || job.status === 'STITCHING') && (
                                         <div className="w-full flex items-center gap-2">

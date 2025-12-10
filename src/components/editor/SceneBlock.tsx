@@ -26,7 +26,9 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
     // Timer logic and Simulated Progress
     React.useEffect(() => {
         let interval: NodeJS.Timeout;
-        if (isRegeneratingImage || isRegeneratingVideo || (!segment.imageUrl && segment.status === 'generating') || (!segment.videoUrl && segment.status === 'generating')) {
+        const shouldTimerRun = isRegeneratingImage || isRegeneratingVideo || (!segment.imageUrl && (segment.status === 'generating' || segment.status === 'pending')) || (!segment.videoUrl && (segment.status === 'generating' || segment.status === 'pending'));
+
+        if (shouldTimerRun) {
             interval = setInterval(() => {
                 setTimer(prev => prev + 1);
             }, 1000);
@@ -39,7 +41,7 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
     // Simulated progress hook logic (inline for now)
     const [simulatedProgress, setSimulatedProgress] = React.useState(0);
     React.useEffect(() => {
-        const isGenerating = isRegeneratingImage || isRegeneratingVideo || segment.status === 'generating';
+        const isGenerating = isRegeneratingImage || isRegeneratingVideo || segment.status === 'generating' || segment.status === 'pending';
         if (!isGenerating) {
             setSimulatedProgress(0);
             return;
@@ -330,23 +332,29 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
                                     progress={simulatedProgress}
                                     size={32}
                                     showPercentage={false}
-                                    progressColor="#60a5fa"
-                                    baseColor="rgba(96,165,250,0.2)"
+                                    progressColor="rgba(255, 255, 255, 0.9)"
+                                    baseColor="rgba(255, 255, 255, 0.2)"
                                 />
-                                <span className="text-[10px] text-blue-300 font-mono animate-pulse">Animating...</span>
+                                <div className="flex flex-col items-center">
+                                    <span className="text-[10px] text-white/90 font-mono animate-pulse font-bold">Animating...</span>
+                                    <span className="text-[9px] text-white/60 font-mono">{formatTime(timer)}</span>
+                                </div>
                             </div>
                         )}
                     </>
                 ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center gap-2 p-2">
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-2 p-2 relative">
                         <CircularProgressRing
                             progress={simulatedProgress}
                             size={32}
                             showPercentage={false}
-                            progressColor="rgba(var(--theme-white-rgb), 0.2)"
-                            baseColor="rgba(var(--theme-white-rgb),0.1)"
+                            progressColor="rgba(255, 255, 255, 0.9)"
+                            baseColor="rgba(255, 255, 255, 0.2)"
                         />
-                        <span className="text-[10px] text-theme-white/40 font-mono text-center leading-tight">Generating Image...</span>
+                        <div className="flex flex-col items-center gap-0.5">
+                            <span className="text-[10px] text-white/90 font-mono text-center leading-tight font-bold">Generating Image...</span>
+                            <span className="text-[9px] text-white/60 font-mono">{formatTime(timer)}</span>
+                        </div>
                     </div>
                 )}
             </div>

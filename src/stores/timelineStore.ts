@@ -33,6 +33,7 @@ interface TimelineState {
     setJobId: (id: string | null) => void;
     setJobDuration: (duration: 'short' | 'medium' | 'long' | null) => void;
     setSegments: (segments: Segment[]) => void;
+    syncSegments: (segments: Segment[]) => void;
     setMusicUrl: (url: string | null) => void;
     setIsPlaying: (isPlaying: boolean) => void;
     setCurrentTime: (time: number) => void;
@@ -70,6 +71,16 @@ export const useTimelineStore = create<TimelineState>()(
                 state.segments = segments;
                 state.activeSegmentIndex = 0;
                 state.currentTime = 0;
+            }),
+            syncSegments: (segments) => set((state) => {
+                state.segments = segments;
+                // Preserve activeSegmentIndex and currentTime
+                // Validate index in case array shrank
+                if (state.activeSegmentIndex >= segments.length) {
+                    state.activeSegmentIndex = Math.max(0, segments.length - 1);
+                    // We don't necessarily reset currentTime here unless out of bounds, 
+                    // but usually segments grow or stay same size.
+                }
             }),
             setMusicUrl: (url) => set((state) => {
                 state.musicUrl = url;
