@@ -5,7 +5,7 @@ import { Scan } from 'lucide-react';
 
 interface PlaceholderSceneProps {
     isActive: boolean;
-    // estimatedProgress: number; // 0-100 (from parent/job)
+    estimatedProgress?: number;
 }
 
 const AI_THOUGHTS = [
@@ -19,7 +19,7 @@ const AI_THOUGHTS = [
 ];
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const PlaceholderScene = ({ isActive }: PlaceholderSceneProps) => {
+export const PlaceholderScene: React.FC<PlaceholderSceneProps> = ({ isActive, estimatedProgress }) => {
     const [thoughtIndex, setThoughtIndex] = useState(0);
     const [typedText, setTypedText] = useState("");
     const [isDeleting, setIsDeleting] = useState(false);

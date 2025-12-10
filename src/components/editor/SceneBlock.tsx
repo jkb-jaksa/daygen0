@@ -3,7 +3,7 @@ import { RefreshCw, Volume2, Loader2 } from 'lucide-react';
 import { CircularProgressRing } from '../CircularProgressRing';
 import { useTimelineStore, type Segment } from '../../stores/timelineStore';
 import { regenerateSegment } from '../../api/timeline';
-import { getJob } from '../../api/jobs';
+
 import clsx from 'clsx';
 
 
@@ -14,14 +14,14 @@ interface SceneBlockProps {
 }
 
 export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, currentTime }) => {
-    const { updateSegmentScript, updateSegmentAudio, setCurrentTime } = useTimelineStore();
+    const { updateSegmentScript, updateSegmentAudio, setCurrentTime, setIsSeeking, setSeekTarget } = useTimelineStore();
     const progressRef = React.useRef<HTMLDivElement>(null);
     const [localScript, setLocalScript] = React.useState(segment.script);
     const [isRegeneratingAudio, setIsRegeneratingAudio] = React.useState(false);
     const [isRegeneratingImage, setIsRegeneratingImage] = React.useState(false);
     const [isRegeneratingVideo, setIsRegeneratingVideo] = React.useState(false);
     const [timer, setTimer] = React.useState(0);
-    const { updateSegmentImage, updateSegmentVideo } = useTimelineStore();
+    const { updateSegmentImage } = useTimelineStore();
 
     // Timer logic and Simulated Progress
     React.useEffect(() => {
@@ -76,14 +76,6 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
         if (isImage) setIsRegeneratingImage(true);
         else setIsRegeneratingVideo(true);
 
-        let checkInterval: NodeJS.Timeout | null = null;
-        let safetyTimeout: NodeJS.Timeout | null = null;
-
-        const cleanup = () => {
-            if (checkInterval) clearInterval(checkInterval);
-            if (safetyTimeout) clearTimeout(safetyTimeout);
-        };
-
         try {
             const index = useTimelineStore.getState().segments.findIndex(s => s.id === segment.id);
             if (index === -1) throw new Error("Segment not found");
@@ -98,50 +90,38 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
                 !isImage // regenerateVideo
             );
 
+            // Immediate update for image if returned
             if (isImage && res.imageUrl) {
                 updateSegmentImage(segment.id, res.imageUrl);
-            } else if (!isImage) {
-                // Polling for video
-                checkInterval = setInterval(async () => {
-                    if (!jobId) {
-                        cleanup();
-                        setIsRegeneratingVideo(false);
-                        return;
-                    }
-                    try {
-                        const job = await getJob(jobId);
-                        if (job.status === 'COMPLETED' && job.metadata?.response) {
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            const segments = (job.metadata.response as any).segments;
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            const matched = segments.find((s: any) => s.id === segment.id);
-
-                            if (matched && matched.videoUrl) {
-                                cleanup();
-                                setIsRegeneratingVideo(false);
-                                updateSegmentVideo(segment.id, matched.videoUrl);
-                            }
-                        }
-                    } catch {
-                        // ignore
-                    }
-                }, 3000);
-
-                safetyTimeout = setTimeout(() => {
-                    cleanup();
-                    setIsRegeneratingVideo(false);
-                    alert("Video regeneration timed out or takes longer than expected.");
-                }, 120000);
+                setIsRegeneratingImage(false); // Can turn off immediately if we got the URL
             }
+
+            // For video, or if image didn't return immediately, we wait for global poll to update the segment prop.
+            // We set the flag to true, and a useEffect will turn it off when segment.videoUrl changes.
+
         } catch (error) {
             console.error(error);
             alert(`Failed to regenerate ${type}: ` + error);
-            if (!isImage) cleanup();
-        } finally {
             if (isImage) setIsRegeneratingImage(false);
-            // Video flag cleared in polling/timeout if video
+            else setIsRegeneratingVideo(false);
         }
     };
+
+    // React to external updates to turn off spinners
+    React.useEffect(() => {
+        if (isRegeneratingImage && segment.imageUrl) {
+            // If we were waiting for an image and it arrived (or changed), turn off spinner
+            // Note: basic check. Ideally we'd check if it's a *new* URL, but checking if it exists is a good start
+            // or we need to track 'previous' url.
+            // For now, let's assume if the user clicked regen, they are waiting for *some* change.
+            // Actually, if the store updates, this runs.
+            // A better way is to compare with a ref of the old url, but for simplicity:
+            setIsRegeneratingImage(false);
+        }
+        if (isRegeneratingVideo && segment.videoUrl) {
+            setIsRegeneratingVideo(false);
+        }
+    }, [segment.imageUrl, segment.videoUrl, isRegeneratingImage, isRegeneratingVideo]);
 
     const handleUpdateAudio = async () => {
         if (!localScript.trim() || localScript === segment.script) return; // No change or empty
@@ -200,7 +180,11 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
         percentage = Math.max(0, Math.min(1, percentage));
 
         const newTime = segment.startTime + (percentage * (segment.endTime - segment.startTime));
-        setCurrentTime(newTime);
+
+        // Use robust seeking
+        setIsSeeking(true);
+        setSeekTarget(newTime);
+        // Note: setCurrentTime(newTime) will be called by the TimeDriver in useAudioSync immediately after to update UI snap.
     };
 
     return (

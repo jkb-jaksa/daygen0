@@ -26,9 +26,11 @@ interface TimelineState {
     activeSegmentIndex: number;
     isLoading: boolean;
     jobId: string | null;
+    jobStatus?: 'PENDING' | 'processing' | 'COMPLETED' | 'FAILED'; // Added for proper streaming logic
     musicVolume: number; // 0-100
     jobDuration: 'short' | 'medium' | 'long' | null;
 
+    isWaitingForSegment: boolean;
     // Actions
     setJobId: (id: string | null) => void;
     setJobDuration: (duration: 'short' | 'medium' | 'long' | null) => void;
@@ -38,6 +40,14 @@ interface TimelineState {
     setIsPlaying: (isPlaying: boolean) => void;
     setCurrentTime: (time: number) => void;
     setSegmentIndex: (index: number) => void;
+
+    // Robust Seeking
+    isSeeking: boolean;
+    seekTarget: number | null;
+    setIsSeeking: (isSeeking: boolean) => void;
+    setSeekTarget: (time: number | null) => void;
+    setJobStatus: (status: 'PENDING' | 'processing' | 'COMPLETED' | 'FAILED') => void;
+
     nextSegment: () => void;
     updateSegmentImage: (segmentId: string, newImageUrl: string) => void;
     updateSegmentVideo: (segmentId: string, newVideoUrl: string) => void;
@@ -62,24 +72,64 @@ export const useTimelineStore = create<TimelineState>()(
             activeSegmentIndex: 0,
             isLoading: false,
             jobId: null,
+            jobStatus: undefined,
+            isSeeking: false,
+            seekTarget: null,
             musicVolume: 30, // Default to 30%
             jobDuration: null,
+            isWaitingForSegment: false,
 
             setJobId: (id) => set((state) => { state.jobId = id }),
+            setJobStatus: (status) => set((state) => { state.jobStatus = status }),
             setJobDuration: (duration) => set((state) => { state.jobDuration = duration }),
             setSegments: (segments) => set((state) => {
                 state.segments = segments;
                 state.activeSegmentIndex = 0;
                 state.currentTime = 0;
+                state.isWaitingForSegment = false;
             }),
-            syncSegments: (segments) => set((state) => {
-                state.segments = segments;
-                // Preserve activeSegmentIndex and currentTime
-                // Validate index in case array shrank
-                if (state.activeSegmentIndex >= segments.length) {
-                    state.activeSegmentIndex = Math.max(0, segments.length - 1);
-                    // We don't necessarily reset currentTime here unless out of bounds, 
-                    // but usually segments grow or stay same size.
+            syncSegments: (newSegments) => set((state) => {
+                const prevCount = state.segments.length;
+
+                // Duration Reconciliation: Maintain relative position within the active segment
+                // This prevents "jumping" when previous segments change duration during generation.
+                const currentSeg = state.segments[state.activeSegmentIndex];
+                let relativeTime = 0;
+                let trackingSegmentId: string | null = null;
+                const wasWaiting = state.isWaitingForSegment;
+
+                if (currentSeg) {
+                    relativeTime = state.currentTime - currentSeg.startTime;
+                    trackingSegmentId = currentSeg.id;
+                }
+
+                state.segments = newSegments;
+
+                // Validate index
+                if (state.activeSegmentIndex >= state.segments.length) {
+                    // If we lost segments, clamp.
+                    state.activeSegmentIndex = Math.max(0, state.segments.length - 1);
+                }
+
+                // Attempt to re-align time to the same segment ID
+                if (trackingSegmentId && !wasWaiting) {
+                    const newIndex = state.segments.findIndex(s => s.id === trackingSegmentId);
+                    if (newIndex !== -1) {
+                        state.activeSegmentIndex = newIndex;
+                        const newSeg = state.segments[newIndex];
+                        // Update global time to match the new start time + saved relative offset
+                        state.currentTime = newSeg.startTime + relativeTime;
+                    }
+                }
+
+                // STREAMING LOGIC: If we were waiting and now have more segments, resume!
+                if (state.isWaitingForSegment && state.segments.length > prevCount) {
+                    // Check if we actually have a next segment relative to active
+                    if (state.activeSegmentIndex < state.segments.length - 1) {
+                        state.isWaitingForSegment = false;
+                        state.activeSegmentIndex = state.activeSegmentIndex + 1;
+                        state.currentTime = state.segments[state.activeSegmentIndex].startTime;
+                    }
                 }
             }),
             setMusicUrl: (url) => set((state) => {
@@ -88,12 +138,18 @@ export const useTimelineStore = create<TimelineState>()(
             setFinalVideoUrl: (url) => set((state) => {
                 state.finalVideoUrl = url;
             }),
-            setIsPlaying: (isPlaying) => set((state) => { state.isPlaying = isPlaying }),
+            setIsPlaying: (isPlaying) => set((state) => {
+                state.isPlaying = isPlaying;
+                if (!isPlaying) state.isWaitingForSegment = false;
+            }),
             setCurrentTime: (time) => set((state) => {
                 state.currentTime = time;
-                const index = state.segments.findIndex(s => time >= s.startTime && time < s.endTime);
-                if (index !== -1) {
-                    state.activeSegmentIndex = index;
+                // Only update index if NOT waiting (waiting means we are intentionally off the grid)
+                if (!state.isWaitingForSegment) {
+                    const index = state.segments.findIndex(s => time >= s.startTime && time < s.endTime);
+                    if (index !== -1) {
+                        state.activeSegmentIndex = index;
+                    }
                 }
             }),
             setSegmentIndex: (index) => set((state) => {
@@ -101,17 +157,32 @@ export const useTimelineStore = create<TimelineState>()(
                     state.activeSegmentIndex = index;
                     // When jumping to a segment, set time to its start
                     state.currentTime = state.segments[index].startTime;
+                    state.isWaitingForSegment = false;
                 }
             }),
             nextSegment: () => set((state) => {
-                if (state.activeSegmentIndex < state.segments.length - 1) {
-                    state.activeSegmentIndex += 1;
-                    // Time update will happen via audio sync, but we can pre-set it
-                    state.currentTime = state.segments[state.activeSegmentIndex].startTime;
+                const nextIndex = state.activeSegmentIndex + 1;
+
+                // If next segment exists, move to it
+                if (nextIndex < state.segments.length) {
+                    state.activeSegmentIndex = nextIndex;
+                    state.currentTime = state.segments[nextIndex].startTime;
+                    state.isWaitingForSegment = false;
                 } else {
-                    state.isPlaying = false; // End of timeline
+                    // We are at the end of KNOWN segments.
+                    // IF job is still running/processing, enter WAITING mode.
+                    if (state.jobId && state.jobStatus !== 'COMPLETED' && state.jobStatus !== 'FAILED') {
+                        console.log("Timeline: Generating next segment... Waiting.");
+                        state.isWaitingForSegment = true;
+                        // Keep isPlaying = true
+                    } else {
+                        state.isPlaying = false; // End of timeline
+                        state.isWaitingForSegment = false;
+                    }
                 }
             }),
+            setIsSeeking: (isSeeking) => set((state) => { state.isSeeking = isSeeking }),
+            setSeekTarget: (target) => set((state) => { state.seekTarget = target }),
             updateSegmentImage: (id, url) => set((state) => {
                 const seg = state.segments.find(s => s.id === id);
                 if (seg) seg.imageUrl = url;

@@ -25,7 +25,7 @@ interface JobResponse {
 }
 
 export const ReelsEditorLayout = () => {
-    const { segments, isPlaying, setIsPlaying, currentTime, nextSegment, musicUrl, finalVideoUrl, musicVolume, jobId, jobDuration, setSegments, syncSegments, setMusicUrl, setFinalVideoUrl, setCurrentTime, setMusicVolume } = useTimelineStore();
+    const { segments, isPlaying, setIsPlaying, currentTime, nextSegment, musicUrl, finalVideoUrl, musicVolume, jobId, jobDuration, setSegments, syncSegments, setMusicUrl, setFinalVideoUrl, setCurrentTime, setMusicVolume, setJobStatus, isWaitingForSegment } = useTimelineStore();
     const { audioRef } = useAudioSync();
 
     const musicRef = useRef<HTMLAudioElement | null>(null);
@@ -43,6 +43,7 @@ export const ReelsEditorLayout = () => {
             try {
                 const job = await getJob(jobId);
                 setProgress(job.progress || 0);
+                if (job.status) setJobStatus(job.status as 'PENDING' | 'processing' | 'COMPLETED' | 'FAILED');
 
                 // Check for partial or full segments available in metadata response
                 if (job.metadata?.response) {
@@ -123,13 +124,90 @@ export const ReelsEditorLayout = () => {
     // Sync video playback with isPlaying state
     useEffect(() => {
         if (videoRef.current) {
-            if (isPlaying) {
+            if (isPlaying && !isWaitingForSegment) {
                 videoRef.current.play().catch(e => console.warn("Video play failed:", e));
             } else {
                 videoRef.current.pause();
             }
         }
-    }, [isPlaying, activeSegment]);
+    }, [isPlaying, activeSegment, isWaitingForSegment]);
+
+    // Sync Video Time (Fix for "Video not changing on seek")
+    // The TimeDriver manages 'currentTime' via audio or timer, but the Video element
+    // needs to be manually synced if it drifts or if the user seeks.
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video || !activeSegment) return;
+
+        // Jitter Fix: If the video element is ALREADY trying to seek (from a previous correction
+        // or a mechanic), don't interrupt it.
+        const isSeeking = useTimelineStore.getState().isSeeking;
+        if (!isSeeking && video.seeking) return;
+
+        // Calculate where the video SHOULD be relative to the segment start
+        const timeIntoSegment = currentTime - activeSegment.startTime;
+
+        // Safety check
+        if (timeIntoSegment < 0) return;
+
+        // HANDLE LOOPING & DURATION MISMATCH
+        // If the video file is shorter than the audio/segment duration, it should loop.
+        // We cannot force 'linear' time (e.g. 8s) onto a 5s video, or it will clamp/jump.
+        // We must calculate the 'modulo' time.
+        let targetTime = timeIntoSegment;
+
+        // We need the actual video duration from the DOM element, not metadata
+        const videoDuration = video.duration;
+
+        // If video metadata is loaded and valid
+        if (videoDuration && videoDuration > 0 && videoDuration < Infinity) {
+            // If the segment implies we are past the video's natural end, wrap it.
+            if (timeIntoSegment >= videoDuration) {
+                targetTime = timeIntoSegment % videoDuration;
+            }
+        }
+
+        // Check Delta
+        const currentVideoTime = video.currentTime;
+        const delta = Math.abs(currentVideoTime - targetTime);
+
+        // THRESHOLD STRATEGY
+        // We use a larger threshold for loop points to allow the browser to wrap naturally.
+        // If we are close to the loop point (e.g. end of video), delta might briefly spike (e.g. 4.9s vs 0.1s).
+        // We handle wrap-around delta check:
+        // Real distance on a circle of L is min(|a-b|, L - |a-b|)
+        let circularDelta = delta;
+        if (videoDuration) {
+            circularDelta = Math.min(delta, videoDuration - delta);
+        }
+
+        // If drift is significant (> 0.25s), snap it.
+        if (circularDelta > 0.25 || isSeeking) {
+            // console.log("Drift detected. Snap.", { circularDelta, currentVideoTime, targetTime });
+            video.currentTime = targetTime;
+        }
+
+    }, [currentTime, activeSegment]);
+
+    // Spacebar to Play/Pause
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.code === 'Space') {
+                // Prevent scrolling if not in a text input
+                const target = e.target as HTMLElement;
+                const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+
+                if (!isInput) {
+                    e.preventDefault();
+                    // Toggle directly using the store's current state to avoid dependency loop
+                    setIsPlaying(!useTimelineStore.getState().isPlaying);
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [setIsPlaying]);
 
     // Sync Background Music (Play/Pause & Volume)
     useEffect(() => {
@@ -149,40 +227,17 @@ export const ReelsEditorLayout = () => {
         console.log("DEBUG: ReelsEditorLayout - normalizedVolume:", normalizedVolume, "final music.volume:", music.volume);
 
         if (isPlaying) {
+            // If waiting, maybe dim the music or keep loop?
+            // Usually nice music continues while waiting.
             music.play().catch(console.warn);
         } else {
             music.pause();
         }
     }, [isPlaying, musicUrl, musicVolume]);
 
-    // Ensure music stays synced with timeline
-    useEffect(() => {
-        const music = musicRef.current;
-        if (!music || !musicUrl) return;
-
-        // If desync is > 0.5s, snap it
-        if (Math.abs(music.currentTime - currentTime) > 0.5) {
-            music.currentTime = currentTime;
-        }
-    }, [currentTime, musicUrl]);
-
-    // Ensure Voiceover Audio stays synced with timeline (handle Seeking)
-    useEffect(() => {
-        const audio = audioRef.current;
-        const segment = activeSegment;
-        if (!audio || !segment) return;
-
-        // Calculate where the audio SHOULD be based on global currentTime
-        const localTime = currentTime - segment.startTime;
-
-        // If discrepancy is large (e.g. user sought manually), force audio to sync.
-        // We check if localTime is non-negative to avoid setting negative time.
-        // We use a threshold (0.25s) safely larger than frame time to avoid fight with useAudioSync loop.
-        if (localTime >= 0 && Math.abs(audio.currentTime - localTime) > 0.25) {
-            // console.log("Syncing audio to", localTime);
-            audio.currentTime = localTime;
-        }
-    }, [currentTime, activeSegment]); // audioRef is stable from hook
+    // CONFLICT RESOLUTION: This effect was "Mechanism B" which fought with the TimeDriver using strict sync.
+    // We REMOVE IT to let the TimeDriver (useAudioSync) be the single source of truth for time.
+    // The TimeDriver now handles seeking properly.
 
     // MOCK DATA REMOVED
     // The placeholder logic handles the loading state now.
@@ -283,6 +338,14 @@ export const ReelsEditorLayout = () => {
                         </div>
                     )}
 
+                    {/* WAITING OVERLAY */}
+                    {isWaitingForSegment && (
+                        <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center z-20 backdrop-blur-sm">
+                            <Loader2 className="w-8 h-8 text-cyan-500 animate-spin mb-2" />
+                            <span className="text-sm font-bold text-white tracking-wider animate-pulse">GENERATING NEXT SCENE...</span>
+                        </div>
+                    )}
+
                     {/* Playback Controls Overlay */}
                     {!isPlaying && (
                         <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
@@ -331,6 +394,44 @@ export const ReelsEditorLayout = () => {
                     src={musicUrl || undefined}
                     loop
                 />
+
+                {/* Preloader for Next Segment */}
+                {(() => {
+                    // Identify next segment
+                    const activeIndex = segments.findIndex(s => s.id === activeSegment?.id);
+                    const nextSeg = segments[activeIndex + 1];
+
+                    if (!nextSeg) return null;
+
+                    return (
+                        <div className="hidden">
+                            {/* Preload Video if available */}
+                            {nextSeg.videoUrl && (
+                                <video
+                                    src={nextSeg.videoUrl}
+                                    preload="auto"
+                                    muted
+                                    playsInline
+                                />
+                            )}
+                            {/* Preload Image if available */}
+                            {nextSeg.imageUrl && (
+                                <img
+                                    src={nextSeg.imageUrl}
+                                    loading="eager"
+                                    alt="preload"
+                                />
+                            )}
+                            {/* Preload Audio if available */}
+                            {nextSeg.voiceUrl && (
+                                <audio
+                                    src={nextSeg.voiceUrl}
+                                    preload="auto"
+                                />
+                            )}
+                        </div>
+                    );
+                })()}
             </div>
         </div>
     );
