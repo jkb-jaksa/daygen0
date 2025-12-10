@@ -54,8 +54,6 @@ const ResizeModal = memo<ResizeModalProps>(({
     const [userPrompt, setUserPrompt] = useState('');
     // Crop mode state
     const [cropArea, setCropArea] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
-    const [isCropDragging, setIsCropDragging] = useState(false);
-    const [cropDragStart, setCropDragStart] = useState<{ x: number; y: number } | null>(null);
     const dragStartRef = useRef<{ x: number; y: number; startPos: { x: number; y: number } } | null>(null);
 
     // Handle escape key

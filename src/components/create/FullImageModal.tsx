@@ -611,7 +611,6 @@ const FullImageModal = memo(() => {
     }
   }, [fullSizeImage]);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleResize = useCallback(() => {
     if (fullSizeImage) {
       setResizeModalState({
