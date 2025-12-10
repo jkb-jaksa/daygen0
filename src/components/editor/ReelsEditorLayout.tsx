@@ -68,7 +68,9 @@ export const ReelsEditorLayout = () => {
                                 s.voiceUrl !== current.voiceUrl ||
                                 s.videoUrl !== current.videoUrl ||
                                 s.imageUrl !== current.imageUrl ||
-                                s.status !== current.status
+                                s.status !== current.status ||
+                                s.startTime !== current.startTime ||
+                                s.endTime !== current.endTime
                             );
                         });
 
@@ -81,7 +83,6 @@ export const ReelsEditorLayout = () => {
                     // If completed, do the final cleanup/setting
                     if (job.status === 'COMPLETED') {
                         // Only perform reset if we haven't already processed this completion (i.e., finalVideoUrl changed or wasn't set)
-                        // This prevents the polling loop from resetting isPlaying/currentTime every 2 seconds
                         if (job.resultUrl !== finalVideoUrl) {
                             // Restore music volume if available
                             const savedVolume = (job.metadata as { dto?: { musicVolume?: number } })?.dto?.musicVolume ?? 30;
@@ -92,8 +93,8 @@ export const ReelsEditorLayout = () => {
                             setMusicUrl(musicUrl);
                             setFinalVideoUrl(job.resultUrl || null);
 
-                            setIsPlaying(false);
-                            setCurrentTime(0);
+                            // REMOVED: setIsPlaying(false) and setCurrentTime(0)
+                            // We want to KEEP playing if the user is already watching.
                         }
                     }
                 } else if (job.status === 'FAILED') {

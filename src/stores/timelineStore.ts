@@ -117,8 +117,12 @@ export const useTimelineStore = create<TimelineState>()(
                     if (newIndex !== -1) {
                         state.activeSegmentIndex = newIndex;
                         const newSeg = state.segments[newIndex];
+
+                        // Clamp relative time to new duration to avoid jumping past end
+                        const clampedRelativeTime = Math.min(relativeTime, newSeg.duration - 0.1);
+
                         // Update global time to match the new start time + saved relative offset
-                        state.currentTime = newSeg.startTime + relativeTime;
+                        state.currentTime = newSeg.startTime + Math.max(0, clampedRelativeTime);
                     }
                 }
 
