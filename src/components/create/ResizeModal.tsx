@@ -96,8 +96,6 @@ const ResizeModal = memo<ResizeModalProps>(({
             setImageScale(100);
             setUserPrompt('');
             setCropArea(null);
-            setIsCropDragging(false);
-            setCropDragStart(null);
         }
     }, [open]);
 
