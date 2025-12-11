@@ -40,7 +40,7 @@ export async function urlToFile(url: string): Promise<File> {
     }
 
     const proxyData = await proxyResponse.json();
-    
+
     if (!proxyData.success || !proxyData.dataUrl) {
       throw new Error('Invalid response from image proxy');
     }
@@ -50,7 +50,7 @@ export async function urlToFile(url: string): Promise<File> {
     const blob = await response.blob();
     const fileName = url.split('/').pop() || `image-${Date.now()}.png`;
     const mimeType = proxyData.mimeType || 'image/png';
-    
+
     return new File([blob], fileName, { type: mimeType });
   } catch (error) {
     throw new Error(`Failed to convert URL to File: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -94,9 +94,9 @@ function getAspectRatioDifference(
 function findClosestSize(width: number, height: number): RecraftSize {
   const aspectRatio = width / height;
   const tolerance = 0.1; // Consider square if within 10% of 1:1
-  
+
   let candidateSizes: RecraftSize[];
-  
+
   if (Math.abs(aspectRatio - 1) < tolerance) {
     // Square image
     candidateSizes = RECRAFT_SIZES.square;
@@ -107,11 +107,11 @@ function findClosestSize(width: number, height: number): RecraftSize {
     // Portrait
     candidateSizes = RECRAFT_SIZES.portrait;
   }
-  
+
   // Find the size with the closest aspect ratio
   let closestSize = candidateSizes[0];
   let smallestDiff = getAspectRatioDifference(width, height, closestSize);
-  
+
   for (const size of candidateSizes) {
     const diff = getAspectRatioDifference(width, height, size);
     if (diff < smallestDiff) {
@@ -119,7 +119,7 @@ function findClosestSize(width: number, height: number): RecraftSize {
       closestSize = size;
     }
   }
-  
+
   return closestSize;
 }
 
@@ -130,10 +130,10 @@ function findClosestSize(width: number, height: number): RecraftSize {
 export async function detectImageSize(url: string): Promise<RecraftSize> {
   return new Promise((resolve) => {
     const img = new Image();
-    
+
     img.onload = () => {
       const { naturalWidth, naturalHeight } = img;
-      
+
       if (naturalWidth > 0 && naturalHeight > 0) {
         const closestSize = findClosestSize(naturalWidth, naturalHeight);
         resolve(closestSize);
@@ -142,15 +142,40 @@ export async function detectImageSize(url: string): Promise<RecraftSize> {
         resolve('1024x1024');
       }
     };
-    
+
     img.onerror = () => {
       // Fallback on error
       resolve('1024x1024');
     };
-    
+
     // Set crossOrigin to handle CORS if needed
     img.crossOrigin = 'anonymous';
     img.src = url;
+  });
+}
+
+/**
+ * Preload images using link tags to ensure they are available in browser cache
+ * This is useful for improving perceived performance when switching between versions
+ */
+export function preloadImages(urls: (string | null | undefined)[]): void {
+  // Filter out invalid URLs
+  const validUrls = urls.filter((url): url is string => !!url && url.length > 0);
+
+  // Deduplicate
+  const uniqueUrls = [...new Set(validUrls)];
+
+  uniqueUrls.forEach(url => {
+    // Check if already preloaded
+    if (document.querySelector(`link[rel="preload"][href="${url}"]`)) {
+      return;
+    }
+
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'image';
+    link.href = url;
+    document.head.appendChild(link);
   });
 }
 

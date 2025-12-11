@@ -5,6 +5,8 @@ import { SceneBlock } from './SceneBlock';
 import { PlaceholderScene } from './PlaceholderScene';
 import { getJob } from '../../api/jobs';
 import { Play, Pause, Download, Loader2 } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 interface SegmentResponse {
     id?: string;
@@ -25,7 +27,7 @@ interface JobResponse {
 }
 
 export const ReelsEditorLayout = () => {
-    const { segments, isPlaying, setIsPlaying, currentTime, nextSegment, musicUrl, finalVideoUrl, musicVolume, jobId, jobDuration, setSegments, syncSegments, setMusicUrl, setFinalVideoUrl, setCurrentTime, setMusicVolume, setJobStatus, isWaitingForSegment } = useTimelineStore();
+    const { segments, isPlaying, setIsPlaying, currentTime, nextSegment, musicUrl, finalVideoUrl, musicVolume, jobId, jobDuration, setSegments, syncSegments, setMusicUrl, setFinalVideoUrl, setCurrentTime, setMusicVolume, setJobStatus, isWaitingForSegment, updateSegmentByIndex } = useTimelineStore();
     const { audioRef } = useAudioSync();
 
     const musicRef = useRef<HTMLAudioElement | null>(null);
@@ -35,7 +37,49 @@ export const ReelsEditorLayout = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [progress, setProgress] = useState(0);
 
-    // Polling for Job Completion
+    // 1. Supabase Realtime: Instant Segment Updates
+    useEffect(() => {
+        if (!jobId) return;
+
+        console.log("Subscribing to Realtime updates for Job:", jobId);
+
+        const channel = supabase.channel(`job-${jobId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'TimelineSegment',
+                    filter: `jobId=eq.${jobId}`
+                },
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (payload: RealtimePostgresChangesPayload<any>) => {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const newRow = payload.new as any;
+                    // console.log("Realtime Update Recv:", newRow.index, newRow.status);
+
+                    updateSegmentByIndex(newRow.index, {
+                        id: newRow.id,
+                        script: newRow.script,
+                        visualPrompt: newRow.visualPrompt,
+                        motionPrompt: newRow.motionPrompt,
+                        voiceUrl: newRow.audioUrl, // DB: audioUrl -> Store: voiceUrl
+                        imageUrl: newRow.imageUrl,
+                        videoUrl: newRow.videoUrl,
+                        status: newRow.status,
+                        duration: newRow.duration || 3.0,
+                    });
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [jobId, updateSegmentByIndex]);
+
+    // 2. Polling for Job Completion (Fallback & Status)
+    // Relaxed interval since segments are realtime
     useEffect(() => {
         if (!jobId) return;
 
@@ -45,7 +89,11 @@ export const ReelsEditorLayout = () => {
                 setProgress(job.progress || 0);
                 if (job.status) setJobStatus(job.status as 'PENDING' | 'processing' | 'COMPLETED' | 'FAILED');
 
-                // Check for partial or full segments available in metadata response
+                // If Realtime is working, we theoretically don't need to sync segments here.
+                // But `getJob` returns the aggregated "Source of Truth" which handles continuity fixing and timing.
+                // So we keep this sync, but maybe less frequent or rely on it for "healing".
+                // We'll keep it for robustness.
+
                 if (job.metadata?.response) {
                     const response = job.metadata.response as JobResponse;
 
@@ -54,47 +102,23 @@ export const ReelsEditorLayout = () => {
                             ...s,
                             id: s.id || `segment-${i}`,
                             voiceUrl: s.voiceUrl,
-                            status: s.status || 'completed' // Default to completed if not present for now, or 'pending'
+                            status: s.status || 'completed'
                         }));
 
-                        // Check for ANY changes in segments (deep comparison of relevant fields)
-                        const hasChanges = segmentsWithIds.length !== segments.length || segmentsWithIds.some((s, i) => {
-                            const current = segments[i];
-                            if (!current) return true;
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            const sAny = s as any;
-                            return (
-                                sAny.script !== current.script || // Check script
-                                s.voiceUrl !== current.voiceUrl ||
-                                s.videoUrl !== current.videoUrl ||
-                                s.imageUrl !== current.imageUrl ||
-                                s.status !== current.status ||
-                                s.startTime !== current.startTime ||
-                                s.endTime !== current.endTime
-                            );
-                        });
-
-                        if (hasChanges) {
-                            // console.log("Segments updated", segmentsWithIds);
-                            syncSegments(segmentsWithIds as unknown as Segment[]);
-                        }
+                        // Only sync if significant drift or first load
+                        // Or just let store's immer logic handle diffs (it does shallow compare).
+                        syncSegments(segmentsWithIds as unknown as Segment[]);
                     }
 
                     // If completed, do the final cleanup/setting
                     if (job.status === 'COMPLETED') {
-                        // Only perform reset if we haven't already processed this completion (i.e., finalVideoUrl changed or wasn't set)
                         if (job.resultUrl !== finalVideoUrl) {
-                            // Restore music volume if available
                             const savedVolume = (job.metadata as { dto?: { musicVolume?: number } })?.dto?.musicVolume ?? 30;
                             setMusicVolume(savedVolume);
 
-                            // Extract global musicUrl from response
                             const musicUrl = (response as JobResponse).musicUrl || null;
                             setMusicUrl(musicUrl);
                             setFinalVideoUrl(job.resultUrl || null);
-
-                            // REMOVED: setIsPlaying(false) and setCurrentTime(0)
-                            // We want to KEEP playing if the user is already watching.
                         }
                     }
                 } else if (job.status === 'FAILED') {
@@ -106,10 +130,10 @@ export const ReelsEditorLayout = () => {
         };
 
         checkJob(); // immediate check
-        const intervalId = setInterval(checkJob, 2000);
+        const intervalId = setInterval(checkJob, 5000); // Slower polling (5s)
 
         return () => clearInterval(intervalId);
-    }, [jobId, segments, setSegments, syncSegments, setMusicVolume, setMusicUrl, setFinalVideoUrl, setIsPlaying, setCurrentTime]);
+    }, [jobId, setSegments, syncSegments, setMusicVolume, setMusicUrl, setFinalVideoUrl, setIsPlaying, setCurrentTime, finalVideoUrl, setJobStatus]);
 
     // Find active segment for the main preview
     const activeSegment = segments.find(

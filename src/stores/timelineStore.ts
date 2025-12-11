@@ -29,6 +29,7 @@ export interface SegmentVersion {
     imageUrl?: string;
     videoUrl?: string;
     duration: number;
+    changeType?: string;
     createdAt: string;
 }
 
@@ -68,6 +69,8 @@ interface TimelineState {
     updateSegmentScript: (segmentId: string, newScript: string) => void;
     updateSegmentAudio: (segmentId: string, audioUrl: string, duration: number) => void;
     updateSegmentPrompt: (segmentId: string, field: 'script' | 'visualPrompt' | 'motionPrompt', value: string) => void;
+    updateSegment: (segmentId: string, partial: Partial<Segment>) => void;
+    updateSegmentByIndex: (index: number, partial: Partial<Segment>) => void;
     setMusicVolume: (volume: number) => void;
 
     // Final Video
@@ -117,6 +120,9 @@ export const useTimelineStore = create<TimelineState>()(
                     trackingSegmentId = currentSeg.id;
                 }
 
+                // MERGE STRATEGY: Instead of full replace, we should try to preserve existing objects if possible
+                // to avoid re-renders? But immer handles checking changes.
+                // However, let's stick to replacement for now as "sync" implies full state sync.
                 state.segments = newSegments;
 
                 // Validate index
@@ -227,6 +233,18 @@ export const useTimelineStore = create<TimelineState>()(
                     if (field === 'script') seg.script = value;
                     if (field === 'visualPrompt') seg.visualPrompt = value;
                     if (field === 'motionPrompt') seg.motionPrompt = value;
+                }
+            }),
+            updateSegment: (id, partial) => set((state) => {
+                const seg = state.segments.find(s => s.id === id);
+                if (seg) {
+                    Object.assign(seg, partial);
+                }
+            }),
+            updateSegmentByIndex: (index, partial) => set((state) => {
+                if (index >= 0 && index < state.segments.length) {
+                    const seg = state.segments[index];
+                    Object.assign(seg, partial);
                 }
             }),
             setMusicVolume: (volume) => set((state) => {

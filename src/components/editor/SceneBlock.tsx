@@ -1,11 +1,13 @@
 import React from 'react';
-import { RefreshCw, Volume2, Loader2, History as HistoryIcon } from 'lucide-react';
+import { RefreshCw, Volume2, Loader2, History as HistoryIcon, Edit2, Image as ImageIcon, Video as VideoIcon, Sparkles } from 'lucide-react';
 import { CircularProgressRing } from '../CircularProgressRing';
 import { useTimelineStore, type Segment } from '../../stores/timelineStore';
 import { regenerateSegment } from '../../api/timeline';
 
 import clsx from 'clsx';
 
+
+import { preloadImages } from '../../utils/imageUtils';
 
 interface SceneBlockProps {
     segment: Segment;
@@ -20,13 +22,49 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
     const [isRegeneratingAudio, setIsRegeneratingAudio] = React.useState(false);
     const [isRegeneratingImage, setIsRegeneratingImage] = React.useState(false);
     const [isRegeneratingVideo, setIsRegeneratingVideo] = React.useState(false);
+
+    // Track previous URLs to detect changes
+    const prevImageUrlRef = React.useRef(segment.imageUrl);
+    const prevVideoUrlRef = React.useRef(segment.videoUrl);
+
     const [timer, setTimer] = React.useState(0);
     const { updateSegmentImage } = useTimelineStore();
     const [showVersionHistory, setShowVersionHistory] = React.useState(false);
 
+    // FIX: Local state for prompts with Dirty Checking to prevent data loss on blur
+    const [localVisualPrompt, setLocalVisualPrompt] = React.useState(segment.visualPrompt || '');
+    const [localMotionPrompt, setLocalMotionPrompt] = React.useState(segment.motionPrompt || '');
+    const [activeField, setActiveField] = React.useState<'visual' | 'motion' | null>(null);
+
+    // Track dirty state (User has typed something different from the store/DB)
+    const [isVisualDirty, setIsVisualDirty] = React.useState(false);
+    const [isMotionDirty, setIsMotionDirty] = React.useState(false);
+
+    // Sync mechanism: Visual Prompt
+    React.useEffect(() => {
+        // If the store matches our local state, we are clean.
+        if (segment.visualPrompt === localVisualPrompt) {
+            setIsVisualDirty(false);
+        } else if (!isVisualDirty && activeField !== 'visual') {
+            // If we are NOT dirty and NOT editing, we accept external updates
+            setLocalVisualPrompt(segment.visualPrompt || '');
+        }
+        // If we ARE dirty, we ignore external updates until consistency is reached (Regeneration)
+    }, [segment.visualPrompt, isVisualDirty, activeField, localVisualPrompt]);
+
+    // Sync mechanism: Motion Prompt
+    React.useEffect(() => {
+        if (segment.motionPrompt === localMotionPrompt) {
+            setIsMotionDirty(false);
+        } else if (!isMotionDirty && activeField !== 'motion') {
+            setLocalMotionPrompt(segment.motionPrompt || '');
+        }
+    }, [segment.motionPrompt, isMotionDirty, activeField, localMotionPrompt]);
+
     // Timer logic and Simulated Progress
     React.useEffect(() => {
         let interval: NodeJS.Timeout;
+        // Run timer if explicitly regenerating OR if segment status implies generation
         const shouldTimerRun = isRegeneratingImage || isRegeneratingVideo || (!segment.imageUrl && (segment.status === 'generating' || segment.status === 'pending')) || (!segment.videoUrl && (segment.status === 'generating' || segment.status === 'pending'));
 
         if (shouldTimerRun) {
@@ -42,11 +80,12 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
     // Simulated progress hook logic (inline for now)
     const [simulatedProgress, setSimulatedProgress] = React.useState(0);
     React.useEffect(() => {
-        const isGenerating = isRegeneratingImage || isRegeneratingVideo || segment.status === 'generating' || segment.status === 'pending';
+        const isGenerating = isRegeneratingImage || isRegeneratingVideo || (segment.status === 'generating' || segment.status === 'pending');
         if (!isGenerating) {
             setSimulatedProgress(0);
             return;
         }
+        // Only run progress if generating
         const interval = setInterval(() => {
             setSimulatedProgress(prev => {
                 if (prev >= 90) return prev;
@@ -69,13 +108,25 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
 
     const handleRegenerate = async (type: 'image' | 'video') => {
         if (!jobId) {
-            alert("Error: No active Job ID.");
+            console.error("Error: No active Job ID.");
             return;
         }
 
         const isImage = type === 'image';
-        if (isImage) setIsRegeneratingImage(true);
-        else setIsRegeneratingVideo(true);
+        if (isImage) {
+            setIsRegeneratingImage(true);
+            prevImageUrlRef.current = segment.imageUrl; // Mark current URL
+
+            // Prefetch images for previous versions to ensure instant fallback/review
+            if (segment.versions) {
+                const versionImages = segment.versions.map(v => v.imageUrl);
+                // Also preload current image as it will become a version
+                preloadImages([segment.imageUrl, ...versionImages]);
+            }
+        } else {
+            setIsRegeneratingVideo(true);
+            prevVideoUrlRef.current = segment.videoUrl; // Mark current URL
+        }
 
         try {
             const index = useTimelineStore.getState().segments.findIndex(s => s.id === segment.id);
@@ -84,17 +135,19 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
             const res = await regenerateSegment(
                 jobId,
                 index,
-                segment.script, // Pass script
-                segment.visualPrompt,
-                segment.motionPrompt,
+                localScript, // Pass script (local)
+                localVisualPrompt, // Use local visual prompt
+                localMotionPrompt, // Use local motion prompt
                 isImage, // regenerateImage
                 !isImage // regenerateVideo
             );
 
             // Immediate update for image if returned
             if (isImage && res.imageUrl) {
+                // If the URL is new immediately, updated it.
+                // However, often it might be async.
                 updateSegmentImage(segment.id, res.imageUrl);
-                setIsRegeneratingImage(false); // Can turn off immediately if we got the URL
+                // We don't turn off flag here, we let the useEffect detect the change
             }
 
             // For video, or if image didn't return immediately, we wait for global poll to update the segment prop.
@@ -102,7 +155,7 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
 
         } catch (error) {
             console.error(error);
-            alert(`Failed to regenerate ${type}: ` + error);
+            // alert(`Failed to regenerate ${type}: ` + error);
             if (isImage) setIsRegeneratingImage(false);
             else setIsRegeneratingVideo(false);
         }
@@ -110,17 +163,20 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
 
     // React to external updates to turn off spinners
     React.useEffect(() => {
-        if (isRegeneratingImage && segment.imageUrl) {
-            // If we were waiting for an image and it arrived (or changed), turn off spinner
-            // Note: basic check. Ideally we'd check if it's a *new* URL, but checking if it exists is a good start
-            // or we need to track 'previous' url.
-            // For now, let's assume if the user clicked regen, they are waiting for *some* change.
-            // Actually, if the store updates, this runs.
-            // A better way is to compare with a ref of the old url, but for simplicity:
-            setIsRegeneratingImage(false);
+        if (isRegeneratingImage) {
+            // Check if URL changed
+            if (segment.imageUrl !== prevImageUrlRef.current) {
+                setIsRegeneratingImage(false);
+                prevImageUrlRef.current = segment.imageUrl; // Sync ref
+            }
         }
-        if (isRegeneratingVideo && segment.videoUrl) {
-            setIsRegeneratingVideo(false);
+
+        if (isRegeneratingVideo) {
+            // Check if URL changed
+            if (segment.videoUrl !== prevVideoUrlRef.current) {
+                setIsRegeneratingVideo(false);
+                prevVideoUrlRef.current = segment.videoUrl; // Sync ref
+            }
         }
     }, [segment.imageUrl, segment.videoUrl, isRegeneratingImage, isRegeneratingVideo]);
 
@@ -128,7 +184,7 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
         if (!localScript.trim() || localScript === segment.script) return; // No change or empty
         if (!jobId) {
             console.error("No Job ID found in store");
-            alert("Error: Cannot update segment without active job session. Please reload.");
+            // alert("Error: Cannot update segment without active job session. Please reload.");
             return;
         }
 
@@ -150,8 +206,8 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
                 updateSegmentScript(segment.id, localScript);
             }
         } catch (error) {
-            console.error(error);
-            alert("Failed to regenerate audio: " + error);
+            console.error("Failed to regenerate audio:", error);
+            // alert("Failed to regenerate audio: " + error);
         } finally {
             setIsRegeneratingAudio(false);
         }
@@ -222,43 +278,124 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
                                     className="fixed inset-0 z-40 bg-transparent"
                                     onClick={(e) => { e.stopPropagation(); setShowVersionHistory(false); }}
                                 />
-                                <div className="absolute left-full top-0 ml-2 w-48 bg-theme-black border border-theme-dark/50 rounded-lg shadow-xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
+                                <div className="absolute right-0 sm:left-full top-0 mt-2 sm:ml-2 w-44 bg-theme-black border border-theme-dark/50 rounded-lg shadow-xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
                                     <div className="p-2 border-b border-theme-white/5 bg-theme-white/5 flex justify-between items-center">
                                         <h4 className="text-[10px] uppercase font-bold text-theme-white/60 font-raleway">Version History</h4>
                                         <button onClick={(e) => { e.stopPropagation(); setShowVersionHistory(false); }} className="text-theme-white/40 hover:text-white"><HistoryIcon size={10} /></button>
                                     </div>
-                                    <div className="max-h-40 overflow-y-auto">
-                                        {segment.versions.map((ver, i) => (
-                                            <button
-                                                key={ver.id}
-                                                onClick={async (e) => {
-                                                    e.stopPropagation();
-                                                    if (confirm(`Revert to version from ${new Date(ver.createdAt).toLocaleTimeString()}?`)) {
+                                    <div className="max-h-64 overflow-y-auto">
+                                        {segment.versions.filter(ver => (
+                                            ver.script !== segment.script ||
+                                            ver.imageUrl !== segment.imageUrl ||
+                                            ver.changeType // Always show if we have explicit type
+                                        )).map((ver, i, filteredArr) => {
+                                            // Determine Icon and Label
+                                            let Icon = HistoryIcon;
+                                            let label = "Version " + (filteredArr.length - i);
+
+                                            switch (ver.changeType) {
+                                                case 'SCRIPT_EDIT': Icon = Edit2; label = "Script Edit"; break;
+                                                case 'VISUAL_EDIT': Icon = ImageIcon; label = "Visual Edit"; break;
+                                                case 'VISUAL_REROLL': Icon = RefreshCw; label = "Visual Reroll"; break;
+                                                case 'MOTION_EDIT': Icon = VideoIcon; label = "Motion Edit"; break;
+                                                case 'MOTION_REROLL': Icon = RefreshCw; label = "Motion Reroll"; break;
+                                                case 'AUDIO_REROLL': Icon = Volume2; label = "Audio Change"; break;
+                                                case 'INITIAL_GEN': Icon = Sparkles; label = "Original Gen"; break;
+                                                // Legacy / Fallback mapping
+                                                case 'SCRIPT_UPDATE': Icon = Edit2; label = "Script Change"; break;
+                                                case 'VISUAL_REGEN': Icon = ImageIcon; label = "Visual Change"; break;
+                                                case 'MOTION_REGEN': Icon = VideoIcon; label = "Motion Change"; break;
+                                                case 'AUDIO_UPDATE': Icon = Volume2; label = "Audio Update"; break;
+                                                default:
+                                                    // Fallback inference for old untyped versions
+                                                    if (ver.script !== segment.script) { Icon = Edit2; label = "Script Edit"; }
+                                                    else if (ver.imageUrl !== segment.imageUrl) { Icon = ImageIcon; label = "Visual Checkpoint"; }
+                                            }
+
+                                            const DisplayIcon = Icon;
+
+                                            return (
+                                                <button
+                                                    key={ver.id}
+                                                    onClick={async (e) => {
+                                                        e.stopPropagation();
+                                                        // Instant Revert - Optimistic UI Update
                                                         const jobId = useTimelineStore.getState().jobId;
                                                         if (!jobId) return;
-                                                        const index = useTimelineStore.getState().segments.findIndex(s => s.id === segment.id);
+
+                                                        const store = useTimelineStore.getState();
+                                                        const index = store.segments.findIndex(s => s.id === segment.id);
+                                                        if (index === -1) return;
+
+                                                        // 1. Backup current state
+                                                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                                                        const { versions, ...currentData } = segment;
+
+                                                        // 2. Optimistic Update
+                                                        store.updateSegment(segment.id, {
+                                                            script: ver.script,
+                                                            visualPrompt: ver.visualPrompt,
+                                                            motionPrompt: ver.motionPrompt,
+                                                            voiceUrl: ver.voiceUrl ?? segment.voiceUrl,
+                                                            imageUrl: ver.imageUrl ?? '',
+                                                            videoUrl: ver.videoUrl,
+                                                            duration: ver.duration
+                                                        });
+
+                                                        // Update local script state to match
+                                                        setLocalScript(ver.script);
+                                                        setShowVersionHistory(false);
+
                                                         try {
                                                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                             const { revertSegment } = await import('../../api/timeline');
                                                             await revertSegment(jobId, index, ver.id);
-                                                            setShowVersionHistory(false);
-                                                            alert('Reverted! Please reload the page to see changes (or wait for poll).');
+                                                            // Success: Do nothing, store is already correct.
                                                         } catch (err: any) {
+                                                            console.error('Failed to revert:', err);
+                                                            // 3. Rollback on failure
+                                                            store.updateSegment(segment.id, currentData);
+                                                            setLocalScript(currentData.script);
                                                             alert('Failed to revert: ' + err.message);
                                                         }
-                                                    }
-                                                }}
-                                                className="w-full text-left px-3 py-2 text-xs text-theme-white/70 hover:bg-theme-white/10 hover:text-theme-white transition-colors border-b border-theme-white/5 last:border-0 flex flex-col"
-                                            >
-                                                <span className="font-bold truncate">v{segment.versions!.length - i}: {ver.script.substring(0, 15)}...</span>
-                                                <span className="text-[10px] opacity-50">{new Date(ver.createdAt).toLocaleTimeString()}</span>
-                                            </button>
-                                        ))}
+                                                    }}
+                                                    className="w-full text-left px-3 py-2 text-xs text-theme-white/70 hover:bg-theme-white/10 hover:text-theme-white transition-colors border-b border-theme-white/5 last:border-0 flex items-start gap-3 group/item"
+                                                >
+                                                    {/* Thumbnail */}
+                                                    <div className="w-7 h-7 shrink-0 rounded bg-theme-black/50 border border-theme-white/10 overflow-hidden relative">
+                                                        {ver.imageUrl ? (
+                                                            <img src={ver.imageUrl} alt="Version Preview" className="w-full h-full object-cover opacity-70 group-hover/item:opacity-100 transition-opacity" />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center text-theme-white/20">
+                                                                <DisplayIcon size={14} />
+                                                            </div>
+                                                        )}
+                                                        {/* Small icon overlay for type */}
+                                                        <div className="absolute bottom-0 right-0 bg-theme-black/80 p-0.5 rounded-tl backdrop-blur-sm">
+                                                            <DisplayIcon size={8} className="text-theme-mid" />
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex flex-col flex-1 min-w-0 pt-0.5">
+                                                        <span className="font-bold truncate text-[11px] text-theme-white/90 group-hover/item:text-theme-mid transition-colors">{label}</span>
+                                                        <span className="text-[9px] opacity-40 font-mono truncate">{new Date(ver.createdAt).toLocaleString()}</span>
+                                                        {/* Prompt Snippet Preview */}
+                                                        {ver.changeType?.includes('SCRIPT') && ver.script !== segment.script && (
+                                                            <p className="text-[9px] text-theme-white/40 truncate mt-1 italic border-l-2 border-theme-white/10 pl-1">{ver.script.substring(0, 30)}...</p>
+                                                        )}
+                                                        {ver.changeType?.includes('VISUAL') && ver.visualPrompt !== segment.visualPrompt && (
+                                                            <p className="text-[9px] text-theme-white/40 truncate mt-1 italic border-l-2 border-theme-white/10 pl-1">{ver.visualPrompt.substring(0, 30)}...</p>
+                                                        )}
+                                                    </div>
+                                                </button>
+                                            )
+                                        })}
                                     </div>
                                 </div>
                             </>
-                        )}
-                    </div>
+                        )
+                        }
+                    </div >
                 )}
 
                 <div
@@ -274,30 +411,32 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
                         }}
                     />
                 </div>
-            </div>
+            </div >
 
             {/* Content */}
-            <div className="flex-1 space-y-2 sm:space-y-3 order-2 sm:order-1">
+            < div className="flex-1 space-y-2 sm:space-y-3 order-2 sm:order-1" >
                 {/* Script Input (Editable in future, static for now) */}
                 {/* Script Input */}
-                {(!segment.script && segment.status === 'pending') ? (
-                    <div className="w-full h-16 flex items-center justify-center gap-2 bg-theme-black/40 rounded-lg border border-theme-dark/50">
-                        <Loader2 className="w-4 h-4 animate-spin text-theme-white/40" />
-                        <span className="text-xs text-theme-white/40 font-mono">Generating Script...</span>
-                    </div>
-                ) : (
-                    <textarea
-                        value={localScript}
-                        onChange={(e) => setLocalScript(e.target.value)}
-                        onClick={(e) => e.stopPropagation()}
-                        className={clsx(
-                            "w-full bg-transparent border-0 p-0 resize-none focus:ring-0 text-base sm:text-lg leading-relaxed transition-colors h-auto min-h-[4rem] font-raleway",
-                            isActive ? "text-theme-text placeholder:text-theme-white/30" : "text-theme-text/60 placeholder:text-theme-white/20"
-                        )}
-                        placeholder="Enter script here..."
-                        spellCheck="false"
-                    />
-                )}
+                {
+                    (!segment.script && segment.status === 'pending') ? (
+                        <div className="w-full h-16 flex items-center justify-center gap-2 bg-theme-black/40 rounded-lg border border-theme-dark/50">
+                            <Loader2 className="w-4 h-4 animate-spin text-theme-white/40" />
+                            <span className="text-xs text-theme-white/40 font-mono">Generating Script...</span>
+                        </div>
+                    ) : (
+                        <textarea
+                            value={localScript}
+                            onChange={(e) => setLocalScript(e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            className={clsx(
+                                "w-full bg-transparent border-0 p-0 resize-none focus:ring-0 text-base sm:text-lg leading-relaxed transition-colors h-auto min-h-[4rem] font-raleway",
+                                isActive ? "text-theme-text placeholder:text-theme-white/30" : "text-theme-text/60 placeholder:text-theme-white/20"
+                            )}
+                            placeholder="Enter script here..."
+                            spellCheck="false"
+                        />
+                    )
+                }
 
                 {/* Visual Prompt */}
                 <div className="space-y-1">
@@ -314,8 +453,14 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
                         </button>
                     </div>
                     <textarea
-                        value={segment.visualPrompt || ''}
-                        onChange={(e) => useTimelineStore.getState().updateSegmentPrompt(segment.id, 'visualPrompt', e.target.value)}
+                        value={localVisualPrompt}
+                        onChange={(e) => {
+                            setLocalVisualPrompt(e.target.value);
+                            setIsVisualDirty(true);
+                            useTimelineStore.getState().updateSegmentPrompt(segment.id, 'visualPrompt', e.target.value);
+                        }}
+                        onFocus={() => setActiveField('visual')}
+                        onBlur={() => setActiveField(null)}
                         onClick={(e) => e.stopPropagation()}
                         className="w-full bg-theme-black/30 border border-theme-dark rounded-lg p-3 text-xs text-theme-text/80 font-raleway resize-none focus:outline-none focus:border-theme-mid focus:ring-1 focus:ring-theme-mid/50 transition-all placeholder:text-theme-white/20"
                         style={{ height: '70px' }}
@@ -338,8 +483,14 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
                         </button>
                     </div>
                     <textarea
-                        value={segment.motionPrompt || ''}
-                        onChange={(e) => useTimelineStore.getState().updateSegmentPrompt(segment.id, 'motionPrompt', e.target.value)}
+                        value={localMotionPrompt}
+                        onChange={(e) => {
+                            setLocalMotionPrompt(e.target.value);
+                            setIsMotionDirty(true);
+                            useTimelineStore.getState().updateSegmentPrompt(segment.id, 'motionPrompt', e.target.value);
+                        }}
+                        onFocus={() => setActiveField('motion')}
+                        onBlur={() => setActiveField(null)}
                         onClick={(e) => e.stopPropagation()}
                         className="w-full bg-theme-black/30 border border-theme-mid/50 rounded-lg p-3 text-xs text-theme-text/80 font-raleway resize-none focus:outline-none focus:border-theme-mid focus:ring-1 focus:ring-theme-mid/50 transition-all placeholder:text-theme-white/30"
                         style={{ height: '70px' }}
@@ -360,47 +511,66 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
                         </button>
                     )}
                 </div>
-            </div>
+            </div >
 
             {/* Thumbnail (Small Preview) */}
-            <div className="w-full sm:w-[20%] sm:min-w-[80px] sm:max-w-[120px] aspect-[16/9] sm:aspect-[9/16] shrink-0 rounded-lg overflow-hidden bg-theme-black/40 border border-theme-dark order-1 sm:order-2 sm:self-start relative group-image">
-                {segment.imageUrl ? (
-                    <>
-                        <img src={segment.imageUrl} alt="Scene preview" className="w-full h-full object-cover" />
+            < div className="w-full sm:w-[20%] sm:min-w-[80px] sm:max-w-[120px] aspect-[16/9] sm:aspect-[9/16] shrink-0 rounded-lg overflow-hidden bg-theme-black/40 border border-theme-dark order-1 sm:order-2 sm:self-start relative group-image" >
+                {
+                    segment.imageUrl ? (
+                        <>
+                            <img src={segment.imageUrl} alt="Scene preview" className={clsx("w-full h-full object-cover", (isRegeneratingImage || isRegeneratingVideo) ? "opacity-30 blur-sm" : "")} />
 
-                        {/* Video Generating Overlay */}
-                        {(!segment.videoUrl && segment.status === 'generating') && (
-                            <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-2 backdrop-blur-[1px]">
-                                <CircularProgressRing
-                                    progress={simulatedProgress}
-                                    size={32}
-                                    showPercentage={false}
-                                    progressColor="rgba(255, 255, 255, 0.9)"
-                                    baseColor="rgba(255, 255, 255, 0.2)"
-                                />
-                                <div className="flex flex-col items-center">
-                                    <span className="text-[10px] text-white/90 font-mono animate-pulse font-bold">Animating...</span>
-                                    <span className="text-[9px] text-white/60 font-mono">{formatTime(timer)}</span>
+                            {/* Video Generating Overlay */}
+                            {(isRegeneratingVideo || (!segment.videoUrl && segment.status === 'generating')) && (
+                                <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-2 backdrop-blur-[1px] z-10">
+                                    <CircularProgressRing
+                                        progress={simulatedProgress}
+                                        size={32}
+                                        showPercentage={false}
+                                        progressColor="rgba(255, 255, 255, 0.9)"
+                                        baseColor="rgba(255, 255, 255, 0.2)"
+                                    />
+                                    <div className="flex flex-col items-center">
+                                        <span className="text-[10px] text-white/90 font-mono animate-pulse font-bold">Animating...</span>
+                                        <span className="text-[9px] text-white/60 font-mono">{formatTime(timer)}</span>
+                                    </div>
                                 </div>
+                            )}
+
+                            {/* Image Regenerating Overlay (New) */}
+                            {isRegeneratingImage && (
+                                <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-2 backdrop-blur-[1px] z-10">
+                                    <CircularProgressRing
+                                        progress={simulatedProgress}
+                                        size={32}
+                                        showPercentage={false}
+                                        progressColor="rgba(255, 255, 255, 0.9)"
+                                        baseColor="rgba(255, 255, 255, 0.2)"
+                                    />
+                                    <div className="flex flex-col items-center">
+                                        <span className="text-[10px] text-white/90 font-mono animate-pulse font-bold">Regenerating...</span>
+                                        <span className="text-[9px] text-white/60 font-mono">{formatTime(timer)}</span>
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center gap-2 p-2 relative">
+                            <CircularProgressRing
+                                progress={simulatedProgress}
+                                size={32}
+                                showPercentage={false}
+                                progressColor="rgba(255, 255, 255, 0.9)"
+                                baseColor="rgba(255, 255, 255, 0.2)"
+                            />
+                            <div className="flex flex-col items-center gap-0.5">
+                                <span className="text-[10px] text-white/90 font-mono text-center leading-tight font-bold">Generating Image...</span>
+                                <span className="text-[9px] text-white/60 font-mono">{formatTime(timer)}</span>
                             </div>
-                        )}
-                    </>
-                ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center gap-2 p-2 relative">
-                        <CircularProgressRing
-                            progress={simulatedProgress}
-                            size={32}
-                            showPercentage={false}
-                            progressColor="rgba(255, 255, 255, 0.9)"
-                            baseColor="rgba(255, 255, 255, 0.2)"
-                        />
-                        <div className="flex flex-col items-center gap-0.5">
-                            <span className="text-[10px] text-white/90 font-mono text-center leading-tight font-bold">Generating Image...</span>
-                            <span className="text-[9px] text-white/60 font-mono">{formatTime(timer)}</span>
                         </div>
-                    </div>
-                )}
-            </div>
-        </div>
+                    )
+                }
+            </div >
+        </div >
     );
 };
