@@ -844,7 +844,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       reader.readAsDataURL(file);
     });
 
-  const handleQuickEditSubmit = useCallback(async ({ prompt, referenceFiles, avatarImageUrl, productImageUrl, mask }: QuickEditOptions) => {
+  const handleQuickEditSubmit = useCallback(async ({ prompt, referenceFiles, avatarImageUrl, productImageUrl, mask, resizeParams }: QuickEditOptions) => {
     if (!quickEditModalState?.item || !quickEditModalState.item.url) {
       showToast('No image URL available');
       return;
@@ -855,7 +855,114 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     // Close modal immediately
     setQuickEditModalState(null);
 
-    // Start background job
+    // Handle resize mode (when resizeParams is provided)
+    if (resizeParams) {
+      const { aspectRatio, position, scale, userPrompt: resizeUserPrompt } = resizeParams;
+
+      // Track job ID for error handling
+      let syntheticJobId: string | null = null;
+
+      try {
+        // Render the composed canvas with positioned image
+        console.log('[Resize via QuickEdit] Rendering composed canvas...');
+        const { dataUrl: composedImageDataUrl, isPureCrop } = await renderComposedCanvas({
+          imageUrl: item.url,
+          targetAspectRatio: aspectRatio,
+          position,
+          scale,
+        });
+        console.log('[Resize via QuickEdit] Canvas rendered, isPureCrop:', isPureCrop, 'dataUrl length:', composedImageDataUrl.length);
+
+        // If this is a pure crop AND no user prompt, skip AI and upload directly
+        const hasUserPrompt = resizeUserPrompt.trim().length > 0;
+
+        if (isPureCrop && !hasUserPrompt) {
+          console.log('[Resize via QuickEdit] Pure crop detected - uploading directly without AI');
+          showToast('Cropping image...');
+
+          // Upload cropped image directly to R2
+          const uploadResult = await uploadBase64ToR2(composedImageDataUrl, {
+            folder: 'cropped-images',
+            prompt: `Cropped to ${aspectRatio}`,
+            model: 'crop',
+          });
+
+          if (uploadResult.success && uploadResult.url) {
+            await addImage({
+              url: uploadResult.url,
+              prompt: `Cropped to ${aspectRatio}`,
+              model: 'crop',
+              timestamp: new Date().toISOString(),
+              ownerId: item.ownerId,
+              isLiked: false,
+              isPublic: false,
+            });
+            showToast('Image cropped successfully!');
+          } else {
+            showToast(`Failed to crop: ${uploadResult.error || 'Unknown error'}`);
+          }
+          return;
+        }
+
+        // Generate the smart extension prompt (for AI generation)
+        const extensionPrompt = generateExtensionPrompt({
+          position,
+          scale,
+          targetRatio: aspectRatio,
+          userPrompt: resizeUserPrompt.trim() || undefined,
+        });
+
+        // Start the resize job for tracking
+        syntheticJobId = startResizeJob(item, extensionPrompt);
+        console.log('[Resize via QuickEdit] Job started:', syntheticJobId);
+
+        // Call Gemini with the composed image as reference
+        console.log('[Resize via QuickEdit] Calling Gemini for AI extension...');
+        generateGeminiImage({
+          prompt: extensionPrompt,
+          references: [composedImageDataUrl],
+          model: 'gemini-3-pro-image-preview',
+          aspectRatio: aspectRatio,
+          clientJobId: syntheticJobId,
+        }).then(async (result) => {
+          console.log('[Resize via QuickEdit] Gemini result:', result);
+          if (result) {
+            await addImage({
+              url: result.url,
+              prompt: extensionPrompt,
+              model: result.model,
+              timestamp: new Date().toISOString(),
+              ownerId: item.ownerId,
+              isLiked: false,
+              isPublic: false,
+              r2FileId: result.r2FileId,
+            });
+            finalizeResizeJob(syntheticJobId!, 'completed');
+            showToast('Image extended successfully!');
+          } else {
+            showToast('Failed to extend image');
+            finalizeResizeJob(syntheticJobId!, 'failed');
+          }
+        }).catch((error) => {
+          console.error('[Resize via QuickEdit] Gemini error:', error);
+          debugError('Failed to extend image:', error);
+          showToast('Failed to extend image');
+          finalizeResizeJob(syntheticJobId!, 'failed');
+        });
+      } catch (error) {
+        console.error('[Resize via QuickEdit] Process error:', error);
+        debugError('Failed to process resize:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        showToast(`Failed to resize: ${errorMessage}`);
+        // Finalize the job if it was started
+        if (syntheticJobId) {
+          finalizeResizeJob(syntheticJobId, 'failed');
+        }
+      }
+      return; // Exit after handling resize
+    }
+
+    // Start background job for normal quick edit
     const syntheticJobId = startQuickEditJob(item, prompt);
 
     try {
@@ -951,7 +1058,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       showToast('Failed to start edit');
       finalizeQuickEditJob(syntheticJobId, 'failed');
     }
-  }, [quickEditModalState, generateGeminiImage, generateIdeogramImage, addImage, showToast, startQuickEditJob, finalizeQuickEditJob]);
+  }, [quickEditModalState, generateGeminiImage, generateIdeogramImage, addImage, showToast, startQuickEditJob, finalizeQuickEditJob, startResizeJob, finalizeResizeJob]);
 
   const handleQuickEditClose = useCallback(() => {
     setQuickEditModalState(null);
