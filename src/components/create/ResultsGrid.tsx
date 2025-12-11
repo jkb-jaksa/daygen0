@@ -834,55 +834,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     }
   }, [resizeModalState, generateGeminiImage, addImage, showToast, startResizeJob, finalizeResizeJob]);
 
-  // Handle crop submit - free crop without AI
-  const handleCropSubmit = useCallback(async (cropAreaParam: { x: number; y: number; width: number; height: number }) => {
-    if (!resizeModalState?.item || !resizeModalState.item.url) {
-      showToast('No image available for crop');
-      return;
-    }
 
-    const item = resizeModalState.item;
-    setResizeModalState(null);
-    showToast('Cropping image...');
-
-    try {
-      // Import cropImage dynamically to use the proxy-based loader
-      const { cropImage } = await import('./utils/resizeUtils');
-
-      // Crop the image using proxy to bypass CORS
-      const cropResult = await cropImage({
-        imageUrl: item.url,
-        cropArea: cropAreaParam,
-      });
-
-      // Upload to R2
-      const uploadResult = await uploadBase64ToR2(cropResult.dataUrl, {
-        folder: 'cropped-images',
-        prompt: 'Free crop',
-        model: 'crop',
-      });
-
-      if (uploadResult.success && uploadResult.url) {
-        await addImage({
-          url: uploadResult.url,
-          prompt: 'Free crop',
-          model: 'crop',
-          timestamp: new Date().toISOString(),
-          ownerId: item.ownerId,
-          isLiked: false,
-          isPublic: false,
-        });
-        showToast('Image cropped successfully!');
-      } else {
-        showToast(`Failed to crop: ${uploadResult.error || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error('[Crop] Error:', error);
-      debugError('Failed to crop image:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      showToast(`Failed to crop: ${errorMessage}`);
-    }
-  }, [resizeModalState, addImage, showToast]);
 
   const fileToDataUrl = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
@@ -2041,7 +1993,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
             onClose={handleResizeClose}
             image={resizeModalState.item}
             onResize={handleResizeSubmit}
-            onCrop={handleCropSubmit}
+
           />
         </Suspense>
       )}

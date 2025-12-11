@@ -781,55 +781,7 @@ const FullImageModal = memo(() => {
     }
   }, [fullSizeImage, generateGeminiImage, addImage, showToast, startResizeJob, finalizeResizeJob, closeFullSize]);
 
-  // Handle crop submit - free crop without AI
-  const handleCropSubmit = useCallback(async (cropAreaParam: { x: number; y: number; width: number; height: number }) => {
-    if (!fullSizeImage || !fullSizeImage.url) {
-      showToast('No image available for crop');
-      return;
-    }
 
-    setResizeModalState(null);
-    closeFullSize();
-    showToast('Cropping image...');
-
-    try {
-      // Import cropImage dynamically to use the proxy-based loader
-      const { cropImage } = await import('./utils/resizeUtils');
-
-      // Crop the image using proxy to bypass CORS
-      const cropResult = await cropImage({
-        imageUrl: fullSizeImage.url,
-        cropArea: cropAreaParam,
-      });
-
-      // Upload to R2
-      const uploadResult = await uploadBase64ToR2(cropResult.dataUrl, {
-        folder: 'cropped-images',
-        prompt: 'Free crop',
-        model: 'crop',
-      });
-
-      if (uploadResult.success && uploadResult.url) {
-        await addImage({
-          url: uploadResult.url,
-          prompt: 'Free crop',
-          model: 'crop',
-          timestamp: new Date().toISOString(),
-          ownerId: fullSizeImage.ownerId,
-          isLiked: false,
-          isPublic: false,
-        });
-        showToast('Image cropped successfully!');
-      } else {
-        showToast(`Failed to crop: ${uploadResult.error || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error('[Crop] Error:', error);
-      debugError('Failed to crop image:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      showToast(`Failed to crop: ${errorMessage}`);
-    }
-  }, [fullSizeImage, addImage, showToast, closeFullSize]);
 
   const handleMakeVideoSubmit = useCallback(async (options: MakeVideoOptions) => {
     if (!fullSizeImage || !fullSizeImage.url) {
@@ -1996,7 +1948,7 @@ const FullImageModal = memo(() => {
             onClose={handleResizeClose}
             image={fullSizeImage}
             onResize={handleResizeSubmit}
-            onCrop={handleCropSubmit}
+
           />
         )}
       </Suspense>
