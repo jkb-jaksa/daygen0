@@ -16,6 +16,20 @@ export interface Segment {
     endTime: number; // Seconds
     duration: number;
     status?: 'pending' | 'generating' | 'completed' | 'failed';
+    versions?: SegmentVersion[];
+}
+
+export interface SegmentVersion {
+    id: string;
+    segmentId: string;
+    script: string;
+    visualPrompt: string;
+    motionPrompt?: string;
+    voiceUrl?: string;
+    imageUrl?: string;
+    videoUrl?: string;
+    duration: number;
+    createdAt: string;
 }
 
 interface TimelineState {

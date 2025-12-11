@@ -1,5 +1,5 @@
 import React from 'react';
-import { RefreshCw, Volume2, Loader2 } from 'lucide-react';
+import { RefreshCw, Volume2, Loader2, History as HistoryIcon } from 'lucide-react';
 import { CircularProgressRing } from '../CircularProgressRing';
 import { useTimelineStore, type Segment } from '../../stores/timelineStore';
 import { regenerateSegment } from '../../api/timeline';
@@ -22,6 +22,7 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
     const [isRegeneratingVideo, setIsRegeneratingVideo] = React.useState(false);
     const [timer, setTimer] = React.useState(0);
     const { updateSegmentImage } = useTimelineStore();
+    const [showVersionHistory, setShowVersionHistory] = React.useState(false);
 
     // Timer logic and Simulated Progress
     React.useEffect(() => {
@@ -202,6 +203,64 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
                 <span className={clsx("text-xs font-mono mb-1", isActive ? "text-theme-mid font-bold" : "text-theme-white/40")}>
                     {segment.startTime.toFixed(1)}s
                 </span>
+
+                {/* Version History Dropdown - Compact Vertical */}
+                {segment.versions && segment.versions.length > 0 && (
+                    <div className="relative group/versions mb-2">
+                        <button
+                            className={clsx(
+                                "p-1 rounded-full hover:bg-theme-white/10 transition-colors",
+                                showVersionHistory ? "bg-theme-white/10 text-theme-white" : "bg-theme-white/5 text-theme-white/40 hover:text-theme-white"
+                            )}
+                            onClick={(e) => { e.stopPropagation(); setShowVersionHistory(!showVersionHistory); }}
+                        >
+                            <HistoryIcon size={12} />
+                        </button>
+                        {showVersionHistory && (
+                            <>
+                                <div
+                                    className="fixed inset-0 z-40 bg-transparent"
+                                    onClick={(e) => { e.stopPropagation(); setShowVersionHistory(false); }}
+                                />
+                                <div className="absolute left-full top-0 ml-2 w-48 bg-theme-black border border-theme-dark/50 rounded-lg shadow-xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="p-2 border-b border-theme-white/5 bg-theme-white/5 flex justify-between items-center">
+                                        <h4 className="text-[10px] uppercase font-bold text-theme-white/60 font-raleway">Version History</h4>
+                                        <button onClick={(e) => { e.stopPropagation(); setShowVersionHistory(false); }} className="text-theme-white/40 hover:text-white"><HistoryIcon size={10} /></button>
+                                    </div>
+                                    <div className="max-h-40 overflow-y-auto">
+                                        {segment.versions.map((ver, i) => (
+                                            <button
+                                                key={ver.id}
+                                                onClick={async (e) => {
+                                                    e.stopPropagation();
+                                                    if (confirm(`Revert to version from ${new Date(ver.createdAt).toLocaleTimeString()}?`)) {
+                                                        const jobId = useTimelineStore.getState().jobId;
+                                                        if (!jobId) return;
+                                                        const index = useTimelineStore.getState().segments.findIndex(s => s.id === segment.id);
+                                                        try {
+                                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                                            const { revertSegment } = await import('../../api/timeline');
+                                                            await revertSegment(jobId, index, ver.id);
+                                                            setShowVersionHistory(false);
+                                                            alert('Reverted! Please reload the page to see changes (or wait for poll).');
+                                                        } catch (err: any) {
+                                                            alert('Failed to revert: ' + err.message);
+                                                        }
+                                                    }
+                                                }}
+                                                className="w-full text-left px-3 py-2 text-xs text-theme-white/70 hover:bg-theme-white/10 hover:text-theme-white transition-colors border-b border-theme-white/5 last:border-0 flex flex-col"
+                                            >
+                                                <span className="font-bold truncate">v{segment.versions!.length - i}: {ver.script.substring(0, 15)}...</span>
+                                                <span className="text-[10px] opacity-50">{new Date(ver.createdAt).toLocaleTimeString()}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                )}
+
                 <div
                     ref={progressRef}
                     onClick={handleSeek}

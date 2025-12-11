@@ -123,7 +123,7 @@ export default function TimelineGenerator() {
         try {
             const uploadPromises = files.map(async (file) => {
                 try {
-                    const result = await uploadToR2(file, file.name, file.type, 'cyran-roll-images');
+                    const result = await uploadToR2(file, file.name, file.type, 'temp/cyran-roll-images');
                     if (result.success && result.publicUrl) {
                         return result.publicUrl;
                     }

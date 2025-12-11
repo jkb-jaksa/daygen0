@@ -37,3 +37,16 @@ export async function regenerateSegment(
         body: { text, prompt, motionPrompt, regenerateImage, regenerateVideo }, // Only send what is defined
     });
 }
+
+export async function revertSegment(
+    jobId: string,
+    segmentIndex: number,
+    versionId: string
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): Promise<any> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return apiFetch<any>(`/api/timeline/${jobId}/segments/${segmentIndex}/revert`, {
+        method: 'POST',
+        body: { versionId },
+    });
+}
