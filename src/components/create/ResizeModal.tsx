@@ -54,6 +54,8 @@ const ResizeModal = memo<ResizeModalProps>(({
     const [userPrompt, setUserPrompt] = useState('');
     // Crop mode state
     const [cropArea, setCropArea] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+    const [cropScale, setCropScale] = useState(100); // 100 = full size, < 100 = shrink (creates AI fill areas)
+    const [cropPrompt, setCropPrompt] = useState(''); // Extension hint for AI fill
     const dragStartRef = useRef<{ x: number; y: number; startPos: { x: number; y: number } } | null>(null);
 
     // Handle escape key
@@ -96,6 +98,8 @@ const ResizeModal = memo<ResizeModalProps>(({
             setImageScale(100);
             setUserPrompt('');
             setCropArea(null);
+            setCropScale(100);
+            setCropPrompt('');
         }
     }, [open]);
 
@@ -320,114 +324,99 @@ const ResizeModal = memo<ResizeModalProps>(({
             );
         }
 
-        // Crop mode - simple corner drag to resize (maintains aspect ratio)
+        // Crop mode - with optional AI fill when image is shrunk
         if (mode === 'crop') {
             // cropArea represents the visible crop frame as percentage of image (0-100)
             // If not set, default to 100% (full image)
             const crop = cropArea || { x: 0, y: 0, width: 100, height: 100 };
+            const needsAiFill = cropScale < 100;
+
+            // Calculate container dimensions based on image aspect ratio (stable, doesn't change with scale)
+            const maxW = 500;
+            const maxH = 320;
+            let containerW = maxW;
+            let containerH = maxH;
+
+            if (imageDimensions) {
+                const imgRatio = imageDimensions.width / imageDimensions.height;
+                if (imgRatio > 1) {
+                    containerW = maxW;
+                    containerH = maxW / imgRatio;
+                    if (containerH > maxH) {
+                        containerH = maxH;
+                        containerW = maxH * imgRatio;
+                    }
+                } else if (imgRatio < 1) {
+                    containerH = maxH;
+                    containerW = maxH * imgRatio;
+                } else {
+                    containerW = Math.min(maxW, maxH);
+                    containerH = containerW;
+                }
+            }
 
             return (
-                <div className="flex flex-col items-center gap-4 w-full">
+                <div className="flex flex-col items-center gap-2 w-full">
+                    {/* Canvas container - fixed size based on image AR */}
                     <div
                         ref={canvasRef}
-                        className="relative rounded-xl overflow-hidden shadow-2xl border-2 border-theme-dark"
-                        style={{ maxWidth: '500px', maxHeight: '400px' }}
+                        className="relative rounded-xl overflow-hidden shadow-2xl border-2 border-theme-text flex-shrink-0"
+                        style={{
+                            width: `${containerW}px`,
+                            height: `${containerH}px`,
+                            minWidth: `${containerW}px`,
+                            minHeight: `${containerH}px`,
+                            maxWidth: `${containerW}px`,
+                            maxHeight: `${containerH}px`,
+                            boxSizing: 'border-box',
+                            // Always show a background - checkerboard when shrinking, solid when not
+                            backgroundColor: '#1a1a2e',
+                            ...(needsAiFill ? checkerboardStyle : {})
+                        }}
                     >
+                        {/* Image with scale transform - always applied */}
                         <img
                             src={image.url}
                             alt="To crop"
-                            className="max-w-full max-h-[400px] object-contain"
+                            className="absolute top-1/2 left-1/2 object-cover"
+                            style={{
+                                width: '100%',
+                                height: '100%',
+                                transform: `translate(-50%, -50%) scale(${cropScale / 100})`,
+                                transition: 'transform 0.15s ease-out',
+                            }}
                             draggable={false}
                         />
 
-                        {/* Darkened overlay with clear crop area */}
-                        <div
-                            className="absolute inset-0 pointer-events-none"
-                            style={{
-                                background: `linear-gradient(to right, 
-                                    rgba(0,0,0,0.7) ${crop.x}%, 
-                                    transparent ${crop.x}%, 
-                                    transparent ${crop.x + crop.width}%, 
-                                    rgba(0,0,0,0.7) ${crop.x + crop.width}%
-                                )`
-                            }}
-                        />
-
-                        {/* Crop frame - draggable to move */}
-                        <div
-                            className="absolute border-2 border-theme-text cursor-move"
-                            style={{
-                                left: `${crop.x}%`,
-                                top: `${crop.y}%`,
-                                width: `${crop.width}%`,
-                                height: `${crop.height}%`,
-                                boxShadow: '0 0 0 9999px rgba(0,0,0,0.6)',
-                            }}
-                            onMouseDown={(e) => {
-                                e.stopPropagation();
-                                if (!canvasRef.current) return;
-
-                                const rect = canvasRef.current.getBoundingClientRect();
-                                const startMouseX = e.clientX;
-                                const startMouseY = e.clientY;
-                                const startX = crop.x;
-                                const startY = crop.y;
-
-                                const handleMove = (moveEvent: MouseEvent) => {
-                                    const deltaX = ((moveEvent.clientX - startMouseX) / rect.width) * 100;
-                                    const deltaY = ((moveEvent.clientY - startMouseY) / rect.height) * 100;
-
-                                    // Clamp to stay within bounds
-                                    const newX = Math.max(0, Math.min(100 - crop.width, startX + deltaX));
-                                    const newY = Math.max(0, Math.min(100 - crop.height, startY + deltaY));
-
-                                    setCropArea({ ...crop, x: newX, y: newY });
-                                };
-
-                                const handleUp = () => {
-                                    window.removeEventListener('mousemove', handleMove);
-                                    window.removeEventListener('mouseup', handleUp);
-                                };
-
-                                window.addEventListener('mousemove', handleMove);
-                                window.addEventListener('mouseup', handleUp);
-                            }}
-                        >
-                            {/* Draggable corner handle - bottom right */}
+                        {/* When 100% scale, show crop frame overlay */}
+                        {cropScale === 100 && (
                             <div
-                                className="absolute -bottom-2 -right-2 w-5 h-5 bg-theme-text rounded-full cursor-se-resize hover:scale-110 transition-transform z-10"
+                                className="absolute border-2 border-theme-text cursor-move"
+                                style={{
+                                    left: `${crop.x}%`,
+                                    top: `${crop.y}%`,
+                                    width: `${crop.width}%`,
+                                    height: `${crop.height}%`,
+                                    boxShadow: '0 0 0 9999px rgba(0,0,0,0.6)',
+                                }}
                                 onMouseDown={(e) => {
                                     e.stopPropagation();
-                                    if (!canvasRef.current || !imageDimensions) return;
+                                    if (!canvasRef.current) return;
 
-                                    const originalRatio = imageDimensions.width / imageDimensions.height;
                                     const rect = canvasRef.current.getBoundingClientRect();
-                                    const startWidth = crop.width;
                                     const startMouseX = e.clientX;
-                                    const cropCenterX = crop.x + crop.width / 2;
-                                    const cropCenterY = crop.y + crop.height / 2;
+                                    const startMouseY = e.clientY;
+                                    const startX = crop.x;
+                                    const startY = crop.y;
 
                                     const handleMove = (moveEvent: MouseEvent) => {
                                         const deltaX = ((moveEvent.clientX - startMouseX) / rect.width) * 100;
-                                        let newWidth = Math.max(20, Math.min(100, startWidth + deltaX));
-                                        // Maintain aspect ratio
-                                        let newHeight = newWidth / originalRatio;
+                                        const deltaY = ((moveEvent.clientY - startMouseY) / rect.height) * 100;
 
-                                        // Ensure it fits
-                                        if (newHeight > 100) {
-                                            newHeight = 100;
-                                            newWidth = newHeight * originalRatio;
-                                        }
+                                        const newX = Math.max(0, Math.min(100 - crop.width, startX + deltaX));
+                                        const newY = Math.max(0, Math.min(100 - crop.height, startY + deltaY));
 
-                                        // Keep centered around the same point (or clamp to bounds)
-                                        let newX = cropCenterX - newWidth / 2;
-                                        let newY = cropCenterY - newHeight / 2;
-
-                                        // Clamp to bounds
-                                        newX = Math.max(0, Math.min(100 - newWidth, newX));
-                                        newY = Math.max(0, Math.min(100 - newHeight, newY));
-
-                                        setCropArea({ x: newX, y: newY, width: newWidth, height: newHeight });
+                                        setCropArea({ ...crop, x: newX, y: newY });
                                     };
 
                                     const handleUp = () => {
@@ -438,22 +427,152 @@ const ResizeModal = memo<ResizeModalProps>(({
                                     window.addEventListener('mousemove', handleMove);
                                     window.addEventListener('mouseup', handleUp);
                                 }}
-                            />
+                            >
+                                {/* Corner handle */}
+                                <div
+                                    className="absolute -bottom-2 -right-2 w-5 h-5 bg-theme-text rounded-full cursor-se-resize hover:scale-110 transition-transform z-10"
+                                    onMouseDown={(e) => {
+                                        e.stopPropagation();
+                                        if (!canvasRef.current || !imageDimensions) return;
 
-                            {/* Grid lines for composition */}
-                            <div className="absolute inset-0 pointer-events-none">
-                                <div className="absolute left-1/3 top-0 bottom-0 w-px bg-theme-white/30" />
-                                <div className="absolute left-2/3 top-0 bottom-0 w-px bg-theme-white/30" />
-                                <div className="absolute top-1/3 left-0 right-0 h-px bg-theme-white/30" />
-                                <div className="absolute top-2/3 left-0 right-0 h-px bg-theme-white/30" />
+                                        const rect = canvasRef.current.getBoundingClientRect();
+                                        const startWidth = crop.width;
+                                        const startMouseX = e.clientX;
+                                        const cropCenterX = crop.x + crop.width / 2;
+                                        const cropCenterY = crop.y + crop.height / 2;
+
+                                        const handleMove = (moveEvent: MouseEvent) => {
+                                            const deltaX = ((moveEvent.clientX - startMouseX) / rect.width) * 100;
+                                            let newWidth = Math.max(20, Math.min(100, startWidth + deltaX));
+                                            // Since container already matches image aspect ratio,
+                                            // using equal percentages for width and height maintains the ratio
+                                            let newHeight = newWidth;
+
+                                            // Clamp to container bounds
+                                            if (newWidth > 100) {
+                                                newWidth = 100;
+                                                newHeight = 100;
+                                            }
+
+                                            let newX = cropCenterX - newWidth / 2;
+                                            let newY = cropCenterY - newHeight / 2;
+                                            newX = Math.max(0, Math.min(100 - newWidth, newX));
+                                            newY = Math.max(0, Math.min(100 - newHeight, newY));
+
+                                            setCropArea({ x: newX, y: newY, width: newWidth, height: newHeight });
+                                        };
+
+                                        const handleUp = () => {
+                                            window.removeEventListener('mousemove', handleMove);
+                                            window.removeEventListener('mouseup', handleUp);
+                                        };
+
+                                        window.addEventListener('mousemove', handleMove);
+                                        window.addEventListener('mouseup', handleUp);
+                                    }}
+                                />
+
+                                {/* Grid lines */}
+                                <div className="absolute inset-0 pointer-events-none">
+                                    <div className="absolute left-1/3 top-0 bottom-0 w-px bg-theme-white/30" />
+                                    <div className="absolute left-2/3 top-0 bottom-0 w-px bg-theme-white/30" />
+                                    <div className="absolute top-1/3 left-0 right-0 h-px bg-theme-white/30" />
+                                    <div className="absolute top-2/3 left-0 right-0 h-px bg-theme-white/30" />
+                                </div>
                             </div>
-                        </div>
+                        )}
+
+                        {/* When shrunk, show dashed border */}
+                        {needsAiFill && (
+                            <div className="absolute inset-0 border-2 border-dashed border-theme-text/50 pointer-events-none" />
+                        )}
                     </div>
 
-                    {/* Crop size indicator */}
-                    <p className="text-xs font-raleway text-theme-white/70">
-                        Drag to move • Corner handle to resize • {Math.round(crop.width)}% of original
-                    </p>
+                    {/* Scale slider - matching resize mode style */}
+                    <div className="w-full max-w-[500px] flex items-center gap-3 px-2 flex-shrink-0">
+                        <ZoomOut className="w-4 h-4 text-theme-white flex-shrink-0" />
+                        <input
+                            type="range"
+                            min={20}
+                            max={300}
+                            value={cropScale}
+                            onChange={(e) => {
+                                setCropScale(Number(e.target.value));
+                                if (Number(e.target.value) < 100) {
+                                    setCropArea(null);
+                                }
+                            }}
+                            className="flex-1 h-2 bg-theme-dark rounded-lg appearance-none cursor-pointer accent-theme-text"
+                        />
+                        <ZoomIn className="w-4 h-4 text-theme-white flex-shrink-0" />
+                        <span className="text-xs font-raleway text-theme-white w-12 text-right">{cropScale}%</span>
+                        {/* Reset button - always takes space, invisible when at 100% */}
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setCropScale(100);
+                                setCropArea(null);
+                                setCropPrompt('');
+                            }}
+                            className={`p-1.5 rounded-lg border border-theme-dark hover:border-theme-mid bg-theme-black/50 hover:bg-theme-black transition-all ${cropScale !== 100 ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                            title="Reset"
+                        >
+                            <RotateCcw className="w-4 h-4 text-theme-white" />
+                        </button>
+                    </div>
+
+                    {/* Controls container - fixed height to prevent layout shift */}
+                    <div className="w-full max-w-[500px] flex flex-col gap-2" style={{ minHeight: '100px' }}>
+                        {/* Background hint when shrinking */}
+                        {cropScale < 100 && (
+                            <textarea
+                                value={cropPrompt}
+                                onChange={(e) => setCropPrompt(e.target.value)}
+                                placeholder="Background hint (optional)"
+                                className="w-full h-12 bg-theme-black/40 text-theme-white placeholder-theme-white/40 border border-theme-dark rounded-lg px-3 py-2 focus:outline-none focus:border-theme-mid transition-colors duration-200 font-raleway text-sm resize-none"
+                            />
+                        )}
+
+                        {/* Submit button - always same height */}
+                        {cropScale < 100 ? (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (onResize && imageDimensions) {
+                                        const ratio = imageDimensions.width / imageDimensions.height;
+                                        const ratioStr = ratio >= 1.7 ? '16:9' : ratio >= 1.4 ? '3:2' : ratio >= 1.2 ? '4:3' : ratio <= 0.6 ? '9:16' : ratio <= 0.7 ? '2:3' : ratio <= 0.8 ? '3:4' : '1:1';
+                                        onResize(
+                                            ratioStr as GeminiAspectRatio,
+                                            { x: 50, y: 50 },
+                                            cropScale,
+                                            cropPrompt
+                                        );
+                                        onClose();
+                                    }
+                                }}
+                                className={`${buttons.primary} w-full py-3 flex items-center justify-center gap-2 text-base`}
+                            >
+                                <Sparkles className="w-5 h-5" />
+                                Generate Background
+                            </button>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const crop = cropArea || { x: 0, y: 0, width: 100, height: 100 };
+                                    if (onCrop) {
+                                        onCrop(crop);
+                                        onClose();
+                                    }
+                                }}
+                                disabled={!cropArea || cropArea.width >= 100}
+                                className={`${buttons.primary} w-full py-3 flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-60 text-base`}
+                            >
+                                <Crop className="w-5 h-5" />
+                                Crop Image
+                            </button>
+                        )}
+                    </div>
                 </div>
             );
         }
@@ -692,9 +811,9 @@ const ResizeModal = memo<ResizeModalProps>(({
                         )}
                     </div>
 
-                    {/* Right Column: Controls */}
-                    <div className="w-full lg:w-80 flex flex-col gap-4 overflow-y-auto flex-shrink-0" {...{ [scrollLockExemptAttr]: 'true' }}>
-                        {mode === 'resize' ? (
+                    {/* Right Column: Controls - only for resize mode */}
+                    {mode === 'resize' && (
+                        <div className="w-full lg:w-80 flex flex-col gap-4 overflow-y-auto flex-shrink-0" {...{ [scrollLockExemptAttr]: 'true' }}>
                             <>
                                 {/* Model Selection (Locked) */}
                                 <div className="space-y-1.5">
@@ -710,19 +829,31 @@ const ResizeModal = memo<ResizeModalProps>(({
                                     <div className="grid grid-cols-2 gap-2">
                                         {GEMINI_ASPECT_RATIO_OPTIONS.map(option => {
                                             const isSelected = selectedAspectRatio === option.value;
+
+                                            // Check if this ratio matches the original image
+                                            const [targetW, targetH] = option.value.split(':').map(Number);
+                                            const targetRatio = targetW / targetH;
+                                            const originalRatio = imageDimensions ? imageDimensions.width / imageDimensions.height : 0;
+                                            const isOriginalRatio = imageDimensions && Math.abs(targetRatio - originalRatio) < 0.05;
+
                                             return (
                                                 <button
                                                     key={option.value}
                                                     type="button"
                                                     onClick={() => {
+                                                        if (isOriginalRatio) return;
                                                         setSelectedAspectRatio(option.value);
                                                         setImagePosition({ x: 50, y: 50 });
                                                         setImageScale(100);
                                                     }}
-                                                    className={`relative flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all duration-200 text-left ${isSelected
-                                                        ? 'border-theme-text bg-theme-mid/20'
-                                                        : 'border-theme-dark hover:border-theme-mid bg-theme-black/50 hover:bg-theme-black'
+                                                    disabled={isOriginalRatio || false}
+                                                    className={`relative flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all duration-200 text-left ${isOriginalRatio
+                                                        ? 'border-theme-dark/50 bg-theme-dark/30 opacity-40 cursor-not-allowed'
+                                                        : isSelected
+                                                            ? 'border-theme-text bg-theme-mid/20'
+                                                            : 'border-theme-dark hover:border-theme-mid bg-theme-black/50 hover:bg-theme-black'
                                                         }`}
+                                                    title={isOriginalRatio ? 'This is the current aspect ratio' : undefined}
                                                 >
                                                     <div className={`w-7 h-7 rounded flex items-center justify-center border ${isSelected ? 'border-theme-text' : 'border-theme-mid/50'} bg-theme-dark/80 overflow-hidden`}>
                                                         <div
@@ -776,65 +907,8 @@ const ResizeModal = memo<ResizeModalProps>(({
                                     </button>
                                 </div>
                             </>
-                        ) : (
-                            <>
-                                {/* Crop Mode Info */}
-                                <div className="space-y-3">
-                                    <div className="p-4 rounded-xl bg-theme-dark/30 border border-theme-dark">
-                                        <h3 className="text-sm font-raleway font-medium text-theme-text mb-2 flex items-center gap-2">
-                                            <Crop className="w-4 h-4" />
-                                            Crop Image
-                                        </h3>
-                                        <p className="text-xs font-raleway text-theme-white/70 leading-relaxed">
-                                            Drag the corner handle to resize the crop area. The aspect ratio is maintained automatically.
-                                        </p>
-                                    </div>
-
-                                    {/* Current crop info */}
-                                    <div className="p-3 rounded-lg bg-theme-black/40 border border-theme-mid/30">
-                                        <p className="text-xs font-raleway text-theme-white/80">
-                                            Crop size: {Math.round(cropArea?.width || 100)}% of original
-                                        </p>
-                                    </div>
-
-                                    {/* Reset crop button */}
-                                    {cropArea && cropArea.width < 100 && (
-                                        <button
-                                            type="button"
-                                            onClick={() => setCropArea(null)}
-                                            className="w-full px-3 py-2 rounded-lg border border-theme-dark hover:border-theme-mid bg-theme-black/50 hover:bg-theme-black transition-colors text-xs font-raleway text-theme-white/80 flex items-center justify-center gap-2"
-                                        >
-                                            <RotateCcw className="w-3.5 h-3.5" />
-                                            Reset to Full Size
-                                        </button>
-                                    )}
-                                </div>
-
-                                <div className="mt-auto pt-6">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            const crop = cropArea || { x: 0, y: 0, width: 100, height: 100 };
-                                            if (onCrop) {
-                                                onCrop(crop);
-                                                onClose();
-                                            }
-                                        }}
-                                        disabled={!cropArea || cropArea.width >= 100}
-                                        className={`${buttons.primary} w-full py-4 flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-60 text-base`}
-                                    >
-                                        <Crop className="w-5 h-5" />
-                                        Crop Image
-                                    </button>
-                                    {(!cropArea || cropArea.width >= 100) && (
-                                        <p className="text-xs font-raleway text-theme-white/50 text-center mt-2">
-                                            Drag the corner to reduce the crop size
-                                        </p>
-                                    )}
-                                </div>
-                            </>
-                        )}
-                    </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
