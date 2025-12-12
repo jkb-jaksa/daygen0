@@ -347,10 +347,10 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
                                                         setShowVersionHistory(false);
 
                                                         try {
-                                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                             const { revertSegment } = await import('../../api/timeline');
                                                             await revertSegment(jobId, index, ver.id);
                                                             // Success: Do nothing, store is already correct.
+                                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         } catch (err: any) {
                                                             console.error('Failed to revert:', err);
                                                             // 3. Rollback on failure
