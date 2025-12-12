@@ -1724,8 +1724,8 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                             </div>
                         )}
 
-                        {/* Precise Edit Toolbar Helper */}
-                        {renderToolbar()}
+                        {/* Precise Edit Toolbar Helper - Only show in default mode (moved to right in Resize mode) */}
+                        {!isResizeMode && renderToolbar()}
                     </div>
 
                     {/* Right Column - Form */}
