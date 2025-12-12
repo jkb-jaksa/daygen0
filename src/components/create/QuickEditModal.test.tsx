@@ -103,6 +103,20 @@ vi.mock('./hooks/useReferenceHandlers', () => ({
     }),
 }));
 
+// Mock useGeneration
+vi.mock('./contexts/GenerationContext', () => ({
+    useGeneration: () => ({
+        state: {
+            batchSize: 1,
+            selectedModel: 'gemini-3.0-pro-image',
+            isButtonSpinning: false,
+        },
+        setBatchSize: vi.fn(),
+        setSelectedModel: vi.fn(),
+        isGenerating: false,
+    }),
+}));
+
 describe('QuickEditModal', () => {
     const defaultProps = {
         isOpen: true,
@@ -113,6 +127,21 @@ describe('QuickEditModal', () => {
 
     beforeAll(() => {
         global.URL.createObjectURL = vi.fn(() => 'blob:test');
+
+        // Mock Canvas
+        HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
+            clearRect: vi.fn(),
+            drawImage: vi.fn(),
+            fillRect: vi.fn(),
+            getImageData: vi.fn(() => ({ data: [] })),
+            beginPath: vi.fn(),
+            moveTo: vi.fn(),
+            lineTo: vi.fn(),
+            stroke: vi.fn(),
+            measureText: vi.fn(() => ({ width: 0 })),
+            fillText: vi.fn(),
+        })) as any;
+        HTMLCanvasElement.prototype.toDataURL = vi.fn(() => 'data:image/png;base64,mock');
 
         // Mock Image for resize auto-detection
         global.Image = class {
