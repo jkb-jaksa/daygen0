@@ -502,10 +502,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     }, [redrawCanvas]);
 
     // Parse aspect ratio string to numeric value (for resize mode)
-    const parseAspectRatio = useCallback((ratio: string): number => {
-        const [w, h] = ratio.split(':').map(Number);
-        return w / h;
-    }, []);
+
 
     // Load image dimensions when resize mode opens or image changes
     useEffect(() => {
@@ -568,7 +565,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                 baseHeightPercent,
             };
         }
-    }, [resizeImageDimensions, resizeAspectRatio, parseAspectRatio]);
+    }, [resizeImageDimensions, resizeAspectRatio]);
 
     // Calculate actual layout with scale applied
     const resizeLayoutInfo = useMemo(() => {
@@ -659,10 +656,8 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
 
 
 
-    // Check if selected ratio is the same as original
-    const resizeIsSameRatio = resizeLayoutInfo?.type === 'same';
-    // Check if there is any AI fill needed (scale < 100 or not covering full canvas)
-    const resizeNeedsAiFill = resizeImageScale < 100 || !resizeIsSameRatio;
+
+
 
     // Checkerboard pattern style for resize canvas
     const checkerboardStyle = useMemo(() => ({

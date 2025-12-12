@@ -125,7 +125,7 @@ describe('QuickEditModal', () => {
                 setTimeout(() => this.onload?.(), 10);
             }
             get src() { return this._src; }
-        } as any;
+        } as unknown as typeof Image;
     });
 
     afterAll(() => {
