@@ -6,6 +6,7 @@ import { useTimelineStore, type Segment } from '../../stores/timelineStore';
 import { fetchJobs, type Job } from '../../api/jobs';
 import { Loader2, Sparkles, History, Volume2, VolumeX, Upload, X } from 'lucide-react';
 import { uploadToR2 } from '../../utils/uploadToR2';
+import { VoiceSelector } from '../shared/VoiceSelector';
 
 export default function TimelineGenerator() {
     const navigate = useNavigate();
@@ -27,6 +28,7 @@ export default function TimelineGenerator() {
 
     const [referenceImages, setReferenceImages] = useState<string[]>([]);
     const [isUploadingImage, setIsUploadingImage] = useState(false);
+    const [selectedVoiceId, setSelectedVoiceId] = useState<string>('');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [isDragging, setIsDragging] = useState(false);
@@ -186,7 +188,7 @@ export default function TimelineGenerator() {
             setMusicUrl(null);
             setFinalVideoUrl(null);
 
-            const job = await generateTimeline(topic, style, duration, musicVolume / 100, referenceImages);
+            const job = await generateTimeline(topic, style, duration, musicVolume / 100, referenceImages, selectedVoiceId);
 
             // Set Job ID and navigate immediately
             setJobId(job.id);
@@ -332,6 +334,17 @@ export default function TimelineGenerator() {
                                 ))}
                             </div>
                         </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="block text-sm font-medium text-theme-white font-raleway ml-1">
+                            Narrator Voice
+                        </label>
+                        <VoiceSelector
+                            value={selectedVoiceId}
+                            onChange={setSelectedVoiceId}
+                            className="w-full bg-theme-black/40 border border-theme-dark rounded-xl p-3 text-theme-text font-raleway text-sm focus:outline-none focus:border-theme-mid focus:ring-1 focus:ring-theme-mid transition-all appearance-none cursor-pointer"
+                        />
                     </div>
 
                     <div className="space-y-2">

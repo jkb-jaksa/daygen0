@@ -13,11 +13,12 @@ export async function generateTimeline(
     style: string,
     duration: 'short' | 'medium' | 'long' = 'medium',
     musicVolume: number = 0.3,
-    referenceImageUrls?: string[]
+    referenceImageUrls?: string[],
+    voiceId?: string
 ): Promise<Job> {
     return apiFetch<Job>('/api/timeline/generate', {
         method: 'POST',
-        body: { topic, style, duration, musicVolume, referenceImageUrls },
+        body: { topic, style, duration, musicVolume, referenceImageUrls, voiceId },
     });
 }
 
