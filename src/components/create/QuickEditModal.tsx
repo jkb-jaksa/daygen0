@@ -1253,6 +1253,201 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
 
     if (!isOpen) return null;
 
+    const renderToolbar = () => (
+        <div className="w-full flex justify-start gap-1 transition-all duration-200 animate-in fade-in slide-in-from-top-2">
+            <div className="relative flex items-center">
+                <button
+                    onClick={() => {
+                        if (isMaskToolbarVisible) setIsEraseMode(false);
+                        setIsMaskToolbarVisible(!isMaskToolbarVisible);
+                        // Mutual exclusivity - disable resize mode when enabling inpaint
+                        if (!isMaskToolbarVisible) setIsResizeMode(false);
+                    }}
+                    className={`flex items-center gap-1.5 px-3 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)] font-raleway font-normal text-sm ${isMaskToolbarVisible ? 'text-theme-text border-theme-text' : 'text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text'}`}
+                    onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'precise-edit-tooltip')}
+                    onMouseLeave={() => hideHoverTooltip('precise-edit-tooltip')}
+                >
+                    <Wand2 className="w-4 h-4" />
+                    Inpaint
+                </button>
+                <TooltipPortal id="precise-edit-tooltip">
+                    Draw a mask
+                </TooltipPortal>
+                {/* Help icon with info about Ideogram requirement */}
+                <div className="relative ml-1">
+                    <button
+                        type="button"
+                        className="flex items-center justify-center w-5 h-5 rounded-full text-theme-white/60 hover:text-theme-white transition-colors duration-200"
+                        onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'precise-edit-info-tooltip')}
+                        onMouseLeave={() => hideHoverTooltip('precise-edit-info-tooltip')}
+                    >
+                        <HelpCircle className="w-3.5 h-3.5" />
+                    </button>
+                    <TooltipPortal id="precise-edit-info-tooltip">
+                        <div className="max-w-[200px] text-center">
+                            Inpaint uses Ideogram for accurate mask-based inpainting
+                        </div>
+                    </TooltipPortal>
+                </div>
+            </div>
+
+            {/* Resize Button */}
+            <div className="relative flex items-center">
+                <button
+                    onClick={() => {
+                        const newMode = !isResizeMode;
+                        setIsResizeMode(newMode);
+                        // Mutual exclusivity - disable inpaint mode when enabling resize
+                        if (newMode) {
+                            setIsMaskToolbarVisible(false);
+                            setIsEraseMode(false);
+
+                            // Auto-detect and set aspect ratio
+                            if (imageUrl) {
+                                const img = new Image();
+                                img.onload = () => {
+                                    const ratio = img.naturalWidth / img.naturalHeight;
+                                    // Find closest aspect ratio option
+                                    let closest = GEMINI_ASPECT_RATIO_OPTIONS[0];
+                                    let minDiff = Infinity;
+
+                                    GEMINI_ASPECT_RATIO_OPTIONS.forEach(option => {
+                                        const optRatio = parseAspectRatio(option.value);
+                                        const diff = Math.abs(ratio - optRatio);
+                                        if (diff < minDiff) {
+                                            minDiff = diff;
+                                            closest = option;
+                                        }
+                                    });
+
+                                    // If close enough, use it
+                                    if (minDiff < 0.1) {
+                                        setResizeAspectRatio(closest.value);
+                                    } else {
+                                        // Default to 1:1 if weird ratio, or maybe just keep null? 
+                                        // User said "initial aspect ratio is selected by default". 
+                                        // Let's force set it to the closest match.
+                                        setResizeAspectRatio(closest.value);
+                                    }
+
+                                    // Reset other params
+                                    setResizeImagePosition({ x: 50, y: 50 });
+                                    setResizeImageScale(100);
+                                    setResizeUserPrompt('');
+                                };
+                                img.src = imageUrl;
+                            }
+                        } else {
+                            // Reset resize state when toggling off
+                            setResizeAspectRatio(null);
+                            setResizeImagePosition({ x: 50, y: 50 });
+                            setResizeImageScale(100);
+                            setResizeUserPrompt('');
+                        }
+                    }}
+                    className={`flex items-center gap-1.5 px-3 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)] font-raleway font-normal text-sm ${isResizeMode ? 'text-theme-text border-theme-text' : 'text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text'}`}
+                    onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'resize-tooltip')}
+                    onMouseLeave={() => hideHoverTooltip('resize-tooltip')}
+                >
+                    <Scaling className="w-4 h-4" />
+                    Resize
+                </button>
+                <TooltipPortal id="resize-tooltip">
+                    Change aspect ratio
+                </TooltipPortal>
+            </div>
+
+            {isMaskToolbarVisible && (
+                <>
+                    {/* Brush size control */}
+                    <div className={`flex items-center gap-1.5 px-2 h-8 rounded-lg border border-theme-dark prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)]`}>
+                        <span className="text-theme-white text-sm font-raleway font-normal">Size:</span>
+                        <input
+                            type="range"
+                            min="2"
+                            max="200"
+                            value={brushSize}
+                            onChange={(e) => setBrushSize(Number(e.target.value))}
+                            className="w-12 h-1 bg-theme-white rounded-lg appearance-none cursor-pointer"
+                            style={{
+                                background: `linear-gradient(to right, rgba(184, 192, 192, 1) 0%, rgba(184, 192, 192, 1) ${(brushSize - 2) / 198 * 100}%, rgba(184, 192, 192, 0.3) ${(brushSize - 2) / 198 * 100}%, rgba(184, 192, 192, 0.3) 100%)`,
+                                WebkitAppearance: 'none',
+                                appearance: 'none',
+                                height: '4px',
+                                outline: 'none',
+                                borderRadius: '5px'
+                            }}
+                            title="Adjust brush size"
+                        />
+                        <div className="flex items-center gap-0.5">
+                            <input
+                                type="number"
+                                min="2"
+                                max="200"
+                                value={brushSize || ''}
+                                onChange={(e) => {
+                                    const val = e.target.value === '' ? 0 : parseInt(e.target.value);
+                                    if (!isNaN(val)) setBrushSize(Math.min(val, 200));
+                                }}
+                                onBlur={() => {
+                                    setBrushSize(Math.max(2, brushSize));
+                                }}
+                                className="w-6 bg-transparent text-theme-white text-sm font-raleway font-normal text-center focus:outline-none appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            />
+                            <span className="text-theme-white text-sm font-raleway font-normal">px</span>
+                        </div>
+                    </div>
+
+                    <button
+                        onClick={undoStroke}
+                        className="flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-theme-white border-theme-dark hover:text-theme-text disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Undo last stroke"
+                        disabled={allPaths.length === 0}
+                    >
+                        <Undo2 className="w-4 h-4" />
+                    </button>
+                    <button
+                        onClick={redoStroke}
+                        disabled={redoStack.length === 0}
+                        className="flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-theme-white border-theme-dark hover:text-theme-text disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Redo last stroke"
+                    >
+                        <Redo2 className="w-4 h-4" />
+                    </button>
+                    <div className="relative">
+                        <button
+                            onClick={() => setIsEraseMode(!isEraseMode)}
+                            className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] ${isEraseMode ? 'text-theme-text border-theme-text bg-theme-text/10' : 'text-theme-white border-theme-dark hover:text-theme-text'}`}
+                            onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'eraser-tooltip')}
+                            onMouseLeave={() => hideHoverTooltip('eraser-tooltip')}
+                        >
+                            <Eraser className="w-3.5 h-3.5" />
+                        </button>
+                        <TooltipPortal id="eraser-tooltip">
+                            Erase
+                        </TooltipPortal>
+                    </div>
+                    {/* Reset mask button - only show when mask exists */}
+                    {maskData && (
+                        <div className="relative">
+                            <button
+                                onClick={clearMask}
+                                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-theme-white border-theme-dark hover:text-theme-text`}
+                                onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'reset-mask-tooltip')}
+                                onMouseLeave={() => hideHoverTooltip('reset-mask-tooltip')}
+                            >
+                                <RotateCcw className="w-4 h-4" />
+                            </button>
+                            <TooltipPortal id="reset-mask-tooltip">
+                                Reset mask
+                            </TooltipPortal>
+                        </div>
+                    )}
+                </>
+            )}
+        </div>
+    );
+
     return createPortal(
         <>
             {/* Save Prompt Modal */}
@@ -1534,200 +1729,11 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                             </div>
                         )}
 
-                        {/* Precise Edit Toolbar - Below Image */}
-                        <div className="w-full flex justify-start gap-1 transition-all duration-200 animate-in fade-in slide-in-from-top-2">
-                            <div className="relative flex items-center">
-                                <button
-                                    onClick={() => {
-                                        if (isMaskToolbarVisible) setIsEraseMode(false);
-                                        setIsMaskToolbarVisible(!isMaskToolbarVisible);
-                                        // Mutual exclusivity - disable resize mode when enabling inpaint
-                                        if (!isMaskToolbarVisible) setIsResizeMode(false);
-                                    }}
-                                    className={`flex items-center gap-1.5 px-3 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)] font-raleway font-normal text-sm ${isMaskToolbarVisible ? 'text-theme-text border-theme-text' : 'text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text'}`}
-                                    onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'precise-edit-tooltip')}
-                                    onMouseLeave={() => hideHoverTooltip('precise-edit-tooltip')}
-                                >
-                                    <Wand2 className="w-4 h-4" />
-                                    Inpaint
-                                </button>
-                                <TooltipPortal id="precise-edit-tooltip">
-                                    Draw a mask
-                                </TooltipPortal>
-                                {/* Help icon with info about Ideogram requirement */}
-                                <div className="relative ml-1">
-                                    <button
-                                        type="button"
-                                        className="flex items-center justify-center w-5 h-5 rounded-full text-theme-white/60 hover:text-theme-white transition-colors duration-200"
-                                        onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'precise-edit-info-tooltip')}
-                                        onMouseLeave={() => hideHoverTooltip('precise-edit-info-tooltip')}
-                                    >
-                                        <HelpCircle className="w-3.5 h-3.5" />
-                                    </button>
-                                    <TooltipPortal id="precise-edit-info-tooltip">
-                                        <div className="max-w-[200px] text-center">
-                                            Inpaint uses Ideogram for accurate mask-based inpainting
-                                        </div>
-                                    </TooltipPortal>
-                                </div>
-                            </div>
+                        {/* Precise Edit Toolbar Helper */}
+                        {renderToolbar()}
+                    </div>
 
-                            {/* Resize Button */}
-                            <div className="relative flex items-center">
-                                <button
-                                    onClick={() => {
-                                        const newMode = !isResizeMode;
-                                        setIsResizeMode(newMode);
-                                        // Mutual exclusivity - disable inpaint mode when enabling resize
-                                        if (newMode) {
-                                            setIsMaskToolbarVisible(false);
-                                            setIsEraseMode(false);
-
-                                            // Auto-detect and set aspect ratio
-                                            if (imageUrl) {
-                                                const img = new Image();
-                                                img.onload = () => {
-                                                    const ratio = img.naturalWidth / img.naturalHeight;
-                                                    // Find closest aspect ratio option
-                                                    let closest = GEMINI_ASPECT_RATIO_OPTIONS[0];
-                                                    let minDiff = Infinity;
-
-                                                    GEMINI_ASPECT_RATIO_OPTIONS.forEach(option => {
-                                                        const optRatio = parseAspectRatio(option.value);
-                                                        const diff = Math.abs(ratio - optRatio);
-                                                        if (diff < minDiff) {
-                                                            minDiff = diff;
-                                                            closest = option;
-                                                        }
-                                                    });
-
-                                                    // If close enough, use it
-                                                    if (minDiff < 0.1) {
-                                                        setResizeAspectRatio(closest.value);
-                                                    } else {
-                                                        // Default to 1:1 if weird ratio, or maybe just keep null? 
-                                                        // User said "initial aspect ratio is selected by default". 
-                                                        // Let's force set it to the closest match.
-                                                        setResizeAspectRatio(closest.value);
-                                                    }
-
-                                                    // Reset other params
-                                                    setResizeImagePosition({ x: 50, y: 50 });
-                                                    setResizeImageScale(100);
-                                                    setResizeUserPrompt('');
-                                                };
-                                                img.src = imageUrl;
-                                            }
-                                        } else {
-                                            // Reset resize state when toggling off
-                                            setResizeAspectRatio(null);
-                                            setResizeImagePosition({ x: 50, y: 50 });
-                                            setResizeImageScale(100);
-                                            setResizeUserPrompt('');
-                                        }
-                                    }}
-                                    className={`flex items-center gap-1.5 px-3 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)] font-raleway font-normal text-sm ${isResizeMode ? 'text-theme-text border-theme-text' : 'text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text'}`}
-                                    onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'resize-tooltip')}
-                                    onMouseLeave={() => hideHoverTooltip('resize-tooltip')}
-                                >
-                                    <Scaling className="w-4 h-4" />
-                                    Resize
-                                </button>
-                                <TooltipPortal id="resize-tooltip">
-                                    Change aspect ratio
-                                </TooltipPortal>
-                            </div>
-
-                            {isMaskToolbarVisible && (
-                                <>
-                                    {/* Brush size control */}
-                                    <div className={`flex items-center gap-1.5 px-2 h-8 rounded-lg border border-theme-dark prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)]`}>
-                                        <span className="text-theme-white text-sm font-raleway font-normal">Size:</span>
-                                        <input
-                                            type="range"
-                                            min="2"
-                                            max="200"
-                                            value={brushSize}
-                                            onChange={(e) => setBrushSize(Number(e.target.value))}
-                                            className="w-12 h-1 bg-theme-white rounded-lg appearance-none cursor-pointer"
-                                            style={{
-                                                background: `linear-gradient(to right, rgba(184, 192, 192, 1) 0%, rgba(184, 192, 192, 1) ${(brushSize - 2) / 198 * 100}%, rgba(184, 192, 192, 0.3) ${(brushSize - 2) / 198 * 100}%, rgba(184, 192, 192, 0.3) 100%)`,
-                                                WebkitAppearance: 'none',
-                                                appearance: 'none',
-                                                height: '4px',
-                                                outline: 'none',
-                                                borderRadius: '5px'
-                                            }}
-                                            title="Adjust brush size"
-                                        />
-                                        <div className="flex items-center gap-0.5">
-                                            <input
-                                                type="number"
-                                                min="2"
-                                                max="200"
-                                                value={brushSize || ''}
-                                                onChange={(e) => {
-                                                    const val = e.target.value === '' ? 0 : parseInt(e.target.value);
-                                                    if (!isNaN(val)) setBrushSize(Math.min(val, 200));
-                                                }}
-                                                onBlur={() => {
-                                                    setBrushSize(Math.max(2, brushSize));
-                                                }}
-                                                className="w-6 bg-transparent text-theme-white text-sm font-raleway font-normal text-center focus:outline-none appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                            />
-                                            <span className="text-theme-white text-sm font-raleway font-normal">px</span>
-                                        </div>
-                                    </div>
-
-                                    <button
-                                        onClick={undoStroke}
-                                        className="flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-theme-white border-theme-dark hover:text-theme-text disabled:opacity-50 disabled:cursor-not-allowed"
-                                        title="Undo last stroke"
-                                        disabled={allPaths.length === 0}
-                                    >
-                                        <Undo2 className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={redoStroke}
-                                        disabled={redoStack.length === 0}
-                                        className="flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-theme-white border-theme-dark hover:text-theme-text disabled:opacity-50 disabled:cursor-not-allowed"
-                                        title="Redo last stroke"
-                                    >
-                                        <Redo2 className="w-4 h-4" />
-                                    </button>
-                                    <div className="relative">
-                                        <button
-                                            onClick={() => setIsEraseMode(!isEraseMode)}
-                                            className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] ${isEraseMode ? 'text-theme-text border-theme-text bg-theme-text/10' : 'text-theme-white border-theme-dark hover:text-theme-text'}`}
-                                            onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'eraser-tooltip')}
-                                            onMouseLeave={() => hideHoverTooltip('eraser-tooltip')}
-                                        >
-                                            <Eraser className="w-3.5 h-3.5" />
-                                        </button>
-                                        <TooltipPortal id="eraser-tooltip">
-                                            Erase
-                                        </TooltipPortal>
-                                    </div>
-                                    {/* Reset mask button - only show when mask exists */}
-                                    {maskData && (
-                                        <div className="relative">
-                                            <button
-                                                onClick={clearMask}
-                                                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-theme-white border-theme-dark hover:text-theme-text`}
-                                                onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'reset-mask-tooltip')}
-                                                onMouseLeave={() => hideHoverTooltip('reset-mask-tooltip')}
-                                            >
-                                                <RotateCcw className="w-4 h-4" />
-                                            </button>
-                                            <TooltipPortal id="reset-mask-tooltip">
-                                                Reset mask
-                                            </TooltipPortal>
-                                        </div>
-                                    )}
-                                </>
-                            )}
-                        </div>
-                    </div>    {/* Right Column - Form */}
+                    {/* Right Column - Form */}
                     <div className={`flex flex-col ${isResizeMode ? 'w-full' : 'flex-1 w-full md:min-w-[720px]'}`}>
                         <div className="flex items-center justify-between mb-1">
                             <h2 className="text-lg font-raleway text-theme-text flex items-center gap-2">
@@ -1750,28 +1756,13 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                 {/* Top Section: Image + Aspect Ratio Sidebar */}
                                 <div className="flex flex-row flex-1 overflow-hidden min-h-0 gap-2">
                                     {/* Center: Image Canvas */}
-                                    <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden bg-theme-black/20 rounded-xl border border-theme-dark/50">
+                                    <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden bg-theme-black/20 rounded-xl">
                                         {resizeAspectRatio && resizeLayoutInfo ? (
-                                            <div className="flex flex-col items-center justify-center gap-3 w-full h-full p-2 relative">
-                                                {/* Scale slider - Floating Top Right */}
-                                                <div className="absolute top-4 right-4 z-10 bg-theme-black/80 backdrop-blur-md px-3 py-2 rounded-xl border border-theme-dark flex items-center gap-3 shadow-lg">
-                                                    <ZoomOut className="w-4 h-4 text-theme-white flex-shrink-0" />
-                                                    <input
-                                                        type="range"
-                                                        min={resizeMinScale}
-                                                        max={200}
-                                                        value={resizeImageScale}
-                                                        onChange={(e) => setResizeImageScale(Number(e.target.value))}
-                                                        className="w-24 h-1.5 bg-theme-dark rounded-lg appearance-none cursor-pointer accent-theme-text"
-                                                    />
-                                                    <ZoomIn className="w-4 h-4 text-theme-white flex-shrink-0" />
-                                                    <span className="text-xs font-raleway text-theme-white w-8 text-right font-variant-numeric tabular-nums">{resizeImageScale}%</span>
-                                                </div>
-
+                                            <div className="flex flex-col items-center justify-center gap-2 w-full h-full p-2 overflow-y-auto">
                                                 {/* Interactive Canvas Preview */}
                                                 <div
                                                     ref={resizeCanvasRef}
-                                                    className="relative shadow-2xl border border-theme-mid/50 overflow-hidden"
+                                                    className="relative shadow-2xl border-2 border-theme-text overflow-hidden rounded-xl flex-shrink-0"
                                                     style={(() => {
                                                         const targetRatio = parseAspectRatio(resizeAspectRatio);
                                                         const isWide = targetRatio > 1;
@@ -1801,7 +1792,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         }}
                                                         onMouseDown={handleResizeDragStart}
                                                         onTouchStart={handleResizeDragStart}
-                                                        className="rounded-lg overflow-hidden shadow-lg ring-1 ring-theme-text/30"
+                                                        className="rounded-lg overflow-hidden shadow-lg ring-2 ring-theme-text/50"
                                                     >
                                                         <img
                                                             src={imageUrl}
@@ -1809,12 +1800,37 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                             className="w-full h-full object-cover pointer-events-none"
                                                             draggable={false}
                                                         />
+                                                        <div className="absolute top-2 left-2 bg-theme-black/80 backdrop-blur-sm px-2 py-1 rounded-md border border-theme-dark text-xs font-raleway text-theme-white flex items-center gap-1">
+                                                            <Move className="w-3 h-3" />
+                                                            Drag to position
+                                                        </div>
                                                     </div>
                                                 </div>
 
-                                                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-theme-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-theme-dark/50 text-xs font-raleway text-theme-white/90 flex items-center gap-1.5 pointer-events-none">
-                                                    <Move className="w-3 h-3 text-theme-mid" />
-                                                    Drag image to position
+                                                {/* Scale slider below image - matching ResizeModal */}
+                                                <div className="w-full max-w-[500px] flex items-center gap-3 px-2 flex-shrink-0">
+                                                    <ZoomOut className="w-4 h-4 text-theme-white flex-shrink-0" />
+                                                    <input
+                                                        type="range"
+                                                        min={resizeMinScale}
+                                                        max={200}
+                                                        value={resizeImageScale}
+                                                        onChange={(e) => setResizeImageScale(Number(e.target.value))}
+                                                        className="flex-1 h-2 bg-theme-dark rounded-lg appearance-none cursor-pointer accent-theme-text"
+                                                    />
+                                                    <ZoomIn className="w-4 h-4 text-theme-white flex-shrink-0" />
+                                                    <span className="text-xs font-raleway text-theme-white w-12 text-right">{resizeImageScale}%</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setResizeImageScale(100);
+                                                            setResizeImagePosition({ x: 50, y: 50 });
+                                                        }}
+                                                        className="p-1.5 rounded-lg border border-theme-dark hover:border-theme-mid bg-theme-black/50 hover:bg-theme-black transition-colors"
+                                                        title="Reset"
+                                                    >
+                                                        <RotateCcw className="w-4 h-4 text-theme-white" />
+                                                    </button>
                                                 </div>
                                             </div>
                                         ) : (
@@ -1880,7 +1896,13 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
 
                                 {/* Bottom Section: Prompt Bar (Full Width) */}
                                 <div className="flex-shrink-0 mt-2">
-                                    <div className="flex flex-col gap-2 w-full max-w-5xl mx-auto">
+                                    {/* Also render toolbar in Resize Mode */}
+                                    {isResizeMode && (
+                                        <div className="w-full flex justify-start mb-2">
+                                            {renderToolbar()}
+                                        </div>
+                                    )}
+                                    <div className="flex flex-col gap-2 w-full">
 
                                         <div
                                             className={`relative flex flex-col rounded-xl transition-colors duration-200 ${glass.prompt} focus-within:border-theme-mid ${isDragActive ? 'border border-n-text shadow-[0_0_32px_rgba(255,255,255,0.25)]' : ''}`}
@@ -1906,7 +1928,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                     id="resize-prompt"
                                                     value={resizeUserPrompt}
                                                     onChange={(e) => setResizeUserPrompt(e.target.value)}
-                                                    className="flex-1 min-h-[100px] bg-transparent border-none focus:ring-0 text-theme-text placeholder:text-n-light font-raleway text-base px-3 py-2 resize-none focus:outline-none"
+                                                    className="flex-1 min-h-[72px] bg-transparent border-none focus:ring-0 text-theme-text placeholder:text-n-light font-raleway text-base px-3 py-2 resize-none focus:outline-none"
                                                     placeholder="e.g. Make it a sunny day, Add a red hat..."
                                                     disabled={isLoading}
                                                 />
@@ -1933,7 +1955,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                             onDrop={handleAvatarButtonDrop}
                                                             onMouseEnter={() => setIsAvatarButtonHovered(true)}
                                                             onMouseLeave={() => setIsAvatarButtonHovered(false)}
-                                                            className={`${glass.promptBorderless} ${isDraggingOverAvatarButton || avatarSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid ${selectedAvatar || avatarSelection ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                            className={`${glass.promptBorderless} ${isDraggingOverAvatarButton || avatarSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid ${selectedAvatar || avatarSelection ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-16 lg:w-16 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                                                             onPointerMove={onPointerMove}
                                                             onPointerEnter={onPointerEnter}
                                                             onPointerLeave={onPointerLeave}
@@ -2023,7 +2045,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                             onDrop={handleProductButtonDrop}
                                                             onMouseEnter={() => setIsProductButtonHovered(true)}
                                                             onMouseLeave={() => setIsProductButtonHovered(false)}
-                                                            className={`${glass.promptBorderless} ${isDraggingOverProductButton || productSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid ${selectedProduct || productSelection ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                            className={`${glass.promptBorderless} ${isDraggingOverProductButton || productSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid ${selectedProduct || productSelection ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-16 lg:w-16 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                                                             onPointerMove={onPointerMove}
                                                             onPointerEnter={onPointerEnter}
                                                             onPointerLeave={onPointerLeave}
@@ -2100,7 +2122,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                             onMouseEnter={() => setIsStyleButtonHovered(true)}
                                                             onMouseLeave={() => setIsStyleButtonHovered(false)}
                                                             onClick={styleHandlers.handleStyleModalOpen}
-                                                            className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                            className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-16 lg:w-16 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                                                             onPointerMove={onPointerMove}
                                                             onPointerEnter={onPointerEnter}
                                                             onPointerLeave={onPointerLeave}
@@ -2227,9 +2249,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                             <SettingsMenu {...settingsProps} />
                                                         </Suspense>
                                                     </div>
-                                                </div>
 
-                                                <div className="flex items-center gap-3">
                                                     {/* Batch Size (Visible on larger screens) */}
                                                     <div
                                                         className="relative hidden lg:flex items-center"
@@ -2265,17 +2285,17 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                             Batch size
                                                         </TooltipPortal>
                                                     </div>
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={handleSubmit}
-                                                        disabled={!resizeAspectRatio || isLoading}
-                                                        className={`${buttons.primary} px-6 py-2 rounded-lg flex items-center gap-2 font-raleway text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 shadow-lg glow-sm`}
-                                                    >
-                                                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                                                        Generate
-                                                    </button>
                                                 </div>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={handleSubmit}
+                                                    disabled={!resizeAspectRatio || isLoading}
+                                                    className={`${buttons.primary} px-6 py-2 rounded-lg flex items-center gap-2 font-raleway text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 shadow-lg glow-sm`}
+                                                >
+                                                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                                    Generate
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -2316,7 +2336,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                 value={prompt}
                                                 onChange={(e) => setPrompt(e.target.value)}
                                                 onKeyDown={handleKeyDown}
-                                                className="flex-1 min-h-[100px] bg-transparent border-none focus:ring-0 text-theme-text placeholder:text-n-light font-raleway text-base px-3 py-2 resize-none focus:outline-none"
+                                                className="flex-1 min-h-[72px] bg-transparent border-none focus:ring-0 text-theme-text placeholder:text-n-light font-raleway text-base px-3 py-2 resize-none focus:outline-none"
                                                 placeholder="e.g. Make it a sunny day, Add a red hat..."
                                                 disabled={isLoading}
                                             />
@@ -2343,7 +2363,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         onDrop={handleAvatarButtonDrop}
                                                         onMouseEnter={() => setIsAvatarButtonHovered(true)}
                                                         onMouseLeave={() => setIsAvatarButtonHovered(false)}
-                                                        className={`${glass.promptBorderless} ${isDraggingOverAvatarButton || avatarSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid ${selectedAvatar || avatarSelection ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                        className={`${glass.promptBorderless} ${isDraggingOverAvatarButton || avatarSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid ${selectedAvatar || avatarSelection ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-16 lg:w-16 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                                                         onPointerMove={onPointerMove}
                                                         onPointerEnter={onPointerEnter}
                                                         onPointerLeave={onPointerLeave}
@@ -2433,7 +2453,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         onDrop={handleProductButtonDrop}
                                                         onMouseEnter={() => setIsProductButtonHovered(true)}
                                                         onMouseLeave={() => setIsProductButtonHovered(false)}
-                                                        className={`${glass.promptBorderless} ${isDraggingOverProductButton || productSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid ${selectedProduct || productSelection ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                        className={`${glass.promptBorderless} ${isDraggingOverProductButton || productSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid ${selectedProduct || productSelection ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-16 lg:w-16 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                                                         onPointerMove={onPointerMove}
                                                         onPointerEnter={onPointerEnter}
                                                         onPointerLeave={onPointerLeave}
@@ -2510,7 +2530,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         onMouseEnter={() => setIsStyleButtonHovered(true)}
                                                         onMouseLeave={() => setIsStyleButtonHovered(false)}
                                                         onClick={styleHandlers.handleStyleModalOpen}
-                                                        className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                        className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-16 lg:w-16 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                                                         onPointerMove={onPointerMove}
                                                         onPointerEnter={onPointerEnter}
                                                         onPointerLeave={onPointerLeave}

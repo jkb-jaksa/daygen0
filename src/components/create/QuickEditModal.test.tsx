@@ -113,6 +113,19 @@ describe('QuickEditModal', () => {
 
     beforeAll(() => {
         global.URL.createObjectURL = vi.fn(() => 'blob:test');
+
+        // Mock Image for resize auto-detection
+        global.Image = class {
+            onload: (() => void) | null = null;
+            naturalWidth = 1000;
+            naturalHeight = 1000;
+            _src = '';
+            set src(val: string) {
+                this._src = val;
+                setTimeout(() => this.onload?.(), 10);
+            }
+            get src() { return this._src; }
+        } as any;
     });
 
     afterAll(() => {
@@ -187,5 +200,38 @@ describe('QuickEditModal', () => {
             productId: undefined,
             styleId: undefined,
         });
+    });
+
+    it('keeps Resize toggle visible when active', async () => {
+        const user = userEvent.setup();
+        render(
+            <MemoryRouter>
+                <QuickEditModal {...defaultProps} />
+            </MemoryRouter>
+        );
+
+        // Resize button should be visible initially
+        const resizeBtn = screen.getByText('Resize').closest('button');
+        expect(resizeBtn).toBeInTheDocument();
+
+        // Click to enable resize mode
+        await user.click(resizeBtn!);
+
+        // Wait for potential re-render/animation
+        // Resize button should STILL be visible (in the new location)
+        const resizeBtnActive = screen.getByText('Resize').closest('button');
+        expect(resizeBtnActive).toBeInTheDocument();
+
+        // It shoud have active styling (we can check class or just that it exists)
+        expect(resizeBtnActive).toHaveClass('text-theme-text'); // Based on logic: isResizeMode ? 'text-theme-text ...'
+
+        // Click again to disable
+        await user.click(resizeBtnActive!);
+
+        // Should be back to normal state
+        const resizeBtnInactive = screen.getByText('Resize').closest('button');
+        expect(resizeBtnInactive).toBeInTheDocument();
+        expect(resizeBtnInactive).not.toHaveClass('text-theme-text');
+        expect(resizeBtnInactive).toHaveClass('text-theme-white');
     });
 });
