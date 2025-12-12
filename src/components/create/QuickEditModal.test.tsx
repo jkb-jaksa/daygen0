@@ -140,7 +140,7 @@ describe('QuickEditModal', () => {
             stroke: vi.fn(),
             measureText: vi.fn(() => ({ width: 0 })),
             fillText: vi.fn(),
-        })) as any;
+        })) as unknown as any; // eslint-disable-line @typescript-eslint/no-explicit-any
         HTMLCanvasElement.prototype.toDataURL = vi.fn(() => 'data:image/png;base64,mock');
 
         // Mock Image for resize auto-detection
