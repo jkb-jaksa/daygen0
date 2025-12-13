@@ -54,3 +54,9 @@ export async function revertSegment(
         body: { versionId },
     });
 }
+
+export async function stitchTimeline(jobId: string): Promise<any> {
+    return apiFetch<any>(`/api/timeline/${jobId}/stitch`, {
+        method: 'POST',
+    });
+}

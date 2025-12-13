@@ -4,9 +4,10 @@ import { useAudioSync } from '../../hooks/useAudioSync';
 import { SceneBlock } from './SceneBlock';
 import { PlaceholderScene } from './PlaceholderScene';
 import { getJob } from '../../api/jobs';
-import { Play, Pause, Download, Loader2 } from 'lucide-react';
+import { Play, Pause, Download, Loader2, RotateCcw } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import { stitchTimeline as apiStitchTimeline } from '../../api/timeline';
 
 interface SegmentResponse {
     id?: string;
@@ -27,7 +28,7 @@ interface JobResponse {
 }
 
 export const ReelsEditorLayout = () => {
-    const { segments, isPlaying, setIsPlaying, currentTime, musicUrl, finalVideoUrl, musicVolume, jobId, jobDuration, setSegments, syncSegments, setMusicUrl, setFinalVideoUrl, setCurrentTime, setMusicVolume, setJobStatus, isWaitingForSegment, updateSegmentByIndex } = useTimelineStore();
+    const { segments, isPlaying, setIsPlaying, currentTime, musicUrl, finalVideoUrl, musicVolume, jobId, jobDuration, setSegments, syncSegments, setMusicUrl, setFinalVideoUrl, setCurrentTime, setMusicVolume, setJobStatus, jobStatus, isWaitingForSegment, updateSegmentByIndex } = useTimelineStore();
     const { audioRef } = useAudioSync();
 
     const musicRef = useRef<HTMLAudioElement | null>(null);
@@ -36,6 +37,27 @@ export const ReelsEditorLayout = () => {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const [progress, setProgress] = useState(0);
+    const [isStitching, setIsStitching] = useState(false);
+
+    const handleStitch = async () => {
+        if (!jobId) return;
+        try {
+            setIsStitching(true);
+            await apiStitchTimeline(jobId);
+            // The polling/realtime will update the status to STITCHING -> COMPLETED
+        } catch (error) {
+            console.error("Failed to trigger stitch:", error);
+            setIsStitching(false);
+            alert("Failed to start video re-assembly. Please try again.");
+        }
+    };
+
+    // Reset stitching state when job is no longer processing (e.g. completes or fails)
+    useEffect(() => {
+        if (jobStatus === 'COMPLETED' || jobStatus === 'FAILED') {
+            setIsStitching(false);
+        }
+    }, [jobStatus]);
 
     // 1. Supabase Realtime: Instant Segment Updates
     useEffect(() => {
@@ -390,6 +412,16 @@ export const ReelsEditorLayout = () => {
                         className="flex items-center gap-2 px-4 py-2 lg:px-6 lg:py-3 bg-white text-black rounded-full font-bold hover:bg-zinc-200 transition-colors text-sm lg:text-base"
                     >
                         {isPlaying ? <><Pause size={18} /> Pause</> : <><Play size={18} /> Play Preview</>}
+                    </button>
+
+                    <button
+                        onClick={handleStitch}
+                        disabled={isStitching}
+                        className="flex items-center gap-2 px-4 py-2 lg:px-6 lg:py-3 bg-zinc-800 text-white rounded-full font-medium hover:bg-zinc-700 transition-colors text-sm lg:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Re-assemble video with latest changes"
+                    >
+                        <RotateCcw size={18} className={isStitching ? "animate-spin" : ""} />
+                        {isStitching ? "Stitching..." : "Update Final Video"}
                     </button>
 
                     <button
