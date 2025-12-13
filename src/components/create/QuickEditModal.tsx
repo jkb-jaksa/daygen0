@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { X, Sparkles, Edit, Loader2, Plus, Settings, User, Package, Scan, Minus, Palette, LayoutGrid, Copy, Bookmark, BookmarkPlus, Wand2, Undo2, Redo2, Eraser, RotateCcw, Scaling, ZoomIn, ZoomOut, Move } from 'lucide-react';
+import { X, Sparkles, Edit, Loader2, Plus, Settings, User, Package, Scan, Minus, Palette, LayoutGrid, Copy, Bookmark, BookmarkPlus, Wand2, Undo2, Redo2, Eraser, RotateCcw, Scaling, ZoomIn, ZoomOut, Move, Crop } from 'lucide-react';
 import { debugLog, debugError } from '../../utils/debug';
 import { glass, buttons, tooltips } from '../../styles/designSystem';
 import { useReferenceHandlers } from './hooks/useReferenceHandlers';
@@ -584,6 +584,15 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
             canMoveY: true,
         };
     }, [resizeBaseLayoutInfo, resizeImageScale]);
+
+    // Compute whether this is a pure crop (no AI fill needed)
+    // Pure crop = image fully covers the canvas (both dimensions >= 100%)
+    const resizeImageCoversCanvas = resizeLayoutInfo
+        ? resizeLayoutInfo.imageWidthPercent >= 100 && resizeLayoutInfo.imageHeightPercent >= 100
+        : false;
+    const resizeHasUserPrompt = resizeUserPrompt.trim().length > 0;
+    // Show "Crop" only when: image covers full canvas AND no user prompt
+    const resizeIsPureCrop = resizeImageCoversCanvas && !resizeHasUserPrompt;
 
     const resizeMinScale = 20;
 
@@ -1745,8 +1754,28 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                     style={(() => {
                                                         const targetRatio = parseAspectRatio(resizeAspectRatio);
                                                         const isWide = targetRatio > 1;
-                                                        const maxWidth = isWide ? 500 : 280 * targetRatio;
-                                                        const maxHeight = isWide ? 500 / targetRatio : 280;
+
+                                                        let maxWidth: number, maxHeight: number;
+                                                        if (isWide) {
+                                                            // For wide images, constrain by both width (500) and height (320)
+                                                            // This prevents "squarish" wide formats like 5:4 from being too tall (e.g. 400px)
+                                                            const maxBoxWidth = 500;
+                                                            const maxBoxHeight = 320;
+
+                                                            if (targetRatio > maxBoxWidth / maxBoxHeight) {
+                                                                // Very wide (e.g. 16:9) -> Width limited
+                                                                maxWidth = maxBoxWidth;
+                                                                maxHeight = maxBoxWidth / targetRatio;
+                                                            } else {
+                                                                // Taller wide (e.g. 5:4, 4:3) -> Height limited
+                                                                maxHeight = maxBoxHeight;
+                                                                maxWidth = maxBoxHeight * targetRatio;
+                                                            }
+                                                        } else {
+                                                            // Vertical/Square -> Height limited (existing logic)
+                                                            maxWidth = 280 * targetRatio;
+                                                            maxHeight = 280;
+                                                        }
                                                         return {
                                                             aspectRatio: resizeAspectRatio.replace(':', '/'),
                                                             width: `${maxWidth}px`,
@@ -1799,17 +1828,23 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                     />
                                                     <ZoomIn className="w-4 h-4 text-theme-white flex-shrink-0" />
                                                     <span className="text-xs font-raleway text-theme-white w-12 text-right">{resizeImageScale}%</span>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setResizeImageScale(100);
-                                                            setResizeImagePosition({ x: 50, y: 50 });
-                                                        }}
-                                                        className="p-1.5 rounded-lg border border-theme-dark hover:border-theme-mid bg-theme-black/50 hover:bg-theme-black transition-colors"
-                                                        title="Reset"
-                                                    >
-                                                        <RotateCcw className="w-4 h-4 text-theme-white" />
-                                                    </button>
+                                                    <div className="relative">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setResizeImageScale(100);
+                                                                setResizeImagePosition({ x: 50, y: 50 });
+                                                            }}
+                                                            className="flex items-center justify-center text-theme-white/70 hover:text-theme-white transition-colors"
+                                                            onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'resize-reset-tooltip')}
+                                                            onMouseLeave={() => hideHoverTooltip('resize-reset-tooltip')}
+                                                        >
+                                                            <RotateCcw className="w-3 h-3" />
+                                                        </button>
+                                                        <TooltipPortal id="resize-reset-tooltip">
+                                                            Reset zoom
+                                                        </TooltipPortal>
+                                                    </div>
                                                 </div>
                                             </div>
                                         ) : (
@@ -1906,7 +1941,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                     value={resizeUserPrompt}
                                                     onChange={(e) => setResizeUserPrompt(e.target.value)}
                                                     className="flex-1 bg-transparent border-none focus:ring-0 text-theme-text placeholder:text-n-light font-raleway text-base resize-none focus:outline-none leading-tight px-3 pt-3 pb-2"
-                                                    placeholder="Describe what you want to create..."
+                                                    placeholder="Enter your prompt here (optional)."
                                                     disabled={isLoading}
                                                 />
 
@@ -1963,28 +1998,18 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         </div>
                                                     )}
 
-                                                    {/* Model Selector */}
+                                                    {/* Model Selector - Locked to Gemini 3 Pro for resize */}
                                                     <div className="relative">
                                                         <Suspense fallback={null}>
                                                             <ModelSelector
-                                                                selectedModel={effectiveModel}
-                                                                onModelChange={(model) => {
-                                                                    if (!isMaskToolbarVisible) {
-                                                                        setUserSelectedModel(model);
-                                                                    }
-                                                                }}
+                                                                selectedModel="gemini-3.0-pro-image"
+                                                                onModelChange={() => { }}
+                                                                readOnly={true}
                                                                 isGenerating={isLoading}
                                                                 activeCategory="image"
-                                                                hasReferences={referenceFiles.length > 0}
-                                                                allowedModels={['ideogram', 'gemini-3.0-pro-image']}
-                                                                disabledModels={isMaskToolbarVisible ? ['gemini-3.0-pro-image'] : undefined}
-                                                                readOnly={isMaskToolbarVisible}
+                                                                allowedModels={['gemini-3.0-pro-image']}
                                                                 customDescriptions={{
-                                                                    'gemini-3.0-pro-image': 'Best image editing (text and reference).',
-                                                                    'ideogram': 'Best inpainting.',
-                                                                }}
-                                                                customTooltips={{
-                                                                    'ideogram': 'Inpaint uses Ideogram for precise editing. If you don\'t want to draw a mask for precise editing, disable Inpaint mode.',
+                                                                    'gemini-3.0-pro-image': 'Resize always uses Gemini 3 Pro for AI outpainting.',
                                                                 }}
                                                             />
                                                         </Suspense>
@@ -2257,15 +2282,15 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                     </button>
                                                 </div>
 
-                                                {/* Generate button */}
+                                                {/* Extend/Crop button */}
                                                 <button
                                                     type="button"
                                                     onClick={handleSubmit}
                                                     disabled={!resizeAspectRatio || isLoading}
                                                     className={`${buttons.primary} px-6 rounded-lg flex items-center gap-2 font-raleway text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 shadow-lg glow-sm self-end`}
                                                 >
-                                                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                                                    Generate
+                                                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : resizeIsPureCrop ? <Crop className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+                                                    {resizeIsPureCrop ? 'Crop' : 'Extend'}
                                                 </button>
                                             </div>
                                         </div>
