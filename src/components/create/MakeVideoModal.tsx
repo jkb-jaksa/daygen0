@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Sparkles, Settings, Plus, Scan, Minus, Video, Copy, Bookmark, BookmarkPlus, User, Package, Palette, LayoutGrid, Loader2 } from 'lucide-react';
+import { X, Sparkles, Settings, Plus, Scan, Minus, Video, Copy, Bookmark, BookmarkPlus, User, Package, Palette, LayoutGrid, Loader2, Mic } from 'lucide-react';
 import { glass, buttons, tooltips } from '../../styles/designSystem';
 import { useReferenceHandlers } from './hooks/useReferenceHandlers';
 import { useParallaxHover } from '../../hooks/useParallaxHover';
@@ -16,6 +16,7 @@ import type { GalleryImageLike } from './types';
 import type { StoredStyle } from '../styles/types';
 import { useStyleHandlers } from './hooks/useStyleHandlers';
 import AvatarPickerPortal from './AvatarPickerPortal';
+import { VoiceSelector } from '../shared/VoiceSelector';
 
 // Lazy load components to avoid circular dependencies and reduce bundle size
 const SettingsMenu = lazy(() => import('./SettingsMenu'));
@@ -182,6 +183,32 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
     const [isAvatarButtonHovered, setIsAvatarButtonHovered] = useState(false);
     const [isProductButtonHovered, setIsProductButtonHovered] = useState(false);
     const [isStyleButtonHovered, setIsStyleButtonHovered] = useState(false);
+
+    // Voice selection state
+    const [isVoiceDropdownOpen, setIsVoiceDropdownOpen] = useState(false);
+    const [selectedVoiceId, setSelectedVoiceId] = useState<string>("");
+    const voiceButtonRef = useRef<HTMLButtonElement>(null);
+    const voiceDropdownRef = useRef<HTMLDivElement>(null);
+    const promptContainerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (isVoiceDropdownOpen &&
+                voiceDropdownRef.current &&
+                !voiceDropdownRef.current.contains(event.target as Node) &&
+                !voiceButtonRef.current?.contains(event.target as Node)) {
+                setIsVoiceDropdownOpen(false);
+            }
+        };
+
+        if (isVoiceDropdownOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isVoiceDropdownOpen]);
 
     // Drag states for Avatar/Product buttons
     const [isDraggingOverAvatarButton, setIsDraggingOverAvatarButton] = useState(false);
@@ -666,6 +693,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                     Enter your prompt
                                 </label>
                                 <div
+                                    ref={promptContainerRef}
                                     className={`relative flex flex-col rounded-xl transition-colors duration-200 ${glass.prompt} focus-within:border-theme-mid ${isDragActive ? 'border border-n-text' : ''}`}
                                     onDragOver={handleDragOver}
                                     onDragEnter={handleDragEnter}
@@ -683,8 +711,65 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                         disabled={isLoading}
                                     />
 
-                                    {/* Middle Row: Avatar, Product, Style */}
+                                    {/* Middle Row: Voice, Avatar, Product, Style */}
                                     <div className="flex items-center gap-2 border-t border-n-dark px-3 py-2">
+                                        {/* Voice Button */}
+                                        <div className="relative">
+                                            <button
+                                                type="button"
+                                                ref={voiceButtonRef}
+                                                onClick={() => setIsVoiceDropdownOpen(!isVoiceDropdownOpen)}
+                                                className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid ${selectedVoiceId ? 'hover:border-n-white' : ''} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                onPointerMove={onPointerMove}
+                                                onPointerEnter={onPointerEnter}
+                                                onPointerLeave={onPointerLeave}
+                                            >
+                                                <div className="flex-1 flex items-center justify-center lg:mt-3">
+                                                    <Mic className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
+                                                </div>
+                                                <div className="hidden lg:flex items-center gap-1">
+                                                    <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
+                                                        Voice
+                                                    </span>
+                                                </div>
+                                            </button>
+                                            {isVoiceDropdownOpen && createPortal(
+                                                <div
+                                                    ref={voiceDropdownRef}
+                                                    className={`fixed ${glass.promptDark} rounded-xl border border-theme-mid p-4 min-w-[280px] z-[10000] shadow-xl`}
+                                                    style={{
+                                                        top: voiceButtonRef.current ? `${voiceButtonRef.current.getBoundingClientRect().bottom + 8}px` : '0px',
+                                                        left: promptContainerRef.current ? `${promptContainerRef.current.getBoundingClientRect().left}px` : (voiceButtonRef.current ? `${voiceButtonRef.current.getBoundingClientRect().left}px` : '0px'),
+                                                    }}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    <VoiceSelector
+                                                        value={selectedVoiceId}
+                                                        onChange={(voiceId) => {
+                                                            setSelectedVoiceId(voiceId);
+                                                            setIsVoiceDropdownOpen(false);
+                                                        }}
+                                                        className="w-full"
+                                                    />
+                                                </div>,
+                                                document.body
+                                            )}
+                                            {selectedVoiceId && (
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSelectedVoiceId("");
+                                                    }}
+                                                    className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
+                                                    title="Remove voice"
+                                                    aria-label="Remove voice"
+                                                >
+                                                    <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
+                                                </button>
+                                            )}
+                                        </div>
+
                                         {/* Avatar Button */}
                                         <div className="relative">
                                             <button
