@@ -390,13 +390,16 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         CenterIcon = Pause;
     } else if ((!isPlaying && !hasInteracted) || hasEnded) {
         CenterIcon = Play;
+    } else if (isPlaying && showBottomControls) {
+        CenterIcon = Pause;
     }
 
     // Determine if center controls should be visible
     const isCenterVisible = (momentaryIcon === 'play') ||
         (momentaryIcon === 'pause' && showBottomControls) ||
         (!isPlaying && !hasInteracted) ||
-        hasEnded;
+        hasEnded ||
+        (isPlaying && showBottomControls);
 
     return (
         <div

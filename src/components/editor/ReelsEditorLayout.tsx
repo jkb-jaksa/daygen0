@@ -8,6 +8,7 @@ import { Play, Pause, Download, Loader2, RotateCcw } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { stitchTimeline as apiStitchTimeline } from '../../api/timeline';
+import { VersionSelector } from './VersionSelector';
 
 interface SegmentResponse {
     id?: string;
@@ -28,7 +29,7 @@ interface JobResponse {
 }
 
 export const ReelsEditorLayout = () => {
-    const { segments, isPlaying, setIsPlaying, currentTime, musicUrl, finalVideoUrl, musicVolume, jobId, jobDuration, setSegments, syncSegments, setMusicUrl, setFinalVideoUrl, setCurrentTime, setMusicVolume, setJobStatus, jobStatus, isWaitingForSegment, updateSegmentByIndex } = useTimelineStore();
+    const { segments, isPlaying, setIsPlaying, currentTime, musicUrl, finalVideoUrl, musicVolume, jobId, jobDuration, setSegments, syncSegments, setMusicUrl, setFinalVideoUrl, setCurrentTime, setMusicVolume, setJobStatus, jobStatus, isWaitingForSegment, updateSegmentByIndex, setVersions, hasChanges, markChangesSaved } = useTimelineStore();
     const { audioRef } = useAudioSync();
 
     const musicRef = useRef<HTMLAudioElement | null>(null);
@@ -38,12 +39,14 @@ export const ReelsEditorLayout = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [progress, setProgress] = useState(0);
     const [isStitching, setIsStitching] = useState(false);
+    const [isHovering, setIsHovering] = useState(false);
 
     const handleStitch = async () => {
         if (!jobId) return;
         try {
             setIsStitching(true);
             await apiStitchTimeline(jobId);
+            markChangesSaved();
             // The polling/realtime will update the status to STITCHING -> COMPLETED
         } catch (error) {
             console.error("Failed to trigger stitch:", error);
@@ -147,6 +150,11 @@ export const ReelsEditorLayout = () => {
                             setMusicUrl(musicUrl);
                             setFinalVideoUrl(job.resultUrl || null);
                         }
+                    }
+
+                    // Always sync versions if available (even if not completed, maybe partials?)
+                    if (job.versions) {
+                        setVersions(job.versions);
                     }
                 } else if (job.status === 'FAILED') {
                     console.error("Job failed", job.error);
@@ -359,7 +367,11 @@ export const ReelsEditorLayout = () => {
 
                 {/* The Phone Simulator */}
                 {/* Responsive sizing: smaller on mobile to fit in the top pane */}
-                <div className="relative w-full max-w-[200px] lg:max-w-[340px] aspect-[9/16] bg-black rounded-[1.5rem] lg:rounded-[2rem] border-4 lg:border-8 border-zinc-900 shadow-2xl overflow-hidden ring-1 ring-zinc-800">
+                <div
+                    className="relative w-full max-w-[200px] lg:max-w-[340px] aspect-[9/16] bg-black rounded-[1.5rem] lg:rounded-[2rem] border-4 lg:border-8 border-zinc-900 shadow-2xl overflow-hidden ring-1 ring-zinc-800"
+                    onMouseEnter={() => setIsHovering(true)}
+                    onMouseLeave={() => setIsHovering(false)}
+                >
 
                     {/* Main Display Layer */}
                     {activeSegment?.videoUrl ? (
@@ -393,50 +405,61 @@ export const ReelsEditorLayout = () => {
                     )}
 
                     {/* Playback Controls Overlay */}
-                    {!isPlaying && (
-                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                    {(!isPlaying || isHovering) && (
+                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-20">
                             <button
-                                onClick={() => setIsPlaying(true)}
+                                onClick={() => setIsPlaying(!isPlaying)}
                                 className="w-12 h-12 lg:w-16 lg:h-16 bg-white/90 rounded-full flex items-center justify-center hover:scale-105 transition-transform"
                             >
-                                <Play fill="black" className="ml-1" size={24} />
+                                {isPlaying ? (
+                                    <Pause fill="black" size={24} />
+                                ) : (
+                                    <Play fill="black" className="ml-1" size={24} />
+                                )}
                             </button>
                         </div>
                     )}
                 </div>
 
                 {/* Global Bottom Toolbar */}
-                <div className="mt-4 lg:absolute lg:bottom-8 flex gap-4">
-                    <button
-                        onClick={() => setIsPlaying(!isPlaying)}
-                        className="flex items-center gap-2 px-4 py-2 lg:px-6 lg:py-3 bg-white text-black rounded-full font-bold hover:bg-zinc-200 transition-colors text-sm lg:text-base"
-                    >
-                        {isPlaying ? <><Pause size={18} /> Pause</> : <><Play size={18} /> Play Preview</>}
-                    </button>
+                <div className="mt-4 lg:absolute lg:bottom-8 w-full flex justify-center items-center gap-4 px-4 pointer-events-none z-30">
+                    <div className="flex bg-zinc-900/80 backdrop-blur-md p-1.5 rounded-full border border-zinc-800 shadow-xl pointer-events-auto">
+                        {(hasChanges || isStitching) && (
+                            <>
+                                <button
+                                    onClick={handleStitch}
+                                    disabled={isStitching}
+                                    className="flex items-center gap-2 px-6 py-3 bg-zinc-800 text-white rounded-full font-medium hover:bg-zinc-700 transition-colors text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Re-assemble video with latest changes"
+                                >
+                                    <RotateCcw size={18} className={isStitching ? "animate-spin" : ""} />
+                                    {isStitching ? "Processing..." : "Update Video"}
+                                </button>
 
-                    <button
-                        onClick={handleStitch}
-                        disabled={isStitching}
-                        className="flex items-center gap-2 px-4 py-2 lg:px-6 lg:py-3 bg-zinc-800 text-white rounded-full font-medium hover:bg-zinc-700 transition-colors text-sm lg:text-base disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Re-assemble video with latest changes"
-                    >
-                        <RotateCcw size={18} className={isStitching ? "animate-spin" : ""} />
-                        {isStitching ? "Stitching..." : "Update Final Video"}
-                    </button>
+                                <div className="w-px h-8 bg-zinc-700 mx-2 self-center" />
+                            </>
+                        )}
 
-                    <button
-                        onClick={() => {
-                            if (finalVideoUrl) window.open(finalVideoUrl, '_blank');
-                            else alert("Video is not ready yet. Please wait.");
-                        }}
-                        disabled={!finalVideoUrl}
-                        className={`flex items-center gap-2 px-4 py-2 lg:px-6 lg:py-3 rounded-full font-medium transition-colors text-sm lg:text-base ${finalVideoUrl
-                            ? 'bg-zinc-800 text-white hover:bg-zinc-700'
-                            : 'bg-zinc-900 text-zinc-600 cursor-not-allowed'
-                            }`}
-                    >
-                        <Download size={18} /> Export Video
-                    </button>
+                        <button
+                            onClick={() => {
+                                if (finalVideoUrl) window.open(finalVideoUrl, '_blank');
+                                else alert("Video is not ready yet. Please wait.");
+                            }}
+                            disabled={!finalVideoUrl}
+                            className={`flex items-center gap-2 px-6 py-3 rounded-full font-medium transition-colors text-base ${finalVideoUrl
+                                ? 'text-white hover:bg-zinc-800'
+                                : 'text-zinc-600 cursor-not-allowed'
+                                }`}
+                        >
+                            <Download size={18} /> Export
+                        </button>
+
+                        <div className="w-px h-8 bg-zinc-700 mx-2 self-center" />
+
+                        <div className="px-2 self-center">
+                            <VersionSelector />
+                        </div>
+                    </div>
                 </div>
 
                 {/* Audio Elements */}

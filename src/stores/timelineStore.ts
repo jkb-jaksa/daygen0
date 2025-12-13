@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { persist } from 'zustand/middleware';
+import type { JobVersion } from '../api/jobs';
 
 export interface Segment {
     id: string; // UUID from backend
@@ -47,6 +48,7 @@ interface TimelineState {
 
     isWaitingForSegment: boolean;
     isTransitioning: boolean; // Lock to prevent double-triggering
+    hasChanges: boolean; // Dirty check flag
     // Actions
     setJobId: (id: string | null) => void;
     setJobDuration: (duration: 'short' | 'medium' | 'long' | null) => void;
@@ -63,6 +65,7 @@ interface TimelineState {
     setIsSeeking: (isSeeking: boolean) => void;
     setSeekTarget: (time: number | null) => void;
     setJobStatus: (status: 'PENDING' | 'processing' | 'COMPLETED' | 'FAILED') => void;
+    markChangesSaved: () => void;
 
     nextSegment: () => void;
     updateSegmentImage: (segmentId: string, newImageUrl: string) => void;
@@ -77,6 +80,11 @@ interface TimelineState {
     // Final Video
     finalVideoUrl: string | null;
     setFinalVideoUrl: (url: string | null) => void;
+
+    // Versions
+    versions: JobVersion[];
+    setVersions: (versions: JobVersion[]) => void;
+    restoreVersion: (version: JobVersion) => void;
 }
 
 export const useTimelineStore = create<TimelineState>()(
@@ -97,10 +105,18 @@ export const useTimelineStore = create<TimelineState>()(
             jobDuration: null,
             isWaitingForSegment: false,
             isTransitioning: false,
+            hasChanges: false,
+
+            versions: [],
 
             setJobId: (id) => set((state) => { state.jobId = id }),
             setJobStatus: (status) => set((state) => { state.jobStatus = status }),
             setJobDuration: (duration) => set((state) => { state.jobDuration = duration }),
+            setVersions: (versions) => set((state) => { state.versions = versions }),
+            markChangesSaved: () => set((state) => { state.hasChanges = false; }),
+            restoreVersion: (version) => set((state) => {
+                state.finalVideoUrl = version.resultUrl;
+            }),
             setSegments: (segments) => set((state) => {
                 state.segments = segments;
                 state.activeSegmentIndex = 0;
@@ -168,6 +184,7 @@ export const useTimelineStore = create<TimelineState>()(
             }),
             setMusicUrl: (url) => set((state) => {
                 state.musicUrl = url;
+                state.hasChanges = true;
             }),
             setFinalVideoUrl: (url) => set((state) => {
                 state.finalVideoUrl = url;
@@ -230,15 +247,24 @@ export const useTimelineStore = create<TimelineState>()(
             setSeekTarget: (target) => set((state) => { state.seekTarget = target }),
             updateSegmentImage: (id, url) => set((state) => {
                 const seg = state.segments.find(s => s.id === id);
-                if (seg) seg.imageUrl = url;
+                if (seg) {
+                    seg.imageUrl = url;
+                    state.hasChanges = true;
+                }
             }),
             updateSegmentVideo: (id, url) => set((state) => {
                 const seg = state.segments.find(s => s.id === id);
-                if (seg) seg.videoUrl = url;
+                if (seg) {
+                    seg.videoUrl = url;
+                    state.hasChanges = true;
+                }
             }),
             updateSegmentScript: (id, script) => set((state) => {
                 const seg = state.segments.find(s => s.id === id);
-                if (seg) seg.script = script;
+                if (seg) {
+                    seg.script = script;
+                    state.hasChanges = true;
+                }
             }),
             updateSegmentAudio: (id, audioUrl, duration) => set((state) => {
                 const seg = state.segments.find(s => s.id === id);
@@ -246,6 +272,7 @@ export const useTimelineStore = create<TimelineState>()(
                     seg.audioUrl = audioUrl; // Background music if any? No, voiceUrl usually.
                     seg.voiceUrl = audioUrl; // Mapped to voiceUrl usually
                     seg.duration = duration;
+                    state.hasChanges = true;
                 }
             }),
             updateSegmentPrompt: (id, field, value) => set((state) => {
@@ -254,18 +281,34 @@ export const useTimelineStore = create<TimelineState>()(
                     if (field === 'script') seg.script = value;
                     if (field === 'visualPrompt') seg.visualPrompt = value;
                     if (field === 'motionPrompt') seg.motionPrompt = value;
+                    // Note: We do NOT set hasChanges = true here because prompt text changes 
+                    // alone do not affect the stitched video until regenerated.
                 }
             }),
             updateSegment: (id, partial) => set((state) => {
                 const seg = state.segments.find(s => s.id === id);
                 if (seg) {
                     Object.assign(seg, partial);
+                    state.hasChanges = true;
                 }
             }),
             updateSegmentByIndex: (index, partial) => set((state) => {
                 if (index >= 0 && index < state.segments.length) {
                     const seg = state.segments[index];
                     const oldDuration = seg.duration;
+
+                    // Detect significant changes that warrant a re-stitch
+                    // We only care if the ASSETS or CONTENT of the segment changed.
+                    const hasAssetChange =
+                        (partial.videoUrl !== undefined && partial.videoUrl !== seg.videoUrl) ||
+                        (partial.imageUrl !== undefined && partial.imageUrl !== seg.imageUrl) ||
+                        (partial.voiceUrl !== undefined && partial.voiceUrl !== seg.voiceUrl) ||
+                        (partial.audioUrl !== undefined && partial.audioUrl !== seg.audioUrl) ||
+                        (partial.script !== undefined && partial.script !== seg.script);
+
+                    if (hasAssetChange) {
+                        state.hasChanges = true;
+                    }
 
                     // debug
                     // if (partial.duration !== undefined) {
@@ -301,6 +344,7 @@ export const useTimelineStore = create<TimelineState>()(
             }),
             setMusicVolume: (volume) => set((state) => {
                 state.musicVolume = volume;
+                state.hasChanges = true;
             }),
         })),
         {
@@ -312,6 +356,7 @@ export const useTimelineStore = create<TimelineState>()(
                 segments: state.segments,
                 musicVolume: state.musicVolume,
                 jobDuration: state.jobDuration,
+                hasChanges: state.hasChanges,
                 // Don't persist isPlaying or currentTime ideally, but maybe currentTime if needed
             }),
         }

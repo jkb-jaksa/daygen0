@@ -1,5 +1,12 @@
 import { apiFetch } from '../utils/api';
 
+export interface JobVersion {
+    id: string;
+    jobId: string;
+    resultUrl: string;
+    createdAt: string;
+}
+
 export interface Job {
     id: string;
     type: string;
@@ -8,6 +15,7 @@ export interface Job {
     resultUrl?: string;
     error?: string;
     metadata?: Record<string, unknown>;
+    versions?: JobVersion[];
     createdAt: string;
 }
 
