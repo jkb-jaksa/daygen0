@@ -281,7 +281,9 @@ export function generateExtensionPrompt(params: ExtensionPromptParams): string {
     }
 
     prompt +=
-        ' Seamlessly blend new content with the existing image\'s style, lighting, colors, and perspective. Preserve the subject exactly as shown in the original area.';
+        ' CRITICAL: Do NOT alter, distort, or modify the original image content in any way. Keep the original portion of the image completely intact and unchanged.' +
+        ' Seamlessly blend new content with the existing image\'s style, lighting, colors, and perspective.' +
+        ' Only generate content for the empty/extended areas while preserving the subject exactly as shown.';
 
     // Add user's custom hints if provided
     if (userPrompt?.trim()) {
@@ -292,9 +294,9 @@ export function generateExtensionPrompt(params: ExtensionPromptParams): string {
 }
 
 /**
- * Estimate which directions will need extension based on position and scale.
- * Useful for UI hints before actual canvas rendering.
- */
+     * Estimate which directions will need extension based on position and scale.
+     * Useful for UI hints before actual canvas rendering.
+     */
 export function estimateExtensionDirections(
     position: { x: number; y: number },
     scale: number,

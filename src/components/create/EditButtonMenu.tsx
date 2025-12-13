@@ -1,6 +1,6 @@
 import React, { memo, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Edit, Camera, RotateCw, Scaling } from 'lucide-react';
+import { Edit, Camera, RotateCw } from 'lucide-react';
 
 import { tooltips } from '../../styles/designSystem';
 import type { GalleryImageLike, GalleryVideoLike } from './types';
@@ -13,7 +13,6 @@ interface EditButtonMenuProps {
   anyMenuOpen?: boolean;
   onMakeVideo: () => void;
   onChangeAngle?: () => void;
-  onResize?: () => void;
   onQuickEdit?: () => void;
 }
 
@@ -25,13 +24,11 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
   anyMenuOpen = false,
   onMakeVideo,
   onChangeAngle,
-  onResize,
   onQuickEdit,
 }) => {
   const tooltipBaseId = useMemo(() => image.jobId || image.r2FileId || image.url || menuId, [image, menuId]);
   const makeVideoTooltipId = `${tooltipBaseId}-make-video`;
   const changeAngleTooltipId = `${tooltipBaseId}-change-angle`;
-  const resizeTooltipId = `${tooltipBaseId}-resize`;
   const editTooltipId = `${tooltipBaseId}-edit`;
 
   const showTooltip = useCallback((target: HTMLElement, tooltipId: string) => {
@@ -66,13 +63,6 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
       onChangeAngle();
     }
   }, [onChangeAngle]);
-
-  const handleResizeClick = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-    if (onResize) {
-      onResize();
-    }
-  }, [onResize]);
 
   return (
     <>
@@ -133,23 +123,6 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
         >
           <RotateCw className="w-3 h-3 text-theme-white transition-colors duration-100 group-hover/angle-action:text-red-500" />
         </button>
-        <button
-          type="button"
-          className={`image-action-btn ${isFullSize ? 'image-action-btn--fullsize' : isGallery ? 'image-action-btn--gallery' : ''} parallax-large transition-opacity duration-100 group/resize-action master-action-create-image text-theme-white ${anyMenuOpen
-            ? 'opacity-100 pointer-events-auto'
-            : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-            }`}
-          aria-label="Resize"
-          onClick={handleResizeClick}
-          onMouseEnter={(e) => {
-            showTooltip(e.currentTarget, resizeTooltipId);
-          }}
-          onMouseLeave={() => {
-            hideTooltip(resizeTooltipId);
-          }}
-        >
-          <Scaling className="w-3 h-3 text-theme-white transition-colors duration-100 group-hover/resize-action:text-red-500" />
-        </button>
       </div>
       {createPortal(
         <div
@@ -168,16 +141,6 @@ const EditButtonMenu = memo<EditButtonMenuProps>(({
           style={{ zIndex: 9999 }}
         >
           Change angle
-        </div>,
-        document.body,
-      )}
-      {createPortal(
-        <div
-          data-tooltip-for={resizeTooltipId}
-          className={`${tooltips.base} fixed`}
-          style={{ zIndex: 9999 }}
-        >
-          Resize
         </div>,
         document.body,
       )}

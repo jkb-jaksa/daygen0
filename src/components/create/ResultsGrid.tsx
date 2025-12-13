@@ -43,8 +43,9 @@ const MakeVideoModal = lazy(() => import('./MakeVideoModal'));
 import type { MakeVideoOptions } from './MakeVideoModal';
 const ChangeAngleModal = lazy(() => import('./ChangeAngleModal'));
 import type { AngleOption } from './hooks/useAngleHandlers';
-const ResizeModal = lazy(() => import('./ResizeModal'));
-import type { GeminiAspectRatio } from '../../types/aspectRatio';
+
+
+
 const GenerationProgress = lazy(() => import('./GenerationProgress'));
 import { renderComposedCanvas, generateExtensionPrompt } from './utils/resizeUtils';
 import { uploadBase64ToR2 } from '../../utils/uploadToR2';
@@ -206,7 +207,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const [quickEditModalState, setQuickEditModalState] = useState<{ isOpen: boolean; initialPrompt: string; item: GalleryImageLike } | null>(null);
   const [makeVideoModalState, setMakeVideoModalState] = useState<{ isOpen: boolean; initialPrompt: string; item: GalleryImageLike } | null>(null);
   const [changeAngleModalState, setChangeAngleModalState] = useState<{ isOpen: boolean; item: GalleryImageLike; selectedAngle: AngleOption | null } | null>(null);
-  const [resizeModalState, setResizeModalState] = useState<{ isOpen: boolean; item: GalleryImageLike } | null>(null);
+
   const [isQuickEditLoading] = useState(false);
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement }>({});
   const {
@@ -664,12 +665,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     });
   }, []);
 
-  const handleResize = useCallback((item: GalleryImageLike) => {
-    setResizeModalState({
-      isOpen: true,
-      item,
-    });
-  }, []);
+
 
   const handleChangeAngleClose = useCallback(() => {
     setChangeAngleModalState(null);
@@ -682,10 +678,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const handleAngleApply = useCallback(() => {
     // TODO: Implement angle application logic
     setChangeAngleModalState(null);
-  }, []);
-
-  const handleResizeClose = useCallback(() => {
-    setResizeModalState(null);
   }, []);
 
   const startResizeJob = useCallback((image: GalleryImageLike, prompt: string) => {
@@ -716,123 +708,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     removeActiveJob(jobId);
   }, [removeActiveJob, updateJobStatus]);
 
-  const handleResizeSubmit = useCallback(async (
-    aspectRatio: GeminiAspectRatio,
-    position: { x: number; y: number },
-    scale: number,
-    userPrompt: string
-  ) => {
-    if (!resizeModalState?.item || !resizeModalState.item.url) {
-      showToast('No image available for resize');
-      return;
-    }
 
-    const item = resizeModalState.item;
 
-    // Close modal immediately
-    setResizeModalState(null);
-
-    // Track job ID for error handling
-    let syntheticJobId: string | null = null;
-
-    try {
-      // Render the composed canvas with positioned image
-      console.log('[Resize] Rendering composed canvas...');
-      const { dataUrl: composedImageDataUrl, isPureCrop } = await renderComposedCanvas({
-        imageUrl: item.url,
-        targetAspectRatio: aspectRatio,
-        position,
-        scale,
-      });
-      console.log('[Resize] Canvas rendered, isPureCrop:', isPureCrop, 'dataUrl length:', composedImageDataUrl.length);
-
-      // If this is a pure crop AND no user prompt, skip AI and upload directly
-      const hasUserPrompt = userPrompt.trim().length > 0;
-
-      if (isPureCrop && !hasUserPrompt) {
-        console.log('[Resize] Pure crop detected - uploading directly without AI');
-        showToast('Cropping image...');
-
-        // Upload cropped image directly to R2
-        const uploadResult = await uploadBase64ToR2(composedImageDataUrl, {
-          folder: 'cropped-images',
-          prompt: `Cropped to ${aspectRatio}`,
-          model: 'crop',
-        });
-
-        if (uploadResult.success && uploadResult.url) {
-          await addImage({
-            url: uploadResult.url,
-            prompt: `Cropped to ${aspectRatio}`,
-            model: 'crop',
-            timestamp: new Date().toISOString(),
-            ownerId: item.ownerId,
-            isLiked: false,
-            isPublic: false,
-          });
-          showToast('Image cropped successfully!');
-        } else {
-          showToast(`Failed to crop: ${uploadResult.error || 'Unknown error'}`);
-        }
-        return;
-      }
-
-      // Generate the smart extension prompt (for AI generation)
-      const extensionPrompt = generateExtensionPrompt({
-        position,
-        scale,
-        targetRatio: aspectRatio,
-        userPrompt: userPrompt.trim() || undefined,
-      });
-
-      // Start the resize job for tracking
-      syntheticJobId = startResizeJob(item, extensionPrompt);
-      console.log('[Resize] Job started:', syntheticJobId);
-
-      // Call Gemini with the composed image as reference
-      console.log('[Resize] Calling Gemini for AI extension...');
-      generateGeminiImage({
-        prompt: extensionPrompt,
-        references: [composedImageDataUrl],
-        model: 'gemini-3-pro-image-preview',
-        aspectRatio: aspectRatio,
-        clientJobId: syntheticJobId,
-      }).then(async (result) => {
-        console.log('[Resize] Gemini result:', result);
-        if (result) {
-          await addImage({
-            url: result.url,
-            prompt: extensionPrompt,
-            model: result.model,
-            timestamp: new Date().toISOString(),
-            ownerId: item.ownerId,
-            isLiked: false,
-            isPublic: false,
-            r2FileId: result.r2FileId,
-          });
-          finalizeResizeJob(syntheticJobId!, 'completed');
-          showToast('Image extended successfully!');
-        } else {
-          showToast('Failed to extend image');
-          finalizeResizeJob(syntheticJobId!, 'failed');
-        }
-      }).catch((error) => {
-        console.error('[Resize] Gemini error:', error);
-        debugError('Failed to extend image:', error);
-        showToast('Failed to extend image');
-        finalizeResizeJob(syntheticJobId!, 'failed');
-      });
-    } catch (error) {
-      console.error('[Resize] Process error:', error);
-      debugError('Failed to process resize:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      showToast(`Failed to resize: ${errorMessage}`);
-      // Finalize the job if it was started
-      if (syntheticJobId) {
-        finalizeResizeJob(syntheticJobId, 'failed');
-      }
-    }
-  }, [resizeModalState, generateGeminiImage, addImage, showToast, startResizeJob, finalizeResizeJob]);
 
 
 
@@ -912,11 +789,15 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           userPrompt: resizeUserPrompt.trim() || undefined,
         });
 
-        // Start the resize job for tracking
-        syntheticJobId = startResizeJob(item, extensionPrompt);
+        // Create a short display prompt for the gallery (not the AI prompt)
+        const displayPrompt = `Resize to ${aspectRatio}`;
+
+        // Start the resize job for tracking (use display prompt for UI)
+        syntheticJobId = startResizeJob(item, displayPrompt);
         console.log('[Resize via QuickEdit] Job started:', syntheticJobId);
 
         // Call Gemini with the composed image as reference
+        // Use the detailed extensionPrompt for AI, but jobType 'resize' for tracking
         console.log('[Resize via QuickEdit] Calling Gemini for AI extension...');
         generateGeminiImage({
           prompt: extensionPrompt,
@@ -924,12 +805,13 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           model: 'gemini-3-pro-image-preview',
           aspectRatio: aspectRatio,
           clientJobId: syntheticJobId,
+          jobType: 'resize',
         }).then(async (result) => {
           console.log('[Resize via QuickEdit] Gemini result:', result);
           if (result) {
             await addImage({
               url: result.url,
-              prompt: extensionPrompt,
+              prompt: displayPrompt, // Use short display prompt for gallery
               model: result.model,
               timestamp: new Date().toISOString(),
               ownerId: item.ownerId,
@@ -1412,7 +1294,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                               anyMenuOpen={isMenuActive}
                               onMakeVideo={() => handleVideo(item as GalleryImageLike)}
                               onChangeAngle={() => handleChangeAngle(item as GalleryImageLike)}
-                              onResize={() => handleResize(item as GalleryImageLike)}
                               onQuickEdit={() => handleQuickEdit(item as GalleryImageLike)}
                             />
                           </Suspense>
@@ -1437,7 +1318,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                 anyMenuOpen={isMenuActive}
                                 onMakeVideo={() => handleVideo(item as GalleryImageLike)}
                                 onChangeAngle={() => handleChangeAngle(item as GalleryImageLike)}
-                                onResize={() => handleResize(item as GalleryImageLike)}
                                 onQuickEdit={() => handleQuickEdit(item as GalleryImageLike)}
                               />
                             </Suspense>
@@ -2092,18 +1972,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
         </Suspense>
       )}
 
-      {/* Resize Modal */}
-      {resizeModalState && (
-        <Suspense fallback={null}>
-          <ResizeModal
-            open={resizeModalState.isOpen}
-            onClose={handleResizeClose}
-            image={resizeModalState.item}
-            onResize={handleResizeSubmit}
 
-          />
-        </Suspense>
-      )}
     </>
   );
 });
