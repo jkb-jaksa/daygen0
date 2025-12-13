@@ -5,6 +5,9 @@ export type ElevenLabsVoiceSummary = {
   voice_id: string;
   name: string;
   category: string;
+  labels?: Record<string, string>;
+  preview_url?: string;
+  previewUrl?: string;
 };
 
 export type VoicesResponse = {

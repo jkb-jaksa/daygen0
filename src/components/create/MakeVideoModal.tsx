@@ -188,6 +188,27 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
     const [isVoiceDropdownOpen, setIsVoiceDropdownOpen] = useState(false);
     const [selectedVoiceId, setSelectedVoiceId] = useState<string>("");
     const voiceButtonRef = useRef<HTMLButtonElement>(null);
+    const voiceDropdownRef = useRef<HTMLDivElement>(null);
+    const promptContainerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (isVoiceDropdownOpen &&
+                voiceDropdownRef.current &&
+                !voiceDropdownRef.current.contains(event.target as Node) &&
+                !voiceButtonRef.current?.contains(event.target as Node)) {
+                setIsVoiceDropdownOpen(false);
+            }
+        };
+
+        if (isVoiceDropdownOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isVoiceDropdownOpen]);
 
     // Drag states for Avatar/Product buttons
     const [isDraggingOverAvatarButton, setIsDraggingOverAvatarButton] = useState(false);
@@ -672,6 +693,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                     Enter your prompt
                                 </label>
                                 <div
+                                    ref={promptContainerRef}
                                     className={`relative flex flex-col rounded-xl transition-colors duration-200 ${glass.prompt} focus-within:border-theme-mid ${isDragActive ? 'border border-n-text' : ''}`}
                                     onDragOver={handleDragOver}
                                     onDragEnter={handleDragEnter}
@@ -711,20 +733,16 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                     </span>
                                                 </div>
                                             </button>
-                                            {isVoiceDropdownOpen && (
+                                            {isVoiceDropdownOpen && createPortal(
                                                 <div
-                                                    className={`absolute top-full left-0 mt-2 ${glass.promptDark} rounded-xl border border-theme-mid p-4 min-w-[280px] z-50 shadow-xl`}
+                                                    ref={voiceDropdownRef}
+                                                    className={`fixed ${glass.promptDark} rounded-xl border border-theme-mid p-4 min-w-[280px] z-[10000] shadow-xl`}
+                                                    style={{
+                                                        top: voiceButtonRef.current ? `${voiceButtonRef.current.getBoundingClientRect().bottom + 8}px` : '0px',
+                                                        left: promptContainerRef.current ? `${promptContainerRef.current.getBoundingClientRect().left}px` : (voiceButtonRef.current ? `${voiceButtonRef.current.getBoundingClientRect().left}px` : '0px'),
+                                                    }}
                                                     onClick={(e) => e.stopPropagation()}
                                                 >
-                                                    <div className="flex items-center justify-between mb-3">
-                                                        <div className="text-xs font-raleway text-theme-white">Voice Presets</div>
-                                                        <button
-                                                            onClick={() => setIsVoiceDropdownOpen(false)}
-                                                            className="text-theme-white hover:text-theme-text transition-colors duration-200"
-                                                        >
-                                                            <X className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
                                                     <VoiceSelector
                                                         value={selectedVoiceId}
                                                         onChange={(voiceId) => {
@@ -733,7 +751,8 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                         }}
                                                         className="w-full"
                                                     />
-                                                </div>
+                                                </div>,
+                                                document.body
                                             )}
                                             {selectedVoiceId && (
                                                 <button
