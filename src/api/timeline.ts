@@ -55,7 +55,9 @@ export async function revertSegment(
     });
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function stitchTimeline(jobId: string): Promise<any> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return apiFetch<any>(`/api/timeline/${jobId}/stitch`, {
         method: 'POST',
     });

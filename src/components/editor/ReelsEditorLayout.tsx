@@ -168,7 +168,7 @@ export const ReelsEditorLayout = () => {
         const intervalId = setInterval(checkJob, 12000); // Polling (fallback) 12s
 
         return () => clearInterval(intervalId);
-    }, [jobId, setSegments, syncSegments, setMusicVolume, setMusicUrl, setFinalVideoUrl, setIsPlaying, setCurrentTime, finalVideoUrl, setJobStatus]);
+    }, [jobId, setSegments, syncSegments, setMusicVolume, setMusicUrl, setFinalVideoUrl, setIsPlaying, setCurrentTime, finalVideoUrl, setJobStatus, setVersions]);
 
     // Find active segment for the main preview
     const activeSegment = segments.find(
