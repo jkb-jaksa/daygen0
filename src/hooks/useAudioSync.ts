@@ -9,20 +9,7 @@ export const useAudioSync = () => {
     const lastTimeRef = useRef<number>(0);
     const isAudioWorking = useRef<boolean>(true);
 
-    // --- DEBUG: LOG SEGMENT DETAILS ---
-    useEffect(() => {
-        // console.log(`[AudioSync] 📋 Segments Dump:`, segments.map(s => ... matches removed ...));
 
-        const seg = segments[activeSegmentIndex];
-        if (seg) {
-            console.log(`[AudioSync] 🎬 Segment Changed. Index: ${activeSegmentIndex}, ID: ${seg.id}, Duration: ${seg.duration}, Start: ${seg.startTime}, End: ${seg.endTime}, Voice: ${!!seg.voiceUrl}`);
-            if (seg.duration <= 0 || isNaN(seg.duration)) {
-                console.error(`[AudioSync] 🚨 CRITICAL: Invalid duration for segment ${activeSegmentIndex}: ${seg.duration}`);
-            }
-        } else {
-            console.warn(`[AudioSync] ⚠️ Segment Changed but segment is undefined at index ${activeSegmentIndex}`);
-        }
-    }, [activeSegmentIndex, segments]);
 
     // --- SEEKING LOGIC ---
     useEffect(() => {
@@ -35,7 +22,7 @@ export const useAudioSync = () => {
 
 
         // User requested a seek via the UI
-        console.log("TimeDriver: Processing Seek Request to", seekTarget);
+        // console.log("TimeDriver: Processing Seek Request to", seekTarget);
 
         // 1. Calculate local time
         const segment = segments[activeSegmentIndex];
@@ -53,7 +40,7 @@ export const useAudioSync = () => {
         // Ideally we wait, but for responsiveness we can clear.
         // Let's use a one-time event listener to be safe.
         const onSeeked = () => {
-            console.log("TimeDriver: Audio acknowledged seek");
+            // console.log("TimeDriver: Audio acknowledged seek");
             setIsSeeking(false);
             setSeekTarget(null);
         };
@@ -117,9 +104,13 @@ export const useAudioSync = () => {
             setCurrentTime(newTime);
 
             // End of segment check
-            if (newTime >= segment.endTime) {
-                console.warn(`[AudioSync] ⏱️ Timer Reached End. Time: ${newTime.toFixed(3)}, EndTime: ${segment.endTime}, Delta: ${delta.toFixed(3)}`);
-                console.warn(`[AudioSync] ⏭️ Triggering nextSegment from Timer. Index: ${activeSegmentIndex}`);
+            // GUARD: Prevent skipping if duration is absurdly short (unless it's truly the end)
+            // This acts as a secondary safety net if store data is corrupted.
+            const effectiveDuration = Math.max(segment.duration, 0.5);
+            const effectiveEndTime = segment.startTime + effectiveDuration;
+
+            if (newTime >= effectiveEndTime) {
+                // console.warn(`[AudioSync] ⏱️ Timer Reached End.`);
 
                 if (activeSegmentIndex >= segments.length - 1) {
                     // Check if job is still running/streaming by calling nextSegment logic which we updated
@@ -145,7 +136,7 @@ export const useAudioSync = () => {
         const segment = segments[activeSegmentIndex];
 
         if (isPlaying) {
-            console.log("TimeDriver: Starting Playback");
+            // console.log("TimeDriver: Starting Playback");
             lastTimeRef.current = performance.now();
 
             if (segment?.voiceUrl && audio) {
@@ -163,8 +154,7 @@ export const useAudioSync = () => {
             }
             requestRef.current = requestAnimationFrame(tick);
         } else {
-            console.log("TimeDriver: Pausing");
-            console.log("[DEBUG-DRIVER] Pausing playback loop.");
+            // console.log("TimeDriver: Pausing");
             if (audio) audio.pause();
             if (requestRef.current) cancelAnimationFrame(requestRef.current);
             lastTimeRef.current = 0;
@@ -192,16 +182,12 @@ export const useAudioSync = () => {
             const index = useTimelineStore.getState().activeSegmentIndex;
             const currentSeg = useTimelineStore.getState().segments[index];
 
-            console.warn(`[AudioSync] 🔊 Audio 'ended' event fired. CurrentIndex: ${index}, HasVoice: ${!!currentSeg?.voiceUrl}`);
-
             // GUARD: If the current segment shouldn't be using audio, ignore this event.
             // This prevents "ghost" ended events when src is cleared or changed for a voiceless segment.
             if (!currentSeg?.voiceUrl) {
-                console.warn(`[AudioSync] 🛑 Ignoring 'ended' event because segment ${index} has no voiceUrl.`);
                 return;
             }
 
-            console.warn(`[AudioSync] ⏭️ Triggering nextSegment from Audio Event (Index: ${index})`);
             nextSegment();
         };
 

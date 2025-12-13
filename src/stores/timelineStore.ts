@@ -126,7 +126,14 @@ export const useTimelineStore = create<TimelineState>()(
                 // MERGE STRATEGY: Instead of full replace, we should try to preserve existing objects if possible
                 // to avoid re-renders? But immer handles checking changes.
                 // However, let's stick to replacement for now as "sync" implies full state sync.
-                state.segments = newSegments;
+                state.segments = newSegments.map(s => {
+                    // Safety: Enforce minimum duration
+                    let safeDuration = s.duration;
+                    if (typeof safeDuration !== 'number' || safeDuration < 0.5) {
+                        safeDuration = 5.0;
+                    }
+                    return { ...s, duration: safeDuration };
+                });
 
                 // Validate index
                 if (state.activeSegmentIndex >= state.segments.length) {
@@ -261,18 +268,16 @@ export const useTimelineStore = create<TimelineState>()(
                     const oldDuration = seg.duration;
 
                     // debug
-                    if (partial.duration !== undefined) {
-                        console.log(`[TimelineStore] 🔄 Updating Segment ${index}. OldDur: ${oldDuration}, NewDur (Input): ${partial.duration}`);
-                    }
+                    // if (partial.duration !== undefined) {
+                    //    console.log(`[TimelineStore] 🔄 Updating Segment ${index}. OldDur: ${oldDuration}, NewDur (Input): ${partial.duration}`);
+                    // }
 
                     // Apply updates
                     Object.assign(seg, partial);
 
-                    // Safety Check: Ensure duration is valid
-                    if (typeof seg.duration !== 'number' || seg.duration <= 0) {
-                        console.warn(`[TimelineStore] ⚠️ Invalid duration detected: ${seg.duration}. Defaulting to 5.0s (or keeping old ${oldDuration})`);
-                        // Revert or default to 5.0s (aligned with backend generation)
-                        seg.duration = (oldDuration && oldDuration > 0) ? oldDuration : 5.0;
+                    if (typeof seg.duration !== 'number' || seg.duration < 0.5) {
+                        const fallback = (oldDuration && oldDuration > 0.5) ? oldDuration : 5.0;
+                        seg.duration = fallback;
                     }
 
                     const newDuration = seg.duration;
