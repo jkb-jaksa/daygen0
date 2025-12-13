@@ -237,11 +237,70 @@ export async function renderComposedCanvas(
 }
 
 /**
+ * Helper to get simplified directional hints for combined modify+resize mode.
+ */
+function getSimplifiedDirectionalHints(position: { x: number; y: number }, scale: number): string[] {
+    const directions: string[] = [];
+
+    if (position.y < 40) directions.push('downward');
+    if (position.y > 60) directions.push('upward');
+    if (position.x < 40) directions.push('to the right');
+    if (position.x > 60) directions.push('to the left');
+
+    // If significantly zoomed out, mention expansion
+    if (scale < 60 && directions.length === 0) {
+        directions.push('in all directions');
+    }
+
+    return directions;
+}
+
+/**
  * Generate a smart extension prompt based on image positioning.
- * Combines auto-generated hints with user's optional custom prompt.
+ * 
+ * Two modes of operation:
+ * 1. User provides a modification prompt → Lead with their creative intent, add resize context naturally.
+ *    This allows modifying the image content AND extending it in a single generation.
+ * 2. No user prompt → Pure extension mode with strict "don't alter original" constraints.
  */
 export function generateExtensionPrompt(params: ExtensionPromptParams): string {
     const { position, scale, targetRatio, userPrompt } = params;
+
+    console.log('[generateExtensionPrompt] Called with:', {
+        position,
+        scale,
+        targetRatio,
+        userPrompt: userPrompt ? `"${userPrompt}"` : '(empty)',
+        userPromptLength: userPrompt?.trim()?.length || 0,
+    });
+
+    const trimmedUserPrompt = userPrompt?.trim() || '';
+    const hasModificationPrompt = trimmedUserPrompt.length > 0;
+
+    if (hasModificationPrompt) {
+        // ===== COMBINED MODIFY + RESIZE MODE =====
+        // User wants to modify the image AND resize it in one go.
+        // Lead with their creative intent, then add resize context.
+
+        let prompt = trimmedUserPrompt;
+
+        // Add the resize/extension context as secondary instruction
+        prompt += `\n\nAdditionally, extend the image to fill the complete ${targetRatio} aspect ratio canvas.`;
+        prompt += ' Seamlessly blend the extended areas with the modified image\'s style, lighting, colors, and perspective.';
+
+        // Add subtle directional hints if the image is positioned off-center
+        const directions = getSimplifiedDirectionalHints(position, scale);
+        if (directions.length > 0) {
+            prompt += ` The image needs extension ${directions.join(' and ')}.`;
+        }
+
+        console.log('[generateExtensionPrompt] COMBINED MODE - Final prompt:', prompt.substring(0, 200) + '...');
+        return prompt;
+    }
+
+    // ===== PURE EXTENSION MODE (Original Behavior) =====
+    // No user prompt → Only extend the image, do not alter the original content.
+
     const hints: string[] = [];
 
     // Vertical positioning hints
@@ -285,11 +344,7 @@ export function generateExtensionPrompt(params: ExtensionPromptParams): string {
         ' Seamlessly blend new content with the existing image\'s style, lighting, colors, and perspective.' +
         ' Only generate content for the empty/extended areas while preserving the subject exactly as shown.';
 
-    // Add user's custom hints if provided
-    if (userPrompt?.trim()) {
-        prompt += ` Additional context for the extended areas: ${userPrompt.trim()}`;
-    }
-
+    console.log('[generateExtensionPrompt] PURE EXTENSION MODE - Final prompt:', prompt.substring(0, 200) + '...');
     return prompt;
 }
 

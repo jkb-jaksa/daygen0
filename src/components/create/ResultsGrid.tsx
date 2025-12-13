@@ -789,23 +789,26 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           userPrompt: resizeUserPrompt.trim() || undefined,
         });
 
-        // Create a short display prompt for the gallery (not the AI prompt)
-        const displayPrompt = `Resize to ${aspectRatio}`;
+        // Create display prompt for the gallery and job animation
+        // Use user's prompt if provided, otherwise fall back to generic "Resize to X"
+        const displayPrompt = resizeUserPrompt.trim() || `Resize to ${aspectRatio}`;
 
         // Start the resize job for tracking (use display prompt for UI)
         syntheticJobId = startResizeJob(item, displayPrompt);
         console.log('[Resize via QuickEdit] Job started:', syntheticJobId);
 
+        // Determine jobType: IMAGE_EDIT if user provided a prompt, IMAGE_RESIZE for pure resize/extension
+        const resizeJobType = hasUserPrompt ? 'IMAGE_EDIT' : 'IMAGE_RESIZE';
+
         // Call Gemini with the composed image as reference
-        // Use the detailed extensionPrompt for AI, but jobType 'resize' for tracking
-        console.log('[Resize via QuickEdit] Calling Gemini for AI extension...');
+        console.log('[Resize via QuickEdit] Calling Gemini for AI extension, jobType:', resizeJobType);
         generateGeminiImage({
           prompt: extensionPrompt,
           references: [composedImageDataUrl],
           model: 'gemini-3-pro-image-preview',
           aspectRatio: aspectRatio,
           clientJobId: syntheticJobId,
-          jobType: 'resize',
+          jobType: resizeJobType,
         }).then(async (result) => {
           console.log('[Resize via QuickEdit] Gemini result:', result);
           if (result) {
@@ -882,6 +885,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           aspect_ratio: '1:1',
           rendering_speed: 'DEFAULT',
           num_images: 1,
+          jobType: 'IMAGE_EDIT',
         }).then(async (results) => {
           if (results && results.length > 0) {
             const result = results[0];
@@ -912,6 +916,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           references: references,
           model: 'gemini-3-pro-image-preview',
           clientJobId: syntheticJobId,
+          jobType: 'IMAGE_EDIT',
         }).then(async (result) => {
           if (result) {
             await addImage({

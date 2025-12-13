@@ -1569,7 +1569,7 @@ const PromptForm = memo<PromptFormProps>(
                   onDrop={handleAvatarButtonDrop}
                   onMouseEnter={() => setIsAvatarButtonHovered(true)}
                   onMouseLeave={() => setIsAvatarButtonHovered(false)}
-                  className={`${glass.promptBorderless} ${isDraggingOverAvatarButton || avatarSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid/30 ${selectedAvatar ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                  className={`${glass.promptBorderless} ${isDraggingOverAvatarButton || avatarSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid/30 shadow-[inset_0_-50px_40px_-15px_rgba(0,0,0,0.35)] ${selectedAvatar ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                   onPointerMove={onPointerMove}
                   onPointerEnter={onPointerEnter}
                   onPointerLeave={onPointerLeave}
@@ -1650,7 +1650,7 @@ const PromptForm = memo<PromptFormProps>(
                   onDrop={handleProductButtonDrop}
                   onMouseEnter={() => setIsProductButtonHovered(true)}
                   onMouseLeave={() => setIsProductButtonHovered(false)}
-                  className={`${glass.promptBorderless} ${isDraggingOverProductButton || productSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid/30 ${selectedProduct || productSelection ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                  className={`${glass.promptBorderless} ${isDraggingOverProductButton || productSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid/30 shadow-[inset_0_-50px_40px_-15px_rgba(0,0,0,0.35)] ${selectedProduct || productSelection ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                   onPointerMove={onPointerMove}
                   onPointerEnter={onPointerEnter}
                   onPointerLeave={onPointerLeave}
@@ -1727,7 +1727,7 @@ const PromptForm = memo<PromptFormProps>(
                   onClick={styleHandlers.handleStyleModalOpen}
                   onMouseEnter={() => setIsStyleButtonHovered(true)}
                   onMouseLeave={() => setIsStyleButtonHovered(false)}
-                  className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid/30 ${styleHandlers.firstSelectedStyle ? 'hover:border-n-white' : ''} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small`}
+                  className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid/30 shadow-[inset_0_-50px_40px_-15px_rgba(0,0,0,0.35)] ${styleHandlers.firstSelectedStyle ? 'hover:border-n-white' : ''} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small`}
                   aria-label="Select style"
                   aria-expanded={styleHandlers.isStyleModalOpen}
                   onPointerMove={onPointerMove}

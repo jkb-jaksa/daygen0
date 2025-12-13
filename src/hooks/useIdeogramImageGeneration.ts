@@ -55,6 +55,7 @@ export interface IdeogramGenerateOptions {
   pollRequestTimeoutMs?: number;
   mask?: string;
   references?: string[];
+  jobType?: string;
 }
 
 export interface IdeogramEditOptions {
@@ -319,6 +320,7 @@ export const useIdeogramImageGeneration = () => {
             model: 'ideogram',
             providerOptions,
             references: options.references,
+            jobType: options.jobType,
           },
           tracker,
           prompt: options.prompt,

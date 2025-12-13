@@ -761,6 +761,7 @@ const FullImageModal = memo(() => {
           aspect_ratio: '1:1',
           rendering_speed: 'DEFAULT',
           num_images: 1,
+          jobType: 'IMAGE_EDIT',
         }).then(async (results) => {
           if (results && results.length > 0) {
             const result = results[0];
@@ -795,6 +796,7 @@ const FullImageModal = memo(() => {
           avatarId,
           productId,
           styleId,
+          jobType: 'IMAGE_EDIT',
         }).then(async (result) => {
           if (result) {
             await addImage({
