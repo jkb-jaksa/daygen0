@@ -46,6 +46,7 @@ interface TimelineState {
     jobDuration: 'short' | 'medium' | 'long' | null;
 
     isWaitingForSegment: boolean;
+    isTransitioning: boolean; // Lock to prevent double-triggering
     // Actions
     setJobId: (id: string | null) => void;
     setJobDuration: (duration: 'short' | 'medium' | 'long' | null) => void;
@@ -95,6 +96,7 @@ export const useTimelineStore = create<TimelineState>()(
             musicVolume: 30, // Default to 30%
             jobDuration: null,
             isWaitingForSegment: false,
+            isTransitioning: false,
 
             setJobId: (id) => set((state) => { state.jobId = id }),
             setJobStatus: (status) => set((state) => { state.jobStatus = status }),
@@ -104,6 +106,7 @@ export const useTimelineStore = create<TimelineState>()(
                 state.activeSegmentIndex = 0;
                 state.currentTime = 0;
                 state.isWaitingForSegment = false;
+                state.isTransitioning = false;
             }),
             syncSegments: (newSegments) => set((state) => {
                 const prevCount = state.segments.length;
@@ -187,6 +190,17 @@ export const useTimelineStore = create<TimelineState>()(
             nextSegment: () => set((state) => {
                 const nextIndex = state.activeSegmentIndex + 1;
 
+                if (state.isTransitioning) {
+                    console.log("[TimelineStore] 🔒 Transition locked. Ignoring nextSegment call.");
+                    return;
+                }
+
+                // Lock Transition
+                state.isTransitioning = true;
+                setTimeout(() => {
+                    useTimelineStore.setState((s) => { s.isTransitioning = false; });
+                }, 500); // 500ms debounce
+
                 // If next segment exists, move to it
                 if (nextIndex < state.segments.length) {
                     state.activeSegmentIndex = nextIndex;
@@ -244,7 +258,40 @@ export const useTimelineStore = create<TimelineState>()(
             updateSegmentByIndex: (index, partial) => set((state) => {
                 if (index >= 0 && index < state.segments.length) {
                     const seg = state.segments[index];
+                    const oldDuration = seg.duration;
+
+                    // debug
+                    if (partial.duration !== undefined) {
+                        console.log(`[TimelineStore] 🔄 Updating Segment ${index}. OldDur: ${oldDuration}, NewDur (Input): ${partial.duration}`);
+                    }
+
+                    // Apply updates
                     Object.assign(seg, partial);
+
+                    // Safety Check: Ensure duration is valid
+                    if (typeof seg.duration !== 'number' || seg.duration <= 0) {
+                        console.warn(`[TimelineStore] ⚠️ Invalid duration detected: ${seg.duration}. Defaulting to 5.0s (or keeping old ${oldDuration})`);
+                        // Revert or default to 5.0s (aligned with backend generation)
+                        seg.duration = (oldDuration && oldDuration > 0) ? oldDuration : 5.0;
+                    }
+
+                    const newDuration = seg.duration;
+                    const delta = newDuration - oldDuration;
+
+                    // Update this segment's endTime
+                    seg.endTime = seg.startTime + newDuration;
+
+                    // If there is a delta, shift all subsequent segments
+                    if (Math.abs(delta) > 0.001) {
+                        for (let i = index + 1; i < state.segments.length; i++) {
+                            const s = state.segments[i];
+                            s.startTime += delta;
+                            s.endTime += delta;
+                        }
+
+                        // Fix global duration / total time if needed? 
+                        // No, store doesn't track total duration explicitly other than last segment endTime.
+                    }
                 }
             }),
             setMusicVolume: (volume) => set((state) => {

@@ -11,11 +11,30 @@ interface SceneCardProps {
     onUpdateImage: (url: string) => void;
 }
 
+const ELEVEN_LABS_TAGS = [
+    // Emotions
+    '[happy]', '[sad]', '[excited]', '[whispering]', '[shouting]', '[angry]', '[nervous]',
+    '[hopeful]', '[terrified]', '[friendly]', '[sarcastic]', '[pleading]', '[unimpressed]',
+    '[confused]', '[surprised]', '[disgusted]', '[arrogant]', '[grateful]', '[melancholic]',
+    '[romantic]', '[sympathetic]', '[calm]', '[serious]', '[cheerful]', '[annoyed]',
+    // Pacing & Delivery
+    '[pause]', '[short pause]', '[long pause]', '[fast]', '[slow]', '[enunciate]',
+    '[breathy]', '[deep voice]', '[high pitch]', '[monotone]', '[stutter]',
+    // Actions/Non-verbal
+    '[laughs]', '[chuckles]', '[giggles]', '[sighs]', '[gasps]', '[clears throat]',
+    '[coughs]', '[sneezes]', '[yawn]', '[sniffs]', '[groans]', '[hums]',
+    '[breathing heavily]', '[swallows]', '[lip smack]'
+];
+
 export function SceneCard({ segment, isActive, onUpdateImage }: SceneCardProps) {
     const { jobId, updateSegmentPrompt, updateSegmentVideo } = useTimelineStore();
     const [isRegeneratingImage, setIsRegeneratingImage] = useState(false);
     const [isRegeneratingVideo, setIsRegeneratingVideo] = useState(false);
     const [timer, setTimer] = useState(0);
+
+    // Tag Helper State
+    const [activeTagIndex, setActiveTagIndex] = useState(0);
+    const [lastTabTime, setLastTabTime] = useState(0);
 
     // Timer logic
     useEffect(() => {
@@ -32,6 +51,57 @@ export function SceneCard({ segment, isActive, onUpdateImage }: SceneCardProps) 
 
     const formatTime = (seconds: number) => {
         return `${seconds}s`;
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const now = Date.now();
+            const isCycling = (now - lastTabTime) < 1500; // 1.5s window to cycle
+            setLastTabTime(now);
+
+            const textarea = e.currentTarget as HTMLTextAreaElement;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const value = textarea.value;
+
+            let newScript = '';
+            let newCursorPos = 0;
+
+            if (isCycling) {
+                // Cycle to next tag
+                const nextIndex = (activeTagIndex + 1) % ELEVEN_LABS_TAGS.length;
+                setActiveTagIndex(nextIndex);
+                const prevTag = ELEVEN_LABS_TAGS[activeTagIndex];
+                const nextTag = ELEVEN_LABS_TAGS[nextIndex];
+
+                // Attempt to replace the tag immediately before the cursor
+                const textBefore = value.substring(0, start);
+                if (textBefore.endsWith(prevTag)) {
+                    newScript = textBefore.slice(0, -prevTag.length) + nextTag + value.substring(end);
+                    newCursorPos = start - prevTag.length + nextTag.length;
+                } else {
+                    // Fallback if cursor moved: just insert new
+                    newScript = value.substring(0, start) + nextTag + value.substring(end);
+                    newCursorPos = start + nextTag.length;
+                }
+            } else {
+                // First press: Insert first tag
+                setActiveTagIndex(0);
+                const tag = ELEVEN_LABS_TAGS[0];
+                newScript = value.substring(0, start) + tag + value.substring(end);
+                newCursorPos = start + tag.length;
+            }
+
+            updateSegmentPrompt(segment.id, 'script', newScript);
+
+            // Restore cursor position on next tick
+            setTimeout(() => {
+                if (textarea) {
+                    textarea.selectionStart = textarea.selectionEnd = newCursorPos;
+                }
+            }, 0);
+        }
     };
 
     const handleRegenerateImage = async () => {
@@ -135,12 +205,20 @@ export function SceneCard({ segment, isActive, onUpdateImage }: SceneCardProps) 
                     <label className="block text-xs font-raleway text-theme-white/60 mb-2 uppercase tracking-wider">
                         Script
                     </label>
-                    <textarea
-                        value={segment.script}
-                        onChange={(e) => updateSegmentPrompt(segment.id, 'script', e.target.value)}
-                        className="w-full h-24 bg-theme-black/40 border border-theme-dark rounded-lg p-3 text-theme-text font-raleway text-sm resize-none focus:outline-none focus:border-theme-mid transition-colors"
-                        placeholder="Enter script..."
-                    />
+                    <div className="relative">
+                        <textarea
+                            value={segment.script}
+                            onChange={(e) => updateSegmentPrompt(segment.id, 'script', e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            className="w-full h-24 bg-theme-black/40 border border-theme-dark rounded-lg p-3 text-theme-text font-raleway text-sm resize-none focus:outline-none focus:border-theme-mid transition-colors relative z-10 bg-transparent"
+                            placeholder="Enter script..."
+                        />
+                        {!segment.script && (
+                            <div className="absolute top-3 left-3 text-theme-white/30 pointer-events-none text-sm font-raleway select-none z-0">
+                                Press Tab to insert tags ([shouting], [pause]...)
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Visual Prompt */}

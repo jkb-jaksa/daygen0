@@ -27,7 +27,7 @@ interface JobResponse {
 }
 
 export const ReelsEditorLayout = () => {
-    const { segments, isPlaying, setIsPlaying, currentTime, nextSegment, musicUrl, finalVideoUrl, musicVolume, jobId, jobDuration, setSegments, syncSegments, setMusicUrl, setFinalVideoUrl, setCurrentTime, setMusicVolume, setJobStatus, isWaitingForSegment, updateSegmentByIndex } = useTimelineStore();
+    const { segments, isPlaying, setIsPlaying, currentTime, musicUrl, finalVideoUrl, musicVolume, jobId, jobDuration, setSegments, syncSegments, setMusicUrl, setFinalVideoUrl, setCurrentTime, setMusicVolume, setJobStatus, isWaitingForSegment, updateSegmentByIndex } = useTimelineStore();
     const { audioRef } = useAudioSync();
 
     const musicRef = useRef<HTMLAudioElement | null>(null);
@@ -56,7 +56,7 @@ export const ReelsEditorLayout = () => {
                 (payload: RealtimePostgresChangesPayload<any>) => {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const newRow = payload.new as any;
-                    // console.log("Realtime Update Recv:", newRow.index, newRow.status);
+                    console.log(`[ReelsEditor] 📡 Realtime Update: Index ${newRow.index}, ID: ${newRow.id}, Duration: ${newRow.duration}, Status: ${newRow.status}`);
 
                     updateSegmentByIndex(newRow.index, {
                         id: newRow.id,
@@ -67,7 +67,7 @@ export const ReelsEditorLayout = () => {
                         imageUrl: newRow.imageUrl,
                         videoUrl: newRow.videoUrl,
                         status: newRow.status,
-                        duration: newRow.duration || 3.0,
+                        duration: newRow.duration,
                     });
                 }
             )
@@ -107,6 +107,11 @@ export const ReelsEditorLayout = () => {
 
                         // Only sync if significant drift or first load
                         // Or just let store's immer logic handle diffs (it does shallow compare).
+
+                        // DEBUG LOG
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        console.log("[ReelsEditor] 📥 Polling Job Data. Segments:", segmentsWithIds.map((s: any) => ({ id: s.id, dur: s.duration })));
+
                         syncSegments(segmentsWithIds as unknown as Segment[]);
                     }
 
@@ -130,7 +135,7 @@ export const ReelsEditorLayout = () => {
         };
 
         checkJob(); // immediate check
-        const intervalId = setInterval(checkJob, 5000); // Slower polling (5s)
+        const intervalId = setInterval(checkJob, 12000); // Polling (fallback) 12s
 
         return () => clearInterval(intervalId);
     }, [jobId, setSegments, syncSegments, setMusicVolume, setMusicUrl, setFinalVideoUrl, setIsPlaying, setCurrentTime, finalVideoUrl, setJobStatus]);
@@ -139,12 +144,6 @@ export const ReelsEditorLayout = () => {
     const activeSegment = segments.find(
         s => currentTime >= s.startTime && currentTime < s.endTime
     ) || segments[0];
-
-    // Handle audio ended event to move to next segment
-    const handleAudioEnded = () => {
-        console.log("Audio ended. Moving to next segment.");
-        nextSegment();
-    };
 
     // Sync video playback with isPlaying state
     useEffect(() => {
@@ -412,7 +411,6 @@ export const ReelsEditorLayout = () => {
                 <audio
                     ref={audioRef}
                     src={activeSegment?.voiceUrl || undefined}
-                    onEnded={handleAudioEnded}
                 />
                 <audio
                     ref={musicRef}

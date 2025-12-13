@@ -15,6 +15,21 @@ interface SceneBlockProps {
     currentTime: number;
 }
 
+const ELEVEN_LABS_TAGS = [
+    // Emotions
+    '[happy]', '[sad]', '[excited]', '[whispering]', '[shouting]', '[angry]', '[nervous]',
+    '[hopeful]', '[terrified]', '[friendly]', '[sarcastic]', '[pleading]', '[unimpressed]',
+    '[confused]', '[surprised]', '[disgusted]', '[arrogant]', '[grateful]', '[melancholic]',
+    '[romantic]', '[sympathetic]', '[calm]', '[serious]', '[cheerful]', '[annoyed]',
+    // Pacing & Delivery
+    '[pause]', '[short pause]', '[long pause]', '[fast]', '[slow]', '[enunciate]',
+    '[breathy]', '[deep voice]', '[high pitch]', '[monotone]', '[stutter]',
+    // Actions/Non-verbal
+    '[laughs]', '[chuckles]', '[giggles]', '[sighs]', '[gasps]', '[clears throat]',
+    '[coughs]', '[sneezes]', '[yawn]', '[sniffs]', '[groans]', '[hums]',
+    '[breathing heavily]', '[swallows]', '[lip smack]'
+];
+
 export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, currentTime }) => {
     const { updateSegmentScript, updateSegmentAudio, setCurrentTime, setIsSeeking, setSeekTarget } = useTimelineStore();
     const progressRef = React.useRef<HTMLDivElement>(null);
@@ -30,6 +45,10 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
     const [timer, setTimer] = React.useState(0);
     const { updateSegmentImage } = useTimelineStore();
     const [showVersionHistory, setShowVersionHistory] = React.useState(false);
+
+    // Tag Helper State
+    const [activeTagIndex, setActiveTagIndex] = React.useState(0);
+    const [lastTabTime, setLastTabTime] = React.useState(0);
 
     // FIX: Local state for prompts with Dirty Checking to prevent data loss on blur
     const [localVisualPrompt, setLocalVisualPrompt] = React.useState(segment.visualPrompt || '');
@@ -244,6 +263,60 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
         // Note: setCurrentTime(newTime) will be called by the TimeDriver in useAudioSync immediately after to update UI snap.
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const now = Date.now();
+            const isCycling = (now - lastTabTime) < 1500; // 1.5s window to cycle
+            setLastTabTime(now);
+
+            const textarea = e.currentTarget;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const value = localScript; // Use localScript state
+
+            let newScript = '';
+            let newCursorPos = 0;
+
+            if (isCycling) {
+                // Cycle to next tag
+                const nextIndex = (activeTagIndex + 1) % ELEVEN_LABS_TAGS.length;
+                setActiveTagIndex(nextIndex);
+                const prevTag = ELEVEN_LABS_TAGS[activeTagIndex];
+                const nextTag = ELEVEN_LABS_TAGS[nextIndex];
+
+                // Attempt to replace the tag immediately before the cursor
+                const textBefore = value.substring(0, start);
+                if (textBefore.endsWith(prevTag)) {
+                    newScript = textBefore.slice(0, -prevTag.length) + nextTag + value.substring(end);
+                    newCursorPos = start - prevTag.length + nextTag.length;
+                } else {
+                    // Fallback
+                    newScript = value.substring(0, start) + nextTag + value.substring(end);
+                    newCursorPos = start + nextTag.length;
+                }
+            } else {
+                // First press: Insert first tag
+                setActiveTagIndex(0);
+                const tag = ELEVEN_LABS_TAGS[0];
+                newScript = value.substring(0, start) + tag + value.substring(end);
+                newCursorPos = start + tag.length;
+            }
+
+            setLocalScript(newScript);
+
+            // Restore cursor position on next tick
+            setTimeout(() => {
+                if (textarea) {
+                    textarea.value = newScript;
+                    textarea.selectionStart = textarea.selectionEnd = newCursorPos;
+                }
+            }, 0);
+        }
+    };
+
     return (
         <div
             onClick={() => setCurrentTime(segment.startTime)}
@@ -424,17 +497,25 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
                             <span className="text-xs text-theme-white/40 font-mono">Generating Script...</span>
                         </div>
                     ) : (
-                        <textarea
-                            value={localScript}
-                            onChange={(e) => setLocalScript(e.target.value)}
-                            onClick={(e) => e.stopPropagation()}
-                            className={clsx(
-                                "w-full bg-transparent border-0 p-0 resize-none focus:ring-0 text-base sm:text-lg leading-relaxed transition-colors h-auto min-h-[4rem] font-raleway",
-                                isActive ? "text-theme-text placeholder:text-theme-white/30" : "text-theme-text/60 placeholder:text-theme-white/20"
+                        <div className="relative w-full">
+                            <textarea
+                                value={localScript}
+                                onChange={(e) => setLocalScript(e.target.value)}
+                                onClick={(e) => e.stopPropagation()}
+                                onKeyDown={handleKeyDown}
+                                className={clsx(
+                                    "w-full bg-transparent border-0 p-0 resize-none focus:ring-0 text-base sm:text-lg leading-relaxed transition-colors h-auto min-h-[4rem] font-raleway",
+                                    isActive ? "text-theme-text placeholder:text-theme-white/30" : "text-theme-text/60 placeholder:text-theme-white/20"
+                                )}
+                                placeholder="Enter script here..."
+                                spellCheck="false"
+                            />
+                            {!localScript && (
+                                <div className="absolute top-7 left-0 text-theme-white/30 pointer-events-none text-xs font-raleway select-none z-0 italic">
+                                    Press Tab to insert tags ([happy], [pause]...). Press repeatedly to cycle.
+                                </div>
                             )}
-                            placeholder="Enter script here..."
-                            spellCheck="false"
-                        />
+                        </div>
                     )
                 }
 

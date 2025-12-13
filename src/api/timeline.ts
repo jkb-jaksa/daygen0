@@ -14,11 +14,14 @@ export async function generateTimeline(
     duration: 'short' | 'medium' | 'long' = 'medium',
     musicVolume: number = 0.3,
     referenceImageUrls?: string[],
-    voiceId?: string
+    voiceId?: string,
+    includeVoiceover: boolean = true,
+    includeSubtitles: boolean = true
 ): Promise<Job> {
     return apiFetch<Job>('/api/timeline/generate', {
         method: 'POST',
-        body: { topic, style, duration, musicVolume, referenceImageUrls, voiceId },
+        // Map includeVoiceover -> includeNarration (backend DTO expectation)
+        body: { topic, style, duration, musicVolume, referenceImageUrls, voiceId, includeNarration: includeVoiceover, includeSubtitles },
     });
 }
 

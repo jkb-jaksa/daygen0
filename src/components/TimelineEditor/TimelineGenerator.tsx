@@ -1,10 +1,9 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { generateTimeline, type TimelineResponse } from '../../api/timeline';
 import { useTimelineStore, type Segment } from '../../stores/timelineStore';
 import { fetchJobs, type Job } from '../../api/jobs';
-import { Loader2, Sparkles, History, Volume2, VolumeX, Upload, X } from 'lucide-react';
+import { Loader2, Sparkles, History, Volume2, VolumeX, Upload, X, Captions, CaptionsOff } from 'lucide-react';
 import { uploadToR2 } from '../../utils/uploadToR2';
 import { VoiceSelector } from '../shared/VoiceSelector';
 
@@ -29,9 +28,12 @@ export default function TimelineGenerator() {
     const [referenceImages, setReferenceImages] = useState<string[]>([]);
     const [isUploadingImage, setIsUploadingImage] = useState(false);
     const [selectedVoiceId, setSelectedVoiceId] = useState<string>('');
+    const [includeVoiceover, setIncludeVoiceover] = useState(true);
+    const [includeSubtitles, setIncludeSubtitles] = useState(true);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [isDragging, setIsDragging] = useState(false);
+    const [hoveredControl, setHoveredControl] = useState<'voiceover' | 'subtitles' | null>(null);
 
     useEffect(() => {
         loadHistory();
@@ -188,7 +190,7 @@ export default function TimelineGenerator() {
             setMusicUrl(null);
             setFinalVideoUrl(null);
 
-            const job = await generateTimeline(topic, style, duration, musicVolume / 100, referenceImages, selectedVoiceId);
+            const job = await generateTimeline(topic, style, duration, musicVolume / 100, referenceImages, selectedVoiceId, includeVoiceover, includeSubtitles);
 
             // Set Job ID and navigate immediately
             setJobId(job.id);
@@ -206,7 +208,7 @@ export default function TimelineGenerator() {
     return (
         <div className="w-full max-w-3xl mx-auto p-6 pt-32 min-h-[60vh] flex flex-col gap-12">
             <div className="flex flex-col justify-center">
-                <div className="text-center mb-10">
+                <div className="text-center mb-8">
                     <h1 className="text-4xl font-raleway font-bold text-theme-text mb-4">
                         Create your Cyran Roll
                     </h1>
@@ -234,14 +236,16 @@ export default function TimelineGenerator() {
                         </div>
                     )}
 
+                    {/* Topic Section - Standard Size */}
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
                             <label htmlFor="topic" className="text-sm font-medium text-theme-white font-raleway ml-1">
                                 What video do you want to make?
                             </label>
                             <div className="flex items-center gap-2">
+                                {/* Reference Images */}
                                 {referenceImages.length > 0 && (
-                                    <div className="flex items-center gap-2 mr-2">
+                                    <div className="flex items-center gap-1.5 mr-1">
                                         {referenceImages.map((url, i) => (
                                             <div key={i} className="relative w-8 h-8 rounded overflow-hidden group border border-theme-white/20">
                                                 <img src={url} className="w-full h-full object-cover" alt={`Ref ${i}`} />
@@ -268,7 +272,7 @@ export default function TimelineGenerator() {
                                         ) : (
                                             <Upload className="w-3.5 h-3.5" />
                                         )}
-                                        {isUploadingImage ? 'Uploading...' : 'Add Reference'}
+                                        {isUploadingImage ? '...' : 'Add Reference'}
                                     </button>
                                     <input
                                         type="file"
@@ -287,82 +291,131 @@ export default function TimelineGenerator() {
                             value={topic}
                             onChange={(e) => setTopic(e.target.value)}
                             placeholder="e.g. A futuristic documentary about the history of coffee..."
-                            className="w-full h-32 bg-theme-black/40 border border-theme-dark rounded-xl p-4 text-theme-text font-raleway text-base resize-none focus:outline-none focus:border-theme-mid focus:ring-1 focus:ring-theme-mid transition-all placeholder:text-theme-white/30"
+                            className="w-full h-28 bg-theme-black/40 border border-theme-dark rounded-xl p-4 text-theme-text font-raleway text-base resize-none focus:outline-none focus:border-theme-mid focus:ring-1 focus:ring-theme-mid transition-all placeholder:text-theme-white/30"
                             required
                         />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label htmlFor="style" className="block text-sm font-medium text-theme-white font-raleway ml-1">
-                                Style
-                            </label>
-                            <select
-                                id="style"
-                                value={style}
-                                onChange={(e) => setStyle(e.target.value)}
-                                className="w-full bg-theme-black/40 border border-theme-dark rounded-xl p-3 text-theme-text font-raleway text-sm focus:outline-none focus:border-theme-mid focus:ring-1 focus:ring-theme-mid transition-all appearance-none cursor-pointer"
-                            >
-                                <option value="Cinematic">Cinematic</option>
-                                <option value="Documentary">Documentary</option>
-                                <option value="Vlog">Vlog</option>
-                                <option value="Educational">Educational</option>
-                                <option value="Music Video">Music Video</option>
-                            </select>
-                        </div>
+                    {/* Compact Controls Area */}
+                    <div className="space-y-3 pt-2">
+                        {/* Row 1: Style & Duration */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <label htmlFor="style" className="block text-xs font-medium text-theme-white/80 font-raleway ml-1 uppercase tracking-wide">
+                                    Style
+                                </label>
+                                <select
+                                    id="style"
+                                    value={style}
+                                    onChange={(e) => setStyle(e.target.value)}
+                                    className="w-full bg-theme-black/40 border border-theme-dark rounded-lg p-2 text-theme-text font-raleway text-xs focus:outline-none focus:border-theme-mid focus:ring-1 focus:ring-theme-mid transition-all appearance-none cursor-pointer hover:border-theme-white/20"
+                                >
+                                    <option value="Cinematic">Cinematic</option>
+                                    <option value="Documentary">Documentary</option>
+                                    <option value="Vlog">Vlog</option>
+                                    <option value="Educational">Educational</option>
+                                    <option value="Music Video">Music Video</option>
+                                </select>
+                            </div>
 
-                        <div className="space-y-2">
-                            <span className="block text-sm font-medium text-theme-white font-raleway ml-1">
-                                Duration
-                            </span>
-                            <div className="grid grid-cols-3 gap-2">
-                                {(['short', 'medium', 'long'] as const).map((d) => (
-                                    <button
-                                        key={d}
-                                        type="button"
-                                        onClick={() => setDuration(d)}
-                                        className={`p-2 rounded-xl border font-raleway text-xs transition-all flex flex-col items-center justify-center gap-0.5 ${duration === d
-                                            ? 'bg-theme-mid/20 border-theme-mid text-theme-mid shadow-[0_0_10px_rgba(0,255,255,0.1)]'
-                                            : 'bg-theme-black/40 border-theme-dark text-theme-text/60 hover:border-theme-white/30 hover:text-theme-text'
-                                            }`}
-                                    >
-                                        <span className="capitalize font-bold">{d}</span>
-                                        <span className="text-[10px] opacity-60">
-                                            {d === 'short' ? '~15s' : d === 'medium' ? '~30s' : '~60s'}
-                                        </span>
-                                    </button>
-                                ))}
+                            <div className="space-y-1.5">
+                                <span className="block text-xs font-medium text-theme-white/80 font-raleway ml-1 uppercase tracking-wide">
+                                    Duration
+                                </span>
+                                <div className="grid grid-cols-3 gap-1.5">
+                                    {(['short', 'medium', 'long'] as const).map((d) => (
+                                        <button
+                                            key={d}
+                                            type="button"
+                                            onClick={() => setDuration(d)}
+                                            className={`py-1.5 px-1 rounded-lg border font-raleway transition-all flex flex-col items-center justify-center gap-0.5 ${duration === d
+                                                ? 'bg-theme-mid/20 border-theme-mid text-theme-mid shadow-[0_0_8px_rgba(0,255,255,0.15)]'
+                                                : 'bg-theme-black/40 border-theme-dark text-theme-white/50 hover:border-theme-white/30 hover:text-theme-white'
+                                                }`}
+                                        >
+                                            <span className="capitalize font-bold text-[10px]">{d}</span>
+                                            <span className="text-[8px] opacity-60 leading-none">
+                                                {d === 'short' ? '~15s' : d === 'medium' ? '~30s' : '~60s'}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="space-y-2">
-                        <label className="block text-sm font-medium text-theme-white font-raleway ml-1">
-                            Narrator Voice
-                        </label>
-                        <VoiceSelector
-                            value={selectedVoiceId}
-                            onChange={setSelectedVoiceId}
-                            className="w-full bg-theme-black/40 border border-theme-dark rounded-xl p-3 text-theme-text font-raleway text-sm focus:outline-none focus:border-theme-mid focus:ring-1 focus:ring-theme-mid transition-all appearance-none cursor-pointer"
-                        />
-                    </div>
+                        {/* Row 2: Narrator & Volume */}
+                        <div className="grid grid-cols-2 gap-3">
+                            {/* Compact Narrator Voice */}
+                            <div className="space-y-1.5">
+                                <label className="block text-xs font-medium text-theme-white/80 font-raleway ml-1 uppercase tracking-wide">
+                                    Narrator Voice
+                                </label>
+                                <VoiceSelector
+                                    value={selectedVoiceId}
+                                    onChange={setSelectedVoiceId}
+                                    className="w-full bg-theme-black/40 border border-theme-dark rounded-lg p-2 text-theme-text font-raleway text-xs focus:outline-none focus:border-theme-mid focus:ring-1 focus:ring-theme-mid transition-all appearance-none cursor-pointer hover:border-theme-white/20"
+                                />
+                            </div>
 
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-2 mb-2">
-                            {musicVolume === 0 ? <VolumeX className="w-4 h-4 text-theme-white/60" /> : <Volume2 className="w-4 h-4 text-theme-white/60" />}
-                            <label htmlFor="volume" className="text-sm font-medium text-theme-white font-raleway">
-                                Music Volume: {musicVolume}%
-                            </label>
+                            {/* Compact Volume & Toggles */}
+                            <div className="space-y-1.5">
+                                <label className="block text-xs font-medium text-theme-white/80 font-raleway ml-1 uppercase tracking-wide h-4 transition-all duration-200">
+                                    {hoveredControl === 'voiceover'
+                                        ? `Voiceover: ${includeVoiceover ? 'On' : 'Off (Visual Only ~5s)'}`
+                                        : hoveredControl === 'subtitles'
+                                            ? `Subtitles: ${includeSubtitles ? 'On' : 'Off'}`
+                                            : 'Audio Settings'}
+                                </label>
+                                <div className="flex items-center gap-2 bg-theme-black/40 border border-theme-dark rounded-xl p-2 h-[34px]">
+                                    {/* Slim Volume Slider */}
+                                    <div className="flex-1 flex items-center gap-2 ml-1">
+                                        {musicVolume === 0 ? <VolumeX className="w-3.5 h-3.5 text-theme-white/60" /> : <Volume2 className="w-3.5 h-3.5 text-theme-white/60" />}
+                                        <input
+                                            id="volume"
+                                            type="range"
+                                            min="0"
+                                            max="100"
+                                            value={musicVolume}
+                                            onChange={(e) => setMusicVolume(parseInt(e.target.value))}
+                                            className="flex-1 h-1 bg-theme-dark rounded-lg appearance-none cursor-pointer accent-theme-mid hover:accent-cyan-400 transition-all"
+                                            title={`Music Volume: ${musicVolume}%`}
+                                        />
+                                        <span className="text-[10px] font-mono text-theme-white/60 w-8 text-right">{musicVolume}%</span>
+                                    </div>
+
+                                    <div className="w-px h-4 bg-theme-dark/50 mx-0.5" />
+
+                                    {/* Compact Toggles with Tooltips */}
+                                    <div className="flex gap-1">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIncludeVoiceover(!includeVoiceover)}
+                                            onMouseEnter={() => setHoveredControl('voiceover')}
+                                            onMouseLeave={() => setHoveredControl(null)}
+                                            className={`group relative flex flex-col items-center justify-center w-7 h-7 rounded-md border transition-all ${includeVoiceover
+                                                ? 'bg-theme-mid/20 border-theme-mid text-theme-mid shadow-[0_0_10px_rgba(0,255,255,0.1)]'
+                                                : 'bg-theme-black/40 border-theme-dark text-theme-white/40 hover:border-theme-white/30 hover:text-theme-white'
+                                                }`}
+                                        >
+                                            {includeVoiceover ? <Volume2 className="w-3 h-3" /> : <VolumeX className="w-3 h-3" />}
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => setIncludeSubtitles(!includeSubtitles)}
+                                            onMouseEnter={() => setHoveredControl('subtitles')}
+                                            onMouseLeave={() => setHoveredControl(null)}
+                                            className={`group relative flex flex-col items-center justify-center w-7 h-7 rounded-md border transition-all ${includeSubtitles
+                                                ? 'bg-theme-mid/20 border-theme-mid text-theme-mid shadow-[0_0_10px_rgba(0,255,255,0.1)]'
+                                                : 'bg-theme-black/40 border-theme-dark text-theme-white/40 hover:border-theme-white/30 hover:text-theme-white'
+                                                }`}
+                                        >
+                                            {includeSubtitles ? <Captions className="w-3 h-3" /> : <CaptionsOff className="w-3 h-3" />}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <input
-                            id="volume"
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={musicVolume}
-                            onChange={(e) => setMusicVolume(parseInt(e.target.value))}
-                            className="w-full h-2 bg-theme-dark rounded-lg appearance-none cursor-pointer accent-theme-mid hover:accent-cyan-400 transition-all"
-                        />
                     </div>
 
                     <button
