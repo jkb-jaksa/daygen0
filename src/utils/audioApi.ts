@@ -55,8 +55,31 @@ async function fetchWithAuthFormData(
   });
 }
 
-export async function fetchElevenLabsVoices(): Promise<VoicesResponse> {
-  return apiFetch<VoicesResponse>("/api/audio/voices", { method: "GET" });
+let cachedVoicesResponse: VoicesResponse | null = null;
+let voicesFetchPromise: Promise<VoicesResponse> | null = null;
+
+export async function fetchElevenLabsVoices(forceRefresh = false): Promise<VoicesResponse> {
+  if (!forceRefresh && cachedVoicesResponse) {
+    return cachedVoicesResponse;
+  }
+
+  // Deduplicate concurrent requests
+  if (voicesFetchPromise) {
+    return voicesFetchPromise;
+  }
+
+  voicesFetchPromise = apiFetch<VoicesResponse>("/api/audio/voices", { method: "GET" })
+    .then((response) => {
+      if (response.success) {
+        cachedVoicesResponse = response;
+      }
+      return response;
+    })
+    .finally(() => {
+      voicesFetchPromise = null;
+    });
+
+  return voicesFetchPromise;
 }
 
 export async function cloneElevenLabsVoice(
