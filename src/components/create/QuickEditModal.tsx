@@ -1267,7 +1267,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                         // Mutual exclusivity - disable resize mode when enabling inpaint
                         if (!isMaskToolbarVisible) setIsResizeMode(false);
                     }}
-                    className={`flex items-center gap-1.5 px-3 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)] font-raleway font-normal text-sm ${isMaskToolbarVisible ? 'text-theme-text border-theme-text' : 'text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text'}`}
+                    className={`flex items-center gap-1.5 px-3 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)] font-raleway font-normal text-sm ${isMaskToolbarVisible ? 'text-theme-text border-theme-text' : 'text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text hover:bg-theme-text/10'}`}
                     onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'precise-edit-tooltip')}
                     onMouseLeave={() => hideHoverTooltip('precise-edit-tooltip')}
                 >
@@ -1333,7 +1333,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                             setResizeUserPrompt('');
                         }
                     }}
-                    className={`flex items-center gap-1.5 px-3 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)] font-raleway font-normal text-sm ${isResizeMode ? 'text-theme-text border-theme-text' : 'text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text'}`}
+                    className={`flex items-center gap-1.5 px-3 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)] font-raleway font-normal text-sm ${isResizeMode ? 'text-theme-text border-theme-text' : 'text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text hover:bg-theme-text/10'}`}
                     onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'resize-tooltip')}
                     onMouseLeave={() => hideHoverTooltip('resize-tooltip')}
                 >
@@ -1482,7 +1482,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
             )}
 
             <div
-                className={`fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/75 px-4 backdrop-blur-sm ${isResizeMode ? 'pt-20 pb-4' : 'pt-20 pb-6'}`}
+                className={`fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/75 px-4 backdrop-blur-sm ${isResizeMode ? 'pt-20 pb-4' : 'pt-24 pb-8'}`}
                 onClick={(e) => {
                     e.stopPropagation();
                     onClose();
@@ -1490,7 +1490,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
             >
                 <div
                     ref={modalRef}
-                    className={`${glass.promptDark} w-full ${isResizeMode ? 'max-w-6xl flex flex-col p-4' : 'max-w-[96vw] flex flex-col md:flex-row p-6'} rounded-3xl border border-theme-dark shadow-2xl gap-6 transition-all duration-200`}
+                    className={`${glass.promptDark} w-full ${isResizeMode ? 'max-w-6xl flex flex-col p-4' : 'max-w-[96vw] flex flex-col md:flex-row p-8'} rounded-3xl border border-theme-dark shadow-2xl gap-8 transition-all duration-200`}
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Left Column - Image Preview (hidden in resize mode since canvas is in right column) */}
@@ -1723,7 +1723,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
 
                     {/* Right Column - Form */}
                     <div className={`flex flex-col ${isResizeMode ? 'w-full' : 'flex-1 w-full md:min-w-[720px]'}`}>
-                        <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center justify-between mb-4">
                             <h2 className="text-lg font-raleway text-theme-text flex items-center gap-2">
                                 <Edit className="w-5 h-5 text-theme-text" />
                                 Edit
@@ -1742,7 +1742,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                         {isResizeMode ? (
                             <div className="flex flex-col h-full overflow-hidden">
                                 {/* Top Section: Image + Aspect Ratio Sidebar */}
-                                <div className="flex flex-row flex-1 overflow-hidden min-h-0 gap-2">
+                                <div className="flex flex-row flex-1 overflow-hidden min-h-0 gap-4">
                                     {/* Center: Image Canvas */}
                                     <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden bg-theme-black/20 rounded-xl">
                                         {resizeAspectRatio && resizeLayoutInfo ? (
@@ -1860,7 +1860,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                     </div>
 
                                     {/* Right Sidebar: Aspect Ratio Grid */}
-                                    <div className="w-[400px] flex-shrink-0 flex flex-col gap-2 overflow-y-auto pr-1">
+                                    <div className="w-[400px] flex-shrink-0 flex flex-col gap-2 overflow-y-auto pr-1 custom-scrollbar">
                                         <div className="flex items-center justify-between sticky top-0 bg-theme-bg z-10 pb-2">
                                             <label className="text-xs font-raleway font-medium text-theme-text uppercase tracking-wider">Aspect Ratio</label>
                                         </div>
@@ -1915,7 +1915,8 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
 
                                         {/* Main flex container: left column + right buttons */}
                                         <div
-                                            className={`flex gap-3 items-stretch pb-2 pr-3 rounded-xl transition-colors duration-200 ${glass.prompt} focus-within:border-theme-mid ${isDragActive ? 'border border-n-text shadow-[0_0_32px_rgba(255,255,255,0.25)]' : ''}`}
+                                            className={`flex gap-3 items-stretch pb-2 pr-3 rounded-xl transition-all duration-200 ${glass.prompt} border border-transparent focus-within:border-theme-text/50 focus-within:shadow-[0_0_15px_rgba(var(--theme-text-rgb),0.1)] ${isDragActive ? 'border-theme-text shadow-[0_0_32px_rgba(255,255,255,0.25)]' : ''
+                                                }`}
                                             onDragOver={(e) => {
                                                 handleDragOver(e);
                                                 setIsDragActive(true);
@@ -2307,7 +2308,8 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                         Enter your prompt
                                     </label>
                                     <div
-                                        className={`relative flex flex-col rounded-xl transition-colors duration-200 ${glass.prompt} focus-within:border-theme-mid ${isDragActive ? 'border border-n-text shadow-[0_0_32px_rgba(255,255,255,0.25)]' : ''}`}
+                                        className={`relative flex flex-col rounded-xl transition-all duration-200 ${glass.prompt} border border-transparent focus-within:border-theme-text/50 focus-within:shadow-[0_0_15px_rgba(var(--theme-text-rgb),0.1)] ${isDragActive ? 'border-theme-text shadow-[0_0_32px_rgba(255,255,255,0.25)]' : ''
+                                            }`}
                                         onDragOver={(e) => {
                                             handleDragOver(e);
                                             setIsDragActive(true);
