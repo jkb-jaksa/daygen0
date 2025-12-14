@@ -4,10 +4,11 @@ import { createProductRecord, normalizeStoredProducts } from '../../../utils/pro
 import { getPersistedValue, setPersistedValue } from '../../../lib/clientStorage';
 import { debugLog, debugError } from '../../../utils/debug';
 import { STORAGE_CHANGE_EVENT, dispatchStorageChange, type StorageChangeDetail } from '../../../utils/storageEvents';
-import type { StoredProduct, ProductSelection } from '../../products/types';
+import { getApiUrl } from '../../../utils/api';
+import type { StoredProduct, ProductSelection, ProductImage } from '../../products/types';
 
 export function useProductHandlers() {
-  const { user, storagePrefix } = useAuth();
+  const { user, storagePrefix, token } = useAuth();
 
   // Product state
   const [storedProducts, setStoredProducts] = useState<StoredProduct[]>([]);
@@ -38,19 +39,63 @@ export function useProductHandlers() {
     return map;
   }, [storedProducts]);
 
-  // Load stored products
+  // Load stored products - fetch from backend, fallback to local storage
   const loadStoredProducts = useCallback(async () => {
     if (!storagePrefix) return;
 
     try {
+      // Try to fetch from backend first
+      if (token) {
+        try {
+          const response = await fetch(getApiUrl('/api/products'), {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (response.ok) {
+            const backendProducts = await response.json();
+            // Convert backend format to StoredProduct format
+            const normalized: StoredProduct[] = backendProducts.map((p: any) => ({
+              id: p.id,
+              slug: p.slug,
+              name: p.name,
+              imageUrl: p.imageUrl,
+              createdAt: p.createdAt,
+              source: p.source as 'upload' | 'gallery',
+              sourceId: p.sourceId,
+              published: p.published,
+              ownerId: user?.id,
+              primaryImageId: p.primaryImageId || p.images?.[0]?.id || '',
+              images: (p.images || []).map((img: any) => ({
+                id: img.id,
+                url: img.url,
+                createdAt: img.createdAt,
+                source: img.source as 'upload' | 'gallery',
+                sourceId: img.sourceId,
+              })),
+            }));
+            setStoredProducts(normalized);
+            // Also update local cache
+            await setPersistedValue(storagePrefix, 'products', normalized);
+            debugLog('[useProductHandlers] Loaded products from backend:', normalized.length);
+            return;
+          }
+        } catch (backendError) {
+          debugError('[useProductHandlers] Backend fetch failed, using local storage:', backendError);
+        }
+      }
+
+      // Fallback to local storage
       const stored = await getPersistedValue<StoredProduct[]>(storagePrefix, 'products') ?? [];
       const normalized = normalizeStoredProducts(stored);
       setStoredProducts(normalized);
-      debugLog('[useProductHandlers] Loaded stored products:', normalized.length);
+      debugLog('[useProductHandlers] Loaded stored products from local:', normalized.length);
     } catch (error) {
       debugError('[useProductHandlers] Error loading stored products:', error);
     }
-  }, [storagePrefix]);
+  }, [storagePrefix, token, user?.id]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -70,26 +115,106 @@ export function useProductHandlers() {
     };
   }, [loadStoredProducts]);
 
-  // Save product
+  // Save product - sync with backend and local storage
   const saveProduct = useCallback(async (product: StoredProduct) => {
     if (!storagePrefix) return;
 
     try {
-      const updated = [...storedProducts, product];
+      let savedProduct = product;
+
+      // Sync to backend if token available
+      if (token) {
+        try {
+          const response = await fetch(getApiUrl('/api/products'), {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              name: product.name,
+              imageUrl: product.imageUrl,
+              source: product.source,
+              sourceId: product.sourceId,
+              published: product.published,
+              images: product.images.map(img => ({
+                url: img.url,
+                source: img.source,
+                sourceId: img.sourceId,
+              })),
+            }),
+          });
+
+          if (response.ok) {
+            const backendProduct = await response.json();
+            // Use backend-generated ID and data
+            savedProduct = {
+              id: backendProduct.id,
+              slug: backendProduct.slug,
+              name: backendProduct.name,
+              imageUrl: backendProduct.imageUrl,
+              createdAt: backendProduct.createdAt,
+              source: backendProduct.source as 'upload' | 'gallery',
+              sourceId: backendProduct.sourceId,
+              published: backendProduct.published,
+              ownerId: user?.id,
+              primaryImageId: backendProduct.primaryImageId || backendProduct.images?.[0]?.id || '',
+              images: (backendProduct.images || []).map((img: any) => ({
+                id: img.id,
+                url: img.url,
+                createdAt: img.createdAt,
+                source: img.source as 'upload' | 'gallery',
+                sourceId: img.sourceId,
+              })),
+            };
+            debugLog('[useProductHandlers] Product saved to backend:', savedProduct.id);
+          } else {
+            debugError('[useProductHandlers] Backend save failed:', response.status);
+          }
+        } catch (backendError) {
+          debugError('[useProductHandlers] Backend save error:', backendError);
+        }
+      }
+
+      // Update local state and cache
+      const updated = [...storedProducts, savedProduct];
       await setPersistedValue(storagePrefix, 'products', updated);
       setStoredProducts(updated);
       dispatchStorageChange('products');
-      debugLog('[useProductHandlers] Saved product:', product.name);
+      debugLog('[useProductHandlers] Saved product:', savedProduct.name);
+
+      return savedProduct;
     } catch (error) {
       debugError('[useProductHandlers] Error saving product:', error);
     }
-  }, [storagePrefix, storedProducts]);
+  }, [storagePrefix, storedProducts, token, user?.id]);
 
-  // Delete product
+  // Delete product - sync with backend and local storage
   const deleteProduct = useCallback(async (productId: string) => {
     if (!storagePrefix) return;
 
     try {
+      // Sync to backend if token available
+      if (token) {
+        try {
+          const response = await fetch(getApiUrl(`/api/products/${productId}`), {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+
+          if (response.ok) {
+            debugLog('[useProductHandlers] Product deleted from backend:', productId);
+          } else {
+            debugError('[useProductHandlers] Backend delete failed:', response.status);
+          }
+        } catch (backendError) {
+          debugError('[useProductHandlers] Backend delete error:', backendError);
+        }
+      }
+
+      // Update local state and cache
       const updated = storedProducts.filter(product => product.id !== productId);
       await setPersistedValue(storagePrefix, 'products', updated);
       setStoredProducts(updated);
@@ -104,13 +229,42 @@ export function useProductHandlers() {
     } catch (error) {
       debugError('[useProductHandlers] Error deleting product:', error);
     }
-  }, [storagePrefix, storedProducts, selectedProduct]);
+  }, [storagePrefix, storedProducts, selectedProduct, token]);
 
-  // Update product
+  // Update product - sync with backend and local storage
   const updateProduct = useCallback(async (productId: string, updates: Partial<StoredProduct>) => {
     if (!storagePrefix) return;
 
     try {
+      // Sync to backend if token available
+      if (token) {
+        try {
+          const response = await fetch(getApiUrl(`/api/products/${productId}`), {
+            method: 'PATCH',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              name: updates.name,
+              imageUrl: updates.imageUrl,
+              source: updates.source,
+              sourceId: updates.sourceId,
+              published: updates.published,
+            }),
+          });
+
+          if (response.ok) {
+            debugLog('[useProductHandlers] Product updated on backend:', productId);
+          } else {
+            debugError('[useProductHandlers] Backend update failed:', response.status);
+          }
+        } catch (backendError) {
+          debugError('[useProductHandlers] Backend update error:', backendError);
+        }
+      }
+
+      // Update local state and cache
       const updated = storedProducts.map(product =>
         product.id === productId ? { ...product, ...updates } : product
       );
@@ -121,7 +275,7 @@ export function useProductHandlers() {
     } catch (error) {
       debugError('[useProductHandlers] Error updating product:', error);
     }
-  }, [storagePrefix, storedProducts]);
+  }, [storagePrefix, storedProducts, token]);
 
   // Handle product selection
   const handleProductSelect = useCallback((product: StoredProduct | null) => {

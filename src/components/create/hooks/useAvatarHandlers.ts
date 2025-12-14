@@ -4,10 +4,11 @@ import { createAvatarRecord, normalizeStoredAvatars } from '../../../utils/avata
 import { getPersistedValue, setPersistedValue } from '../../../lib/clientStorage';
 import { debugLog, debugError } from '../../../utils/debug';
 import { STORAGE_CHANGE_EVENT, dispatchStorageChange, type StorageChangeDetail } from '../../../utils/storageEvents';
-import type { StoredAvatar, AvatarSelection } from '../../avatars/types';
+import { getApiUrl } from '../../../utils/api';
+import type { StoredAvatar, AvatarSelection, AvatarImage } from '../../avatars/types';
 
 export function useAvatarHandlers() {
-  const { user, storagePrefix } = useAuth();
+  const { user, storagePrefix, token } = useAuth();
 
   // Avatar state
   const [storedAvatars, setStoredAvatars] = useState<StoredAvatar[]>([]);
@@ -61,19 +62,63 @@ export function useAvatarHandlers() {
     return selectedAvatarImage?.id ?? selectedAvatarImageId ?? selectedAvatar.primaryImageId ?? selectedAvatar.images[0]?.id ?? null;
   }, [selectedAvatar, selectedAvatarImage, selectedAvatarImageId]);
 
-  // Load stored avatars
+  // Load stored avatars - fetch from backend, fallback to local storage
   const loadStoredAvatars = useCallback(async () => {
     if (!storagePrefix) return;
 
     try {
+      // Try to fetch from backend first
+      if (token) {
+        try {
+          const response = await fetch(getApiUrl('/api/avatars'), {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (response.ok) {
+            const backendAvatars = await response.json();
+            // Convert backend format to StoredAvatar format
+            const normalized: StoredAvatar[] = backendAvatars.map((a: any) => ({
+              id: a.id,
+              slug: a.slug,
+              name: a.name,
+              imageUrl: a.imageUrl,
+              createdAt: a.createdAt,
+              source: a.source as 'upload' | 'gallery',
+              sourceId: a.sourceId,
+              published: a.published,
+              ownerId: user?.id,
+              primaryImageId: a.primaryImageId || a.images?.[0]?.id || '',
+              images: (a.images || []).map((img: any) => ({
+                id: img.id,
+                url: img.url,
+                createdAt: img.createdAt,
+                source: img.source as 'upload' | 'gallery',
+                sourceId: img.sourceId,
+              })),
+            }));
+            setStoredAvatars(normalized);
+            // Also update local cache
+            await setPersistedValue(storagePrefix, 'avatars', normalized);
+            debugLog('[useAvatarHandlers] Loaded avatars from backend:', normalized.length);
+            return;
+          }
+        } catch (backendError) {
+          debugError('[useAvatarHandlers] Backend fetch failed, using local storage:', backendError);
+        }
+      }
+
+      // Fallback to local storage
       const stored = await getPersistedValue<StoredAvatar[]>(storagePrefix, 'avatars') ?? [];
       const normalized = normalizeStoredAvatars(stored);
       setStoredAvatars(normalized);
-      debugLog('[useAvatarHandlers] Loaded stored avatars:', normalized.length);
+      debugLog('[useAvatarHandlers] Loaded stored avatars from local:', normalized.length);
     } catch (error) {
       debugError('[useAvatarHandlers] Error loading stored avatars:', error);
     }
-  }, [storagePrefix]);
+  }, [storagePrefix, token, user?.id]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -93,26 +138,106 @@ export function useAvatarHandlers() {
     };
   }, [loadStoredAvatars]);
 
-  // Save avatar
+  // Save avatar - sync with backend and local storage
   const saveAvatar = useCallback(async (avatar: StoredAvatar) => {
     if (!storagePrefix) return;
 
     try {
-      const updated = [...storedAvatars, avatar];
+      let savedAvatar = avatar;
+
+      // Sync to backend if token available
+      if (token) {
+        try {
+          const response = await fetch(getApiUrl('/api/avatars'), {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              name: avatar.name,
+              imageUrl: avatar.imageUrl,
+              source: avatar.source,
+              sourceId: avatar.sourceId,
+              published: avatar.published,
+              images: avatar.images.map(img => ({
+                url: img.url,
+                source: img.source,
+                sourceId: img.sourceId,
+              })),
+            }),
+          });
+
+          if (response.ok) {
+            const backendAvatar = await response.json();
+            // Use backend-generated ID and data
+            savedAvatar = {
+              id: backendAvatar.id,
+              slug: backendAvatar.slug,
+              name: backendAvatar.name,
+              imageUrl: backendAvatar.imageUrl,
+              createdAt: backendAvatar.createdAt,
+              source: backendAvatar.source as 'upload' | 'gallery',
+              sourceId: backendAvatar.sourceId,
+              published: backendAvatar.published,
+              ownerId: user?.id,
+              primaryImageId: backendAvatar.primaryImageId || backendAvatar.images?.[0]?.id || '',
+              images: (backendAvatar.images || []).map((img: any) => ({
+                id: img.id,
+                url: img.url,
+                createdAt: img.createdAt,
+                source: img.source as 'upload' | 'gallery',
+                sourceId: img.sourceId,
+              })),
+            };
+            debugLog('[useAvatarHandlers] Avatar saved to backend:', savedAvatar.id);
+          } else {
+            debugError('[useAvatarHandlers] Backend save failed:', response.status);
+          }
+        } catch (backendError) {
+          debugError('[useAvatarHandlers] Backend save error:', backendError);
+        }
+      }
+
+      // Update local state and cache
+      const updated = [...storedAvatars, savedAvatar];
       await setPersistedValue(storagePrefix, 'avatars', updated);
       setStoredAvatars(updated);
       dispatchStorageChange('avatars');
-      debugLog('[useAvatarHandlers] Saved avatar:', avatar.name);
+      debugLog('[useAvatarHandlers] Saved avatar:', savedAvatar.name);
+
+      return savedAvatar;
     } catch (error) {
       debugError('[useAvatarHandlers] Error saving avatar:', error);
     }
-  }, [storagePrefix, storedAvatars]);
+  }, [storagePrefix, storedAvatars, token, user?.id]);
 
-  // Delete avatar
+  // Delete avatar - sync with backend and local storage
   const deleteAvatar = useCallback(async (avatarId: string) => {
     if (!storagePrefix) return;
 
     try {
+      // Sync to backend if token available
+      if (token) {
+        try {
+          const response = await fetch(getApiUrl(`/api/avatars/${avatarId}`), {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+
+          if (response.ok) {
+            debugLog('[useAvatarHandlers] Avatar deleted from backend:', avatarId);
+          } else {
+            debugError('[useAvatarHandlers] Backend delete failed:', response.status);
+          }
+        } catch (backendError) {
+          debugError('[useAvatarHandlers] Backend delete error:', backendError);
+        }
+      }
+
+      // Update local state and cache
       const updated = storedAvatars.filter(avatar => avatar.id !== avatarId);
       await setPersistedValue(storagePrefix, 'avatars', updated);
       setStoredAvatars(updated);
@@ -128,13 +253,42 @@ export function useAvatarHandlers() {
     } catch (error) {
       debugError('[useAvatarHandlers] Error deleting avatar:', error);
     }
-  }, [storagePrefix, storedAvatars, selectedAvatar]);
+  }, [storagePrefix, storedAvatars, selectedAvatar, token]);
 
-  // Update avatar
+  // Update avatar - sync with backend and local storage
   const updateAvatar = useCallback(async (avatarId: string, updates: Partial<StoredAvatar>) => {
     if (!storagePrefix) return;
 
     try {
+      // Sync to backend if token available
+      if (token) {
+        try {
+          const response = await fetch(getApiUrl(`/api/avatars/${avatarId}`), {
+            method: 'PATCH',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              name: updates.name,
+              imageUrl: updates.imageUrl,
+              source: updates.source,
+              sourceId: updates.sourceId,
+              published: updates.published,
+            }),
+          });
+
+          if (response.ok) {
+            debugLog('[useAvatarHandlers] Avatar updated on backend:', avatarId);
+          } else {
+            debugError('[useAvatarHandlers] Backend update failed:', response.status);
+          }
+        } catch (backendError) {
+          debugError('[useAvatarHandlers] Backend update error:', backendError);
+        }
+      }
+
+      // Update local state and cache
       const updated = storedAvatars.map(avatar =>
         avatar.id === avatarId ? { ...avatar, ...updates } : avatar
       );
@@ -145,7 +299,7 @@ export function useAvatarHandlers() {
     } catch (error) {
       debugError('[useAvatarHandlers] Error updating avatar:', error);
     }
-  }, [storagePrefix, storedAvatars]);
+  }, [storagePrefix, storedAvatars, token]);
 
   // Handle avatar selection
   const handleAvatarSelect = useCallback((avatar: StoredAvatar | null) => {

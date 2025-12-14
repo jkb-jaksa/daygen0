@@ -417,7 +417,7 @@ const GalleryContext = createContext<GalleryContextType | null>(null);
 export function GalleryProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(galleryReducer, initialState);
   const location = useLocation();
-  const { storagePrefix } = useAuth();
+  const { storagePrefix, token: authToken } = useAuth();
   const {
     jobId: jobIdParam,
     setJobId: setJobIdParam,
@@ -486,12 +486,61 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
 
   const updateImage = useCallback(async (id: string, updates: Partial<GalleryImageLike>) => {
     const targetImage = findImageById(id);
+
+    // For isPublic/isLiked/model updates, directly call the backend API if we have r2FileId
+    // This bypasses the unreliable URL matching in useGalleryImages
+    const shouldPatchBackend = updates.isPublic !== undefined || updates.isLiked !== undefined || updates.model !== undefined;
+
+    if (targetImage && shouldPatchBackend && authToken) {
+      if (targetImage.r2FileId) {
+        // Direct API call with r2FileId
+        const apiUrl = `${import.meta.env.VITE_API_BASE_URL || ''}/api/r2files/${targetImage.r2FileId}`;
+        const patchPayload: Record<string, boolean | string> = {};
+        if (updates.isPublic !== undefined) patchPayload.isPublic = updates.isPublic;
+        if (updates.isLiked !== undefined) patchPayload.isLiked = updates.isLiked;
+        if (updates.model !== undefined) patchPayload.model = updates.model;
+
+        fetch(apiUrl, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(patchPayload),
+        }).catch(err => {
+          console.error('[GalleryContext.updateImage] PATCH failed:', err);
+        });
+      } else if (targetImage.url) {
+        // Fallback to URL-based update
+        const apiUrl = `${import.meta.env.VITE_API_BASE_URL || ''}/api/r2files/by-url`;
+        const patchPayload: Record<string, boolean | string> = {};
+        if (updates.isPublic !== undefined) patchPayload.isPublic = updates.isPublic;
+        if (updates.isLiked !== undefined) patchPayload.isLiked = updates.isLiked;
+        if (updates.model !== undefined) patchPayload.model = updates.model;
+
+        fetch(apiUrl, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            fileUrl: targetImage.url.split('?')[0],
+            ...patchPayload,
+          }),
+        }).catch(err => {
+          console.error('[GalleryContext.updateImage] PATCH by URL failed:', err);
+        });
+      }
+    }
+
+    // Also call persistImageUpdates for local storage persistence
     if (targetImage) {
       persistImageUpdates([targetImage.url], updates);
     }
 
     dispatch({ type: 'UPDATE_IMAGE', payload: { id, updates } });
-  }, [findImageById, persistImageUpdates]);
+  }, [findImageById, persistImageUpdates, authToken]);
 
   const updateVideo = useCallback((id: string, updates: Partial<GalleryVideoLike>) => {
     const targetVideo = stateRef.current.videos.find(video => matchGalleryItemId(video, id));

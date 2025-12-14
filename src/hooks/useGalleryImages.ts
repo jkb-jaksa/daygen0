@@ -528,7 +528,7 @@ export const useGalleryImages = () => {
 
         for (const r2Id of Array.from(new Set(r2FileIdsToUpdate))) {
           const apiUrl = getApiUrl(`/api/r2files/${r2Id}`);
-          // Fire-and-forget; ignore errors to keep UI snappy
+          // Fire-and-forget; log errors
           void fetch(apiUrl, {
             method: 'PATCH',
             headers: {
@@ -536,7 +536,9 @@ export const useGalleryImages = () => {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify(patchPayload),
-          }).catch(() => { });
+          }).catch((err) => {
+            console.error('[updateImages] PATCH failed for r2Id:', r2Id, err);
+          });
         }
 
         // Fallback: if some items don't have r2FileId yet, patch by fileUrl.
@@ -556,7 +558,9 @@ export const useGalleryImages = () => {
               fileUrl: baseUrl,
               ...patchPayload,
             }),
-          }).catch(() => { });
+          }).catch((err) => {
+            console.error('[updateImages] PATCH failed for fileUrl:', baseUrl, err);
+          });
         }
       }
     },

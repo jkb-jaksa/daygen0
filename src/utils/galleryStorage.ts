@@ -58,6 +58,7 @@ export const serializeGallery = (
     avatarImageId: item.avatarImageId,
     styleId: item.styleId,
     jobId: item.jobId, // Save jobId for all images that have one
+    aspectRatio: item.aspectRatio, // Persist aspect ratio
   }));
 };
 
@@ -78,6 +79,7 @@ export const hydrateStoredGallery = (
       avatarImageId: item.avatarImageId,
       styleId: item.styleId,
       jobId: item.jobId, // Restore jobId for all images that have one
+      aspectRatio: item.aspectRatio, // Restore aspect ratio
     };
 
     // Special handling for Flux/Reve: generate fallback jobId if missing
