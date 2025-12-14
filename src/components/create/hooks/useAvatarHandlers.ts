@@ -5,7 +5,28 @@ import { getPersistedValue, setPersistedValue } from '../../../lib/clientStorage
 import { debugLog, debugError } from '../../../utils/debug';
 import { STORAGE_CHANGE_EVENT, dispatchStorageChange, type StorageChangeDetail } from '../../../utils/storageEvents';
 import { getApiUrl } from '../../../utils/api';
-import type { StoredAvatar, AvatarSelection, AvatarImage } from '../../avatars/types';
+import type { StoredAvatar, AvatarSelection } from '../../avatars/types';
+
+interface BackendImage {
+  id: string;
+  url: string;
+  createdAt: string;
+  source: string;
+  sourceId?: string;
+}
+
+interface BackendAvatar {
+  id: string;
+  slug: string;
+  name: string;
+  imageUrl: string;
+  createdAt: string;
+  source: string;
+  sourceId?: string;
+  published: boolean;
+  primaryImageId?: string;
+  images?: BackendImage[];
+}
 
 export function useAvatarHandlers() {
   const { user, storagePrefix, token } = useAuth();
@@ -78,9 +99,9 @@ export function useAvatarHandlers() {
           });
 
           if (response.ok) {
-            const backendAvatars = await response.json();
+            const backendAvatars: BackendAvatar[] = await response.json();
             // Convert backend format to StoredAvatar format
-            const normalized: StoredAvatar[] = backendAvatars.map((a: any) => ({
+            const normalized: StoredAvatar[] = backendAvatars.map((a) => ({
               id: a.id,
               slug: a.slug,
               name: a.name,
@@ -91,7 +112,7 @@ export function useAvatarHandlers() {
               published: a.published,
               ownerId: user?.id,
               primaryImageId: a.primaryImageId || a.images?.[0]?.id || '',
-              images: (a.images || []).map((img: any) => ({
+              images: (a.images || []).map((img) => ({
                 id: img.id,
                 url: img.url,
                 createdAt: img.createdAt,
@@ -169,7 +190,7 @@ export function useAvatarHandlers() {
           });
 
           if (response.ok) {
-            const backendAvatar = await response.json();
+            const backendAvatar: BackendAvatar = await response.json();
             // Use backend-generated ID and data
             savedAvatar = {
               id: backendAvatar.id,
@@ -182,7 +203,7 @@ export function useAvatarHandlers() {
               published: backendAvatar.published,
               ownerId: user?.id,
               primaryImageId: backendAvatar.primaryImageId || backendAvatar.images?.[0]?.id || '',
-              images: (backendAvatar.images || []).map((img: any) => ({
+              images: (backendAvatar.images || []).map((img) => ({
                 id: img.id,
                 url: img.url,
                 createdAt: img.createdAt,

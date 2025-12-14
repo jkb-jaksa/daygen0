@@ -5,7 +5,28 @@ import { getPersistedValue, setPersistedValue } from '../../../lib/clientStorage
 import { debugLog, debugError } from '../../../utils/debug';
 import { STORAGE_CHANGE_EVENT, dispatchStorageChange, type StorageChangeDetail } from '../../../utils/storageEvents';
 import { getApiUrl } from '../../../utils/api';
-import type { StoredProduct, ProductSelection, ProductImage } from '../../products/types';
+import type { StoredProduct, ProductSelection } from '../../products/types';
+
+interface BackendImage {
+  id: string;
+  url: string;
+  createdAt: string;
+  source: string;
+  sourceId?: string;
+}
+
+interface BackendProduct {
+  id: string;
+  slug: string;
+  name: string;
+  imageUrl: string;
+  createdAt: string;
+  source: string;
+  sourceId?: string;
+  published: boolean;
+  primaryImageId?: string;
+  images?: BackendImage[];
+}
 
 export function useProductHandlers() {
   const { user, storagePrefix, token } = useAuth();
@@ -55,9 +76,9 @@ export function useProductHandlers() {
           });
 
           if (response.ok) {
-            const backendProducts = await response.json();
+            const backendProducts: BackendProduct[] = await response.json();
             // Convert backend format to StoredProduct format
-            const normalized: StoredProduct[] = backendProducts.map((p: any) => ({
+            const normalized: StoredProduct[] = backendProducts.map((p) => ({
               id: p.id,
               slug: p.slug,
               name: p.name,
@@ -68,7 +89,7 @@ export function useProductHandlers() {
               published: p.published,
               ownerId: user?.id,
               primaryImageId: p.primaryImageId || p.images?.[0]?.id || '',
-              images: (p.images || []).map((img: any) => ({
+              images: (p.images || []).map((img) => ({
                 id: img.id,
                 url: img.url,
                 createdAt: img.createdAt,
@@ -146,7 +167,7 @@ export function useProductHandlers() {
           });
 
           if (response.ok) {
-            const backendProduct = await response.json();
+            const backendProduct: BackendProduct = await response.json();
             // Use backend-generated ID and data
             savedProduct = {
               id: backendProduct.id,
@@ -159,7 +180,7 @@ export function useProductHandlers() {
               published: backendProduct.published,
               ownerId: user?.id,
               primaryImageId: backendProduct.primaryImageId || backendProduct.images?.[0]?.id || '',
-              images: (backendProduct.images || []).map((img: any) => ({
+              images: (backendProduct.images || []).map((img) => ({
                 id: img.id,
                 url: img.url,
                 createdAt: img.createdAt,
