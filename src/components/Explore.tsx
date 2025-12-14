@@ -89,10 +89,12 @@ type GalleryItem = {
   imageUrl: string;
   orientation: "portrait" | "landscape" | "square";
   mediaType?: "image" | "video";
+  aspectRatio?: string;
   isPublic?: boolean;
 };
 
-const galleryItems: GalleryItem[] = [
+// Fallback placeholder items shown when no public generations are available
+const fallbackGalleryItems: GalleryItem[] = [
   {
     id: "luminous-neon",
     creator: {
@@ -155,66 +157,6 @@ const galleryItems: GalleryItem[] = [
     orientation: "square",
     mediaType: "image",
     isPublic: true,
-  },
-  {
-    id: "sonic-waves",
-    creator: {
-      name: "Jules Ried",
-      handle: "@jules.fm",
-      avatarColor: "from-indigo-500/70 via-purple-400/70 to-slate-500/70",
-      location: "Montreal, CA",
-    },
-    modelId: "recraft",
-    modelLabel: "Recraft Vision",
-    timeAgo: "3h ago",
-    likes: 164,
-    prompt:
-      "Dynamic motion still of synthwave DJ booth, translucent sound ribbons, lens bloom, analog noise texture, captured with a 35mm prime.",
-    tags: ["motion", "recraft", "music"],
-    imageUrl:
-      "https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=1200&q=80",
-    orientation: "landscape",
-    mediaType: "image",
-  },
-  {
-    id: "ceramic-dream",
-    creator: {
-      name: "Anjali Rao",
-      handle: "@anjali.designs",
-      avatarColor: "from-rose-400/70 via-orange-300/70 to-amber-300/70",
-      location: "Bengaluru, IN",
-    },
-    modelId: "runway-gen4",
-    modelLabel: "Runway Gen-4",
-    timeAgo: "6h ago",
-    likes: 205,
-    prompt:
-      "Macro photograph of a ceramic sculpture with liquid metal glaze, shallow depth of field, studio lighting, 85mm lens emulation.",
-    tags: ["product", "runway", "macro"],
-    imageUrl:
-      "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=900&q=80",
-    orientation: "portrait",
-    mediaType: "image",
-  },
-  {
-    id: "fjord-lullaby",
-    creator: {
-      name: "Soren Beck",
-      handle: "@sorenbeck",
-      avatarColor: "from-blue-400/70 via-sky-300/70 to-cyan-400/70",
-      location: "Oslo, NO",
-    },
-    modelId: "gemini-3.0-pro-image",
-    modelLabel: "Gemini 3 Pro",
-    timeAgo: "1d ago",
-    likes: 278,
-    prompt:
-      "Panoramic matte painting of aurora over Nordic fjord village, reflective water, painterly brushstrokes, cinematic contrast.",
-    tags: ["landscape", "gemini", "aurora"],
-    imageUrl:
-      "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1200&q=80",
-    orientation: "landscape",
-    mediaType: "image",
   },
 ];
 
@@ -628,11 +570,10 @@ const AvatarCard: React.FC<{
       <div className={`relative flex h-full flex-col justify-end gap-5 ${padding}`}>
         <div className="flex items-center justify-between text-xs text-white/80">
           <span
-            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 uppercase tracking-[0.3em] ${
-              isFeature
-                ? "border-white/30 bg-white/10"
-                : "border-white/20 bg-black/40"
-            }`}
+            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 uppercase tracking-[0.3em] ${isFeature
+              ? "border-white/30 bg-white/10"
+              : "border-white/20 bg-black/40"
+              }`}
           >
             {isFeature ? <Crown className="size-3.5" aria-hidden="true" /> : <Sparkles className="size-3.5" aria-hidden="true" />}
             <span className="tracking-[0.1em]">Top #{rank}</span>
@@ -642,13 +583,12 @@ const AvatarCard: React.FC<{
 
         <div className="space-y-3">
           <h3
-            className={`${
-              isFeature
-                ? "text-3xl sm:text-4xl"
-                : isSpotlight
-                  ? "text-2xl"
-                  : "text-xl"
-            } font-raleway font-normal text-white`}
+            className={`${isFeature
+              ? "text-3xl sm:text-4xl"
+              : isSpotlight
+                ? "text-2xl"
+                : "text-xl"
+              } font-raleway font-normal text-white`}
           >
             {item.name}
           </h3>
@@ -698,9 +638,8 @@ const AvatarCard: React.FC<{
               event.stopPropagation();
               onToggleFavorite(item.id);
             }}
-            className={`inline-flex items-center gap-2 rounded-full border border-white/25 px-3 py-1 text-xs font-medium transition-colors duration-200 ${
-              isFavorite ? "bg-white/20 text-white" : "bg-black/40 text-white/70 hover:text-white"
-            }`}
+            className={`inline-flex items-center gap-2 rounded-full border border-white/25 px-3 py-1 text-xs font-medium transition-colors duration-200 ${isFavorite ? "bg-white/20 text-white" : "bg-black/40 text-white/70 hover:text-white"
+              }`}
             aria-pressed={isFavorite}
           >
             <Heart
@@ -827,9 +766,9 @@ const CustomMultiSelect: React.FC<{
         className={`w-full min-h-[38px] px-2.5 py-1.5 rounded-lg text-theme-white font-raleway text-sm focus:outline-none focus:border-theme-white transition-colors duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed ${glass.promptDark}`}
       >
         <span className={values.length > 0 ? "text-theme-white" : "text-theme-white/50"}>
-          {values.length === 0 
-            ? placeholder || "Select..." 
-            : values.length === 1 
+          {values.length === 0
+            ? placeholder || "Select..."
+            : values.length === 1
               ? options.find(o => o.value === values[0])?.label || `${values.length} selected`
               : `${values.length} selected`}
         </span>
@@ -856,11 +795,10 @@ const CustomMultiSelect: React.FC<{
                   key={option.value}
                   type="button"
                   onClick={() => toggleOption(option.value)}
-                  className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway rounded-lg border transition-all duration-0 ${
-                    isSelected
-                      ? "bg-[color:var(--theme-text)] border-0 shadow-lg shadow-[color:var(--theme-text)]/30 text-[color:var(--theme-black)]"
-                      : "bg-transparent hover:bg-theme-text/20 border-0 text-theme-white hover:text-theme-text"
-                  }`}
+                  className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway rounded-lg border transition-all duration-0 ${isSelected
+                    ? "bg-[color:var(--theme-text)] border-0 shadow-lg shadow-[color:var(--theme-text)]/30 text-[color:var(--theme-black)]"
+                    : "bg-transparent hover:bg-theme-text/20 border-0 text-theme-white hover:text-theme-text"
+                    }`}
                 >
                   {option.label}
                 </button>
@@ -885,14 +823,152 @@ const Explore: React.FC = () => {
     tags: [],
   });
 
+  // Public generations state
+  const [galleryItems, setGalleryItems] = useState<GalleryItem[]>(fallbackGalleryItems);
+  const [isLoadingPublic, setIsLoadingPublic] = useState(false);
+  const [publicApiCursor, setPublicApiCursor] = useState<string | null>(null);
+  const [hasMorePublic, setHasMorePublic] = useState(true);
+
+  // Gradient colors for creator avatars
+  const avatarGradients = useMemo(() => [
+    "from-fuchsia-500/70 via-cyan-400/70 to-sky-500/70",
+    "from-theme-white/70 via-slate-300/70 to-stone-400/70",
+    "from-emerald-400/70 via-teal-400/70 to-lime-400/70",
+    "from-indigo-500/70 via-purple-400/70 to-slate-500/70",
+    "from-rose-400/70 via-orange-300/70 to-amber-300/70",
+    "from-blue-400/70 via-sky-300/70 to-cyan-400/70",
+    "from-amber-400/70 via-rose-500/60 to-purple-600/70",
+    "from-cyan-500/70 via-blue-500/60 to-indigo-500/70",
+  ], []);
+
+  // Helper to determine orientation from aspect ratio
+  const getOrientationFromAspectRatio = useCallback((aspectRatio?: string): "portrait" | "landscape" | "square" => {
+    if (!aspectRatio) return "square";
+    const [w, h] = aspectRatio.split(":").map(Number);
+    if (!w || !h) return "square";
+    if (w > h) return "landscape";
+    if (h > w) return "portrait";
+    return "square";
+  }, []);
+
+  // Helper to format time ago
+  const formatTimeAgo = useCallback((date: Date): string => {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return `${Math.floor(diffDays / 7)}w ago`;
+  }, []);
+
+  // Helper to infer media type from model or mimeType
+  const inferMediaType = useCallback((modelId?: string, mimeType?: string): "image" | "video" => {
+    if (mimeType?.startsWith("video/")) return "video";
+    if (!modelId) return "image";
+    const videoModels = ['veo-3', 'runway-video-gen4', 'wan-video-2.2', 'hailuo-02', 'kling-video', 'seedance-1.0-pro', 'luma-ray-2'];
+    return videoModels.includes(modelId) || modelId.includes('video') ? "video" : "image";
+  }, []);
+
+  // Fetch public generations from API
+  const fetchPublicGenerations = useCallback(async (cursor?: string) => {
+    if (isLoadingPublic) return;
+
+    setIsLoadingPublic(true);
+    try {
+      const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+      const params = new URLSearchParams();
+      params.set('limit', '50');
+      if (cursor) params.set('cursor', cursor);
+
+      const response = await fetch(`${apiBase}/api/r2files/public?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch public generations: ${response.status}`);
+      }
+
+      const data = await response.json() as {
+        items: Array<{
+          id: string;
+          fileUrl: string;
+          prompt?: string;
+          model?: string;
+          aspectRatio?: string;
+          mimeType?: string;
+          createdAt: string;
+          owner?: {
+            displayName?: string;
+            authUserId: string;
+          };
+        }>;
+        nextCursor: string | null;
+        totalCount: number;
+      };
+
+      // Transform API response to GalleryItem format
+      const transformedItems: GalleryItem[] = data.items.map((item, index) => {
+        const creatorName = item.owner?.displayName || 'Community Creator';
+        const creatorHandle = `@${item.owner?.authUserId?.slice(0, 8) || 'user'}`;
+        const gradientIndex = (index + (cursor ? parseInt(cursor.slice(-2), 16) : 0)) % avatarGradients.length;
+
+        return {
+          id: item.id,
+          creator: {
+            name: creatorName,
+            handle: creatorHandle,
+            avatarColor: avatarGradients[gradientIndex],
+            location: "Daygen.ai",
+          },
+          modelId: item.model || 'unknown',
+          timeAgo: formatTimeAgo(new Date(item.createdAt)),
+          likes: Math.floor(Math.random() * 200) + 50, // Placeholder likes for now
+          prompt: item.prompt || 'AI Generated Image',
+          tags: item.model ? [item.model.split('-')[0]] : ['ai'],
+          imageUrl: item.fileUrl,
+          orientation: getOrientationFromAspectRatio(item.aspectRatio),
+          aspectRatio: item.aspectRatio,
+          mediaType: inferMediaType(item.model, item.mimeType),
+          isPublic: true,
+        };
+      });
+
+      if (cursor) {
+        // Append to existing items
+        setGalleryItems(prev => [...prev, ...transformedItems]);
+      } else {
+        // Replace items (initial load)
+        if (transformedItems.length > 0) {
+          setGalleryItems(transformedItems);
+        }
+        // Keep fallback items if no public generations exist
+      }
+
+      setPublicApiCursor(data.nextCursor);
+      setHasMorePublic(data.nextCursor !== null);
+    } catch (error) {
+      debugError('Failed to fetch public generations:', error);
+      // Keep fallback items on error
+    } finally {
+      setIsLoadingPublic(false);
+    }
+  }, [isLoadingPublic, avatarGradients, formatTimeAgo, getOrientationFromAspectRatio, inferMediaType]);
+
+  // Initial fetch of public generations
+  useEffect(() => {
+    void fetchPublicGenerations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Filter function for gallery
-  const filterGalleryItems = useCallback((items: typeof galleryItems) => {
+  const filterGalleryItems = useCallback((items: GalleryItem[]) => {
     return items.filter(item => {
       // Model filter
       if (galleryFilters.models.length > 0 && !galleryFilters.models.includes(item.modelId)) {
         return false;
       }
-      
+
       // Type filter
       if (galleryFilters.types.length > 0) {
         const inferredVideo = item.modelId.includes('video') ||
@@ -910,22 +986,22 @@ const Explore: React.FC = () => {
           return false;
         }
       }
-      
+
       // Tag filter
       if (galleryFilters.tags.length > 0) {
-        const hasMatchingTag = galleryFilters.tags.some(selectedTag => 
+        const hasMatchingTag = galleryFilters.tags.some(selectedTag =>
           item.tags.includes(selectedTag)
         );
         if (!hasMatchingTag) {
           return false;
         }
       }
-      
+
       return true;
     });
   }, [galleryFilters]);
 
-  const filteredGallery = useMemo(() => filterGalleryItems(galleryItems), [filterGalleryItems]);
+  const filteredGallery = useMemo(() => filterGalleryItems(galleryItems), [filterGalleryItems, galleryItems]);
 
   const navigate = useNavigate();
   const { storagePrefix } = useAuth();
@@ -937,7 +1013,7 @@ const Explore: React.FC = () => {
     imageUrl: string | null;
     alreadySaved: boolean;
   }>({ open: false, item: null, imageUrl: null, alreadySaved: false });
-  
+
   const [unsaveConfirm, setUnsaveConfirm] = useState<{
     open: boolean;
     item: GalleryItem | null;
@@ -1227,16 +1303,16 @@ const Explore: React.FC = () => {
         alreadySaved = exists;
         const next = exists
           ? prev.map(img =>
-              img.url === savedImage.url
-                ? {
-                    ...img,
-                    prompt: savedImage.prompt,
-                    model: savedImage.model,
-                    isPublic: savedImage.isPublic,
-                    savedFrom: savedImage.savedFrom,
-                  }
-                : img,
-            )
+            img.url === savedImage.url
+              ? {
+                ...img,
+                prompt: savedImage.prompt,
+                model: savedImage.model,
+                isPublic: savedImage.isPublic,
+                savedFrom: savedImage.savedFrom,
+              }
+              : img,
+          )
           : [savedImage, ...prev];
 
         void persistInspirations(next);
@@ -1245,7 +1321,7 @@ const Explore: React.FC = () => {
 
       setSavePrompt({ open: true, item, imageUrl: savedImage.url, alreadySaved });
       setNewFolderName("");
-      
+
       // Automatically assign to "inspirations" folder if it exists
       const inspirationsFolder = folders.find(f => f.id === 'inspirations-folder');
       if (inspirationsFolder && !inspirationsFolder.imageIds.includes(savedImage.url)) {
@@ -1267,10 +1343,10 @@ const Explore: React.FC = () => {
   const toggleImageFolderAssignment = useCallback(
     (folderId: string) => {
       if (!savePrompt.imageUrl) return;
-      
+
       // Prevent unchecking the "inspirations" folder
       if (folderId === 'inspirations-folder') return;
-      
+
       setFolders(prev => {
         const next = prev.map(folder => {
           if (folder.id !== folderId) return folder;
@@ -1421,13 +1497,13 @@ const Explore: React.FC = () => {
     if (typeof document === 'undefined') return;
     const tooltip = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement | null;
     if (!tooltip) return;
-    
+
     // Get button position in viewport
     const rect = target.getBoundingClientRect();
     tooltip.style.top = `${rect.top - 28}px`;
     tooltip.style.left = `${rect.left + rect.width / 2}px`;
     tooltip.style.transform = 'translateX(-50%)';
-    
+
     tooltip.classList.remove('opacity-0');
     tooltip.classList.add('opacity-100');
   }, []);
@@ -1503,11 +1579,11 @@ const Explore: React.FC = () => {
   const navigateFullSizeImage = useCallback((direction: 'prev' | 'next') => {
     const totalImages = filteredGallery.length;
     if (totalImages === 0) return;
-    
-    const newIndex = direction === 'prev' 
+
+    const newIndex = direction === 'prev'
       ? (currentImageIndex > 0 ? currentImageIndex - 1 : totalImages - 1)
       : (currentImageIndex < totalImages - 1 ? currentImageIndex + 1 : 0);
-    
+
     setCurrentImageIndex(newIndex);
     setSelectedFullImage(filteredGallery[newIndex]);
   }, [filteredGallery, currentImageIndex, setCurrentImageIndex, setSelectedFullImage]);
@@ -1564,25 +1640,25 @@ const Explore: React.FC = () => {
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        
+
         closeMoreActionMenu();
         return;
       }
-      
+
       // Create a temporary URL for the blob
       const url = window.URL.createObjectURL(blob);
-      
+
       // Create a temporary anchor element and trigger download
       const a = document.createElement('a');
       a.href = url;
       a.download = `daygen-${item.id}-${Date.now()}.jpg`;
       document.body.appendChild(a);
       a.click();
-      
+
       // Clean up
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-      
+
       closeMoreActionMenu();
     } catch (error) {
       debugError('Failed to download image:', error);
@@ -1603,17 +1679,17 @@ const Explore: React.FC = () => {
       // No type filter - show all models
       return AI_MODELS.map(model => model.id).sort();
     }
-    
+
     const includesImage = galleryFilters.types.includes('image');
     const includesVideo = galleryFilters.types.includes('video');
-    
+
     if (includesImage && includesVideo) {
       // Both selected - show all models
       return AI_MODELS.map(model => model.id).sort();
     } else if (includesVideo) {
       // Return video models only
-      return AI_MODELS.filter(model => 
-        model.id === 'veo-3' || 
+      return AI_MODELS.filter(model =>
+        model.id === 'veo-3' ||
         model.id === 'runway-video-gen4' ||
         model.id === 'wan-video-2.2' ||
         model.id === 'hailuo-02' ||
@@ -1623,8 +1699,8 @@ const Explore: React.FC = () => {
       ).map(model => model.id).sort();
     } else if (includesImage) {
       // Return image models (exclude video models and Photon Flash variant)
-      return AI_MODELS.filter(model => 
-        model.id !== 'veo-3' && 
+      return AI_MODELS.filter(model =>
+        model.id !== 'veo-3' &&
         model.id !== 'runway-video-gen4' &&
         model.id !== 'wan-video-2.2' &&
         model.id !== 'hailuo-02' &&
@@ -1634,7 +1710,7 @@ const Explore: React.FC = () => {
         model.id !== 'luma-photon-flash-1'
       ).map(model => model.id).sort();
     }
-    
+
     return AI_MODELS.map(model => model.id).sort();
   };
 
@@ -1662,14 +1738,20 @@ const Explore: React.FC = () => {
     const sentinel = loadMoreRef.current;
     if (!sentinel) return;
     if (typeof window === "undefined" || !("IntersectionObserver" in window)) return;
-    if (visibleGallery.length >= filteredGallery.length) return;
 
     const observer = new IntersectionObserver((entries) => {
       const [entry] = entries;
       if (entry?.isIntersecting) {
-        setVisibleCount((prev) =>
-          Math.min(prev + initialBatchSize, filteredGallery.length),
-        );
+        // First, show more items from the already-loaded pool
+        if (visibleCount < filteredGallery.length) {
+          setVisibleCount((prev) =>
+            Math.min(prev + initialBatchSize, filteredGallery.length),
+          );
+        }
+        // Then, fetch more from API if we're running low and have more available
+        if (visibleCount >= galleryItems.length - initialBatchSize && hasMorePublic && !isLoadingPublic && publicApiCursor) {
+          void fetchPublicGenerations(publicApiCursor);
+        }
       }
     }, { rootMargin: "0px 0px 200px 0px" });
 
@@ -1678,13 +1760,13 @@ const Explore: React.FC = () => {
     return () => {
       observer.disconnect();
     };
-  }, [filteredGallery.length, initialBatchSize, visibleGallery.length, isFullSizeOpen]);
+  }, [filteredGallery.length, initialBatchSize, visibleCount, isFullSizeOpen, galleryItems.length, hasMorePublic, isLoadingPublic, publicApiCursor, fetchPublicGenerations]);
 
   // Keyboard navigation for full-size view
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!isFullSizeOpen) return;
-      
+
       if (event.key === 'Escape') {
         closeFullSizeView();
       } else if (event.key === 'ArrowLeft') {
@@ -1713,7 +1795,7 @@ const Explore: React.FC = () => {
           {copyNotification}
         </div>
       )}
-      
+
       <div className="relative isolate">
         <div className={`${layout.backdrop}`} aria-hidden />
 
@@ -1742,11 +1824,10 @@ const Explore: React.FC = () => {
                     type="button"
                     aria-pressed={activeGalleryView === 'creations'}
                     onClick={() => setActiveGalleryView('creations')}
-                    className={`px-4 py-1.5 text-xs font-medium font-raleway rounded-full transition-colors duration-200 ${
-                      activeGalleryView === 'creations'
-                        ? 'bg-theme-white text-theme-black shadow-lg shadow-theme-white/20'
-                        : 'text-theme-white/70 hover:text-theme-text'
-                    }`}
+                    className={`px-4 py-1.5 text-xs font-medium font-raleway rounded-full transition-colors duration-200 ${activeGalleryView === 'creations'
+                      ? 'bg-theme-white text-theme-black shadow-lg shadow-theme-white/20'
+                      : 'text-theme-white/70 hover:text-theme-text'
+                      }`}
                   >
                     Creations
                   </button>
@@ -1754,11 +1835,10 @@ const Explore: React.FC = () => {
                     type="button"
                     aria-pressed={activeGalleryView === 'avatars'}
                     onClick={() => setActiveGalleryView('avatars')}
-                    className={`px-4 py-1.5 text-xs font-medium font-raleway rounded-full transition-colors duration-200 ${
-                      activeGalleryView === 'avatars'
-                        ? 'bg-theme-white text-theme-black shadow-lg shadow-theme-white/20'
-                        : 'text-theme-white/70 hover:text-theme-text'
-                    }`}
+                    className={`px-4 py-1.5 text-xs font-medium font-raleway rounded-full transition-colors duration-200 ${activeGalleryView === 'avatars'
+                      ? 'bg-theme-white text-theme-black shadow-lg shadow-theme-white/20'
+                      : 'text-theme-white/70 hover:text-theme-text'
+                      }`}
                   >
                     Avatars
                   </button>
@@ -1800,11 +1880,10 @@ const Explore: React.FC = () => {
                               }));
                             }
                           }}
-                          className={`px-4 py-2 rounded-full text-sm font-raleway transition-all duration-100 ${
-                            isSelected
-                              ? 'bg-theme-white text-theme-black border border-theme-white shadow-lg shadow-theme-white/20'
-                              : 'bg-theme-black/40 text-theme-white border border-theme-dark hover:border-theme-mid hover:text-theme-text'
-                          }`}
+                          className={`px-4 py-2 rounded-full text-sm font-raleway transition-all duration-100 ${isSelected
+                            ? 'bg-theme-white text-theme-black border border-theme-white shadow-lg shadow-theme-white/20'
+                            : 'bg-theme-black/40 text-theme-white border border-theme-dark hover:border-theme-mid hover:text-theme-text'
+                            }`}
                         >
                           #{tag}
                         </button>
@@ -1823,10 +1902,10 @@ const Explore: React.FC = () => {
                     <button
                       onClick={() =>
                         setGalleryFilters({
-                        models: [],
-                        types: [],
-                        tags: [],
-                      })
+                          models: [],
+                          types: [],
+                          tags: [],
+                        })
                       }
                       className="px-2.5 py-1 text-xs text-theme-white hover:text-theme-text transition-colors duration-200 font-raleway"
                     >
@@ -1984,340 +2063,335 @@ const Explore: React.FC = () => {
               </>
             )}
           </div>
-          </section>
+        </section>
 
         {activeGalleryView === 'creations' ? (
           <section className="relative pb-12 -mt-6">
-          <div className={`${layout.container}`}>
-            <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-              {visibleGallery.map((item) => {
-                const isMenuActive = moreActionMenu?.id === item.id;
-                const isSaved = savedImageUrls.has(item.imageUrl);
-                return (
-                  <article
-                    key={item.id}
-                    className="group relative overflow-hidden rounded-2xl border border-theme-dark hover:border-theme-mid transition-colors duration-200 bg-theme-black/40 shadow-[0_24px_70px_rgba(0,0,0,0.45)] parallax-small cursor-pointer"
-                    onClick={(event) => {
-                      // Check if the click came from a copy button
-                      const target = event.target as HTMLElement;
-                      if (target && (target.hasAttribute('data-copy-button') || target.closest('[data-copy-button="true"]'))) {
-                        return;
-                      }
-                      openFullSizeView(item);
-                    }}
-                  >
-                  <div className={`relative ${orientationStyles[item.orientation]} min-h-[240px] sm:min-h-[280px] xl:min-h-[320px]`}>
-                    <img
-                      src={item.imageUrl}
-                      alt={`Image by ${item.creator.name}`}
-                      className="absolute inset-0 h-full w-full object-cover object-center"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/70" aria-hidden="true" />
-
-                    <div className="image-gallery-actions absolute left-4 top-4 flex items-center gap-2 transition-opacity duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto">
-                      <div className="relative">
-                        <button
-                          type="button"
-                          className={`image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 ${
-                            recreateActionMenu?.id === item.id
-                              ? 'opacity-100 pointer-events-auto'
-                              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
-                          }`}
-                          aria-haspopup="menu"
-                          aria-expanded={recreateActionMenu?.id === item.id}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            toggleRecreateActionMenu(item.id, event.currentTarget, item);
-                          }}
-                        >
-                          <Edit className="w-4 h-4" />
-                          <span className="text-sm font-medium">Recreate</span>
-                        </button>
-                        <ImageActionMenuPortal
-                          anchorEl={recreateActionMenu?.id === item.id ? recreateActionMenu?.anchor ?? null : null}
-                          open={recreateActionMenu?.id === item.id && !isFullSizeOpen}
-                          onClose={closeRecreateActionMenu}
-                          isRecreateMenu={false}
-                        >
-                          <button
-                            type="button"
-                            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                            onClick={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              handleRecreateEdit(item);
-                            }}
-                          >
-                            <Edit className="h-4 w-4" />
-                            Edit image
-                          </button>
-                          <button
-                            type="button"
-                            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                            onClick={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              handleRecreateUseAsReference(item);
-                            }}
-                          >
-                            <Copy className="h-4 w-4" />
-                            Use as reference
-                          </button>
-                          <button
-                            type="button"
-                            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                            onClick={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              handleRecreateRunPrompt(item);
-                            }}
-                          >
-                            <RefreshCw className="h-4 w-4" />
-                            Run the same prompt
-                          </button>
-                        </ImageActionMenuPortal>
-                      </div>
-                    </div>
-
-                    <div
-                      className={`image-gallery-actions absolute right-4 top-4 flex items-center gap-1 transition-opacity duration-100 ${
-                        isMenuActive
-                          ? 'opacity-100 pointer-events-auto'
-                          : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
-                      }`}
-                    >
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          if (isSaved) {
-                            setUnsaveConfirm({ open: true, item });
-                          } else {
-                            handleSaveToGallery(item);
-                          }
-                        }}
-                        className={`image-action-btn image-action-btn--labelled parallax-large ${
-                          isSaved ? 'border-theme-white/50 bg-theme-white/10 text-theme-text' : ''
-                        }`}
-                        aria-pressed={isSaved}
-                        aria-label={isSaved ? 'Remove from your gallery' : 'Save to your gallery'}
-                      >
-                        {isSaved ? (
-                          <BookmarkCheck className="size-3.5" aria-hidden="true" />
-                        ) : (
-                          <BookmarkPlus className="size-3.5" aria-hidden="true" />
-                        )}
-                        {isSaved ? 'Saved' : 'Save'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          toggleFavorite(item.imageUrl);
-                        }}
-                        className="image-action-btn image-action-btn--labelled parallax-large favorite-toggle"
-                        aria-label={favorites.has(item.imageUrl) ? "Remove from liked" : "Add to liked"}
-                      >
-                        <Heart
-                          className={`size-3.5 transition-colors duration-100 ${
-                            favorites.has(item.imageUrl) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
-                          }`}
-                          aria-hidden="true"
-                        />
-                        {getDisplayLikes(item)}
-                      </button>
-                      <div className="relative">
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            toggleMoreActionMenu(item.id, event.currentTarget, item);
-                          }}
-                          className="image-action-btn parallax-large"
-                          aria-label="More options"
-                        >
-                          <MoreHorizontal className="size-4" aria-hidden="true" />
-                        </button>
-                        <ImageActionMenuPortal
-                          anchorEl={moreActionMenu?.id === item.id ? moreActionMenu?.anchor ?? null : null}
-                          open={moreActionMenu?.id === item.id}
-                          onClose={closeMoreActionMenu}
-                          isRecreateMenu={false}
-                        >
-                          <button
-                            type="button"
-                            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                            onClick={async (event) => {
-                              event.stopPropagation();
-                              await copyImageLink(item);
-                            }}
-                          >
-                            <Share2 className="h-4 w-4" />
-                            Copy link
-                          </button>
-                          <button
-                            type="button"
-                            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                            onClick={async (event) => {
-                              event.stopPropagation();
-                              await downloadImage(item);
-                            }}
-                          >
-                            <Download className="h-4 w-4" />
-                            Download
-                          </button>
-                        </ImageActionMenuPortal>
-                      </div>
-                    </div>
-
-                    <div
-                      className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto hidden lg:flex items-end z-10 ${
-                        isMenuActive
-                          ? 'opacity-100'
-                          : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
-                      }`}
-                      onClick={(e) => {
-                        e.stopPropagation();
+            <div className={`${layout.container}`}>
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                {visibleGallery.map((item) => {
+                  const isMenuActive = moreActionMenu?.id === item.id;
+                  const isSaved = savedImageUrls.has(item.imageUrl);
+                  return (
+                    <article
+                      key={item.id}
+                      className="group relative overflow-hidden rounded-2xl border border-theme-dark hover:border-theme-mid transition-colors duration-200 bg-theme-black/40 shadow-[0_24px_70px_rgba(0,0,0,0.45)] parallax-small cursor-pointer"
+                      onClick={(event) => {
+                        // Check if the click came from a copy button
+                        const target = event.target as HTMLElement;
+                        if (target && (target.hasAttribute('data-copy-button') || target.closest('[data-copy-button="true"]'))) {
+                          return;
+                        }
+                        openFullSizeView(item);
                       }}
                     >
-                      <div className="w-full p-4">
-                        <div className="mb-2">
+                      <div className={`relative ${orientationStyles[item.orientation]} min-h-[240px] sm:min-h-[280px] xl:min-h-[320px]`}>
+                        <img
+                          src={item.imageUrl}
+                          alt={`Image by ${item.creator.name}`}
+                          className="absolute inset-0 h-full w-full object-cover object-center"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/70" aria-hidden="true" />
+
+                        <div className="image-gallery-actions absolute left-4 top-4 flex items-center gap-2 transition-opacity duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto">
                           <div className="relative">
-                            <p className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
-                              {item.prompt}
+                            <button
+                              type="button"
+                              className={`image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 ${recreateActionMenu?.id === item.id
+                                ? 'opacity-100 pointer-events-auto'
+                                : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
+                                }`}
+                              aria-haspopup="menu"
+                              aria-expanded={recreateActionMenu?.id === item.id}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                toggleRecreateActionMenu(item.id, event.currentTarget, item);
+                              }}
+                            >
+                              <Edit className="w-4 h-4" />
+                              <span className="text-sm font-medium">Recreate</span>
+                            </button>
+                            <ImageActionMenuPortal
+                              anchorEl={recreateActionMenu?.id === item.id ? recreateActionMenu?.anchor ?? null : null}
+                              open={recreateActionMenu?.id === item.id && !isFullSizeOpen}
+                              onClose={closeRecreateActionMenu}
+                              isRecreateMenu={false}
+                            >
                               <button
-                                data-copy-button="true"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  void copyPromptToClipboard(item.prompt);
-                                }}
-                                onMouseDown={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                }}
-                                className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
-                                onMouseEnter={(e) => {
-                                  showHoverTooltip(e.currentTarget, `copy-${item.id}`);
-                                }}
-                                onMouseLeave={() => {
-                                  hideHoverTooltip(`copy-${item.id}`);
+                                type="button"
+                                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                  handleRecreateEdit(item);
                                 }}
                               >
-                                <Copy className="w-3 h-3" />
+                                <Edit className="h-4 w-4" />
+                                Edit image
                               </button>
-                            </p>
+                              <button
+                                type="button"
+                                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                  handleRecreateUseAsReference(item);
+                                }}
+                              >
+                                <Copy className="h-4 w-4" />
+                                Use as reference
+                              </button>
+                              <button
+                                type="button"
+                                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                  handleRecreateRunPrompt(item);
+                                }}
+                              >
+                                <RefreshCw className="h-4 w-4" />
+                                Run the same prompt
+                              </button>
+                            </ImageActionMenuPortal>
                           </div>
                         </div>
-                        <div className="flex justify-between items-center mt-2">
-                          <Suspense fallback={null}>
-                            <ModelBadge model={item.modelId ?? 'unknown'} size="md" />
-                          </Suspense>
+
+                        <div
+                          className={`image-gallery-actions absolute right-4 top-4 flex items-center gap-1 transition-opacity duration-100 ${isMenuActive
+                            ? 'opacity-100 pointer-events-auto'
+                            : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
+                            }`}
+                        >
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              if (isSaved) {
+                                setUnsaveConfirm({ open: true, item });
+                              } else {
+                                handleSaveToGallery(item);
+                              }
+                            }}
+                            className={`image-action-btn image-action-btn--labelled parallax-large ${isSaved ? 'border-theme-white/50 bg-theme-white/10 text-theme-text' : ''
+                              }`}
+                            aria-pressed={isSaved}
+                            aria-label={isSaved ? 'Remove from your gallery' : 'Save to your gallery'}
+                          >
+                            {isSaved ? (
+                              <BookmarkCheck className="size-3.5" aria-hidden="true" />
+                            ) : (
+                              <BookmarkPlus className="size-3.5" aria-hidden="true" />
+                            )}
+                            {isSaved ? 'Saved' : 'Save'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              toggleFavorite(item.imageUrl);
+                            }}
+                            className="image-action-btn image-action-btn--labelled parallax-large favorite-toggle"
+                            aria-label={favorites.has(item.imageUrl) ? "Remove from liked" : "Add to liked"}
+                          >
+                            <Heart
+                              className={`size-3.5 transition-colors duration-100 ${favorites.has(item.imageUrl) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
+                                }`}
+                              aria-hidden="true"
+                            />
+                            {getDisplayLikes(item)}
+                          </button>
+                          <div className="relative">
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                toggleMoreActionMenu(item.id, event.currentTarget, item);
+                              }}
+                              className="image-action-btn parallax-large"
+                              aria-label="More options"
+                            >
+                              <MoreHorizontal className="size-4" aria-hidden="true" />
+                            </button>
+                            <ImageActionMenuPortal
+                              anchorEl={moreActionMenu?.id === item.id ? moreActionMenu?.anchor ?? null : null}
+                              open={moreActionMenu?.id === item.id}
+                              onClose={closeMoreActionMenu}
+                              isRecreateMenu={false}
+                            >
+                              <button
+                                type="button"
+                                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                onClick={async (event) => {
+                                  event.stopPropagation();
+                                  await copyImageLink(item);
+                                }}
+                              >
+                                <Share2 className="h-4 w-4" />
+                                Copy link
+                              </button>
+                              <button
+                                type="button"
+                                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                onClick={async (event) => {
+                                  event.stopPropagation();
+                                  await downloadImage(item);
+                                }}
+                              >
+                                <Download className="h-4 w-4" />
+                                Download
+                              </button>
+                            </ImageActionMenuPortal>
+                          </div>
                         </div>
+
+                        <div
+                          className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto hidden lg:flex items-end z-10 ${isMenuActive
+                            ? 'opacity-100'
+                            : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
+                            }`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                          }}
+                        >
+                          <div className="w-full p-4">
+                            <div className="mb-2">
+                              <div className="relative">
+                                <p className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
+                                  {item.prompt}
+                                  <button
+                                    data-copy-button="true"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      void copyPromptToClipboard(item.prompt);
+                                    }}
+                                    onMouseDown={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                    }}
+                                    className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
+                                    onMouseEnter={(e) => {
+                                      showHoverTooltip(e.currentTarget, `copy-${item.id}`);
+                                    }}
+                                    onMouseLeave={() => {
+                                      hideHoverTooltip(`copy-${item.id}`);
+                                    }}
+                                  >
+                                    <Copy className="w-3 h-3" />
+                                  </button>
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex justify-between items-center mt-2">
+                              <Suspense fallback={null}>
+                                <ModelBadge model={item.modelId ?? 'unknown'} size="md" />
+                              </Suspense>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Tooltips rendered via portal to avoid clipping */}
+                        {createPortal(
+                          <div
+                            data-tooltip-for={`copy-${item.id}`}
+                            className={`${tooltips.base} fixed`}
+                            style={{ zIndex: 9999 }}
+                          >
+                            Copy prompt
+                          </div>,
+                          document.body
+                        )}
+                      </div>
+                    </article>
+                  );
+                })}
+                <div ref={loadMoreRef} aria-hidden />
+              </div>
+              {visibleGallery.length < filteredGallery.length && (
+                <div className="flex justify-center py-4 text-xs font-raleway text-theme-white/60" aria-live="polite">
+                  Loading more inspiration…
+                </div>
+              )}
+            </div>
+          </section>
+        ) : (
+          <section className="relative pb-12 -mt-6">
+            <div className={`${layout.container} space-y-8`}>
+              {filteredAvatars.length === 0 ? (
+                <div className={`rounded-2xl border border-theme-dark/70 bg-theme-black/40 p-10 text-center text-theme-white/80 ${glass.promptDark}`}>
+                  <p className="text-lg font-raleway text-theme-white">No public avatars match this vibe yet.</p>
+                  <p className="mt-2 text-sm text-theme-white/70">
+                    Publish one from the avatars studio or adjust your filters to explore more community styles.
+                  </p>
+                  <div className="mt-5 flex flex-wrap justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setAvatarTagFilter([])}
+                      className={buttons.glassPrompt}
+                    >
+                      Reset filters
+                      <RefreshCw className="size-4" aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleNavigateToAvatars}
+                      className={buttons.glassPrompt}
+                    >
+                      Create an avatar
+                      <ArrowUpRight className="size-4" aria-hidden="true" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {topAvatars.length > 0 && (
+                    <div className="grid gap-2 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+                      <AvatarCard
+                        key={topAvatars[0].id}
+                        item={topAvatars[0]}
+                        variant="feature"
+                        rank={1}
+                        likeCount={getAvatarLikes(topAvatars[0])}
+                        isFavorite={avatarFavorites.has(topAvatars[0].id)}
+                        onToggleFavorite={toggleAvatarFavorite}
+                      />
+                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+                        {topAvatars.slice(1).map((avatar, index) => (
+                          <AvatarCard
+                            key={avatar.id}
+                            item={avatar}
+                            variant="spotlight"
+                            rank={index + 2}
+                            likeCount={getAvatarLikes(avatar)}
+                            isFavorite={avatarFavorites.has(avatar.id)}
+                            onToggleFavorite={toggleAvatarFavorite}
+                          />
+                        ))}
                       </div>
                     </div>
-                    
-                  {/* Tooltips rendered via portal to avoid clipping */}
-                    {createPortal(
-                      <div
-                        data-tooltip-for={`copy-${item.id}`}
-                        className={`${tooltips.base} fixed`}
-                        style={{ zIndex: 9999 }}
-                      >
-                        Copy prompt
-                      </div>,
-                      document.body
-                    )}
-                  </div>
-                  </article>
-                );
-              })}
-              <div ref={loadMoreRef} aria-hidden />
-            </div>
-            {visibleGallery.length < filteredGallery.length && (
-              <div className="flex justify-center py-4 text-xs font-raleway text-theme-white/60" aria-live="polite">
-                Loading more inspiration…
-              </div>
-            )}
-          </div>
-        </section>
-        ) : (
-        <section className="relative pb-12 -mt-6">
-          <div className={`${layout.container} space-y-8`}>
-            {filteredAvatars.length === 0 ? (
-              <div className={`rounded-2xl border border-theme-dark/70 bg-theme-black/40 p-10 text-center text-theme-white/80 ${glass.promptDark}`}>
-                <p className="text-lg font-raleway text-theme-white">No public avatars match this vibe yet.</p>
-                <p className="mt-2 text-sm text-theme-white/70">
-                  Publish one from the avatars studio or adjust your filters to explore more community styles.
-                </p>
-                <div className="mt-5 flex flex-wrap justify-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setAvatarTagFilter([])}
-                    className={buttons.glassPrompt}
-                  >
-                    Reset filters
-                    <RefreshCw className="size-4" aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleNavigateToAvatars}
-                    className={buttons.glassPrompt}
-                  >
-                    Create an avatar
-                    <ArrowUpRight className="size-4" aria-hidden="true" />
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <>
-                {topAvatars.length > 0 && (
-                  <div className="grid gap-2 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-                    <AvatarCard
-                      key={topAvatars[0].id}
-                      item={topAvatars[0]}
-                      variant="feature"
-                      rank={1}
-                      likeCount={getAvatarLikes(topAvatars[0])}
-                      isFavorite={avatarFavorites.has(topAvatars[0].id)}
-                      onToggleFavorite={toggleAvatarFavorite}
-                    />
-                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
-                      {topAvatars.slice(1).map((avatar, index) => (
+                  )}
+
+                  {remainingAvatars.length > 0 && (
+                    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                      {remainingAvatars.map((avatar, index) => (
                         <AvatarCard
                           key={avatar.id}
                           item={avatar}
-                          variant="spotlight"
-                          rank={index + 2}
+                          variant="grid"
+                          rank={index + 1 + topAvatars.length}
                           likeCount={getAvatarLikes(avatar)}
                           isFavorite={avatarFavorites.has(avatar.id)}
                           onToggleFavorite={toggleAvatarFavorite}
                         />
                       ))}
                     </div>
-                  </div>
-                )}
-
-                {remainingAvatars.length > 0 && (
-                  <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                    {remainingAvatars.map((avatar, index) => (
-                      <AvatarCard
-                        key={avatar.id}
-                        item={avatar}
-                        variant="grid"
-                        rank={index + 1 + topAvatars.length}
-                        likeCount={getAvatarLikes(avatar)}
-                        isFavorite={avatarFavorites.has(avatar.id)}
-                        onToggleFavorite={toggleAvatarFavorite}
-                      />
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </section>
+                  )}
+                </>
+              )}
+            </div>
+          </section>
         )}
 
 
@@ -2347,7 +2421,7 @@ const Explore: React.FC = () => {
               </div>
 
               <div className="grid gap-4 text-left text-sm font-raleway text-theme-white/80 sm:grid-cols-2">
-                <div className={`${glass.surface} border border-theme-dark/70 bg-theme-black/40 p-5`}> 
+                <div className={`${glass.surface} border border-theme-dark/70 bg-theme-black/40 p-5`}>
                   <div className="flex items-center gap-3 text-xs uppercase tracking-[0.25em] text-theme-white/60">
                     <Sparkles className="size-4" aria-hidden="true" />
                     Trending
@@ -2363,7 +2437,7 @@ const Explore: React.FC = () => {
                   <p className="mt-3 text-3xl font-normal text-theme-white">870</p>
                   <p className="text-xs text-theme-white/60">featured artists this month</p>
                 </div>
-                <div className={`${glass.surface} border border-theme-dark/70 bg-theme-black/40 p-5`}> 
+                <div className={`${glass.surface} border border-theme-dark/70 bg-theme-black/40 p-5`}>
                   <div className="flex items-center gap-3 text-xs uppercase tracking-[0.25em] text-theme-white/60">
                     <Clock className="size-4" aria-hidden="true" />
                     Live feed
@@ -2383,7 +2457,7 @@ const Explore: React.FC = () => {
                     ))}
                   </ul>
                 </div>
-                <div className={`${glass.surface} border border-theme-dark/70 bg-theme-black/40 p-5`}> 
+                <div className={`${glass.surface} border border-theme-dark/70 bg-theme-black/40 p-5`}>
                   <div className="flex items-center gap-3 text-xs uppercase tracking-[0.25em] text-theme-white/60">
                     <Palette className="size-4" aria-hidden="true" />
                     Styles
@@ -2411,11 +2485,11 @@ const Explore: React.FC = () => {
           <div
             className="fixed inset-0 z-[70] flex items-center justify-center bg-theme-black/80 px-4 py-8"
             onClick={closeSavePrompt}
+          >
+            <div
+              className={`${glass.promptDark} relative w-full max-w-3xl rounded-2xl border border-theme-dark/70 p-8 shadow-[0_40px_120px_rgba(0,0,0,0.55)]`}
+              onClick={event => event.stopPropagation()}
             >
-              <div
-                className={`${glass.promptDark} relative w-full max-w-3xl rounded-2xl border border-theme-dark/70 p-8 shadow-[0_40px_120px_rgba(0,0,0,0.55)]`}
-                onClick={event => event.stopPropagation()}
-              >
               <button
                 type="button"
                 onClick={closeSavePrompt}
@@ -2435,7 +2509,7 @@ const Explore: React.FC = () => {
                       className="aspect-square w-full object-cover"
                     />
                   </div>
-                    <div className="space-y-3 rounded-[20px] border border-theme-dark/70 bg-theme-black/40 p-4">
+                  <div className="space-y-3 rounded-[20px] border border-theme-dark/70 bg-theme-black/40 p-4">
                     <span className="inline-flex items-center gap-2 rounded-full border border-theme-dark/70 px-3 py-1 text-[11px] font-raleway uppercase tracking-[0.24em] text-theme-white/60">
                       Save inspiration
                       {savePrompt.alreadySaved && <span className="rounded-full bg-theme-white/10 px-2 py-0.5 text-[10px] font-medium text-theme-text">updated</span>}
@@ -2489,13 +2563,12 @@ const Explore: React.FC = () => {
                               type="button"
                               onClick={() => !isInspirationsFolder && toggleImageFolderAssignment(folder.id)}
                               disabled={isInspirationsFolder}
-                              className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-colors duration-200 ${
-                                isInspirationsFolder
-                                  ? 'border-theme-white/70 bg-theme-white/10 text-theme-text shadow-lg shadow-theme-white/10 cursor-default'
-                                  : isAssigned
-                                    ? 'border-theme-white/70 bg-theme-white/10 text-theme-text shadow-lg shadow-theme-white/10'
-                                    : 'border-theme-dark bg-theme-black/30 text-theme-white/80 hover:border-theme-mid hover:text-theme-text'
-                              }`}
+                              className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-colors duration-200 ${isInspirationsFolder
+                                ? 'border-theme-white/70 bg-theme-white/10 text-theme-text shadow-lg shadow-theme-white/10 cursor-default'
+                                : isAssigned
+                                  ? 'border-theme-white/70 bg-theme-white/10 text-theme-text shadow-lg shadow-theme-white/10'
+                                  : 'border-theme-dark bg-theme-black/30 text-theme-white/80 hover:border-theme-mid hover:text-theme-text'
+                                }`}
                             >
                               <div className="flex items-center gap-3 min-w-0 flex-1">
                                 <div className="flex-shrink-0">
@@ -2520,9 +2593,8 @@ const Explore: React.FC = () => {
                                 </div>
                               </div>
                               <span
-                                className={`ml-3 inline-flex h-6 w-6 items-center justify-center rounded-full border ${
-                                  (isAssigned || isInspirationsFolder) ? 'border-theme-text bg-theme-text text-b-black' : 'border-theme-mid text-theme-white/50'
-                                }`}
+                                className={`ml-3 inline-flex h-6 w-6 items-center justify-center rounded-full border ${(isAssigned || isInspirationsFolder) ? 'border-theme-text bg-theme-text text-b-black' : 'border-theme-mid text-theme-white/50'
+                                  }`}
                               >
                                 {(isAssigned || isInspirationsFolder) && <Check className="h-3.5 w-3.5" />}
                               </span>
@@ -2602,7 +2674,7 @@ const Explore: React.FC = () => {
                   </button>
                 </>
               )}
-              
+
               <img
                 src={selectedFullImage.imageUrl}
                 alt={`Image by ${selectedFullImage.creator.name}`}
@@ -2610,18 +2682,17 @@ const Explore: React.FC = () => {
                 className="max-w-full max-h-[90vh] object-contain rounded-lg"
                 style={{ objectPosition: 'top' }}
               />
-              
+
               {/* Action buttons */}
               <div className="image-gallery-actions absolute inset-x-0 top-0 flex items-start justify-between gap-2 px-4 pt-4 pointer-events-none">
                 {/* Left side - Recreate button */}
                 <div className="relative">
                   <button
                     type="button"
-                    className={`image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 ${
-                      recreateActionMenu?.id === selectedFullImage.id
-                        ? 'opacity-100 pointer-events-auto'
-                        : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
-                    }`}
+                    className={`image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 ${recreateActionMenu?.id === selectedFullImage.id
+                      ? 'opacity-100 pointer-events-auto'
+                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
+                      }`}
                     aria-haspopup="menu"
                     aria-expanded={recreateActionMenu?.id === selectedFullImage.id}
                     onClick={(event) => {
@@ -2680,11 +2751,10 @@ const Explore: React.FC = () => {
                 {/* Right side - Heart, More, and Close buttons */}
                 <div className="flex items-center gap-2">
                   <div
-                    className={`flex items-center gap-1 transition-opacity duration-100 ${
-                      moreActionMenu?.id === selectedFullImage.id
-                        ? 'opacity-100 pointer-events-auto'
-                        : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
-                    }`}
+                    className={`flex items-center gap-1 transition-opacity duration-100 ${moreActionMenu?.id === selectedFullImage.id
+                      ? 'opacity-100 pointer-events-auto'
+                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
+                      }`}
                   >
                     <button
                       type="button"
@@ -2698,9 +2768,8 @@ const Explore: React.FC = () => {
                       aria-label={selectedFullImage && favorites.has(selectedFullImage.imageUrl) ? "Remove from liked" : "Add to liked"}
                     >
                       <Heart
-                        className={`w-3 h-3 transition-colors duration-100 ${
-                          selectedFullImage && favorites.has(selectedFullImage.imageUrl) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
-                        }`}
+                        className={`w-3 h-3 transition-colors duration-100 ${selectedFullImage && favorites.has(selectedFullImage.imageUrl) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
+                          }`}
                         aria-hidden="true"
                       />
                       {selectedFullImage ? getDisplayLikes(selectedFullImage) : 0}
@@ -2761,9 +2830,8 @@ const Explore: React.FC = () => {
 
               {/* Image info overlay */}
               <div
-                className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 ${
-                  recreateActionMenu?.id === selectedFullImage.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
-                }`}
+                className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 ${recreateActionMenu?.id === selectedFullImage.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
+                  }`}
               >
                 <div className="flex items-center justify-center">
                   <div className="text-center">
@@ -2799,20 +2867,20 @@ const Explore: React.FC = () => {
                   </div>
                 </div>
               </div>
-              
+
               {/* Tooltips rendered via portal to avoid clipping */}
-                  {createPortal(
-                    <div
-                      data-tooltip-for={`copy-fullsize-${selectedFullImage.id}`}
-                      className={`${tooltips.base} fixed`}
-                      style={{ zIndex: 9999 }}
-                    >
-                      Copy prompt
-                    </div>,
-                    document.body
-                  )}
+              {createPortal(
+                <div
+                  data-tooltip-for={`copy-fullsize-${selectedFullImage.id}`}
+                  className={`${tooltips.base} fixed`}
+                  style={{ zIndex: 9999 }}
+                >
+                  Copy prompt
+                </div>,
+                document.body
+              )}
             </div>
-            
+
             {/* Vertical Gallery Navigation */}
             <VerticalGalleryNav
               images={filteredGallery.map(item => ({ url: item.imageUrl, id: item.id }))}

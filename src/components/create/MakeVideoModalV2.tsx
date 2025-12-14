@@ -738,7 +738,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                 type="button"
                                                 ref={voiceButtonRef}
                                                 onClick={() => setIsVoiceDropdownOpen(!isVoiceDropdownOpen)}
-                                                className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid ${selectedVoiceId ? 'hover:border-n-white' : ''} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                className={`${glass.promptBorderless} hover:bg-n-text/20 border border-theme-dark/10 ${selectedVoiceId ? 'hover:border-theme-mid' : ''} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                                                 onPointerMove={onPointerMove}
                                                 onPointerEnter={onPointerEnter}
                                                 onPointerLeave={onPointerLeave}
@@ -810,7 +810,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                 onDrop={handleAvatarButtonDrop}
                                                 onMouseEnter={() => setIsAvatarButtonHovered(true)}
                                                 onMouseLeave={() => setIsAvatarButtonHovered(false)}
-                                                className={`${glass.promptBorderless} ${isDraggingOverAvatarButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : `hover:bg-n-text/20 border border-n-mid ${selectedAvatar ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                className={`${glass.promptBorderless} ${isDraggingOverAvatarButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : `hover:bg-n-text/20 border border-theme-dark/10 ${selectedAvatar ? 'hover:border-theme-mid' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                                                 onPointerMove={onPointerMove}
                                                 onPointerEnter={onPointerEnter}
                                                 onPointerLeave={onPointerLeave}
@@ -883,7 +883,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                 onDrop={handleProductButtonDrop}
                                                 onMouseEnter={() => setIsProductButtonHovered(true)}
                                                 onMouseLeave={() => setIsProductButtonHovered(false)}
-                                                className={`${glass.promptBorderless} ${isDraggingOverProductButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : `hover:bg-n-text/20 border border-n-mid ${selectedProduct ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                className={`${glass.promptBorderless} ${isDraggingOverProductButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : `hover:bg-n-text/20 border border-theme-dark/10 ${selectedProduct ? 'hover:border-theme-mid' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                                                 onPointerMove={onPointerMove}
                                                 onPointerEnter={onPointerEnter}
                                                 onPointerLeave={onPointerLeave}
@@ -945,7 +945,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                 onMouseEnter={() => setIsStyleButtonHovered(true)}
                                                 onMouseLeave={() => setIsStyleButtonHovered(false)}
                                                 onClick={styleHandlers.handleStyleModalOpen}
-                                                className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                className={`${glass.promptBorderless} hover:bg-n-text/20 border border-theme-dark/10 text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                                                 onPointerMove={onPointerMove}
                                                 onPointerEnter={onPointerEnter}
                                                 onPointerLeave={onPointerLeave}
