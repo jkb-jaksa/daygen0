@@ -18,6 +18,7 @@ export interface R2FileResponse {
   prompt?: string;
   model?: string;
   isPublic?: boolean;
+  isLiked?: boolean;
   avatarId?: string;
   avatarImageId?: string;
   productId?: string;
@@ -92,6 +93,7 @@ export const useGalleryImages = () => {
         jobId: r2File.jobId || undefined, // Only set if we have a real job ID
         r2FileId: r2File.id,
         isPublic: r2File.isPublic ?? false,
+        isLiked: r2File.isLiked ?? false,
         avatarId: r2File.avatarId,
         avatarImageId: r2File.avatarImageId,
         productId: r2File.productId,
@@ -448,8 +450,8 @@ export const useGalleryImages = () => {
           }
 
           if (hasUpdates && image.url && urlSet.has(image.url)) {
-            // Collect r2FileIds for optional server update (only for isPublic toggle)
-            if (updates.isPublic !== undefined && image.r2FileId) {
+            // Collect r2FileIds for optional server update (isPublic, isLiked, or model toggle)
+            if ((updates.isPublic !== undefined || updates.isLiked !== undefined || updates.model !== undefined) && image.r2FileId) {
               r2FileIdsToUpdate.push(image.r2FileId);
             }
             return { ...image, ...updates };
@@ -502,8 +504,18 @@ export const useGalleryImages = () => {
         void setPersistedValue(storagePrefix, 'gallery', serializeGallery(computedNextImages));
       }
 
-      // Optional: best-effort server update for isPublic when r2FileId exists
-      if (token && updates.isPublic !== undefined && r2FileIdsToUpdate.length > 0) {
+      // Optional: best-effort server update for isPublic, isLiked, or model when r2FileId exists
+      const shouldPatchServer =
+        token &&
+        (updates.isPublic !== undefined || updates.isLiked !== undefined || updates.model !== undefined) &&
+        r2FileIdsToUpdate.length > 0;
+
+      if (shouldPatchServer) {
+        const patchPayload: Record<string, boolean | string> = {};
+        if (updates.isPublic !== undefined) patchPayload.isPublic = updates.isPublic;
+        if (updates.isLiked !== undefined) patchPayload.isLiked = updates.isLiked;
+        if (updates.model !== undefined) patchPayload.model = updates.model;
+
         for (const r2Id of Array.from(new Set(r2FileIdsToUpdate))) {
           const apiUrl = getApiUrl(`/api/r2files/${r2Id}`);
           // Fire-and-forget; ignore errors to keep UI snappy
@@ -513,7 +525,7 @@ export const useGalleryImages = () => {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ isPublic: updates.isPublic }),
+            body: JSON.stringify(patchPayload),
           }).catch(() => { });
         }
       }

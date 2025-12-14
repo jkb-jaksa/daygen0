@@ -994,7 +994,7 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
 
     return allItems.filter(item => {
       // Filter by liked
-      if (state.filters.liked && !item.isPublic) return false;
+      if (state.filters.liked && !item.isLiked) return false;
 
       // Filter by public
       if (state.filters.public && !item.isPublic) return false;
