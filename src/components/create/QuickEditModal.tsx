@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { X, Sparkles, Edit, Loader2, Plus, Settings, User, Package, Scan, Minus, Palette, LayoutGrid, Copy, Bookmark, BookmarkPlus, Wand2, Undo2, Redo2, Eraser, RotateCcw, Scaling, ZoomIn, ZoomOut, Move, Crop } from 'lucide-react';
+import { X, Sparkles, Edit, Loader2, Plus, Settings, User, Package, Scan, Minus, Palette, LayoutGrid, Copy, Bookmark, BookmarkPlus, Wand2, Undo2, Redo2, Eraser, RotateCcw, Scaling, ZoomIn, ZoomOut, Move, Crop, Info, Trash2 } from 'lucide-react';
 import { debugLog, debugError } from '../../utils/debug';
 import { glass, buttons, tooltips } from '../../styles/designSystem';
 import { useReferenceHandlers } from './hooks/useReferenceHandlers';
@@ -76,7 +76,7 @@ const TooltipPortal = ({ id, children }: { id: string, children: React.ReactNode
     return createPortal(
         <div
             data-tooltip-for={id}
-            className={`${tooltips.base} fixed z-[9999]`}
+            className={`${tooltips.base} fixed z-[9999] opacity-0 transition-opacity duration-150`}
             style={{ pointerEvents: 'none' }}
         >
             {children}
@@ -106,6 +106,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     const [savePromptModalState, setSavePromptModalState] = useState<{ prompt: string; originalPrompt: string } | null>(null);
     const savePromptModalRef = useRef<HTMLDivElement>(null);
     const [copiedState, setCopiedState] = useState<Record<string, boolean>>({});
+    const [activeTooltip, setActiveTooltip] = useState<{ id: string; text: string; x: number; y: number } | null>(null);
 
     const {
         goToAvatarProfile,
@@ -2096,7 +2097,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         onDrop={handleAvatarButtonDrop}
                                                         onMouseEnter={() => setIsAvatarButtonHovered(true)}
                                                         onMouseLeave={() => setIsAvatarButtonHovered(false)}
-                                                        className={`${glass.promptBorderless} ${isDraggingOverAvatarButton || avatarSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid/30 shadow-[inset_0_-50px_40px_-15px_rgba(0,0,0,0.35)] ${selectedAvatar || avatarSelection ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                        className={`${glass.promptBorderless} ${isDraggingOverAvatarButton || avatarSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid/30 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${selectedAvatar || avatarSelection ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                                                         onPointerMove={onPointerMove}
                                                         onPointerEnter={onPointerEnter}
                                                         onPointerLeave={onPointerLeave}
@@ -2186,7 +2187,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         onDrop={handleProductButtonDrop}
                                                         onMouseEnter={() => setIsProductButtonHovered(true)}
                                                         onMouseLeave={() => setIsProductButtonHovered(false)}
-                                                        className={`${glass.promptBorderless} ${isDraggingOverProductButton || productSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid/30 shadow-[inset_0_-50px_40px_-15px_rgba(0,0,0,0.35)] ${selectedProduct || productSelection ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                        className={`${glass.promptBorderless} ${isDraggingOverProductButton || productSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid/30 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${selectedProduct || productSelection ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                                                         onPointerMove={onPointerMove}
                                                         onPointerEnter={onPointerEnter}
                                                         onPointerLeave={onPointerLeave}
@@ -2263,7 +2264,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         onMouseEnter={() => setIsStyleButtonHovered(true)}
                                                         onMouseLeave={() => setIsStyleButtonHovered(false)}
                                                         onClick={styleHandlers.handleStyleModalOpen}
-                                                        className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid/30 shadow-[inset_0_-50px_40px_-15px_rgba(0,0,0,0.35)] text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                        className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid/30 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                                                         onPointerMove={onPointerMove}
                                                         onPointerEnter={onPointerEnter}
                                                         onPointerLeave={onPointerLeave}
@@ -2361,7 +2362,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         onDrop={handleAvatarButtonDrop}
                                                         onMouseEnter={() => setIsAvatarButtonHovered(true)}
                                                         onMouseLeave={() => setIsAvatarButtonHovered(false)}
-                                                        className={`${glass.promptBorderless} ${isDraggingOverAvatarButton || avatarSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid/30 shadow-[inset_0_-50px_40px_-15px_rgba(0,0,0,0.35)] ${selectedAvatar || avatarSelection ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                        className={`${glass.promptBorderless} ${isDraggingOverAvatarButton || avatarSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid/30 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${selectedAvatar || avatarSelection ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                                                         onPointerMove={onPointerMove}
                                                         onPointerEnter={onPointerEnter}
                                                         onPointerLeave={onPointerLeave}
@@ -2451,7 +2452,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         onDrop={handleProductButtonDrop}
                                                         onMouseEnter={() => setIsProductButtonHovered(true)}
                                                         onMouseLeave={() => setIsProductButtonHovered(false)}
-                                                        className={`${glass.promptBorderless} ${isDraggingOverProductButton || productSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid/30 shadow-[inset_0_-50px_40px_-15px_rgba(0,0,0,0.35)] ${selectedProduct || productSelection ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                        className={`${glass.promptBorderless} ${isDraggingOverProductButton || productSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid/30 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${selectedProduct || productSelection ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                                                         onPointerMove={onPointerMove}
                                                         onPointerEnter={onPointerEnter}
                                                         onPointerLeave={onPointerLeave}
@@ -2528,7 +2529,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         onMouseEnter={() => setIsStyleButtonHovered(true)}
                                                         onMouseLeave={() => setIsStyleButtonHovered(false)}
                                                         onClick={styleHandlers.handleStyleModalOpen}
-                                                        className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid/30 shadow-[inset_0_-50px_40px_-15px_rgba(0,0,0,0.35)] text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                        className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid/30 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                                                         onPointerMove={onPointerMove}
                                                         onPointerEnter={onPointerEnter}
                                                         onPointerLeave={onPointerLeave}
@@ -2792,27 +2793,64 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                             key={avatar.id}
                                             className="rounded-2xl border border-theme-mid px-3 py-2 transition-colors duration-200 group hover:border-theme-mid hover:bg-theme-text/10"
                                         >
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    avatarHandlers.handleAvatarSelect(avatar);
-                                                    setIsAvatarPickerOpen(false);
-                                                }}
-                                                className={`flex w-full items-center gap-3 ${isActive ? 'text-theme-text' : 'text-white'}`}
-                                            >
-                                                <img
-                                                    src={avatar.imageUrl}
-                                                    alt={avatar.name}
-                                                    loading="lazy"
-                                                    className="h-10 w-10 rounded-lg object-cover"
-                                                />
-                                                <div className="min-w-0 flex-1 text-left">
-                                                    <p className="truncate text-sm font-raleway text-theme-white group-hover:text-n-text">
-                                                        {avatar.name}
-                                                    </p>
+                                            <div className="flex items-center gap-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        avatarHandlers.handleAvatarSelect(avatar);
+                                                        setIsAvatarPickerOpen(false);
+                                                    }}
+                                                    className={`flex flex-1 items-center gap-3 ${isActive ? 'text-theme-text' : 'text-white'}`}
+                                                >
+                                                    <img
+                                                        src={avatar.imageUrl}
+                                                        alt={avatar.name}
+                                                        loading="lazy"
+                                                        className="h-10 w-10 rounded-lg object-cover"
+                                                    />
+                                                    <div className="min-w-0 flex-1 text-left">
+                                                        <p className="truncate text-sm font-raleway text-theme-white group-hover:text-n-text">
+                                                            {avatar.name}
+                                                        </p>
+                                                    </div>
+                                                </button>
+                                                <div className="flex items-center gap-1">
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            avatarHandlers.setCreationsModalAvatar(avatar);
+                                                            setIsAvatarPickerOpen(false);
+                                                        }}
+                                                        className="p-1 hover:bg-theme-text/10 rounded-full transition-colors duration-200"
+                                                        aria-label="More info about this Avatar"
+                                                        onMouseEnter={(e) => {
+                                                            const rect = e.currentTarget.getBoundingClientRect();
+                                                            setActiveTooltip({ id: `avatar-info-${avatar.id}`, text: 'More info', x: rect.left + rect.width / 2, y: rect.top - 8 });
+                                                        }}
+                                                        onMouseLeave={() => setActiveTooltip(null)}
+                                                    >
+                                                        <Info className="h-3 w-3 text-theme-white hover:text-theme-text" />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            avatarHandlers.setAvatarToDelete(avatar);
+                                                        }}
+                                                        className="p-1 hover:bg-theme-text/10 rounded-full transition-colors duration-200"
+                                                        aria-label="Delete Avatar"
+                                                        onMouseEnter={(e) => {
+                                                            const rect = e.currentTarget.getBoundingClientRect();
+                                                            setActiveTooltip({ id: `avatar-delete-${avatar.id}`, text: 'Delete Avatar', x: rect.left + rect.width / 2, y: rect.top - 8 });
+                                                        }}
+                                                        onMouseLeave={() => setActiveTooltip(null)}
+                                                    >
+                                                        <Trash2 className="h-3 w-3 text-theme-white hover:text-theme-text" />
+                                                    </button>
+                                                    {isActive && <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>}
                                                 </div>
-                                                {isActive && <div className="h-2 w-2 rounded-full bg-theme-text" />}
-                                            </button>
+                                            </div>
                                         </div>
                                     );
                                 })}
@@ -2863,27 +2901,64 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                             key={product.id}
                                             className="rounded-2xl border border-theme-mid px-3 py-2 transition-colors duration-200 group hover:border-theme-mid hover:bg-theme-text/10"
                                         >
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    productHandlers.handleProductSelect(product);
-                                                    setIsProductPickerOpen(false);
-                                                }}
-                                                className={`flex w-full items-center gap-3 ${isActive ? 'text-theme-text' : 'text-white'}`}
-                                            >
-                                                <img
-                                                    src={product.imageUrl}
-                                                    alt={product.name}
-                                                    loading="lazy"
-                                                    className="h-10 w-10 rounded-lg object-cover"
-                                                />
-                                                <div className="min-w-0 flex-1 text-left">
-                                                    <p className="truncate text-sm font-raleway text-theme-white group-hover:text-n-text">
-                                                        {product.name}
-                                                    </p>
+                                            <div className="flex items-center gap-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        productHandlers.handleProductSelect(product);
+                                                        setIsProductPickerOpen(false);
+                                                    }}
+                                                    className={`flex flex-1 items-center gap-3 ${isActive ? 'text-theme-text' : 'text-white'}`}
+                                                >
+                                                    <img
+                                                        src={product.imageUrl}
+                                                        alt={product.name}
+                                                        loading="lazy"
+                                                        className="h-10 w-10 rounded-lg object-cover"
+                                                    />
+                                                    <div className="min-w-0 flex-1 text-left">
+                                                        <p className="truncate text-sm font-raleway text-theme-white group-hover:text-n-text">
+                                                            {product.name}
+                                                        </p>
+                                                    </div>
+                                                </button>
+                                                <div className="flex items-center gap-1">
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            productHandlers.setCreationsModalProduct(product);
+                                                            setIsProductPickerOpen(false);
+                                                        }}
+                                                        className="p-1 hover:bg-theme-text/10 rounded-full transition-colors duration-200"
+                                                        aria-label="More info about this Product"
+                                                        onMouseEnter={(e) => {
+                                                            const rect = e.currentTarget.getBoundingClientRect();
+                                                            setActiveTooltip({ id: `product-info-${product.id}`, text: 'More info', x: rect.left + rect.width / 2, y: rect.top - 8 });
+                                                        }}
+                                                        onMouseLeave={() => setActiveTooltip(null)}
+                                                    >
+                                                        <Info className="h-3 w-3 text-theme-white hover:text-theme-text" />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            productHandlers.setProductToDelete(product);
+                                                        }}
+                                                        className="p-1 hover:bg-theme-text/10 rounded-full transition-colors duration-200"
+                                                        aria-label="Delete Product"
+                                                        onMouseEnter={(e) => {
+                                                            const rect = e.currentTarget.getBoundingClientRect();
+                                                            setActiveTooltip({ id: `product-delete-${product.id}`, text: 'Delete Product', x: rect.left + rect.width / 2, y: rect.top - 8 });
+                                                        }}
+                                                        onMouseLeave={() => setActiveTooltip(null)}
+                                                    >
+                                                        <Trash2 className="h-3 w-3 text-theme-white hover:text-theme-text" />
+                                                    </button>
+                                                    {isActive && <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>}
                                                 </div>
-                                                {isActive && <div className="h-2 w-2 rounded-full bg-theme-text" />}
-                                            </button>
+                                            </div>
                                         </div>
                                     );
                                 })}
@@ -2980,8 +3055,93 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                         </Suspense>
                     )
                 }
+
+                {/* Delete Confirmation Modals */}
+                {avatarHandlers.avatarToDelete && (
+                    <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 px-4 py-10">
+                        <div className={`${glass.promptDark} w-full max-w-sm min-w-[20rem] rounded-[24px] px-6 py-10 transition-colors duration-200`}>
+                            <div className="space-y-4 text-center">
+                                <div className="space-y-3">
+                                    <Trash2 className="default-orange-icon mx-auto" />
+                                    <h3 className="text-xl font-raleway font-light text-theme-text">Delete Avatar</h3>
+                                    <p className="text-base font-raleway font-light text-theme-white">
+                                        Are you sure you want to delete "{avatarHandlers.avatarToDelete.name}"? This action cannot be undone.
+                                    </p>
+                                </div>
+                                <div className="flex justify-center gap-3">
+                                    <button
+                                        type="button"
+                                        className={buttons.ghost}
+                                        onClick={() => avatarHandlers.setAvatarToDelete(null)}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={buttons.primary}
+                                        onClick={() => {
+                                            void avatarHandlers.handleAvatarDelete(avatarHandlers.avatarToDelete!);
+                                        }}
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {productHandlers.productToDelete && (
+                    <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 px-4 py-10">
+                        <div className={`${glass.promptDark} w-full max-w-sm min-w-[20rem] rounded-[24px] px-6 py-10 transition-colors duration-200`}>
+                            <div className="space-y-4 text-center">
+                                <div className="space-y-3">
+                                    <Trash2 className="default-orange-icon mx-auto" />
+                                    <h3 className="text-xl font-raleway font-light text-theme-text">Delete Product</h3>
+                                    <p className="text-base font-raleway font-light text-theme-white">
+                                        Are you sure you want to delete "{productHandlers.productToDelete.name}"? This action cannot be undone.
+                                    </p>
+                                </div>
+                                <div className="flex justify-center gap-3">
+                                    <button
+                                        type="button"
+                                        className={buttons.ghost}
+                                        onClick={() => productHandlers.setProductToDelete(null)}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={buttons.primary}
+                                        onClick={() => {
+                                            void productHandlers.handleProductDelete(productHandlers.productToDelete!);
+                                        }}
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div >
 
+            {/* Tooltip Portal - renders outside overflow:hidden containers */}
+            {activeTooltip && createPortal(
+                <div
+                    className={`${tooltips.base} opacity-100`}
+                    style={{
+                        position: 'fixed',
+                        top: activeTooltip.y,
+                        left: activeTooltip.x,
+                        transform: 'translate(-50%, -100%)',
+                        zIndex: 99999,
+                    }}
+                >
+                    {activeTooltip.text}
+                </div>,
+                document.body
+            )}
 
 
         </>,

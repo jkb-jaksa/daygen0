@@ -8,6 +8,7 @@ import React, {
   useState,
 } from 'react';
 import { lazy, Suspense } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Settings,
   User,
@@ -242,6 +243,7 @@ const PromptForm = memo<PromptFormProps>(
 
     const [isPromptFocused, setIsPromptFocused] = useState(false);
     const [isStyleButtonHovered, setIsStyleButtonHovered] = useState(false);
+    const [activeTooltip, setActiveTooltip] = useState<{ id: string; text: string; x: number; y: number } | null>(null);
     const [isDraggingOverAvatarButton, setIsDraggingOverAvatarButton] = useState(false);
     const [isDraggingOverProductButton, setIsDraggingOverProductButton] = useState(false);
     const [avatarDragPreviewUrl, setAvatarDragPreviewUrl] = useState<string | null>(null);
@@ -1569,7 +1571,7 @@ const PromptForm = memo<PromptFormProps>(
                   onDrop={handleAvatarButtonDrop}
                   onMouseEnter={() => setIsAvatarButtonHovered(true)}
                   onMouseLeave={() => setIsAvatarButtonHovered(false)}
-                  className={`${glass.promptBorderless} ${isDraggingOverAvatarButton || avatarSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid/30 shadow-[inset_0_-50px_40px_-15px_rgba(0,0,0,0.35)] ${selectedAvatar ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                  className={`${glass.promptBorderless} ${isDraggingOverAvatarButton || avatarSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid/30 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${selectedAvatar ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                   onPointerMove={onPointerMove}
                   onPointerEnter={onPointerEnter}
                   onPointerLeave={onPointerLeave}
@@ -1650,7 +1652,7 @@ const PromptForm = memo<PromptFormProps>(
                   onDrop={handleProductButtonDrop}
                   onMouseEnter={() => setIsProductButtonHovered(true)}
                   onMouseLeave={() => setIsProductButtonHovered(false)}
-                  className={`${glass.promptBorderless} ${isDraggingOverProductButton || productSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid/30 shadow-[inset_0_-50px_40px_-15px_rgba(0,0,0,0.35)] ${selectedProduct || productSelection ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                  className={`${glass.promptBorderless} ${isDraggingOverProductButton || productSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-n-mid/30 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${selectedProduct || productSelection ? 'hover:border-n-white' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                   onPointerMove={onPointerMove}
                   onPointerEnter={onPointerEnter}
                   onPointerLeave={onPointerLeave}
@@ -1727,7 +1729,7 @@ const PromptForm = memo<PromptFormProps>(
                   onClick={styleHandlers.handleStyleModalOpen}
                   onMouseEnter={() => setIsStyleButtonHovered(true)}
                   onMouseLeave={() => setIsStyleButtonHovered(false)}
-                  className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid/30 shadow-[inset_0_-50px_40px_-15px_rgba(0,0,0,0.35)] ${styleHandlers.firstSelectedStyle ? 'hover:border-n-white' : ''} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small`}
+                  className={`${glass.promptBorderless} hover:bg-n-text/20 border border-n-mid/30 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${styleHandlers.firstSelectedStyle ? 'hover:border-n-white' : ''} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small`}
                   aria-label="Select style"
                   aria-expanded={styleHandlers.isStyleModalOpen}
                   onPointerMove={onPointerMove}
@@ -1932,8 +1934,12 @@ const PromptForm = memo<PromptFormProps>(
                               setIsAvatarPickerOpen(false);
                             }}
                             className="p-1 hover:bg-theme-text/10 rounded-full transition-colors duration-200"
-                            title="View creations"
                             aria-label="View creations with this Avatar"
+                            onMouseEnter={(e) => {
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              setActiveTooltip({ id: `avatar-info-${avatar.id}`, text: 'More info', x: rect.left + rect.width / 2, y: rect.top - 8 });
+                            }}
+                            onMouseLeave={() => setActiveTooltip(null)}
                           >
                             <Info className="h-3 w-3 text-theme-white hover:text-theme-text" />
                           </button>
@@ -1944,8 +1950,12 @@ const PromptForm = memo<PromptFormProps>(
                               setAvatarToDelete(avatar);
                             }}
                             className="p-1 hover:bg-theme-text/10 rounded-full transition-colors duration-200"
-                            title="Delete Avatar"
                             aria-label="Delete Avatar"
+                            onMouseEnter={(e) => {
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              setActiveTooltip({ id: `avatar-delete-${avatar.id}`, text: 'Delete Avatar', x: rect.left + rect.width / 2, y: rect.top - 8 });
+                            }}
+                            onMouseLeave={() => setActiveTooltip(null)}
                           >
                             <Trash2 className="h-3 w-3 text-theme-white hover:text-theme-text" />
                           </button>
@@ -2126,8 +2136,12 @@ const PromptForm = memo<PromptFormProps>(
                               setIsProductPickerOpen(false);
                             }}
                             className="p-1 hover:bg-theme-text/10 rounded-full transition-colors duration-200"
-                            title="View creations"
                             aria-label="View creations with this Product"
+                            onMouseEnter={(e) => {
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              setActiveTooltip({ id: `product-info-${product.id}`, text: 'More info', x: rect.left + rect.width / 2, y: rect.top - 8 });
+                            }}
+                            onMouseLeave={() => setActiveTooltip(null)}
                           >
                             <Info className="h-3 w-3 text-theme-white hover:text-theme-text" />
                           </button>
@@ -2138,8 +2152,12 @@ const PromptForm = memo<PromptFormProps>(
                               setProductToDelete(product);
                             }}
                             className="p-1 hover:bg-theme-text/10 rounded-full transition-colors duration-200"
-                            title="Delete Product"
                             aria-label="Delete Product"
+                            onMouseEnter={(e) => {
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              setActiveTooltip({ id: `product-delete-${product.id}`, text: 'Delete Product', x: rect.left + rect.width / 2, y: rect.top - 8 });
+                            }}
+                            onMouseLeave={() => setActiveTooltip(null)}
                           >
                             <Trash2 className="h-3 w-3 text-theme-white hover:text-theme-text" />
                           </button>
@@ -2664,6 +2682,23 @@ const PromptForm = memo<PromptFormProps>(
           <Suspense fallback={null}>
             <PresetGenerationModal flow={presetGenerationFlow} />
           </Suspense>
+        )}
+
+        {/* Tooltip Portal - renders outside overflow:hidden containers */}
+        {activeTooltip && createPortal(
+          <div
+            className={`${tooltips.base} opacity-100`}
+            style={{
+              position: 'fixed',
+              top: activeTooltip.y,
+              left: activeTooltip.x,
+              transform: 'translate(-50%, -100%)',
+              zIndex: 99999,
+            }}
+          >
+            {activeTooltip.text}
+          </div>,
+          document.body
         )}
       </>
     );
