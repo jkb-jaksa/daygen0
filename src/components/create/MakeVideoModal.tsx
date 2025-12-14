@@ -736,10 +736,11 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                             {isVoiceDropdownOpen && createPortal(
                                                 <div
                                                     ref={voiceDropdownRef}
-                                                    className={`fixed ${glass.promptDark} rounded-xl border border-theme-mid p-4 min-w-[280px] z-[10000] shadow-xl`}
+                                                    className="fixed rounded-xl border border-theme-mid p-4 min-w-[280px] shadow-xl overflow-visible bg-theme-black/90 backdrop-blur-xl"
                                                     style={{
                                                         top: voiceButtonRef.current ? `${voiceButtonRef.current.getBoundingClientRect().bottom + 8}px` : '0px',
                                                         left: promptContainerRef.current ? `${promptContainerRef.current.getBoundingClientRect().left}px` : (voiceButtonRef.current ? `${voiceButtonRef.current.getBoundingClientRect().left}px` : '0px'),
+                                                        zIndex: 10000,
                                                     }}
                                                     onClick={(e) => e.stopPropagation()}
                                                 >
@@ -750,6 +751,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                             setIsVoiceDropdownOpen(false);
                                                         }}
                                                         className="w-full"
+                                                        defaultOpen={true}
                                                     />
                                                 </div>,
                                                 document.body

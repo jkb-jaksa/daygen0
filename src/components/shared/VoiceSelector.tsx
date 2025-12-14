@@ -5,7 +5,7 @@ import {
 } from "../../utils/audioApi";
 import { inputs } from "../../styles/designSystem";
 import { ChevronDown, Check, User, Sparkles, Mic, Play, Square } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+
 
 // Reusable component for selecting a voice
 type VoiceSelectorProps = {
@@ -14,6 +14,7 @@ type VoiceSelectorProps = {
   className?: string;
   recentVoice?: ElevenLabsVoiceSummary | null;
   onLoaded?: (voices: ElevenLabsVoiceSummary[]) => void;
+  defaultOpen?: boolean;
 };
 
 export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
@@ -22,11 +23,12 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
   className = "",
   recentVoice,
   onLoaded,
+  defaultOpen = false,
 }) => {
   const [voices, setVoices] = useState<ElevenLabsVoiceSummary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(defaultOpen);
   const [dropdownPosition, setDropdownPosition] = useState<{
     vertical: "top" | "bottom";
     horizontal: "left" | "right";
@@ -153,6 +155,33 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
     }
   };
 
+  useEffect(() => {
+    if (isOpen && containerRef.current) {
+      // Smart positioning logic
+      const rect = containerRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const spaceRight = window.innerWidth - rect.left;
+      const DROPDOWN_HEIGHT = 350;
+      const DROPDOWN_WIDTH = 320;
+
+      let vertical: "top" | "bottom" = "bottom";
+      let horizontal: "left" | "right" = "left";
+
+      if (spaceBelow < DROPDOWN_HEIGHT && spaceAbove > spaceBelow) {
+        vertical = "top";
+      }
+
+      if (spaceRight < DROPDOWN_WIDTH) {
+        horizontal = "right";
+      }
+
+      setDropdownPosition({ vertical, horizontal });
+    }
+  }, [isOpen]);
+
+
+
   const handleSelect = (voiceId: string) => {
     onChange(voiceId);
     setIsOpen(false);
@@ -165,30 +194,6 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
     }
 
     if (isLoading || (!!error && voices.length === 0)) return;
-
-    // Smart positioning logic
-    if (containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const spaceAbove = rect.top;
-      const spaceRight = window.innerWidth - rect.left;
-      const DROPDOWN_HEIGHT = 350; // Approximated height (max-h-80 ~ 320px + margins)
-      const DROPDOWN_WIDTH = 320; // Increased width for better visibility
-
-      let vertical: "top" | "bottom" = "bottom";
-      let horizontal: "left" | "right" = "left";
-
-      if (spaceBelow < DROPDOWN_HEIGHT && spaceAbove > spaceBelow) {
-        vertical = "top";
-      }
-
-      // If there isn't enough space on the right, align to right edge
-      if (spaceRight < DROPDOWN_WIDTH) {
-        horizontal = "right";
-      }
-
-      setDropdownPosition({ vertical, horizontal });
-    }
 
     setIsOpen(true);
   };
@@ -219,96 +224,78 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
         />
       </button>
 
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{
-              opacity: 0,
-              y: dropdownPosition.vertical === "bottom" ? -10 : 10,
-              scale: 0.98
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-              scale: 1
-            }}
-            exit={{
-              opacity: 0,
-              y: dropdownPosition.vertical === "bottom" ? -10 : 10,
-              scale: 0.98
-            }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-            className={`absolute z-50 max-h-80 w-72 xs:w-80 overflow-y-auto overflow-x-hidden rounded-xl border border-theme-dark bg-theme-black/95 backdrop-blur-xl shadow-2xl custom-scrollbar 
+      {isOpen && (
+        <div
+          className={`absolute z-[60] max-h-80 w-72 xs:w-80 overflow-y-auto overflow-x-hidden rounded-xl border border-theme-dark bg-theme-black/95 backdrop-blur-xl shadow-2xl custom-scrollbar 
               ${dropdownPosition.vertical === "bottom" ? "top-full mt-2 origin-top" : "bottom-full mb-2 origin-bottom"}
               ${dropdownPosition.horizontal === "left" ? "left-0" : "right-0"}
             `}
-          >
-            <div className="py-2">
-              {Object.entries(groupedVoices).map(([category, categoryVoices]) => (
-                <div key={category} className="mb-2 last:mb-0">
-                  <div className="sticky top-0 z-10 bg-theme-black/95 backdrop-blur-md px-3 py-1.5 mb-1 border-b border-theme-dark/50">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-theme-light/80 flex items-center gap-2">
-                      {category}
-                      {getCategoryIcon(category)}
-                    </span>
-                  </div>
-                  <div className="px-1">
-                    {categoryVoices.map((voice) => {
-                      const isSelected = voice.voice_id === value;
-                      return (
-                        <div
-                          key={`${category}-${voice.voice_id}`}
-                          onClick={() => handleSelect(voice.voice_id)}
-                          className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-150 group cursor-pointer ${isSelected
-                            ? "bg-theme-white/10 text-theme-text"
-                            : "text-theme-white/80 hover:bg-theme-white/5 hover:text-theme-text"
-                            }`}
-                        >
-                          <div className="flex items-center gap-2 overflow-hidden">
-                            <span className="truncate">{voice.name}</span>
-                            {isSelected && (
-                              <Check className="size-3.5 text-brand-cyan flex-shrink-0" />
-                            )}
-                          </div>
-
-                          {voice.previewUrl && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                if (voice.previewUrl) {
-                                  togglePreview(voice.previewUrl, voice.voice_id);
-                                }
-                              }}
-                              onMouseDown={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                              }}
-                              className="p-1.5 rounded-full hover:bg-theme-white/20 text-theme-white/70 hover:text-theme-white transition-colors flex-shrink-0 z-10"
-                            >
-                              {playingVoiceId === voice.voice_id ? (
-                                <Square size={12} fill="currentColor" />
-                              ) : (
-                                <Play size={12} fill="currentColor" />
-                              )}
-                            </button>
+        >
+          <div className="py-2">
+            {Object.entries(groupedVoices).map(([category, categoryVoices]) => (
+              <div key={category} className="mb-2 last:mb-0">
+                <div className="sticky top-0 z-10 bg-theme-black/95 backdrop-blur-md px-3 py-1.5 mb-1 border-b border-theme-dark/50">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-theme-light/80 flex items-center gap-2">
+                    {category}
+                    {getCategoryIcon(category)}
+                  </span>
+                </div>
+                <div className="px-1">
+                  {categoryVoices.map((voice) => {
+                    const isSelected = voice.voice_id === value;
+                    return (
+                      <div
+                        key={`${category}-${voice.voice_id}`}
+                        onClick={() => handleSelect(voice.voice_id)}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-150 group cursor-pointer ${isSelected
+                          ? "bg-theme-white/10 text-theme-text"
+                          : "text-theme-white/80 hover:bg-theme-white/5 hover:text-theme-text"
+                          }`}
+                      >
+                        <div className="flex items-center gap-2 overflow-hidden">
+                          <span className="truncate">{voice.name}</span>
+                          {isSelected && (
+                            <Check className="size-3.5 text-brand-cyan flex-shrink-0" />
                           )}
                         </div>
-                      );
-                    })}
-                  </div>
+
+                        {voice.previewUrl && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              if (voice.previewUrl) {
+                                togglePreview(voice.previewUrl, voice.voice_id);
+                              }
+                            }}
+                            onMouseDown={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                            }}
+                            className="p-1.5 rounded-full hover:bg-theme-white/20 text-theme-white/70 hover:text-theme-white transition-colors flex-shrink-0 z-10"
+                          >
+                            {playingVoiceId === voice.voice_id ? (
+                              <Square size={12} fill="currentColor" />
+                            ) : (
+                              <Play size={12} fill="currentColor" />
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
-              {Object.keys(groupedVoices).length === 0 && (
-                <div className="px-3 py-2 text-sm text-theme-light text-center">
-                  No voices found
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              </div>
+            ))}
+            {Object.keys(groupedVoices).length === 0 && (
+              <div className="px-3 py-2 text-sm text-theme-light text-center">
+                No voices found
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

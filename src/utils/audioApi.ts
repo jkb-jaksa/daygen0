@@ -55,8 +55,17 @@ async function fetchWithAuthFormData(
   });
 }
 
+let voicesCache: VoicesResponse | null = null;
+
 export async function fetchElevenLabsVoices(): Promise<VoicesResponse> {
-  return apiFetch<VoicesResponse>("/api/audio/voices", { method: "GET" });
+  if (voicesCache) {
+    return voicesCache;
+  }
+  const response = await apiFetch<VoicesResponse>("/api/audio/voices", { method: "GET" });
+  if (response.success) {
+    voicesCache = response;
+  }
+  return response;
 }
 
 export async function cloneElevenLabsVoice(
