@@ -999,6 +999,9 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       model: model as 'veo-3.1-generate-preview' | 'veo-3.1-fast-generate-preview' || 'veo-3.1-generate-preview',
       aspectRatio: aspectRatio as '16:9' | '9:16',
       references: references,
+      avatarId: item.avatarId,
+      avatarImageId: item.avatarImageId,
+      productId: item.productId,
     }).then((result) => {
       if (result && result.url) {
         // Add video to gallery when done
@@ -1010,6 +1013,9 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           jobId: result.jobId,
           type: 'video',
           aspectRatio: aspectRatio as string,
+          avatarId: item.avatarId,
+          avatarImageId: item.avatarImageId,
+          productId: item.productId,
         });
         showToast('Video generation complete!');
       }

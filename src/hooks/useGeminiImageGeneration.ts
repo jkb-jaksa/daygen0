@@ -544,6 +544,9 @@ export const useGeminiImageGeneration = () => {
     if (options.avatarImageId) {
       baseBody.avatarImageId = options.avatarImageId;
     }
+    if (options.productId) {
+      baseBody.productId = options.productId;
+    }
 
     if (Object.keys(providerOptions).length > 0) {
       baseBody.providerOptions = providerOptions;

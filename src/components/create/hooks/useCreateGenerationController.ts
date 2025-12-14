@@ -1024,6 +1024,9 @@ export function useCreateGenerationController(): CreateGenerationController {
             negativePrompt: veoNegativePrompt?.trim() || undefined,
             seed: veoSeed,
             references: references,
+            avatarId: selectedAvatarId,
+            avatarImageId: activeAvatarImageId,
+            productId: selectedProductId,
           });
 
           persistVideoResults(veoVideo, {

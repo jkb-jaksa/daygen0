@@ -677,6 +677,9 @@ const FullImageModal = memo(() => {
       model: (model as 'veo-3.1-generate-preview' | 'veo-3.1-fast-generate-preview') || 'veo-3.1-generate-preview',
       aspectRatio: aspectRatio as '16:9' | '9:16',
       references: references,
+      avatarId: fullSizeImage.avatarId,
+      avatarImageId: fullSizeImage.avatarImageId,
+      productId: fullSizeImage.productId,
     }).then((result) => {
       if (result && result.url) {
         // Add video to gallery when done
@@ -688,6 +691,9 @@ const FullImageModal = memo(() => {
           jobId: result.jobId,
           type: 'video',
           aspectRatio: aspectRatio as string,
+          avatarId: fullSizeImage.avatarId,
+          avatarImageId: fullSizeImage.avatarImageId,
+          productId: fullSizeImage.productId,
         });
         showToast('Video generation complete!');
       }

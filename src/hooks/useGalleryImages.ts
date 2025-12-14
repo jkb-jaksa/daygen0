@@ -23,6 +23,7 @@ export interface R2FileResponse {
   avatarImageId?: string;
   productId?: string;
   styleId?: string;
+  aspectRatio?: string;
   jobId?: string;
   createdAt: string;
   updatedAt: string;
@@ -98,6 +99,7 @@ export const useGalleryImages = () => {
         avatarImageId: r2File.avatarImageId,
         productId: r2File.productId,
         styleId: r2File.styleId,
+        aspectRatio: r2File.aspectRatio,
       };
 
       const mimeType = r2File.mimeType?.toLowerCase() ?? '';
@@ -424,6 +426,8 @@ export const useGalleryImages = () => {
       let computedNextImages: GalleryImageLike[] | null = null;
       // Collect r2FileIds that should be updated server-side (best-effort)
       const r2FileIdsToUpdate: string[] = [];
+      // Collect file URLs that should be updated server-side when r2FileId is missing
+      const fileUrlsToUpdate: string[] = [];
 
       setState(prev => {
         // First, deduplicate existing images
@@ -453,6 +457,12 @@ export const useGalleryImages = () => {
             // Collect r2FileIds for optional server update (isPublic, isLiked, or model toggle)
             if ((updates.isPublic !== undefined || updates.isLiked !== undefined || updates.model !== undefined) && image.r2FileId) {
               r2FileIdsToUpdate.push(image.r2FileId);
+            } else if (
+              (updates.isPublic !== undefined || updates.isLiked !== undefined || updates.model !== undefined) &&
+              image.url &&
+              !image.r2FileId
+            ) {
+              fileUrlsToUpdate.push(image.url);
             }
             return { ...image, ...updates };
           }
@@ -526,6 +536,26 @@ export const useGalleryImages = () => {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify(patchPayload),
+          }).catch(() => { });
+        }
+
+        // Fallback: if some items don't have r2FileId yet, patch by fileUrl.
+        // This prevents likes/public from resetting after refresh for newly added items.
+        for (const rawUrl of Array.from(new Set(fileUrlsToUpdate))) {
+          const trimmed = rawUrl?.trim();
+          if (!trimmed) continue;
+          const baseUrl = trimmed.split('?')[0] || trimmed;
+          const apiUrl = getApiUrl('/api/r2files/by-url');
+          void fetch(apiUrl, {
+            method: 'PATCH',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              fileUrl: baseUrl,
+              ...patchPayload,
+            }),
           }).catch(() => { });
         }
       }

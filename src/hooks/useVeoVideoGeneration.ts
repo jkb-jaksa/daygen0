@@ -41,6 +41,9 @@ export interface VideoGenerationOptions {
   pollIntervalMs?: number;
   pollRequestTimeoutMs?: number;
   references?: string[];
+  avatarId?: string;
+  avatarImageId?: string;
+  productId?: string;
 }
 
 const INITIAL_STATE: VideoGenerationState = {
@@ -186,6 +189,9 @@ export const useVeoVideoGeneration = () => {
           model: options.model ?? 'veo-3.1-generate-preview',
           references: options.references,
           providerOptions,
+          avatarId: options.avatarId,
+          avatarImageId: options.avatarImageId,
+          productId: options.productId,
         },
         tracker,
         prompt: options.prompt,
