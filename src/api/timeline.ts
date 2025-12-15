@@ -10,18 +10,20 @@ export interface TimelineResponse {
 
 export async function generateTimeline(
     topic: string,
-    style: string,
+    musicUrl: string | null,
     duration: 'short' | 'medium' | 'long' = 'medium',
     musicVolume: number = 0.3,
     referenceImageUrls?: string[],
     voiceId?: string,
     includeVoiceover: boolean = true,
-    includeSubtitles: boolean = true
+    includeSubtitles: boolean = true,
+    musicStartTime: number = 0
 ): Promise<Job> {
     return apiFetch<Job>('/api/timeline/generate', {
         method: 'POST',
         // Map includeVoiceover -> includeNarration (backend DTO expectation)
-        body: { topic, style, duration, musicVolume, referenceImageUrls, voiceId, includeNarration: includeVoiceover, includeSubtitles },
+        // Send style as 'auto' to let GPT-5 decide based on prompt
+        body: { topic, style: 'auto', musicUrl, duration, musicVolume, referenceImageUrls, voiceId, includeNarration: includeVoiceover, includeSubtitles, musicStartTime },
     });
 }
 

@@ -341,7 +341,7 @@ export const ReelsEditorLayout = () => {
                         });
 
                         // Render remaining placeholders if job is active
-                        if (jobId && segments.length < totalExpected) {
+                        if (jobId && segments.length < totalExpected && jobStatus !== 'COMPLETED' && jobStatus !== 'FAILED') {
                             for (let i = segments.length; i < totalExpected; i++) {
                                 items.push(
                                     <PlaceholderScene

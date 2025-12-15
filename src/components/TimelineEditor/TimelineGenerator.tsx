@@ -3,14 +3,25 @@ import { useNavigate } from 'react-router-dom';
 import { generateTimeline, type TimelineResponse } from '../../api/timeline';
 import { useTimelineStore, type Segment } from '../../stores/timelineStore';
 import { fetchJobs, type Job } from '../../api/jobs';
-import { Loader2, Sparkles, History, Volume2, VolumeX, Upload, X, Captions, CaptionsOff } from 'lucide-react';
+import { Loader2, Sparkles, History, Volume2, VolumeX, Upload, X, Captions, CaptionsOff, Music } from 'lucide-react';
 import { uploadToR2 } from '../../utils/uploadToR2';
+// import { musicPresets } from '../../data/musicPresets'; // Removed unused import
 import { VoiceSelector } from '../shared/VoiceSelector';
+import { MusicSelector } from '../shared/MusicSelector';
+
+type MusicTrack = {
+    id: string;
+    url: string;
+    name: string;
+    genre?: string;
+};
 
 export default function TimelineGenerator() {
     const navigate = useNavigate();
     const [topic, setTopic] = useState('');
-    const [style, setStyle] = useState('Cinematic');
+    // const [style, setStyle] = useState('Cinematic'); // REMOVED: Style is now auto-determined
+    const [selectedMusicUrl, setSelectedMusicUrl] = useState<string | null>(null);
+    const [musicStartTime, setMusicStartTime] = useState<number>(0);
     const [duration, setDuration] = useState<'short' | 'medium' | 'long'>('medium');
     const [musicVolume, setMusicVolume] = useState(30); // 0-100%
     const [isLoading, setIsLoading] = useState(false);
@@ -25,7 +36,9 @@ export default function TimelineGenerator() {
     const setJobDuration = useTimelineStore((state) => state.setJobDuration);
     const setMusicVolumeStore = useTimelineStore((state) => state.setMusicVolume);
 
+
     const [referenceImages, setReferenceImages] = useState<string[]>([]);
+    const [customMusicTracks, setCustomMusicTracks] = useState<MusicTrack[]>([]);
     const [isUploadingImage, setIsUploadingImage] = useState(false);
     const [selectedVoiceId, setSelectedVoiceId] = useState<string>('');
     const [includeVoiceover, setIncludeVoiceover] = useState(true);
@@ -123,30 +136,85 @@ export default function TimelineGenerator() {
 
     const processFiles = async (files: File[]) => {
         if (!files.length) return;
-        setIsUploadingImage(true);
-        try {
-            const uploadPromises = files.map(async (file) => {
-                try {
-                    const result = await uploadToR2(file, file.name, file.type, 'temp/cyran-roll-images');
-                    if (result.success && result.publicUrl) {
-                        return result.publicUrl;
-                    }
-                    throw new Error(result.error || 'Upload failed');
-                } catch (err) {
-                    console.error(`Failed to upload file ${file.name}:`, err);
-                    throw err; // Re-throw to be caught by Promise.all
-                }
-            });
 
-            const results = await Promise.all(uploadPromises);
-            setReferenceImages(prev => [...prev, ...results]);
-        } catch (error) {
-            console.error('Failed to upload one or more images:', error);
-            alert(`Failed to upload images: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        } finally {
-            setIsUploadingImage(false);
-            if (fileInputRef.current) fileInputRef.current.value = '';
+        const imageFiles = files.filter(f => f.type.startsWith('image/'));
+        const audioFiles = files.filter(f => f.type.startsWith('audio/'));
+
+        // Handle Images
+        if (imageFiles.length > 0) {
+            setIsUploadingImage(true);
+            try {
+                const uploadPromises = imageFiles.map(async (file) => {
+                    try {
+                        const result = await uploadToR2(file, file.name, file.type, 'temp/cyran-roll-images');
+                        if (result.success && result.publicUrl) {
+                            return result.publicUrl;
+                        }
+                        throw new Error(result.error || 'Upload failed');
+                    } catch (err) {
+                        console.error(`Failed to upload file ${file.name}:`, err);
+                        throw err; // Re-throw to be caught by Promise.all
+                    }
+                });
+
+                const results = await Promise.all(uploadPromises);
+                setReferenceImages(prev => [...prev, ...results]);
+            } catch (error) {
+                console.error('Failed to upload one or more images:', error);
+                alert(`Failed to upload images: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            } finally {
+                setIsUploadingImage(false);
+            }
         }
+
+        // Handle Audio
+        if (audioFiles.length > 0) {
+            // For now, let's just create a generic loading state for audio if needed, 
+            // or just rely on the fact it's fast enough or we just update state when done.
+            // We might want `isUploadingMusic` state later? 
+            // The prompt said: "Upon successful upload... Immediately set this URL as the selectedMusicUrl."
+
+            try {
+                const uploadPromises = audioFiles.map(async (file) => {
+                    try {
+                        const result = await uploadToR2(file, file.name, file.type, 'user-music');
+                        if (result.success && result.publicUrl) {
+                            return {
+                                url: result.publicUrl,
+                                name: file.name
+                            };
+                        }
+                        throw new Error(result.error || 'Upload failed');
+                    } catch (err) {
+                        console.error(`Failed to upload file ${file.name}:`, err);
+                        throw err;
+                    }
+                });
+
+                const results = await Promise.all(uploadPromises);
+
+                // Add to custom tracks
+                const newTracks: MusicTrack[] = results.map(r => ({
+                    id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                    url: r.url,
+                    name: r.name,
+                    genre: 'Custom Upload'
+                }));
+
+                setCustomMusicTracks(prev => [...newTracks, ...prev]); // Add new ones to top/start
+
+                // Select the first uploaded track
+                if (newTracks.length > 0) {
+                    setSelectedMusicUrl(newTracks[0].url);
+                }
+
+            } catch (error) {
+                console.error('Failed to upload music:', error);
+                alert(`Failed to upload music: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+        }
+
+        if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -190,7 +258,18 @@ export default function TimelineGenerator() {
             setMusicUrl(null);
             setFinalVideoUrl(null);
 
-            const job = await generateTimeline(topic, style, duration, musicVolume / 100, referenceImages, selectedVoiceId, includeVoiceover, includeSubtitles);
+            // Updated API call: Pass selectedMusicUrl instead of style
+            const job = await generateTimeline(
+                topic,
+                selectedMusicUrl, // Pass music URL
+                duration,
+                musicVolume / 100,
+                referenceImages,
+                selectedVoiceId,
+                includeVoiceover,
+                includeSubtitles,
+                musicStartTime // Pass start time
+            );
 
             // Set Job ID and navigate immediately
             setJobId(job.id);
@@ -231,7 +310,7 @@ export default function TimelineGenerator() {
                         <div className="absolute inset-0 bg-theme-mid/10 backdrop-blur-sm rounded-3xl flex items-center justify-center z-50 animate-in fade-in duration-200">
                             <div className="bg-theme-black/90 p-6 rounded-2xl border border-theme-mid/50 shadow-2xl flex flex-col items-center gap-3">
                                 <Upload className="w-10 h-10 text-theme-mid animate-bounce" />
-                                <p className="text-lg font-bold text-theme-mid font-raleway">Drop images here</p>
+                                <p className="text-lg font-bold text-theme-mid font-raleway">Drop images or music here</p>
                             </div>
                         </div>
                     )}
@@ -298,24 +377,20 @@ export default function TimelineGenerator() {
 
                     {/* Compact Controls Area */}
                     <div className="space-y-3 pt-2">
-                        {/* Row 1: Style & Duration */}
+                        {/* Row 1: Music & Duration */}
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1.5">
-                                <label htmlFor="style" className="block text-xs font-medium text-theme-white/80 font-raleway ml-1 uppercase tracking-wide">
-                                    Style
+                                <label htmlFor="music" className="block text-xs font-medium text-theme-white/80 font-raleway ml-1 uppercase tracking-wide flex items-center gap-1">
+                                    <Music size={10} /> Music Vibe
                                 </label>
-                                <select
-                                    id="style"
-                                    value={style}
-                                    onChange={(e) => setStyle(e.target.value)}
-                                    className="w-full bg-theme-black/40 border border-theme-dark rounded-lg p-2 text-theme-text font-raleway text-xs focus:outline-none focus:border-theme-mid focus:ring-1 focus:ring-theme-mid transition-all appearance-none cursor-pointer hover:border-theme-white/20"
-                                >
-                                    <option value="Cinematic">Cinematic</option>
-                                    <option value="Documentary">Documentary</option>
-                                    <option value="Vlog">Vlog</option>
-                                    <option value="Educational">Educational</option>
-                                    <option value="Music Video">Music Video</option>
-                                </select>
+                                <MusicSelector
+                                    value={selectedMusicUrl}
+                                    onChange={setSelectedMusicUrl}
+                                    musicStartTime={musicStartTime}
+                                    onMusicStartTimeChange={setMusicStartTime}
+                                    className="w-full"
+                                    customTracks={customMusicTracks}
+                                />
                             </div>
 
                             <div className="space-y-1.5">
@@ -353,7 +428,7 @@ export default function TimelineGenerator() {
                                 <VoiceSelector
                                     value={selectedVoiceId}
                                     onChange={setSelectedVoiceId}
-                                    className="w-full bg-theme-black/40 border border-theme-dark rounded-lg p-2 text-theme-text font-raleway text-xs focus:outline-none focus:border-theme-mid focus:ring-1 focus:ring-theme-mid transition-all appearance-none cursor-pointer hover:border-theme-white/20"
+                                    className="w-full"
                                 />
                             </div>
 
