@@ -84,7 +84,7 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
     React.useEffect(() => {
         let interval: NodeJS.Timeout;
         // Run timer if explicitly regenerating OR if segment status implies generation
-        const shouldTimerRun = isRegeneratingImage || isRegeneratingVideo || (!segment.imageUrl && (segment.status === 'generating' || segment.status === 'pending')) || (!segment.videoUrl && (segment.status === 'generating' || segment.status === 'pending'));
+        const shouldTimerRun = isRegeneratingImage || isRegeneratingVideo || isRegeneratingAudio || (!segment.imageUrl && (segment.status === 'generating' || segment.status === 'pending')) || (!segment.videoUrl && (segment.status === 'generating' || segment.status === 'pending'));
 
         if (shouldTimerRun) {
             interval = setInterval(() => {
@@ -94,7 +94,7 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
             setTimer(0);
         }
         return () => clearInterval(interval);
-    }, [isRegeneratingImage, isRegeneratingVideo, segment.imageUrl, segment.videoUrl, segment.status]);
+    }, [isRegeneratingImage, isRegeneratingVideo, isRegeneratingAudio, segment.imageUrl, segment.videoUrl, segment.status]);
 
     // Simulated progress hook logic (inline for now)
     const [simulatedProgress, setSimulatedProgress] = React.useState(0);
@@ -199,34 +199,38 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
         }
     }, [segment.imageUrl, segment.videoUrl, isRegeneratingImage, isRegeneratingVideo]);
 
-    const handleUpdateAudio = async () => {
-        if (!localScript.trim() || localScript === segment.script) return; // No change or empty
+    const handleRegenerateAudio = async (forceRegen = false) => {
+        // If not forcing regen, check for changes
+        if (!forceRegen && (!localScript.trim() || localScript === segment.script)) return;
+
         if (!jobId) {
             console.error("No Job ID found in store");
-            // alert("Error: Cannot update segment without active job session. Please reload.");
             return;
         }
 
         setIsRegeneratingAudio(true);
         try {
-            // Call API to regenerate Text/Audio
-            // Note: Segment index is needed. TimelineState has segments as array.
-            // We can find index by id or passed prop. SceneBlock has segment.
             const index = useTimelineStore.getState().segments.findIndex(s => s.id === segment.id);
             if (index === -1) throw new Error("Segment not found");
 
-            const result = await regenerateSegment(jobId, index, localScript);
+            // Pass regenerateAudio: true if forcing regen
+            const result = await regenerateSegment(
+                jobId,
+                index,
+                localScript,
+                undefined, // prompt
+                undefined, // motionPrompt
+                false, // image
+                false, // video
+                forceRegen // regenerateAudio flag
+            );
 
-            // Update local store with result
-            // result should contain { audioUrl, duration, script, imageUrl... }
-            // We mostly care about audioUrl and duration.
             if (result.audioUrl) {
                 updateSegmentAudio(segment.id, result.audioUrl, result.duration);
                 updateSegmentScript(segment.id, localScript);
             }
         } catch (error) {
             console.error("Failed to regenerate audio:", error);
-            // alert("Failed to regenerate audio: " + error);
         } finally {
             setIsRegeneratingAudio(false);
         }
@@ -497,24 +501,38 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
                             <span className="text-xs text-theme-white/40 font-mono">Generating Script...</span>
                         </div>
                     ) : (
-                        <div className="relative w-full">
-                            <textarea
-                                value={localScript}
-                                onChange={(e) => setLocalScript(e.target.value)}
-                                onClick={(e) => e.stopPropagation()}
-                                onKeyDown={handleKeyDown}
-                                className={clsx(
-                                    "w-full bg-transparent border-0 p-0 resize-none focus:ring-0 text-base sm:text-lg leading-relaxed transition-colors h-auto min-h-[4rem] font-raleway",
-                                    isActive ? "text-theme-text placeholder:text-theme-white/30" : "text-theme-text/60 placeholder:text-theme-white/20"
+                        <div className="space-y-1">
+                            <div className="flex justify-between items-center">
+                                <label className="text-[10px] text-theme-white/70 font-mono uppercase tracking-wider font-bold">Script</label>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleRegenerateAudio(true); }}
+                                    disabled={isRegeneratingAudio}
+                                    className="text-[10px] text-theme-white/70 hover:text-white flex items-center gap-1 transition-colors font-bold"
+                                    title="Regenerate Voice Only"
+                                >
+                                    {isRegeneratingAudio && <span className="font-mono">{formatTime(timer)}</span>}
+                                    {isRegeneratingAudio ? <Loader2 size={10} className="animate-spin" /> : <RefreshCw size={10} />} Regen Voice
+                                </button>
+                            </div>
+                            <div className="relative w-full">
+                                <textarea
+                                    value={localScript}
+                                    onChange={(e) => setLocalScript(e.target.value)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    onKeyDown={handleKeyDown}
+                                    className={clsx(
+                                        "w-full bg-transparent border-0 p-0 resize-none focus:ring-0 text-base sm:text-lg leading-relaxed transition-colors h-auto min-h-[4rem] font-raleway",
+                                        isActive ? "text-theme-text placeholder:text-theme-white/30" : "text-theme-text/60 placeholder:text-theme-white/20"
+                                    )}
+                                    placeholder="Enter script here..."
+                                    spellCheck="false"
+                                />
+                                {!localScript && (
+                                    <div className="absolute top-7 left-0 text-theme-white/30 pointer-events-none text-xs font-raleway select-none z-0 italic">
+                                        Press Tab to insert tags ([happy], [pause]...). Press repeatedly to cycle.
+                                    </div>
                                 )}
-                                placeholder="Enter script here..."
-                                spellCheck="false"
-                            />
-                            {!localScript && (
-                                <div className="absolute top-7 left-0 text-theme-white/30 pointer-events-none text-xs font-raleway select-none z-0 italic">
-                                    Press Tab to insert tags ([happy], [pause]...). Press repeatedly to cycle.
-                                </div>
-                            )}
+                            </div>
                         </div>
                     )
                 }
@@ -579,11 +597,11 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
                     />
                 </div>
 
-                {/* Controls (Audio/Script Save) */}
-                <div className="flex gap-2">
+                {/* Controls (Audio/Script Save) - REMOVED as redundant */}
+                {/* <div className="flex gap-2">
                     {localScript !== segment.script && (
                         <button
-                            onClick={(e) => { e.stopPropagation(); handleUpdateAudio(); }}
+                            onClick={(e) => { e.stopPropagation(); handleRegenerateAudio(); }}
                             disabled={isRegeneratingAudio}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-theme-mid/10 text-theme-mid border border-theme-mid/30 text-xs font-medium hover:bg-theme-mid hover:text-theme-black transition-colors disabled:opacity-50"
                         >
@@ -591,7 +609,7 @@ export const SceneBlock: React.FC<SceneBlockProps> = ({ segment, isActive, curre
                             <span className="hidden sm:inline">Update Audio & Script</span><span className="sm:hidden">Save</span>
                         </button>
                     )}
-                </div>
+                </div> */}
             </div >
 
             {/* Thumbnail (Small Preview) */}
