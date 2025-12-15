@@ -958,7 +958,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       return;
     }
 
-    const { prompt, referenceFiles, aspectRatio, model } = options;
+    const { prompt, referenceFiles, aspectRatio, model, script, voiceId, isLipSyncEnabled } = options;
     const item = makeVideoModalState.item;
 
     // Close modal so user sees the generation in progress
@@ -1002,6 +1002,9 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       avatarId: item.avatarId,
       avatarImageId: item.avatarImageId,
       productId: item.productId,
+      script,
+      voiceId,
+      isLipSyncEnabled,
     }).then((result) => {
       if (result && result.url) {
         // Add video to gallery when done

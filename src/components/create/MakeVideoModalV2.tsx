@@ -41,6 +41,9 @@ export interface MakeVideoOptions {
     avatarImageUrl?: string;
     productImageUrl?: string;
     model?: string;
+    script?: string;
+    voiceId?: string;
+    isLipSyncEnabled?: boolean;
 }
 
 interface MakeVideoModalProps {
@@ -226,6 +229,10 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
     const [soraDuration, setSoraDuration] = useState<number>(5);
     const [soraWithSound, setSoraWithSound] = useState<boolean>(true);
 
+    // Omnihuman LipSync State
+    const [isLipSyncEnabled, setIsLipSyncEnabled] = useState(false);
+    const [script, setScript] = useState('');
+
     // Handlers
     const avatarHandlers = useAvatarHandlers();
     const productHandlers = useProductHandlers();
@@ -408,6 +415,9 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                 avatarImageUrl: selectedAvatar?.imageUrl,
                 productImageUrl: selectedProduct?.imageUrl,
                 model: veoGenModel,
+                script,
+                voiceId: selectedVoiceId,
+                isLipSyncEnabled,
             });
             onClose();
         } else {
@@ -729,6 +739,17 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                         placeholder="e.g. Make it a sunny day, Add a red hat..."
                                         disabled={isLoading}
                                     />
+                                    {isLipSyncEnabled && (
+                                        <div className="border-t border-n-dark px-3 py-2">
+                                            <textarea
+                                                value={script}
+                                                onChange={(e) => setScript(e.target.value)}
+                                                className="w-full min-h-[100px] bg-transparent border-none focus:ring-0 text-theme-text placeholder:text-n-light font-raleway text-base px-0 py-0 resize-none focus:outline-none"
+                                                placeholder="Enter script for LipSync..."
+                                                disabled={isLoading}
+                                            />
+                                        </div>
+                                    )}
 
                                     {/* Middle Row: Voice, Avatar, Product, Style */}
                                     <div className="flex items-center gap-2 border-t border-n-dark px-3 py-2">
@@ -1132,6 +1153,23 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                 </div>
                                                 <TooltipPortal id="make-video-batch-size-tooltip">
                                                     Batch Size (Max 1 for Video)
+                                                </TooltipPortal>
+                                            </div>
+
+                                            {/* LipSync Toggle */}
+                                            <div className="relative flex items-center ml-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsLipSyncEnabled(prev => !prev)}
+                                                    className={`${glass.promptBorderless} flex items-center justify-center h-8 px-3 rounded-full transition-colors duration-200 gap-2 ${isLipSyncEnabled ? 'bg-theme-text/20 border-theme-text' : 'text-n-text'}`}
+                                                    onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'make-video-lipsync-tooltip')}
+                                                    onMouseLeave={() => hideHoverTooltip('make-video-lipsync-tooltip')}
+                                                >
+                                                    <Mic className={`w-4 h-4 ${isLipSyncEnabled ? 'text-theme-text' : 'text-n-text'}`} />
+                                                    <span className={`font-raleway text-sm ${isLipSyncEnabled ? 'text-theme-text' : 'text-n-text'}`}>LipSync</span>
+                                                </button>
+                                                <TooltipPortal id="make-video-lipsync-tooltip">
+                                                    Enable LipSync (Omnihuman)
                                                 </TooltipPortal>
                                             </div>
                                         </div>
