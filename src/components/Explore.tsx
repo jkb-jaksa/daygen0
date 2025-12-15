@@ -2151,7 +2151,7 @@ const Explore: React.FC = () => {
                     return (
                       <article
                         key={item.id}
-                        className="group relative overflow-hidden rounded-2xl border border-theme-dark hover:border-theme-mid transition-colors duration-200 bg-theme-black/40 shadow-[0_24px_70px_rgba(0,0,0,0.45)] parallax-small cursor-pointer"
+                        className="group relative overflow-hidden rounded-2xl border border-theme-dark hover:border-theme-mid transition-colors duration-200 bg-theme-black/40 shadow-[0_24px_70px_rgba(0,0,0,0.45)] parallax-large cursor-pointer"
                         onClick={(event) => {
                           // Check if the click came from a copy button
                           const target = event.target as HTMLElement;
@@ -2267,6 +2267,8 @@ const Explore: React.FC = () => {
                               onClick={(event) => {
                                 event.stopPropagation();
                                 toggleFavorite(item.imageUrl);
+                                // Blur to release focus-within state so UI properly hides on mouse leave
+                                event.currentTarget.blur();
                               }}
                               className="image-action-btn image-action-btn--labelled parallax-large favorite-toggle"
                               aria-label={item.isLiked ? "Remove from liked" : "Add to liked"}
@@ -2278,6 +2280,7 @@ const Explore: React.FC = () => {
                               />
                               {getDisplayLikes(item)}
                             </button>
+
                             <div className="relative">
                               <button
                                 type="button"
@@ -2365,6 +2368,11 @@ const Explore: React.FC = () => {
                                   <Suspense fallback={null}>
                                     <ModelBadge model={item.modelId ?? 'unknown'} size="md" />
                                   </Suspense>
+                                  {item.aspectRatio && (
+                                    <Suspense fallback={null}>
+                                      <AspectRatioBadge aspectRatio={item.aspectRatio} size="md" />
+                                    </Suspense>
+                                  )}
                                   <CreatorBadge name={item.creator.name} profileImage={item.creator.profileImage} userId={item.creator.userId} size="md" onClick={openCreatorProfile} />
                                 </div>
                               </div>
@@ -2836,10 +2844,10 @@ const Explore: React.FC = () => {
                     </ImageActionMenuPortal>
                   </div>
 
-                  {/* Right side - Heart, More, and Close buttons */}
+                  {/* Right side - Save, Heart, More, and Close buttons */}
                   <div className="flex items-center gap-2">
                     <div
-                      className={`flex items-center gap-1 transition-opacity duration-100 ${moreActionMenu?.id === selectedFullImage.id
+                      className={`flex items-center gap-1 transition-opacity duration-100 ${moreActionMenu?.id === selectedFullImage.id || recreateActionMenu?.id === selectedFullImage.id
                         ? 'opacity-100 pointer-events-auto'
                         : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
                         }`}
@@ -2848,9 +2856,33 @@ const Explore: React.FC = () => {
                         type="button"
                         onClick={(event) => {
                           event.stopPropagation();
+                          const isSavedAlready = savedImageUrls.has(selectedFullImage.imageUrl);
+                          if (isSavedAlready) {
+                            setUnsaveConfirm({ open: true, item: selectedFullImage });
+                          } else {
+                            handleSaveToGallery(selectedFullImage);
+                          }
+                        }}
+                        className={`image-action-btn image-action-btn--labelled parallax-large pointer-events-auto ${savedImageUrls.has(selectedFullImage.imageUrl) ? 'border-theme-white/50 bg-theme-white/10 text-theme-text' : ''
+                          }`}
+                        aria-pressed={savedImageUrls.has(selectedFullImage.imageUrl)}
+                        aria-label={savedImageUrls.has(selectedFullImage.imageUrl) ? 'Remove from your gallery' : 'Save to your gallery'}
+                      >
+                        {savedImageUrls.has(selectedFullImage.imageUrl) ? (
+                          <BookmarkCheck className="size-3.5" aria-hidden="true" />
+                        ) : (
+                          <BookmarkPlus className="size-3.5" aria-hidden="true" />
+                        )}
+                        {savedImageUrls.has(selectedFullImage.imageUrl) ? 'Saved' : 'Save'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
                           if (selectedFullImage) {
                             toggleFavorite(selectedFullImage.imageUrl);
                           }
+                          event.currentTarget.blur();
                         }}
                         className="image-action-btn image-action-btn--labelled parallax-large favorite-toggle pointer-events-auto"
                         aria-label={selectedFullImage?.isLiked ? "Remove from liked" : "Add to liked"}
@@ -2905,16 +2937,18 @@ const Explore: React.FC = () => {
                         </ImageActionMenuPortal>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={closeFullSizeView}
-                      className="image-action-btn image-action-btn--fullsize parallax-large pointer-events-auto"
-                      aria-label="Close"
-                    >
-                      <X className="size-4" aria-hidden="true" />
-                    </button>
+
                   </div>
                 </div>
+
+                {/* Close button - positioned on right side of image */}
+                <button
+                  onClick={closeFullSizeView}
+                  className="absolute -top-3 -right-3 p-1.5 rounded-full bg-[color:var(--glass-dark-bg)] text-theme-white hover:text-theme-text backdrop-blur-sm transition-colors duration-200"
+                  aria-label="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
 
                 {/* Image info overlay */}
                 <div
