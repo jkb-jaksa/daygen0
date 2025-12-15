@@ -97,7 +97,7 @@ function ImageActionMenuPortal({
     return createPortal(
         <div
             ref={menuRef}
-            className={`${glass.promptDark} absolute z-[9999] min-w-[160px] rounded-xl border border-theme-dark/70 py-1.5 shadow-xl`}
+            className={`${glass.promptDark} absolute z-[9999] min-w-[160px] rounded-xl border border-theme-dark/70 shadow-xl`}
             style={{
                 position: 'fixed',
                 top: `${position.top}px`,
@@ -123,6 +123,9 @@ interface ProfileFullViewProps {
         model?: string;
         aspectRatio?: string;
         type?: 'image' | 'video';
+        likeCount?: number;
+        likes?: number;
+        isLiked?: boolean;
     }>;
 }
 
@@ -435,27 +438,30 @@ export function ProfileFullView({
                             >
                                 <button
                                     type="button"
-                                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                    className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                                     onClick={handleRecreateEdit}
                                 >
-                                    <Edit className="h-4 w-4" />
-                                    Edit image
+                                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                                    <Edit className="h-4 w-4 relative z-10" />
+                                    <span className="relative z-10">Edit image</span>
                                 </button>
                                 <button
                                     type="button"
-                                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                    className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                                     onClick={handleRecreateUseAsReference}
                                 >
-                                    <Copy className="h-4 w-4" />
-                                    Use as reference
+                                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                                    <Copy className="h-4 w-4 relative z-10" />
+                                    <span className="relative z-10">Use as reference</span>
                                 </button>
                                 <button
                                     type="button"
-                                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                    className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                                     onClick={handleRecreateRunPrompt}
                                 >
-                                    <RefreshCw className="h-4 w-4" />
-                                    Run the same prompt
+                                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                                    <RefreshCw className="h-4 w-4 relative z-10" />
+                                    <span className="relative z-10">Run the same prompt</span>
                                 </button>
                             </ImageActionMenuPortal>
                         </div>
@@ -494,6 +500,7 @@ export function ProfileFullView({
                                             }`}
                                         aria-hidden="true"
                                     />
+                                    {item.likeCount ?? item.likes ?? 0}
                                 </button>
                                 <div className="relative">
                                     <button
@@ -511,19 +518,21 @@ export function ProfileFullView({
                                     >
                                         <button
                                             type="button"
-                                            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                            className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                                             onClick={handleCopyLink}
                                         >
-                                            <Share2 className="h-4 w-4" />
-                                            Copy link
+                                            <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                                            <Share2 className="h-4 w-4 relative z-10" />
+                                            <span className="relative z-10">Copy link</span>
                                         </button>
                                         <button
                                             type="button"
-                                            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                            className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                                             onClick={handleDownload}
                                         >
-                                            <Download className="h-4 w-4" />
-                                            Download
+                                            <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                                            <Download className="h-4 w-4 relative z-10" />
+                                            <span className="relative z-10">Download</span>
                                         </button>
                                     </ImageActionMenuPortal>
                                 </div>
@@ -535,7 +544,7 @@ export function ProfileFullView({
                     {/* Close button - positioned on right side of image */}
                     <button
                         onClick={onClose}
-                        className="absolute -top-3 -right-3 p-1.5 rounded-full bg-[color:var(--glass-dark-bg)] text-theme-white hover:text-theme-text backdrop-blur-sm transition-colors duration-200"
+                        className="absolute -top-3 -right-3 z-[60] p-1.5 rounded-full bg-[color:var(--glass-dark-bg)] text-theme-white hover:text-theme-text backdrop-blur-sm transition-colors duration-200"
                         aria-label="Close"
                     >
                         <X className="w-4 h-4" />

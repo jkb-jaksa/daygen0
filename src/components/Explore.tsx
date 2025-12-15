@@ -522,7 +522,7 @@ const ImageActionMenuPortal: React.FC<{
         width: pos.width,
         zIndex: 1100,
       }}
-      className={`image-gallery-actions-menu ${glass.promptDark} rounded-lg py-2`}
+      className={`image-gallery-actions-menu ${glass.promptDark} rounded-lg`}
     >
       {children}
     </div>,
@@ -817,6 +817,8 @@ const CustomMultiSelect: React.FC<{
 };
 
 const Explore: React.FC = () => {
+  const { storagePrefix, token } = useAuth();
+
   // Filter state
   const [galleryFilters, setGalleryFilters] = useState<{
     models: string[];
@@ -889,7 +891,14 @@ const Explore: React.FC = () => {
       params.set('limit', '50');
       if (cursor) params.set('cursor', cursor);
 
-      const response = await fetch(`${apiBase}/api/r2files/public?${params.toString()}`);
+      const headers: HeadersInit = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${apiBase}/api/r2files/public?${params.toString()}`, {
+        headers
+      });
       if (!response.ok) {
         throw new Error(`Failed to fetch public generations: ${response.status}`);
       }
@@ -966,13 +975,12 @@ const Explore: React.FC = () => {
     } finally {
       setIsLoadingPublic(false);
     }
-  }, [isLoadingPublic, avatarGradients, formatTimeAgo, getOrientationFromAspectRatio, inferMediaType]);
+  }, [isLoadingPublic, avatarGradients, formatTimeAgo, getOrientationFromAspectRatio, inferMediaType, token]);
 
   // Initial fetch of public generations
   useEffect(() => {
     void fetchPublicGenerations();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchPublicGenerations]);
 
   // Filter function for gallery
   const filterGalleryItems = useCallback((items: GalleryItem[]) => {
@@ -1017,7 +1025,6 @@ const Explore: React.FC = () => {
   const filteredGallery = useMemo(() => filterGalleryItems(galleryItems), [filterGalleryItems, galleryItems]);
 
   const navigate = useNavigate();
-  const { storagePrefix, token } = useAuth();
   const [savedInspirations, setSavedInspirations] = useState<GalleryImageLike[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
 
@@ -1865,6 +1872,21 @@ const Explore: React.FC = () => {
     };
   }, [isFullSizeOpen, currentImageIndex, filteredGallery, navigateFullSizeImage]);
 
+  // Lock body scroll (Active)
+  useEffect(() => {
+    if (isFullSizeOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isFullSizeOpen]);
+
+
+
+
   return (
     <div className={`${layout.page} explore-page`}>
       {/* Copy notification */}
@@ -2196,39 +2218,42 @@ const Explore: React.FC = () => {
                               >
                                 <button
                                   type="button"
-                                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                  className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                                   onClick={(event) => {
                                     event.preventDefault();
                                     event.stopPropagation();
                                     handleRecreateEdit(item);
                                   }}
                                 >
-                                  <Edit className="h-4 w-4" />
-                                  Edit image
+                                  <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                                  <Edit className="h-4 w-4 relative z-10" />
+                                  <span className="relative z-10">Edit image</span>
                                 </button>
                                 <button
                                   type="button"
-                                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                  className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                                   onClick={(event) => {
                                     event.preventDefault();
                                     event.stopPropagation();
                                     handleRecreateUseAsReference(item);
                                   }}
                                 >
-                                  <Copy className="h-4 w-4" />
-                                  Use as reference
+                                  <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                                  <Copy className="h-4 w-4 relative z-10" />
+                                  <span className="relative z-10">Use as reference</span>
                                 </button>
                                 <button
                                   type="button"
-                                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                  className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                                   onClick={(event) => {
                                     event.preventDefault();
                                     event.stopPropagation();
                                     handleRecreateRunPrompt(item);
                                   }}
                                 >
-                                  <RefreshCw className="h-4 w-4" />
-                                  Run the same prompt
+                                  <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                                  <RefreshCw className="h-4 w-4 relative z-10" />
+                                  <span className="relative z-10">Run the same prompt</span>
                                 </button>
                               </ImageActionMenuPortal>
                             </div>
@@ -2295,31 +2320,33 @@ const Explore: React.FC = () => {
                               </button>
                               <ImageActionMenuPortal
                                 anchorEl={moreActionMenu?.id === item.id ? moreActionMenu?.anchor ?? null : null}
-                                open={moreActionMenu?.id === item.id}
+                                open={moreActionMenu?.id === item.id && !isFullSizeOpen}
                                 onClose={closeMoreActionMenu}
                                 isRecreateMenu={false}
                               >
                                 <button
                                   type="button"
-                                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                  className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                                   onClick={async (event) => {
                                     event.stopPropagation();
                                     await copyImageLink(item);
                                   }}
                                 >
-                                  <Share2 className="h-4 w-4" />
-                                  Copy link
+                                  <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                                  <Share2 className="h-4 w-4 relative z-10" />
+                                  <span className="relative z-10">Copy link</span>
                                 </button>
                                 <button
                                   type="button"
-                                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                  className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                                   onClick={async (event) => {
                                     event.stopPropagation();
                                     await downloadImage(item);
                                   }}
                                 >
-                                  <Download className="h-4 w-4" />
-                                  Download
+                                  <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                                  <Download className="h-4 w-4 relative z-10" />
+                                  <span className="relative z-10">Download</span>
                                 </button>
                               </ImageActionMenuPortal>
                             </div>
@@ -2914,25 +2941,27 @@ const Explore: React.FC = () => {
                         >
                           <button
                             type="button"
-                            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                            className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                             onClick={async (event) => {
                               event.stopPropagation();
                               await copyImageLink(selectedFullImage);
                             }}
                           >
-                            <Share2 className="h-4 w-4" />
-                            Copy link
+                            <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                            <Share2 className="h-4 w-4 relative z-10" />
+                            <span className="relative z-10">Copy link</span>
                           </button>
                           <button
                             type="button"
-                            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                            className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                             onClick={async (event) => {
                               event.stopPropagation();
                               await downloadImage(selectedFullImage);
                             }}
                           >
-                            <Download className="h-4 w-4" />
-                            Download
+                            <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                            <Download className="h-4 w-4 relative z-10" />
+                            <span className="relative z-10">Download</span>
                           </button>
                         </ImageActionMenuPortal>
                       </div>
@@ -2944,7 +2973,7 @@ const Explore: React.FC = () => {
                 {/* Close button - positioned on right side of image */}
                 <button
                   onClick={closeFullSizeView}
-                  className="absolute -top-3 -right-3 p-1.5 rounded-full bg-[color:var(--glass-dark-bg)] text-theme-white hover:text-theme-text backdrop-blur-sm transition-colors duration-200"
+                  className="absolute -top-3 -right-3 z-[60] p-1.5 rounded-full bg-[color:var(--glass-dark-bg)] text-theme-white hover:text-theme-text backdrop-blur-sm transition-colors duration-200"
                   aria-label="Close"
                 >
                   <X className="w-4 h-4" />
