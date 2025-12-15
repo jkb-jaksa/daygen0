@@ -7,6 +7,7 @@ type User = {
   displayName: string | null;
   credits: number;
   profileImage: string | null;
+  bio?: string | null;
   role: 'USER' | 'ADMIN';
   createdAt: string;
   updatedAt: string;
@@ -15,6 +16,7 @@ type User = {
 type UpdateProfilePayload = {
   displayName?: string | null;
   profileImage?: string | null;
+  bio?: string | null;
 };
 
 type AuthContextValue = {

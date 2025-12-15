@@ -59,6 +59,8 @@ import { hydrateStoredGallery, serializeGallery } from "../utils/galleryStorage"
 import { normalizeModelId } from '../utils/modelUtils';
 import ModelBadge from './ModelBadge';
 import AspectRatioBadge from './shared/AspectRatioBadge';
+import CreatorBadge from './CreatorBadge';
+import CreatorProfileModal from './CreatorProfileModal';
 
 
 const styleFilters = [
@@ -79,11 +81,14 @@ type GalleryItem = {
     handle: string;
     avatarColor: string;
     location: string;
+    profileImage?: string;
+    userId?: string;
   };
   modelId: string;
   modelLabel?: string;
   timeAgo: string;
   likes: number;
+  isLiked?: boolean;
   prompt: string;
   tags: string[];
   imageUrl: string;
@@ -898,9 +903,12 @@ const Explore: React.FC = () => {
           aspectRatio?: string;
           mimeType?: string;
           createdAt: string;
+          likeCount?: number;
+          isLiked?: boolean;
           owner?: {
             displayName?: string;
             authUserId: string;
+            profileImage?: string;
           };
         }>;
         nextCursor: string | null;
@@ -920,19 +928,24 @@ const Explore: React.FC = () => {
             handle: creatorHandle,
             avatarColor: avatarGradients[gradientIndex],
             location: "Daygen.ai",
+            profileImage: item.owner?.profileImage,
+            userId: item.owner?.authUserId,
           },
           modelId: item.model || 'unknown',
           timeAgo: formatTimeAgo(new Date(item.createdAt)),
-          likes: Math.floor(Math.random() * 200) + 50, // Placeholder likes for now
+          likes: item.likeCount || 0,
+          isLiked: item.isLiked, // Map backend relationship status
           prompt: item.prompt || 'AI Generated Image',
           tags: item.model ? [item.model.split('-')[0]] : ['ai'],
           imageUrl: item.fileUrl,
           orientation: getOrientationFromAspectRatio(item.aspectRatio),
           aspectRatio: item.aspectRatio,
-          mediaType: inferMediaType(item.model, item.mimeType),
+          mediaType: inferMediaType(item.model, item.mimeType), // Use helper function
           isPublic: true,
         };
       });
+
+
 
       if (cursor) {
         // Append to existing items
@@ -1004,9 +1017,25 @@ const Explore: React.FC = () => {
   const filteredGallery = useMemo(() => filterGalleryItems(galleryItems), [filterGalleryItems, galleryItems]);
 
   const navigate = useNavigate();
-  const { storagePrefix } = useAuth();
+  const { storagePrefix, token } = useAuth();
   const [savedInspirations, setSavedInspirations] = useState<GalleryImageLike[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
+
+  // Creator profile modal state
+  const [creatorProfileModal, setCreatorProfileModal] = useState<{
+    isOpen: boolean;
+    userId: string;
+    name: string;
+    profileImage?: string;
+  }>({ isOpen: false, userId: '', name: '' });
+
+  const openCreatorProfile = useCallback((userId: string, name: string, profileImage?: string) => {
+    setCreatorProfileModal({ isOpen: true, userId, name, profileImage });
+  }, []);
+
+  const closeCreatorProfile = useCallback(() => {
+    setCreatorProfileModal({ isOpen: false, userId: '', name: '' });
+  }, []);
   const [savePrompt, setSavePrompt] = useState<{
     open: boolean;
     item: GalleryItem | null;
@@ -1025,26 +1054,9 @@ const Explore: React.FC = () => {
   // Copy notification state
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
 
-  // Favorites state
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [avatarFavorites, setAvatarFavorites] = useState<Set<string>>(new Set());
   const [activeGalleryView, setActiveGalleryView] = useState<"creations" | "avatars">("creations");
   const [avatarTagFilter, setAvatarTagFilter] = useState<string[]>([]);
-
-  // Load favorites from storage
-  useEffect(() => {
-    const loadFavorites = async () => {
-      try {
-        const storedFavorites = await getPersistedValue<string[]>('explore-', 'favorites');
-        if (storedFavorites) {
-          setFavorites(new Set(storedFavorites));
-        }
-      } catch (error) {
-        debugError('Failed to load favorites:', error);
-      }
-    };
-    void loadFavorites();
-  }, []);
 
   useEffect(() => {
     const loadAvatarFavorites = async () => {
@@ -1060,16 +1072,6 @@ const Explore: React.FC = () => {
 
     void loadAvatarFavorites();
   }, []);
-
-  // Persist favorites to storage
-  const persistFavorites = async (newFavorites: Set<string>) => {
-    setFavorites(newFavorites);
-    try {
-      await setPersistedValue('explore-', 'favorites', Array.from(newFavorites));
-    } catch (error) {
-      debugError('Failed to persist favorites:', error);
-    }
-  };
 
   const persistAvatarFavorites = useCallback(async (next: Set<string>) => {
     try {
@@ -1389,19 +1391,95 @@ const Explore: React.FC = () => {
   }, [folders, newFolderName, persistFolders, savePrompt.imageUrl]);
 
   // Toggle favorite function
-  const toggleFavorite = (imageUrl: string) => {
-    const newFavorites = new Set(favorites);
-    if (newFavorites.has(imageUrl)) {
-      newFavorites.delete(imageUrl);
-    } else {
-      newFavorites.add(imageUrl);
+  // Toggle favorite function
+  // Toggle favorite function
+  const toggleFavorite = async (imageUrl: string) => {
+    // Find the item with this imageUrl to get its ID
+    const item = galleryItems.find(i => i.imageUrl === imageUrl);
+    if (!item) return;
+
+    // Helper to calculate new state
+    const calculateNewState = (currentItem: GalleryItem, isLikeAction: boolean) => {
+      const newIsLiked = isLikeAction;
+      const newLikes = Math.max(0, currentItem.likes + (newIsLiked ? 1 : -1));
+      return { ...currentItem, isLiked: newIsLiked, likes: newLikes };
+    };
+
+    // Optimistic update
+    const isNowLiked = !item.isLiked;
+
+    // Update gallery grid
+    setGalleryItems(prev => prev.map(i => {
+      if (i.id === item.id) {
+        return calculateNewState(i, isNowLiked);
+      }
+      return i;
+    }));
+
+    // Update full view if open and matching
+    if (selectedFullImage?.id === item.id) {
+      setSelectedFullImage(prev => prev ? calculateNewState(prev, isNowLiked) : null);
     }
-    void persistFavorites(newFavorites);
+
+    try {
+      const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+      // Token is already available from useAuth
+
+      const response = await fetch(`${apiBase}/api/r2files/${item.id}/toggle-like`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to toggle like');
+      }
+
+      const data = await response.json();
+
+      // Update with actual server data if available
+      if (typeof data.likeCount === 'number') {
+        const updateItemWithServerData = (i: GalleryItem) => ({
+          ...i,
+          likes: data.likeCount,
+          isLiked: data.isLiked ?? i.isLiked
+        });
+
+        setGalleryItems(prev => prev.map(i => {
+          if (i.id === item.id) {
+            return updateItemWithServerData(i);
+          }
+          return i;
+        }));
+
+        if (selectedFullImage?.id === item.id) {
+          setSelectedFullImage(prev => prev ? updateItemWithServerData(prev) : null);
+        }
+      }
+
+    } catch (error) {
+      debugError('Failed to toggle like:', error);
+      // Revert optimistic update on error
+      const revertLiked = !isNowLiked;
+
+      setGalleryItems(prev => prev.map(i => {
+        if (i.id === item.id) {
+          return calculateNewState(i, revertLiked);
+        }
+        return i;
+      }));
+
+      if (selectedFullImage?.id === item.id) {
+        setSelectedFullImage(prev => prev ? calculateNewState(prev, revertLiked) : null);
+      }
+    }
   };
 
   const getDisplayLikes = useCallback(
-    (item: GalleryItem) => item.likes + (favorites.has(item.imageUrl) ? 1 : 0),
-    [favorites],
+    (item: GalleryItem) => item.likes,
+    [],
   );
 
   // More button dropdown state
@@ -1801,7 +1879,7 @@ const Explore: React.FC = () => {
 
         <section className="relative pb-12 pt-[calc(var(--nav-h,4rem)+16px)]">
           <div className={`${layout.container} space-y-1`}>
-            <header className="mb-6">
+            <header className="mb-1">
               <div className={headings.tripleHeading.container}>
                 <p className={headings.tripleHeading.eyebrow}>
                   <Compass className="h-4 w-4" />
@@ -1810,9 +1888,6 @@ const Explore: React.FC = () => {
                 <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}>
                   Explore creations from our community.
                 </h1>
-                <p className={headings.tripleHeading.description}>
-                  Get inspired by featured works from our community members, save your favorites, and recreate stand-out prompts across the best AI models.
-                </p>
               </div>
             </header>
 
@@ -2065,334 +2140,339 @@ const Explore: React.FC = () => {
           </div>
         </section>
 
-        {activeGalleryView === 'creations' ? (
-          <section className="relative pb-12 -mt-6">
-            <div className={`${layout.container}`}>
-              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-                {visibleGallery.map((item) => {
-                  const isMenuActive = moreActionMenu?.id === item.id;
-                  const isSaved = savedImageUrls.has(item.imageUrl);
-                  return (
-                    <article
-                      key={item.id}
-                      className="group relative overflow-hidden rounded-2xl border border-theme-dark hover:border-theme-mid transition-colors duration-200 bg-theme-black/40 shadow-[0_24px_70px_rgba(0,0,0,0.45)] parallax-small cursor-pointer"
-                      onClick={(event) => {
-                        // Check if the click came from a copy button
-                        const target = event.target as HTMLElement;
-                        if (target && (target.hasAttribute('data-copy-button') || target.closest('[data-copy-button="true"]'))) {
-                          return;
-                        }
-                        openFullSizeView(item);
-                      }}
-                    >
-                      <div className={`relative ${orientationStyles[item.orientation]} min-h-[240px] sm:min-h-[280px] xl:min-h-[320px]`}>
-                        <img
-                          src={item.imageUrl}
-                          alt={`Image by ${item.creator.name}`}
-                          className="absolute inset-0 h-full w-full object-cover object-center"
-                          loading="lazy"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/70" aria-hidden="true" />
+        {
+          activeGalleryView === 'creations' ? (
+            <section className="relative pb-12 -mt-6">
+              <div className={`${layout.container}`}>
+                <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                  {visibleGallery.map((item) => {
+                    const isMenuActive = moreActionMenu?.id === item.id;
+                    const isSaved = savedImageUrls.has(item.imageUrl);
+                    return (
+                      <article
+                        key={item.id}
+                        className="group relative overflow-hidden rounded-2xl border border-theme-dark hover:border-theme-mid transition-colors duration-200 bg-theme-black/40 shadow-[0_24px_70px_rgba(0,0,0,0.45)] parallax-small cursor-pointer"
+                        onClick={(event) => {
+                          // Check if the click came from a copy button
+                          const target = event.target as HTMLElement;
+                          if (target && (target.hasAttribute('data-copy-button') || target.closest('[data-copy-button="true"]'))) {
+                            return;
+                          }
+                          openFullSizeView(item);
+                        }}
+                      >
+                        <div className={`relative ${orientationStyles[item.orientation]} min-h-[240px] sm:min-h-[280px] xl:min-h-[320px]`}>
+                          <img
+                            src={item.imageUrl}
+                            alt={`Image by ${item.creator.name}`}
+                            className="absolute inset-0 h-full w-full object-cover object-center"
+                            loading="lazy"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/70" aria-hidden="true" />
 
-                        <div className="image-gallery-actions absolute left-4 top-4 flex items-center gap-2 transition-opacity duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto">
-                          <div className="relative">
-                            <button
-                              type="button"
-                              className={`image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 ${recreateActionMenu?.id === item.id
-                                ? 'opacity-100 pointer-events-auto'
-                                : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
-                                }`}
-                              aria-haspopup="menu"
-                              aria-expanded={recreateActionMenu?.id === item.id}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                toggleRecreateActionMenu(item.id, event.currentTarget, item);
-                              }}
-                            >
-                              <Edit className="w-4 h-4" />
-                              <span className="text-sm font-medium">Recreate</span>
-                            </button>
-                            <ImageActionMenuPortal
-                              anchorEl={recreateActionMenu?.id === item.id ? recreateActionMenu?.anchor ?? null : null}
-                              open={recreateActionMenu?.id === item.id && !isFullSizeOpen}
-                              onClose={closeRecreateActionMenu}
-                              isRecreateMenu={false}
-                            >
+                          <div className="image-gallery-actions absolute left-4 top-4 flex items-center gap-2 transition-opacity duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto">
+                            <div className="relative">
                               <button
                                 type="button"
-                                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                className={`image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 ${recreateActionMenu?.id === item.id
+                                  ? 'opacity-100 pointer-events-auto'
+                                  : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
+                                  }`}
+                                aria-haspopup="menu"
+                                aria-expanded={recreateActionMenu?.id === item.id}
                                 onClick={(event) => {
-                                  event.preventDefault();
                                   event.stopPropagation();
-                                  handleRecreateEdit(item);
+                                  toggleRecreateActionMenu(item.id, event.currentTarget, item);
                                 }}
                               >
-                                <Edit className="h-4 w-4" />
-                                Edit image
+                                <Edit className="w-4 h-4" />
+                                <span className="text-sm font-medium">Recreate</span>
                               </button>
-                              <button
-                                type="button"
-                                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                                onClick={(event) => {
-                                  event.preventDefault();
-                                  event.stopPropagation();
-                                  handleRecreateUseAsReference(item);
-                                }}
+                              <ImageActionMenuPortal
+                                anchorEl={recreateActionMenu?.id === item.id ? recreateActionMenu?.anchor ?? null : null}
+                                open={recreateActionMenu?.id === item.id && !isFullSizeOpen}
+                                onClose={closeRecreateActionMenu}
+                                isRecreateMenu={false}
                               >
-                                <Copy className="h-4 w-4" />
-                                Use as reference
-                              </button>
-                              <button
-                                type="button"
-                                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                                onClick={(event) => {
-                                  event.preventDefault();
-                                  event.stopPropagation();
-                                  handleRecreateRunPrompt(item);
-                                }}
-                              >
-                                <RefreshCw className="h-4 w-4" />
-                                Run the same prompt
-                              </button>
-                            </ImageActionMenuPortal>
+                                <button
+                                  type="button"
+                                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                  onClick={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    handleRecreateEdit(item);
+                                  }}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                  Edit image
+                                </button>
+                                <button
+                                  type="button"
+                                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                  onClick={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    handleRecreateUseAsReference(item);
+                                  }}
+                                >
+                                  <Copy className="h-4 w-4" />
+                                  Use as reference
+                                </button>
+                                <button
+                                  type="button"
+                                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                  onClick={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    handleRecreateRunPrompt(item);
+                                  }}
+                                >
+                                  <RefreshCw className="h-4 w-4" />
+                                  Run the same prompt
+                                </button>
+                              </ImageActionMenuPortal>
+                            </div>
                           </div>
-                        </div>
 
-                        <div
-                          className={`image-gallery-actions absolute right-4 top-4 flex items-center gap-1 transition-opacity duration-100 ${isMenuActive
-                            ? 'opacity-100 pointer-events-auto'
-                            : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
-                            }`}
-                        >
-                          <button
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              if (isSaved) {
-                                setUnsaveConfirm({ open: true, item });
-                              } else {
-                                handleSaveToGallery(item);
-                              }
-                            }}
-                            className={`image-action-btn image-action-btn--labelled parallax-large ${isSaved ? 'border-theme-white/50 bg-theme-white/10 text-theme-text' : ''
+                          <div
+                            className={`image-gallery-actions absolute right-4 top-4 flex items-center gap-1 transition-opacity duration-100 ${isMenuActive
+                              ? 'opacity-100 pointer-events-auto'
+                              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
                               }`}
-                            aria-pressed={isSaved}
-                            aria-label={isSaved ? 'Remove from your gallery' : 'Save to your gallery'}
                           >
-                            {isSaved ? (
-                              <BookmarkCheck className="size-3.5" aria-hidden="true" />
-                            ) : (
-                              <BookmarkPlus className="size-3.5" aria-hidden="true" />
-                            )}
-                            {isSaved ? 'Saved' : 'Save'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              toggleFavorite(item.imageUrl);
-                            }}
-                            className="image-action-btn image-action-btn--labelled parallax-large favorite-toggle"
-                            aria-label={favorites.has(item.imageUrl) ? "Remove from liked" : "Add to liked"}
-                          >
-                            <Heart
-                              className={`size-3.5 transition-colors duration-100 ${favorites.has(item.imageUrl) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
-                                }`}
-                              aria-hidden="true"
-                            />
-                            {getDisplayLikes(item)}
-                          </button>
-                          <div className="relative">
                             <button
                               type="button"
                               onClick={(event) => {
                                 event.stopPropagation();
-                                toggleMoreActionMenu(item.id, event.currentTarget, item);
+                                if (isSaved) {
+                                  setUnsaveConfirm({ open: true, item });
+                                } else {
+                                  handleSaveToGallery(item);
+                                }
                               }}
-                              className="image-action-btn parallax-large"
-                              aria-label="More options"
+                              className={`image-action-btn image-action-btn--labelled parallax-large ${isSaved ? 'border-theme-white/50 bg-theme-white/10 text-theme-text' : ''
+                                }`}
+                              aria-pressed={isSaved}
+                              aria-label={isSaved ? 'Remove from your gallery' : 'Save to your gallery'}
                             >
-                              <MoreHorizontal className="size-4" aria-hidden="true" />
+                              {isSaved ? (
+                                <BookmarkCheck className="size-3.5" aria-hidden="true" />
+                              ) : (
+                                <BookmarkPlus className="size-3.5" aria-hidden="true" />
+                              )}
+                              {isSaved ? 'Saved' : 'Save'}
                             </button>
-                            <ImageActionMenuPortal
-                              anchorEl={moreActionMenu?.id === item.id ? moreActionMenu?.anchor ?? null : null}
-                              open={moreActionMenu?.id === item.id}
-                              onClose={closeMoreActionMenu}
-                              isRecreateMenu={false}
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                toggleFavorite(item.imageUrl);
+                              }}
+                              className="image-action-btn image-action-btn--labelled parallax-large favorite-toggle"
+                              aria-label={item.isLiked ? "Remove from liked" : "Add to liked"}
                             >
+                              <Heart
+                                className={`size-3.5 transition-colors duration-100 ${item.isLiked ? 'fill-red-500 text-red-500' : 'text-current fill-none'
+                                  }`}
+                                aria-hidden="true"
+                              />
+                              {getDisplayLikes(item)}
+                            </button>
+                            <div className="relative">
                               <button
                                 type="button"
-                                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                                onClick={async (event) => {
+                                onClick={(event) => {
                                   event.stopPropagation();
-                                  await copyImageLink(item);
+                                  toggleMoreActionMenu(item.id, event.currentTarget, item);
                                 }}
+                                className="image-action-btn parallax-large"
+                                aria-label="More options"
                               >
-                                <Share2 className="h-4 w-4" />
-                                Copy link
+                                <MoreHorizontal className="size-4" aria-hidden="true" />
                               </button>
-                              <button
-                                type="button"
-                                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                                onClick={async (event) => {
-                                  event.stopPropagation();
-                                  await downloadImage(item);
-                                }}
+                              <ImageActionMenuPortal
+                                anchorEl={moreActionMenu?.id === item.id ? moreActionMenu?.anchor ?? null : null}
+                                open={moreActionMenu?.id === item.id}
+                                onClose={closeMoreActionMenu}
+                                isRecreateMenu={false}
                               >
-                                <Download className="h-4 w-4" />
-                                Download
-                              </button>
-                            </ImageActionMenuPortal>
+                                <button
+                                  type="button"
+                                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                  onClick={async (event) => {
+                                    event.stopPropagation();
+                                    await copyImageLink(item);
+                                  }}
+                                >
+                                  <Share2 className="h-4 w-4" />
+                                  Copy link
+                                </button>
+                                <button
+                                  type="button"
+                                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                  onClick={async (event) => {
+                                    event.stopPropagation();
+                                    await downloadImage(item);
+                                  }}
+                                >
+                                  <Download className="h-4 w-4" />
+                                  Download
+                                </button>
+                              </ImageActionMenuPortal>
+                            </div>
                           </div>
-                        </div>
 
-                        <div
-                          className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto hidden lg:flex items-end z-10 ${isMenuActive
-                            ? 'opacity-100'
-                            : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
-                            }`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                          }}
-                        >
-                          <div className="w-full p-4">
-                            <div className="mb-2">
-                              <div className="relative">
-                                <p className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
-                                  {item.prompt}
-                                  <button
-                                    data-copy-button="true"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      void copyPromptToClipboard(item.prompt);
-                                    }}
-                                    onMouseDown={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                    }}
-                                    className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
-                                    onMouseEnter={(e) => {
-                                      showHoverTooltip(e.currentTarget, `copy-${item.id}`);
-                                    }}
-                                    onMouseLeave={() => {
-                                      hideHoverTooltip(`copy-${item.id}`);
-                                    }}
-                                  >
-                                    <Copy className="w-3 h-3" />
-                                  </button>
-                                </p>
+                          <div
+                            className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto hidden lg:flex items-end z-10 ${isMenuActive
+                              ? 'opacity-100'
+                              : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
+                              }`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                            }}
+                          >
+                            <div className="w-full p-4">
+                              <div className="mb-2">
+                                <div className="relative">
+                                  <p className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
+                                    {item.prompt}
+                                    <button
+                                      data-copy-button="true"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        void copyPromptToClipboard(item.prompt);
+                                      }}
+                                      onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                      }}
+                                      className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
+                                      onMouseEnter={(e) => {
+                                        showHoverTooltip(e.currentTarget, `copy-${item.id}`);
+                                      }}
+                                      onMouseLeave={() => {
+                                        hideHoverTooltip(`copy-${item.id}`);
+                                      }}
+                                    >
+                                      <Copy className="w-3 h-3" />
+                                    </button>
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex justify-between items-center mt-2">
+                                <div className="flex items-center gap-2">
+                                  <Suspense fallback={null}>
+                                    <ModelBadge model={item.modelId ?? 'unknown'} size="md" />
+                                  </Suspense>
+                                  <CreatorBadge name={item.creator.name} profileImage={item.creator.profileImage} userId={item.creator.userId} size="md" onClick={openCreatorProfile} />
+                                </div>
                               </div>
                             </div>
-                            <div className="flex justify-between items-center mt-2">
-                              <Suspense fallback={null}>
-                                <ModelBadge model={item.modelId ?? 'unknown'} size="md" />
-                              </Suspense>
-                            </div>
                           </div>
-                        </div>
 
-                        {/* Tooltips rendered via portal to avoid clipping */}
-                        {createPortal(
-                          <div
-                            data-tooltip-for={`copy-${item.id}`}
-                            className={`${tooltips.base} fixed`}
-                            style={{ zIndex: 9999 }}
-                          >
-                            Copy prompt
-                          </div>,
-                          document.body
-                        )}
-                      </div>
-                    </article>
-                  );
-                })}
-                <div ref={loadMoreRef} aria-hidden />
-              </div>
-              {visibleGallery.length < filteredGallery.length && (
-                <div className="flex justify-center py-4 text-xs font-raleway text-theme-white/60" aria-live="polite">
-                  Loading more inspiration…
+                          {/* Tooltips rendered via portal to avoid clipping */}
+                          {createPortal(
+                            <div
+                              data-tooltip-for={`copy-${item.id}`}
+                              className={`${tooltips.base} fixed`}
+                              style={{ zIndex: 9999 }}
+                            >
+                              Copy prompt
+                            </div>,
+                            document.body
+                          )}
+                        </div>
+                      </article>
+                    );
+                  })}
+                  <div ref={loadMoreRef} aria-hidden />
                 </div>
-              )}
-            </div>
-          </section>
-        ) : (
-          <section className="relative pb-12 -mt-6">
-            <div className={`${layout.container} space-y-8`}>
-              {filteredAvatars.length === 0 ? (
-                <div className={`rounded-2xl border border-theme-dark/70 bg-theme-black/40 p-10 text-center text-theme-white/80 ${glass.promptDark}`}>
-                  <p className="text-lg font-raleway text-theme-white">No public avatars match this vibe yet.</p>
-                  <p className="mt-2 text-sm text-theme-white/70">
-                    Publish one from the avatars studio or adjust your filters to explore more community styles.
-                  </p>
-                  <div className="mt-5 flex flex-wrap justify-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setAvatarTagFilter([])}
-                      className={buttons.glassPrompt}
-                    >
-                      Reset filters
-                      <RefreshCw className="size-4" aria-hidden="true" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleNavigateToAvatars}
-                      className={buttons.glassPrompt}
-                    >
-                      Create an avatar
-                      <ArrowUpRight className="size-4" aria-hidden="true" />
-                    </button>
+                {visibleGallery.length < filteredGallery.length && (
+                  <div className="flex justify-center py-4 text-xs font-raleway text-theme-white/60" aria-live="polite">
+                    Loading more inspiration…
                   </div>
-                </div>
-              ) : (
-                <>
-                  {topAvatars.length > 0 && (
-                    <div className="grid gap-2 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-                      <AvatarCard
-                        key={topAvatars[0].id}
-                        item={topAvatars[0]}
-                        variant="feature"
-                        rank={1}
-                        likeCount={getAvatarLikes(topAvatars[0])}
-                        isFavorite={avatarFavorites.has(topAvatars[0].id)}
-                        onToggleFavorite={toggleAvatarFavorite}
-                      />
-                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
-                        {topAvatars.slice(1).map((avatar, index) => (
+                )}
+              </div>
+            </section>
+          ) : (
+            <section className="relative pb-12 -mt-6">
+              <div className={`${layout.container} space-y-8`}>
+                {filteredAvatars.length === 0 ? (
+                  <div className={`rounded-2xl border border-theme-dark/70 bg-theme-black/40 p-10 text-center text-theme-white/80 ${glass.promptDark}`}>
+                    <p className="text-lg font-raleway text-theme-white">No public avatars match this vibe yet.</p>
+                    <p className="mt-2 text-sm text-theme-white/70">
+                      Publish one from the avatars studio or adjust your filters to explore more community styles.
+                    </p>
+                    <div className="mt-5 flex flex-wrap justify-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setAvatarTagFilter([])}
+                        className={buttons.glassPrompt}
+                      >
+                        Reset filters
+                        <RefreshCw className="size-4" aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleNavigateToAvatars}
+                        className={buttons.glassPrompt}
+                      >
+                        Create an avatar
+                        <ArrowUpRight className="size-4" aria-hidden="true" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {topAvatars.length > 0 && (
+                      <div className="grid gap-2 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+                        <AvatarCard
+                          key={topAvatars[0].id}
+                          item={topAvatars[0]}
+                          variant="feature"
+                          rank={1}
+                          likeCount={getAvatarLikes(topAvatars[0])}
+                          isFavorite={avatarFavorites.has(topAvatars[0].id)}
+                          onToggleFavorite={toggleAvatarFavorite}
+                        />
+                        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+                          {topAvatars.slice(1).map((avatar, index) => (
+                            <AvatarCard
+                              key={avatar.id}
+                              item={avatar}
+                              variant="spotlight"
+                              rank={index + 2}
+                              likeCount={getAvatarLikes(avatar)}
+                              isFavorite={avatarFavorites.has(avatar.id)}
+                              onToggleFavorite={toggleAvatarFavorite}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {remainingAvatars.length > 0 && (
+                      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                        {remainingAvatars.map((avatar, index) => (
                           <AvatarCard
                             key={avatar.id}
                             item={avatar}
-                            variant="spotlight"
-                            rank={index + 2}
+                            variant="grid"
+                            rank={index + 1 + topAvatars.length}
                             likeCount={getAvatarLikes(avatar)}
                             isFavorite={avatarFavorites.has(avatar.id)}
                             onToggleFavorite={toggleAvatarFavorite}
                           />
                         ))}
                       </div>
-                    </div>
-                  )}
-
-                  {remainingAvatars.length > 0 && (
-                    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                      {remainingAvatars.map((avatar, index) => (
-                        <AvatarCard
-                          key={avatar.id}
-                          item={avatar}
-                          variant="grid"
-                          rank={index + 1 + topAvatars.length}
-                          likeCount={getAvatarLikes(avatar)}
-                          isFavorite={avatarFavorites.has(avatar.id)}
-                          onToggleFavorite={toggleAvatarFavorite}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </section>
-        )}
+                    )}
+                  </>
+                )}
+              </div>
+            </section>
+          )
+        }
 
 
 
@@ -2481,462 +2561,483 @@ const Explore: React.FC = () => {
           </div>
         </section>
 
-        {savePrompt.open && savePrompt.item && (
-          <div
-            className="fixed inset-0 z-[70] flex items-center justify-center bg-theme-black/80 px-4 py-8"
-            onClick={closeSavePrompt}
-          >
+        {
+          savePrompt.open && savePrompt.item && (
             <div
-              className={`${glass.promptDark} relative w-full max-w-3xl rounded-2xl border border-theme-dark/70 p-8 shadow-[0_40px_120px_rgba(0,0,0,0.55)]`}
-              onClick={event => event.stopPropagation()}
+              className="fixed inset-0 z-[70] flex items-center justify-center bg-theme-black/80 px-4 py-8"
+              onClick={closeSavePrompt}
             >
-              <button
-                type="button"
-                onClick={closeSavePrompt}
-                className="absolute right-4 top-4 inline-flex size-9 items-center justify-center rounded-full border border-theme-dark/60 text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
-                aria-label="Close save dialog"
+              <div
+                className={`${glass.promptDark} relative w-full max-w-3xl rounded-2xl border border-theme-dark/70 p-8 shadow-[0_40px_120px_rgba(0,0,0,0.55)]`}
+                onClick={event => event.stopPropagation()}
               >
-                <X className="size-4" />
-              </button>
+                <button
+                  type="button"
+                  onClick={closeSavePrompt}
+                  className="absolute right-4 top-4 inline-flex size-9 items-center justify-center rounded-full border border-theme-dark/60 text-theme-white/70 transition-colors duration-200 hover:text-theme-text"
+                  aria-label="Close save dialog"
+                >
+                  <X className="size-4" />
+                </button>
 
-              <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-                <div className="space-y-4">
-                  <div className="overflow-hidden rounded-[24px] border border-theme-dark/70 w-1/2">
-                    <img
-                      src={savePrompt.item.imageUrl}
-                      alt={`Saved inspiration ${savePrompt.item.id}`}
-                      loading="lazy"
-                      className="aspect-square w-full object-cover"
-                    />
-                  </div>
-                  <div className="space-y-3 rounded-[20px] border border-theme-dark/70 bg-theme-black/40 p-4">
-                    <span className="inline-flex items-center gap-2 rounded-full border border-theme-dark/70 px-3 py-1 text-[11px] font-raleway uppercase tracking-[0.24em] text-theme-white/60">
-                      Save inspiration
-                      {savePrompt.alreadySaved && <span className="rounded-full bg-theme-white/10 px-2 py-0.5 text-[10px] font-medium text-theme-text">updated</span>}
-                    </span>
-                    <div className="flex items-center gap-3">
-                      <div className="relative size-8 overflow-hidden rounded-full">
-                        <div className={`absolute inset-0 bg-gradient-to-br ${savePrompt.item.creator.avatarColor}`} aria-hidden="true" />
-                        <span className="relative flex h-full w-full items-center justify-center text-xs font-medium text-white">
-                          {getInitials(savePrompt.item.creator.name)}
-                        </span>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-raleway text-theme-white">{savePrompt.item.creator.name}</p>
-                        <p className="truncate text-xs text-theme-white/60">{savePrompt.item.creator.handle}</p>
-                      </div>
-                      <a
-                        href={buildCreatorProfileUrl(savePrompt.item.creator)}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        className={`ml-auto ${buttons.glassPromptCompact}`}
-                      >
-                        View profile
-                        <ArrowUpRight className="size-3.5" />
-                      </a>
+                <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+                  <div className="space-y-4">
+                    <div className="overflow-hidden rounded-[24px] border border-theme-dark/70 w-1/2">
+                      <img
+                        src={savePrompt.item.imageUrl}
+                        alt={`Saved inspiration ${savePrompt.item.id}`}
+                        loading="lazy"
+                        className="aspect-square w-full object-cover"
+                      />
                     </div>
-                    <p className="text-sm font-raleway leading-relaxed text-theme-white">{savePrompt.item.prompt}</p>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-6">
-                  <div className="space-y-3">
-                    <h3 className="text-xl font-raleway font-normal text-theme-text">Add to a folder</h3>
-                    <p className="text-sm text-theme-white">
-                      Choose folders to keep this inspiration close. You can manage folders anytime from your gallery.
-                    </p>
-                    <div className="max-h-60 space-y-2 overflow-y-auto pr-1">
-                      {folders.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center gap-3 rounded-[20px] border border-theme-dark/70 bg-theme-black/30 py-8 text-center text-theme-white/70">
-                          <FolderPlus className="size-8 text-theme-white/50" />
-                          <p className="max-w-xs text-sm font-raleway text-theme-white/70">
-                            You don’t have any folders yet. Create one to organise your saved inspirations.
-                          </p>
+                    <div className="space-y-3 rounded-[20px] border border-theme-dark/70 bg-theme-black/40 p-4">
+                      <span className="inline-flex items-center gap-2 rounded-full border border-theme-dark/70 px-3 py-1 text-[11px] font-raleway uppercase tracking-[0.24em] text-theme-white/60">
+                        Save inspiration
+                        {savePrompt.alreadySaved && <span className="rounded-full bg-theme-white/10 px-2 py-0.5 text-[10px] font-medium text-theme-text">updated</span>}
+                      </span>
+                      <div className="flex items-center gap-3">
+                        <div className="relative size-8 overflow-hidden rounded-full">
+                          <div className={`absolute inset-0 bg-gradient-to-br ${savePrompt.item.creator.avatarColor}`} aria-hidden="true" />
+                          <span className="relative flex h-full w-full items-center justify-center text-xs font-medium text-white">
+                            {getInitials(savePrompt.item.creator.name)}
+                          </span>
                         </div>
-                      ) : (
-                        folders.map(folder => {
-                          const isAssigned = assignedFolderIds.has(folder.id);
-                          const isInspirationsFolder = folder.id === 'inspirations-folder';
-                          return (
-                            <button
-                              key={folder.id}
-                              type="button"
-                              onClick={() => !isInspirationsFolder && toggleImageFolderAssignment(folder.id)}
-                              disabled={isInspirationsFolder}
-                              className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-colors duration-200 ${isInspirationsFolder
-                                ? 'border-theme-white/70 bg-theme-white/10 text-theme-text shadow-lg shadow-theme-white/10 cursor-default'
-                                : isAssigned
-                                  ? 'border-theme-white/70 bg-theme-white/10 text-theme-text shadow-lg shadow-theme-white/10'
-                                  : 'border-theme-dark bg-theme-black/30 text-theme-white/80 hover:border-theme-mid hover:text-theme-text'
-                                }`}
-                            >
-                              <div className="flex items-center gap-3 min-w-0 flex-1">
-                                <div className="flex-shrink-0">
-                                  {folder.customThumbnail ? (
-                                    <div className="w-8 h-8 rounded-lg overflow-hidden">
-                                      <img
-                                        src={folder.customThumbnail}
-                                        alt={`${folder.name} thumbnail`}
-                                        loading="lazy"
-                                        className="w-full h-full object-cover"
-                                      />
-                                    </div>
-                                  ) : (
-                                    <div className="w-8 h-8 rounded-lg bg-theme-dark/50 flex items-center justify-center">
-                                      <FolderPlus className="w-4 h-4 text-theme-white/50" />
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <p className="truncate text-sm font-raleway">{folder.name}</p>
-                                  <p className="text-xs text-theme-white/60">{folder.imageIds.length} saved</p>
-                                </div>
-                              </div>
-                              <span
-                                className={`ml-3 inline-flex h-6 w-6 items-center justify-center rounded-full border ${(isAssigned || isInspirationsFolder) ? 'border-theme-text bg-theme-text text-b-black' : 'border-theme-mid text-theme-white/50'
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-raleway text-theme-white">{savePrompt.item.creator.name}</p>
+                          <p className="truncate text-xs text-theme-white/60">{savePrompt.item.creator.handle}</p>
+                        </div>
+                        <a
+                          href={buildCreatorProfileUrl(savePrompt.item.creator)}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                          className={`ml-auto ${buttons.glassPromptCompact}`}
+                        >
+                          View profile
+                          <ArrowUpRight className="size-3.5" />
+                        </a>
+                      </div>
+                      <p className="text-sm font-raleway leading-relaxed text-theme-white">{savePrompt.item.prompt}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-6">
+                    <div className="space-y-3">
+                      <h3 className="text-xl font-raleway font-normal text-theme-text">Add to a folder</h3>
+                      <p className="text-sm text-theme-white">
+                        Choose folders to keep this inspiration close. You can manage folders anytime from your gallery.
+                      </p>
+                      <div className="max-h-60 space-y-2 overflow-y-auto pr-1">
+                        {folders.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center gap-3 rounded-[20px] border border-theme-dark/70 bg-theme-black/30 py-8 text-center text-theme-white/70">
+                            <FolderPlus className="size-8 text-theme-white/50" />
+                            <p className="max-w-xs text-sm font-raleway text-theme-white/70">
+                              You don’t have any folders yet. Create one to organise your saved inspirations.
+                            </p>
+                          </div>
+                        ) : (
+                          folders.map(folder => {
+                            const isAssigned = assignedFolderIds.has(folder.id);
+                            const isInspirationsFolder = folder.id === 'inspirations-folder';
+                            return (
+                              <button
+                                key={folder.id}
+                                type="button"
+                                onClick={() => !isInspirationsFolder && toggleImageFolderAssignment(folder.id)}
+                                disabled={isInspirationsFolder}
+                                className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-colors duration-200 ${isInspirationsFolder
+                                  ? 'border-theme-white/70 bg-theme-white/10 text-theme-text shadow-lg shadow-theme-white/10 cursor-default'
+                                  : isAssigned
+                                    ? 'border-theme-white/70 bg-theme-white/10 text-theme-text shadow-lg shadow-theme-white/10'
+                                    : 'border-theme-dark bg-theme-black/30 text-theme-white/80 hover:border-theme-mid hover:text-theme-text'
                                   }`}
                               >
-                                {(isAssigned || isInspirationsFolder) && <Check className="h-3.5 w-3.5" />}
-                              </span>
-                            </button>
-                          );
-                        })
-                      )}
+                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                  <div className="flex-shrink-0">
+                                    {folder.customThumbnail ? (
+                                      <div className="w-8 h-8 rounded-lg overflow-hidden">
+                                        <img
+                                          src={folder.customThumbnail}
+                                          alt={`${folder.name} thumbnail`}
+                                          loading="lazy"
+                                          className="w-full h-full object-cover"
+                                        />
+                                      </div>
+                                    ) : (
+                                      <div className="w-8 h-8 rounded-lg bg-theme-dark/50 flex items-center justify-center">
+                                        <FolderPlus className="w-4 h-4 text-theme-white/50" />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="truncate text-sm font-raleway">{folder.name}</p>
+                                    <p className="text-xs text-theme-white/60">{folder.imageIds.length} saved</p>
+                                  </div>
+                                </div>
+                                <span
+                                  className={`ml-3 inline-flex h-6 w-6 items-center justify-center rounded-full border ${(isAssigned || isInspirationsFolder) ? 'border-theme-text bg-theme-text text-b-black' : 'border-theme-mid text-theme-white/50'
+                                    }`}
+                                >
+                                  {(isAssigned || isInspirationsFolder) && <Check className="h-3.5 w-3.5" />}
+                                </span>
+                              </button>
+                            );
+                          })
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex justify-start">
-                    <button
-                      onClick={() => {
-                        setNewFolderName("");
-                        // This will trigger the folder creation flow
-                        const trimmed = prompt("Enter folder name:");
-                        if (trimmed) {
-                          setNewFolderName(trimmed);
-                          handleCreateFolderFromDialog();
-                        }
-                      }}
-                      className={`${buttons.ghostCompact} cursor-pointer text-sm`}
-                      title="Create new folder"
-                      aria-label="Create new folder"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
-                      New folder
-                    </button>
-                  </div>
+                    <div className="flex justify-start">
+                      <button
+                        onClick={() => {
+                          setNewFolderName("");
+                          // This will trigger the folder creation flow
+                          const trimmed = prompt("Enter folder name:");
+                          if (trimmed) {
+                            setNewFolderName(trimmed);
+                            handleCreateFolderFromDialog();
+                          }
+                        }}
+                        className={`${buttons.ghostCompact} cursor-pointer text-sm`}
+                        title="Create new folder"
+                        aria-label="Create new folder"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        New folder
+                      </button>
+                    </div>
 
-                  <div className="flex justify-end gap-3">
-                    <button
-                      type="button"
-                      onClick={closeSavePrompt}
-                      className={buttons.primary}
-                    >
-                      Done
-                    </button>
+                    <div className="flex justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={closeSavePrompt}
+                        className={buttons.primary}
+                      >
+                        Done
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )
+        }
 
         {/* Full-size image modal */}
-        {isFullSizeOpen && selectedFullImage && (
-          <div
-            className="fixed inset-0 z-[60] bg-theme-black/80 flex items-start justify-center py-4"
-            style={{
-              paddingLeft: `${fullSizePadding.left}px`,
-              paddingRight: `${fullSizePadding.right}px`,
-            }}
-            onClick={closeFullSizeView}
-          >
-            <div className="relative max-w-[95vw] max-h-[90vh] group flex items-start justify-center mt-14" style={{ transform: 'translateX(-50px)' }} onClick={(e) => e.stopPropagation()}>
-              {/* Navigation arrows for full-size modal */}
-              {filteredGallery.length > 1 && (
-                <>
-                  <button
-                    onClick={() => navigateFullSizeImage('prev')}
-                    className={`${glass.promptDark} absolute left-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:text-theme-text`}
-                    title="Previous image (←)"
-                    aria-label="Previous image"
-                  >
-                    <ChevronLeft className="w-5 h-5 text-current transition-colors duration-100" />
-                  </button>
-                  <button
-                    onClick={() => navigateFullSizeImage('next')}
-                    className={`${glass.promptDark} absolute right-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:text-theme-text`}
-                    title="Next image (→)"
-                    aria-label="Next image"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                </>
-              )}
+        {
+          isFullSizeOpen && selectedFullImage && (
+            <div
+              className="fixed inset-0 z-[60] bg-theme-black/80 backdrop-blur-md flex items-start justify-center py-4"
+              style={{
+                paddingLeft: `${fullSizePadding.left}px`,
+                paddingRight: `${fullSizePadding.right}px`,
+              }}
+              onClick={closeFullSizeView}
+            >
+              <div className="relative max-w-[95vw] max-h-[90vh] group flex items-start justify-center mt-14" style={{ transform: 'translateX(-50px)' }} onClick={(e) => e.stopPropagation()}>
+                {/* Navigation arrows for full-size modal */}
+                {filteredGallery.length > 1 && (
+                  <>
+                    <button
+                      onClick={() => navigateFullSizeImage('prev')}
+                      className={`${glass.promptDark} absolute left-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:text-theme-text`}
+                      title="Previous image (←)"
+                      aria-label="Previous image"
+                    >
+                      <ChevronLeft className="w-5 h-5 text-current transition-colors duration-100" />
+                    </button>
+                    <button
+                      onClick={() => navigateFullSizeImage('next')}
+                      className={`${glass.promptDark} absolute right-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:text-theme-text`}
+                      title="Next image (→)"
+                      aria-label="Next image"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </>
+                )}
 
-              <img
-                src={selectedFullImage.imageUrl}
-                alt={`Image by ${selectedFullImage.creator.name}`}
-                loading="lazy"
-                className="max-w-full max-h-[90vh] object-contain rounded-lg"
-                style={{ objectPosition: 'top' }}
-              />
+                <div
+                  className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat blur-[100px] opacity-50 scale-110 pointer-events-none"
+                  style={{ backgroundImage: `url(${selectedFullImage.imageUrl})` }}
+                />
 
-              {/* Action buttons */}
-              <div className="image-gallery-actions absolute inset-x-0 top-0 flex items-start justify-between gap-2 px-4 pt-4 pointer-events-none">
-                {/* Left side - Recreate button */}
-                <div className="relative">
-                  <button
-                    type="button"
-                    className={`image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 ${recreateActionMenu?.id === selectedFullImage.id
-                      ? 'opacity-100 pointer-events-auto'
-                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
-                      }`}
-                    aria-haspopup="menu"
-                    aria-expanded={recreateActionMenu?.id === selectedFullImage.id}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      toggleRecreateActionMenu(selectedFullImage.id, event.currentTarget, selectedFullImage);
-                    }}
-                  >
-                    <Edit className="w-4 h-4" />
-                    <span className="text-sm font-medium">Recreate</span>
-                  </button>
-                  <ImageActionMenuPortal
-                    anchorEl={recreateActionMenu?.id === selectedFullImage.id ? recreateActionMenu?.anchor ?? null : null}
-                    open={recreateActionMenu?.id === selectedFullImage.id}
-                    onClose={closeRecreateActionMenu}
-                    isRecreateMenu={false}
-                  >
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                      onClick={(event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        handleRecreateEdit(selectedFullImage);
-                      }}
-                    >
-                      <Edit className="h-4 w-4" />
-                      Edit image
-                    </button>
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                      onClick={(event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        handleRecreateUseAsReference(selectedFullImage);
-                      }}
-                    >
-                      <Copy className="h-4 w-4" />
-                      Use as reference
-                    </button>
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                      onClick={(event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        handleRecreateRunPrompt(selectedFullImage);
-                      }}
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                      Run the same prompt
-                    </button>
-                  </ImageActionMenuPortal>
-                </div>
+                <img
+                  src={selectedFullImage.imageUrl}
+                  alt={`Image by ${selectedFullImage.creator.name}`}
+                  loading="lazy"
+                  className="relative z-10 max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                  style={{ objectPosition: 'top' }}
+                />
 
-                {/* Right side - Heart, More, and Close buttons */}
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`flex items-center gap-1 transition-opacity duration-100 ${moreActionMenu?.id === selectedFullImage.id
-                      ? 'opacity-100 pointer-events-auto'
-                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
-                      }`}
-                  >
+                {/* Action buttons */}
+                <div className="image-gallery-actions absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-2 px-4 pt-4 pointer-events-none">
+                  {/* Left side - Recreate button */}
+                  <div className="relative">
                     <button
                       type="button"
+                      className={`image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 ${recreateActionMenu?.id === selectedFullImage.id
+                        ? 'opacity-100 pointer-events-auto'
+                        : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
+                        }`}
+                      aria-haspopup="menu"
+                      aria-expanded={recreateActionMenu?.id === selectedFullImage.id}
                       onClick={(event) => {
                         event.stopPropagation();
-                        if (selectedFullImage) {
-                          toggleFavorite(selectedFullImage.imageUrl);
-                        }
+                        toggleRecreateActionMenu(selectedFullImage.id, event.currentTarget, selectedFullImage);
                       }}
-                      className="image-action-btn image-action-btn--labelled parallax-large favorite-toggle pointer-events-auto"
-                      aria-label={selectedFullImage && favorites.has(selectedFullImage.imageUrl) ? "Remove from liked" : "Add to liked"}
                     >
-                      <Heart
-                        className={`w-3 h-3 transition-colors duration-100 ${selectedFullImage && favorites.has(selectedFullImage.imageUrl) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
-                          }`}
-                        aria-hidden="true"
-                      />
-                      {selectedFullImage ? getDisplayLikes(selectedFullImage) : 0}
+                      <Edit className="w-4 h-4" />
+                      <span className="text-sm font-medium">Recreate</span>
                     </button>
-                    <div className="relative">
+                    <ImageActionMenuPortal
+                      anchorEl={recreateActionMenu?.id === selectedFullImage.id ? recreateActionMenu?.anchor ?? null : null}
+                      open={recreateActionMenu?.id === selectedFullImage.id}
+                      onClose={closeRecreateActionMenu}
+                      isRecreateMenu={false}
+                    >
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          handleRecreateEdit(selectedFullImage);
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
+                        Edit image
+                      </button>
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          handleRecreateUseAsReference(selectedFullImage);
+                        }}
+                      >
+                        <Copy className="h-4 w-4" />
+                        Use as reference
+                      </button>
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          handleRecreateRunPrompt(selectedFullImage);
+                        }}
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                        Run the same prompt
+                      </button>
+                    </ImageActionMenuPortal>
+                  </div>
+
+                  {/* Right side - Heart, More, and Close buttons */}
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`flex items-center gap-1 transition-opacity duration-100 ${moreActionMenu?.id === selectedFullImage.id
+                        ? 'opacity-100 pointer-events-auto'
+                        : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
+                        }`}
+                    >
                       <button
                         type="button"
                         onClick={(event) => {
                           event.stopPropagation();
-                          toggleMoreActionMenu(selectedFullImage.id, event.currentTarget, selectedFullImage);
+                          if (selectedFullImage) {
+                            toggleFavorite(selectedFullImage.imageUrl);
+                          }
                         }}
-                        className="image-action-btn image-action-btn--fullsize parallax-large pointer-events-auto"
-                        aria-label="More options"
+                        className="image-action-btn image-action-btn--labelled parallax-large favorite-toggle pointer-events-auto"
+                        aria-label={selectedFullImage?.isLiked ? "Remove from liked" : "Add to liked"}
                       >
-                        <MoreHorizontal className="size-4" aria-hidden="true" />
+                        <Heart
+                          className={`w-3 h-3 transition-colors duration-100 ${selectedFullImage?.isLiked ? 'fill-red-500 text-red-500' : 'text-current fill-none'
+                            }`}
+                          aria-hidden="true"
+                        />
+                        {selectedFullImage ? getDisplayLikes(selectedFullImage) : 0}
                       </button>
-                      <ImageActionMenuPortal
-                        anchorEl={moreActionMenu?.id === selectedFullImage?.id ? moreActionMenu?.anchor ?? null : null}
-                        open={moreActionMenu?.id === selectedFullImage?.id}
-                        onClose={closeMoreActionMenu}
-                        isRecreateMenu={false}
-                      >
+                      <div className="relative">
                         <button
                           type="button"
-                          className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                          onClick={async (event) => {
+                          onClick={(event) => {
                             event.stopPropagation();
-                            await copyImageLink(selectedFullImage);
+                            toggleMoreActionMenu(selectedFullImage.id, event.currentTarget, selectedFullImage);
                           }}
+                          className="image-action-btn image-action-btn--fullsize parallax-large pointer-events-auto"
+                          aria-label="More options"
                         >
-                          <Share2 className="h-4 w-4" />
-                          Copy link
+                          <MoreHorizontal className="size-4" aria-hidden="true" />
                         </button>
-                        <button
-                          type="button"
-                          className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                          onClick={async (event) => {
-                            event.stopPropagation();
-                            await downloadImage(selectedFullImage);
-                          }}
+                        <ImageActionMenuPortal
+                          anchorEl={moreActionMenu?.id === selectedFullImage?.id ? moreActionMenu?.anchor ?? null : null}
+                          open={moreActionMenu?.id === selectedFullImage?.id}
+                          onClose={closeMoreActionMenu}
+                          isRecreateMenu={false}
                         >
-                          <Download className="h-4 w-4" />
-                          Download
-                        </button>
-                      </ImageActionMenuPortal>
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                            onClick={async (event) => {
+                              event.stopPropagation();
+                              await copyImageLink(selectedFullImage);
+                            }}
+                          >
+                            <Share2 className="h-4 w-4" />
+                            Copy link
+                          </button>
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                            onClick={async (event) => {
+                              event.stopPropagation();
+                              await downloadImage(selectedFullImage);
+                            }}
+                          >
+                            <Download className="h-4 w-4" />
+                            Download
+                          </button>
+                        </ImageActionMenuPortal>
+                      </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={closeFullSizeView}
+                      className="image-action-btn image-action-btn--fullsize parallax-large pointer-events-auto"
+                      aria-label="Close"
+                    >
+                      <X className="size-4" aria-hidden="true" />
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={closeFullSizeView}
-                    className="image-action-btn image-action-btn--fullsize parallax-large pointer-events-auto"
-                    aria-label="Close"
-                  >
-                    <X className="size-4" aria-hidden="true" />
-                  </button>
                 </div>
-              </div>
 
-              {/* Image info overlay */}
-              <div
-                className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 ${recreateActionMenu?.id === selectedFullImage.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
-                  }`}
-              >
-                <div className="flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-sm font-raleway leading-relaxed">
-                      {selectedFullImage.prompt}
-                      <button
-                        data-copy-button="true"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void copyPromptToClipboard(selectedFullImage.prompt);
-                        }}
-                        onMouseEnter={(e) => {
-                          showHoverTooltip(e.currentTarget, `copy-fullsize-${selectedFullImage.id}`);
-                        }}
-                        onMouseLeave={() => {
-                          hideHoverTooltip(`copy-fullsize-${selectedFullImage.id}`);
-                        }}
-                        className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
-                      >
-                        <Copy className="w-3 h-3" />
-                      </button>
-                    </div>
-                    <div className="mt-2 flex justify-center items-center gap-2">
-                      <div className="flex items-center gap-2">
-                        <Suspense fallback={null}>
-                          <ModelBadge model={selectedFullImage.modelId ?? 'unknown'} size="md" />
-                        </Suspense>
-                        <Suspense fallback={null}>
-                          <AspectRatioBadge aspectRatio={selectedFullImage.aspectRatio || '1:1'} size="md" />
-                        </Suspense>
+                {/* Image info overlay */}
+                <div
+                  className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 z-30 ${recreateActionMenu?.id === selectedFullImage.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
+                    }`}
+                >
+                  <div className="flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="text-sm font-raleway leading-relaxed">
+                        {selectedFullImage.prompt}
+                        <button
+                          data-copy-button="true"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void copyPromptToClipboard(selectedFullImage.prompt);
+                          }}
+                          onMouseEnter={(e) => {
+                            showHoverTooltip(e.currentTarget, `copy-fullsize-${selectedFullImage.id}`);
+                          }}
+                          onMouseLeave={() => {
+                            hideHoverTooltip(`copy-fullsize-${selectedFullImage.id}`);
+                          }}
+                          className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
+                        >
+                          <Copy className="w-3 h-3" />
+                        </button>
+                      </div>
+                      <div className="mt-2 flex justify-center items-center gap-2">
+                        <div className="flex items-center gap-2">
+                          <Suspense fallback={null}>
+                            <ModelBadge model={selectedFullImage.modelId ?? 'unknown'} size="md" />
+                          </Suspense>
+                          <Suspense fallback={null}>
+                            <AspectRatioBadge aspectRatio={selectedFullImage.aspectRatio || '1:1'} size="md" />
+                          </Suspense>
+                          <CreatorBadge name={selectedFullImage.creator.name} profileImage={selectedFullImage.creator.profileImage} userId={selectedFullImage.creator.userId} size="md" onClick={openCreatorProfile} />
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
+
+                {/* Tooltips rendered via portal to avoid clipping */}
+                {createPortal(
+                  <div
+                    data-tooltip-for={`copy-fullsize-${selectedFullImage.id}`}
+                    className={`${tooltips.base} fixed`}
+                    style={{ zIndex: 9999 }}
+                  >
+                    Copy prompt
+                  </div>,
+                  document.body
+                )}
               </div>
 
-              {/* Tooltips rendered via portal to avoid clipping */}
-              {createPortal(
-                <div
-                  data-tooltip-for={`copy-fullsize-${selectedFullImage.id}`}
-                  className={`${tooltips.base} fixed`}
-                  style={{ zIndex: 9999 }}
-                >
-                  Copy prompt
-                </div>,
-                document.body
-              )}
+              {/* Vertical Gallery Navigation */}
+              <VerticalGalleryNav
+                images={filteredGallery.map(item => ({ url: item.imageUrl, id: item.id }))}
+                currentIndex={currentImageIndex}
+                onNavigate={(index) => {
+                  if (index >= 0 && index < filteredGallery.length) {
+                    setSelectedFullImage(filteredGallery[index]);
+                    setCurrentImageIndex(index);
+                  }
+                }}
+                onWidthChange={handleGalleryNavWidthChange}
+              />
             </div>
-
-            {/* Vertical Gallery Navigation */}
-            <VerticalGalleryNav
-              images={filteredGallery.map(item => ({ url: item.imageUrl, id: item.id }))}
-              currentIndex={currentImageIndex}
-              onNavigate={(index) => {
-                if (index >= 0 && index < filteredGallery.length) {
-                  setSelectedFullImage(filteredGallery[index]);
-                  setCurrentImageIndex(index);
-                }
-              }}
-              onWidthChange={handleGalleryNavWidthChange}
-            />
-          </div>
-        )}
+          )
+        }
 
         {/* Unsave confirmation modal */}
-        {unsaveConfirm.open && unsaveConfirm.item && (
-          <div
-            className="fixed inset-0 z-[70] flex items-center justify-center bg-theme-black/80 py-12"
-            onClick={closeUnsaveConfirm}
-          >
+        {
+          unsaveConfirm.open && unsaveConfirm.item && (
             <div
-              className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}
-              onClick={event => event.stopPropagation()}
+              className="fixed inset-0 z-[70] flex items-center justify-center bg-theme-black/80 py-12"
+              onClick={closeUnsaveConfirm}
             >
-              <div className="text-center space-y-4">
-                <div className="space-y-3">
-                  <Trash2 className="default-orange-icon mx-auto" />
-                  <h3 className="text-xl font-raleway font-normal text-theme-text">Remove from gallery?</h3>
-                  <p className="text-base font-raleway font-normal text-theme-white">
-                    This will remove the image from your saved gallery and any folders it's in.
-                  </p>
-                </div>
-                <div className="flex justify-center gap-3">
-                  <button
-                    type="button"
-                    onClick={closeUnsaveConfirm}
-                    className={buttons.ghost}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleUnsaveFromGallery(unsaveConfirm.item!)}
-                    className={buttons.primary}
-                  >
-                    Remove
-                  </button>
+              <div
+                className={`${glass.promptDark} rounded-[20px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}
+                onClick={event => event.stopPropagation()}
+              >
+                <div className="text-center space-y-4">
+                  <div className="space-y-3">
+                    <Trash2 className="default-orange-icon mx-auto" />
+                    <h3 className="text-xl font-raleway font-normal text-theme-text">Remove from gallery?</h3>
+                    <p className="text-base font-raleway font-normal text-theme-white">
+                      This will remove the image from your saved gallery and any folders it's in.
+                    </p>
+                  </div>
+                  <div className="flex justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={closeUnsaveConfirm}
+                      className={buttons.ghost}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleUnsaveFromGallery(unsaveConfirm.item!)}
+                      className={buttons.primary}
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )
+        }
 
-      </div>
-    </div>
+        {/* Creator Profile Modal */}
+        <CreatorProfileModal
+          isOpen={creatorProfileModal.isOpen}
+          onClose={closeCreatorProfile}
+          userId={creatorProfileModal.userId}
+          initialName={creatorProfileModal.name}
+          initialProfileImage={creatorProfileModal.profileImage}
+        />
+
+      </div >
+    </div >
   );
 };
 

@@ -62,6 +62,7 @@ export default function Account() {
   const { user, updateProfile, uploadProfilePicture, removeProfilePicture, logOut, storagePrefix, isLoading } = useAuth();
   const { showToast } = useToast();
   const [name, setName] = useState(user?.displayName ?? "");
+  const [bio, setBio] = useState(user?.bio ?? "");
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
   const [isUploadingPic, setIsUploadingPic] = useState(false);
   const [cropModalOpen, setCropModalOpen] = useState(false);
@@ -69,6 +70,7 @@ export default function Account() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [nameTouched, setNameTouched] = useState(false);
+  const [bioTouched, setBioTouched] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
@@ -104,7 +106,11 @@ export default function Account() {
     if (user?.displayName && name === "") {
       setName(user.displayName);
     }
-  }, [name, user?.displayName]);
+    // Only update bio if it hasn't been touched yet
+    if (user?.bio && bio === "" && !bioTouched) {
+      setBio(user.bio);
+    }
+  }, [name, bio, user?.displayName, user?.bio, bioTouched]);
 
   useEffect(() => {
     let cancelled = false;
@@ -200,7 +206,7 @@ export default function Account() {
 
         // Extract mime type from data URL
         const mimeType = dataUrl.match(/^data:([^;]+);/)?.[1] || 'image/png';
-        
+
         await uploadProfilePicture(dataUrl, mimeType);
         showToast("Profile photo updated");
       } catch (error) {
@@ -228,11 +234,20 @@ export default function Account() {
   }, [releasePreview, resetFileInput, showToast, removeProfilePicture]);
 
   const trimmedName = useMemo(() => (name ?? "").trim(), [name]);
+  const trimmedBio = useMemo(() => (bio ?? "").trim(), [bio]);
   const currentUserName = useMemo(() => (user?.displayName ?? "").trim(), [user?.displayName]);
+  const currentUserBio = useMemo(() => (user?.bio ?? "").trim(), [user?.bio]);
+
   const isNameValid = trimmedName.length > 0 && trimmedName.length <= 60;
+  const isBioValid = trimmedBio.length <= 500;
+
   const isNameChanged = trimmedName !== currentUserName;
-  const canSaveProfile = isNameValid && !isSavingProfile;
+  const isBioChanged = trimmedBio !== currentUserBio;
+  const isFormChanged = isNameChanged || isBioChanged;
+
+  const canSaveProfile = isNameValid && isBioValid && !isSavingProfile;
   const nameErrorMessage = trimmedName.length === 0 ? "Display name is required." : "Display name must be 60 characters or fewer.";
+  const bioErrorMessage = "Bio must be 500 characters or fewer.";
 
   const handleNameChange = useCallback(
     (value: string) => {
@@ -251,15 +266,38 @@ export default function Account() {
     setNameTouched(true);
   }, []);
 
+  const handleBioChange = useCallback(
+    (value: string) => {
+      setBio(value);
+      if (!bioTouched) {
+        setBioTouched(true);
+      }
+      if (saveError) {
+        setSaveError(null);
+      }
+    },
+    [bioTouched, saveError],
+  );
+
+  const handleBioBlur = useCallback(() => {
+    setBioTouched(true);
+  }, []);
+
   const handleSaveProfile = useCallback(async () => {
     setNameTouched(true);
+    setBioTouched(true);
 
     if (!isNameValid) {
       setSaveError(nameErrorMessage);
       return;
     }
 
-    if (!isNameChanged) {
+    if (!isBioValid) {
+      setSaveError(bioErrorMessage);
+      return;
+    }
+
+    if (!isFormChanged) {
       showToast("Profile saved");
       return;
     }
@@ -267,7 +305,10 @@ export default function Account() {
     setIsSavingProfile(true);
 
     try {
-      await updateProfile({ displayName: trimmedName });
+      await updateProfile({
+        displayName: trimmedName,
+        bio: trimmedBio
+      });
       setSaveError(null);
 
       if (sanitizedNextPath && sanitizedNextPath !== "/app") {
@@ -287,13 +328,16 @@ export default function Account() {
       setIsSavingProfile(false);
     }
   }, [
-    isNameChanged,
+    isFormChanged,
     isNameValid,
+    isBioValid,
     nameErrorMessage,
+    bioErrorMessage,
     navigate,
     sanitizedNextPath,
     showToast,
     trimmedName,
+    trimmedBio,
     updateProfile,
   ]);
 
@@ -366,6 +410,10 @@ export default function Account() {
           nameTouched={nameTouched}
           isNameValid={isNameValid}
           nameErrorMessage={nameErrorMessage}
+          bio={bio}
+          bioTouched={bioTouched}
+          isBioValid={isBioValid}
+          bioErrorMessage={bioErrorMessage}
           saveError={saveError}
           canSaveProfile={canSaveProfile}
           isSavingProfile={isSavingProfile}
@@ -376,6 +424,8 @@ export default function Account() {
           onRemoveProfilePic={handleRemoveProfilePic}
           onNameChange={handleNameChange}
           onNameBlur={handleNameBlur}
+          onBioChange={handleBioChange}
+          onBioBlur={handleBioBlur}
           onSaveProfile={handleProfileSubmit}
           onLogOut={handleLogOut}
         />
