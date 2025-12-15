@@ -29,7 +29,7 @@ interface JobResponse {
 }
 
 export const ReelsEditorLayout = () => {
-    const { segments, isPlaying, setIsPlaying, currentTime, musicUrl, finalVideoUrl, musicVolume, jobId, jobDuration, setSegments, syncSegments, setMusicUrl, setFinalVideoUrl, setCurrentTime, setMusicVolume, setJobStatus, jobStatus, isWaitingForSegment, updateSegmentByIndex, setVersions, hasChanges, markChangesSaved } = useTimelineStore();
+    const { segments, isPlaying, setIsPlaying, currentTime, musicUrl, finalVideoUrl, musicVolume, jobId, jobDuration, setSegments, syncSegments, setMusicUrl, setFinalVideoUrl, setCurrentTime, setMusicVolume, setJobStatus, jobStatus, isWaitingForSegment, updateSegmentByIndex, setVersions, hasChanges, markChangesSaved, activeSegmentIndex } = useTimelineStore();
     const { audioRef } = useAudioSync();
 
     const musicRef = useRef<HTMLAudioElement | null>(null);
@@ -465,6 +465,14 @@ export const ReelsEditorLayout = () => {
                 {/* Audio Elements */}
                 <audio
                     ref={audioRef}
+                    onLoadedMetadata={(e) => {
+                        const audio = e.currentTarget;
+                        const duration = audio.duration;
+                        if (activeSegment && duration && duration > 0 && Math.abs(duration - activeSegment.duration) > 0.1) {
+                            console.log(`[ReelsEditor] 🩹 Self-Healing Duration: Store=${activeSegment.duration.toFixed(2)}s -> Audio=${duration.toFixed(2)}s`);
+                            updateSegmentByIndex(activeSegmentIndex, { duration: duration });
+                        }
+                    }}
                     src={activeSegment?.voiceUrl || undefined}
                 />
                 <audio

@@ -109,7 +109,7 @@ export const useAudioSync = () => {
             const effectiveDuration = Math.max(segment.duration, 0.5);
             const effectiveEndTime = segment.startTime + effectiveDuration;
 
-            if (newTime >= effectiveEndTime) {
+            if (newTime >= effectiveEndTime && !shouldUseAudio) {
                 // console.warn(`[AudioSync] ⏱️ Timer Reached End.`);
 
                 if (activeSegmentIndex >= segments.length - 1) {
