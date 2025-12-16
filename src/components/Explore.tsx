@@ -880,10 +880,14 @@ const Explore: React.FC = () => {
     return videoModels.includes(modelId) || modelId.includes('video') ? "video" : "image";
   }, []);
 
+  // Use a ref to track loading state for the fetch guard to avoid dependency loops
+  const isLoadingPublicRef = useRef(false);
+
   // Fetch public generations from API
   const fetchPublicGenerations = useCallback(async (cursor?: string) => {
-    if (isLoadingPublic) return;
+    if (isLoadingPublicRef.current) return;
 
+    isLoadingPublicRef.current = true;
     setIsLoadingPublic(true);
     try {
       const apiBase = import.meta.env.VITE_API_BASE_URL || '';
@@ -973,9 +977,10 @@ const Explore: React.FC = () => {
       debugError('Failed to fetch public generations:', error);
       // Keep fallback items on error
     } finally {
+      isLoadingPublicRef.current = false;
       setIsLoadingPublic(false);
     }
-  }, [isLoadingPublic, avatarGradients, formatTimeAgo, getOrientationFromAspectRatio, inferMediaType, token]);
+  }, [avatarGradients, formatTimeAgo, getOrientationFromAspectRatio, inferMediaType, token]);
 
   // Initial fetch of public generations
   useEffect(() => {
