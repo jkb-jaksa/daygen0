@@ -43,6 +43,7 @@ export default function TimelineGenerator() {
     const [selectedVoiceId, setSelectedVoiceId] = useState<string>('');
     const [includeVoiceover, setIncludeVoiceover] = useState(true);
     const [includeSubtitles, setIncludeSubtitles] = useState(true);
+    const [useVisualReferenceOnly, setUseVisualReferenceOnly] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [isDragging, setIsDragging] = useState(false);
@@ -179,6 +180,32 @@ export default function TimelineGenerator() {
                     try {
                         const result = await uploadToR2(file, file.name, file.type, 'user-music');
                         if (result.success && result.publicUrl) {
+                            // Save to database for persistence
+                            try {
+                                const { supabase } = await import('../../lib/supabase');
+                                const { data: { session } } = await supabase.auth.getSession();
+                                const token = session?.access_token || '';
+
+                                if (token) {
+                                    await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/audio/tracks/user`, {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'Authorization': `Bearer ${token}`
+                                        },
+                                        body: JSON.stringify({
+                                            name: file.name,
+                                            url: result.publicUrl,
+                                            genre: 'Custom Upload'
+                                        })
+                                    });
+                                }
+                            } catch (apiErr) {
+                                console.error("Failed to save track to DB:", apiErr);
+                                // Don't fail the whole upload if DB save fails, just log it?
+                                // Or maybe we should warn? For now, we proceed as it will be in current session at least.
+                            }
+
                             return {
                                 url: result.publicUrl,
                                 name: file.name
@@ -193,7 +220,13 @@ export default function TimelineGenerator() {
 
                 const results = await Promise.all(uploadPromises);
 
-                // Add to custom tracks
+                // Add to custom tracks - NO, we should re-fetch from backend or just rely on the new logic.
+                // But the user wants IMMEDIATE feedback.
+                // The `MusicSelector` fetches on mount. If we just uploaded, MusicSelector won't know unless we tell it or we trigger a re-fetch.
+                // The current code adds to `customMusicTracks` state which is passed to MusicSelector.
+                // This is fine for immediate feedback. Persistence is handled by the DB save above.
+                // When they reload, MusicSelector will fetch from DB.
+
                 const newTracks: MusicTrack[] = results.map(r => ({
                     id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                     url: r.url,
@@ -207,7 +240,6 @@ export default function TimelineGenerator() {
                 if (newTracks.length > 0) {
                     setSelectedMusicUrl(newTracks[0].url);
                 }
-
             } catch (error) {
                 console.error('Failed to upload music:', error);
                 alert(`Failed to upload music: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -268,7 +300,8 @@ export default function TimelineGenerator() {
                 selectedVoiceId,
                 includeVoiceover,
                 includeSubtitles,
-                musicStartTime // Pass start time
+                musicStartTime, // Pass start time
+                useVisualReferenceOnly // Pass reference only flag
             );
 
             // Set Job ID and navigate immediately
@@ -362,6 +395,19 @@ export default function TimelineGenerator() {
                                         multiple
                                     />
                                 </div>
+
+                                {/* 🔞 Toggle Button using text emoji */}
+                                <button
+                                    type="button"
+                                    onClick={() => setUseVisualReferenceOnly(!useVisualReferenceOnly)}
+                                    className={`flex items-center justify-center px-2 py-1.5 rounded-lg border text-sm transition-all ${useVisualReferenceOnly
+                                        ? 'bg-theme-mid/20 border-theme-mid text-theme-mid shadow-[0_0_8px_rgba(0,255,255,0.15)]'
+                                        : 'bg-theme-white/5 border-theme-white/10 text-theme-white/40 hover:text-theme-white'
+                                        }`}
+                                    title={useVisualReferenceOnly ? "Direct Reference Mode: ENABLED (Uses uploaded images directly)" : "Direct Reference Mode: DISABLED (AI Creates Visuals)"}
+                                >
+                                    🔞
+                                </button>
                             </div>
                         </div>
 

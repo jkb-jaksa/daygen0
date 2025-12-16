@@ -17,13 +17,14 @@ export async function generateTimeline(
     voiceId?: string,
     includeVoiceover: boolean = true,
     includeSubtitles: boolean = true,
-    musicStartTime: number = 0
+    musicStartTime: number = 0,
+    useVisualReferenceOnly: boolean = false
 ): Promise<Job> {
     return apiFetch<Job>('/api/timeline/generate', {
         method: 'POST',
         // Map includeVoiceover -> includeNarration (backend DTO expectation)
         // Send style as 'auto' to let GPT-5 decide based on prompt
-        body: { topic, style: 'auto', musicUrl, duration, musicVolume, referenceImageUrls, voiceId, includeNarration: includeVoiceover, includeSubtitles, musicStartTime },
+        body: { topic, style: 'auto', musicUrl, duration, musicVolume, referenceImageUrls, voiceId, includeNarration: includeVoiceover, includeSubtitles, musicStartTime, useVisualReferenceOnly },
     });
 }
 

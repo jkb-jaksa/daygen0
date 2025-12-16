@@ -47,7 +47,20 @@ export const MusicSelector: React.FC<MusicSelectorProps> = ({
     useEffect(() => {
         const fetchTracks = async () => {
             try {
-                const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/audio/tracks`);
+                // Get auth token to fetch user-specific tracks
+                const { supabase } = await import("../../lib/supabase");
+                const { data: { session } } = await supabase.auth.getSession();
+                const token = session?.access_token || '';
+
+                const headers: HeadersInit = {};
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
+                const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/audio/tracks`, {
+                    headers
+                });
+
                 if (res.ok) {
                     const data = await res.json();
                     setTracks(data);
