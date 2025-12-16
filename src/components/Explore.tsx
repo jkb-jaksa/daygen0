@@ -1027,65 +1027,7 @@ const Explore: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Handle deep linking via jobId
-  useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const jobId = searchParams.get('jobId');
 
-    if (jobId && !selectedFullImage) {
-      const fetchJob = async () => {
-        try {
-          const apiBase = import.meta.env.VITE_API_BASE_URL || '';
-          const headers: HeadersInit = {};
-          if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-          }
-
-          const response = await fetch(`${apiBase}/api/r2files/public/${jobId}`, {
-            headers
-          });
-
-          if (!response.ok) return;
-
-          const item = await response.json();
-
-          // Transform to GalleryItem matching fetchPublicGenerations logic
-          const galleryItem: GalleryItem = {
-            id: item.id,
-            creator: {
-              name: item.owner?.displayName || 'Community Creator',
-              handle: `@${item.owner?.authUserId?.slice(0, 8) || 'user'}`,
-              avatarColor: avatarGradients[0], // Default gradient as we don't have index context
-              location: "Daygen.ai",
-              profileImage: item.owner?.profileImage,
-              userId: item.owner?.authUserId,
-            },
-            modelId: item.model || 'unknown',
-            timeAgo: formatTimeAgo(new Date(item.createdAt)),
-            likes: item.likeCount || 0,
-            isLiked: item.isLiked,
-            prompt: item.prompt || 'AI Generated Image',
-            tags: item.model ? [item.model.split('-')[0]] : ['ai'],
-            imageUrl: item.fileUrl,
-            orientation: getOrientationFromAspectRatio(item.aspectRatio),
-            aspectRatio: item.aspectRatio,
-            mediaType: inferMediaType(item.model, item.mimeType),
-            isPublic: true,
-          };
-
-          setSelectedFullImage(galleryItem);
-          setIsFullSizeOpen(true);
-        } catch (error) {
-          debugError('Failed to fetch deep linked job:', error);
-        }
-      };
-      void fetchJob();
-    } else if (!jobId && isFullSizeOpen) {
-      // If URL doesn't have jobId but modal is open (e.g. back button pressed), close it
-      setIsFullSizeOpen(false);
-      setSelectedFullImage(null);
-    }
-  }, [location.search, token, avatarGradients, formatTimeAgo, getOrientationFromAspectRatio, inferMediaType, isFullSizeOpen, selectedFullImage]);
   const [savedInspirations, setSavedInspirations] = useState<GalleryImageLike[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
 
@@ -1600,6 +1542,66 @@ const Explore: React.FC = () => {
       prev.left !== nextLeft || prev.right !== nextRight ? { left: nextLeft, right: nextRight } : prev,
     );
   }, [galleryNavWidth]);
+
+  // Handle deep linking via jobId
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const jobId = searchParams.get('jobId');
+
+    if (jobId && !selectedFullImage) {
+      const fetchJob = async () => {
+        try {
+          const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+          const headers: HeadersInit = {};
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+          }
+
+          const response = await fetch(`${apiBase}/api/r2files/public/${jobId}`, {
+            headers
+          });
+
+          if (!response.ok) return;
+
+          const item = await response.json();
+
+          // Transform to GalleryItem matching fetchPublicGenerations logic
+          const galleryItem: GalleryItem = {
+            id: item.id,
+            creator: {
+              name: item.owner?.displayName || 'Community Creator',
+              handle: `@${item.owner?.authUserId?.slice(0, 8) || 'user'}`,
+              avatarColor: avatarGradients[0], // Default gradient as we don't have index context
+              location: "Daygen.ai",
+              profileImage: item.owner?.profileImage,
+              userId: item.owner?.authUserId,
+            },
+            modelId: item.model || 'unknown',
+            timeAgo: formatTimeAgo(new Date(item.createdAt)),
+            likes: item.likeCount || 0,
+            isLiked: item.isLiked,
+            prompt: item.prompt || 'AI Generated Image',
+            tags: item.model ? [item.model.split('-')[0]] : ['ai'],
+            imageUrl: item.fileUrl,
+            orientation: getOrientationFromAspectRatio(item.aspectRatio),
+            aspectRatio: item.aspectRatio,
+            mediaType: inferMediaType(item.model, item.mimeType),
+            isPublic: true,
+          };
+
+          setSelectedFullImage(galleryItem);
+          setIsFullSizeOpen(true);
+        } catch (error) {
+          debugError('Failed to fetch deep linked job:', error);
+        }
+      };
+      void fetchJob();
+    } else if (!jobId && isFullSizeOpen) {
+      // If URL doesn't have jobId but modal is open (e.g. back button pressed), close it
+      setIsFullSizeOpen(false);
+      setSelectedFullImage(null);
+    }
+  }, [location.search, token, avatarGradients, formatTimeAgo, getOrientationFromAspectRatio, inferMediaType, isFullSizeOpen, selectedFullImage]);
 
   useLayoutEffect(() => {
     if (typeof window === "undefined") {
