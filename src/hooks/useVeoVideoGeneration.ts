@@ -194,6 +194,7 @@ export const useVeoVideoGeneration = () => {
           prompt: options.prompt,
           model: options.model ?? 'veo-3.1-generate-preview',
           references: options.references,
+          imageUrls: options.references, // Check if backend expects imageUrls for omnihuman
           providerOptions,
           avatarId: options.avatarId,
           avatarImageId: options.avatarImageId,
@@ -206,7 +207,7 @@ export const useVeoVideoGeneration = () => {
         model: options.model ?? 'veo-3.1-generate-preview',
         signal: options.signal,
         timeoutMs: options.requestTimeoutMs,
-        pollTimeoutMs: options.pollTimeoutMs,
+        pollTimeoutMs: options.pollTimeoutMs ?? (isLipSync ? 600000 : undefined),
         pollIntervalMs: options.pollIntervalMs,
         requestTimeoutMs: options.pollRequestTimeoutMs,
         parseImmediateResult: (response) =>
