@@ -958,7 +958,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       return;
     }
 
-    const { prompt, referenceFiles, aspectRatio, model } = options;
+    const { prompt, referenceFiles, aspectRatio, model, script, voiceId, isLipSyncEnabled } = options;
     const item = makeVideoModalState.item;
 
     // Close modal so user sees the generation in progress
@@ -1002,6 +1002,9 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       avatarId: item.avatarId,
       avatarImageId: item.avatarImageId,
       productId: item.productId,
+      script,
+      voiceId,
+      isLipSyncEnabled,
     }).then((result) => {
       if (result && result.url) {
         // Add video to gallery when done
@@ -1544,6 +1547,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                           hideHoverTooltip(`save-${tooltipId}`);
                                         }}
                                         className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
+                                        aria-label={isPromptSaved(promptForActions) ? "Remove from saved" : "Save prompt"}
                                       >
                                         {isPromptSaved(promptForActions) ? (
                                           <Bookmark className="w-3 h-3 fill-current" />

@@ -1,0 +1,15 @@
+# Supabase Configuration
+VITE_SUPABASE_URL="https://kxrxsydlhfkkmvwypcqm.supabase.co"
+VITE_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4cnhzeWRsaGZra212d3lwY3FtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzOTgzOTEsImV4cCI6MjA3Mzk3NDM5MX0.odXDaM0gAoQT2hd09StEG2Jl1eBAVFDtahupZLU7v2k"
+
+# Backend API URL
+# VITE_API_BASE_URL="https://daygen-backend-365299591811.europe-central2.run.app"
+
+# This localhost only for local development
+VITE_API_BASE_URL="http://localhost:3000"
+
+# Google OAuth Configuration
+VITE_GOOGLE_CLIENT_ID="365299591811-m1osaqqjlptr324g02jn9b8k5srppc32.apps.googleusercontent.com"
+
+# Stripe
+VITE_STRIPE_PUBLISHABLE_KEY="pk_test_51SIcmIBEB6zYRY4ShPvtjB2rqHJGFjQfOd4ommlGhCMloq0943Vbo6jScmDpCa381hAKRWMZ7BzA5zDLaOrQyvFC00LeUGpaV9"

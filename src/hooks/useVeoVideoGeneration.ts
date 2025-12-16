@@ -44,6 +44,9 @@ export interface VideoGenerationOptions {
   avatarId?: string;
   avatarImageId?: string;
   productId?: string;
+  script?: string;
+  voiceId?: string;
+  isLipSyncEnabled?: boolean;
 }
 
 const INITIAL_STATE: VideoGenerationState = {
@@ -181,24 +184,30 @@ export const useVeoVideoGeneration = () => {
       if (options.imageBase64) providerOptions.image_base64 = options.imageBase64;
       if (options.imageMimeType) providerOptions.image_mime_type = options.imageMimeType;
 
+      const isLipSync = options.isLipSyncEnabled;
+      const provider = isLipSync ? 'omnihuman' : 'veo';
+
       const { result } = await runGenerationJob<GeneratedVideo, Record<string, unknown>>({
-        provider: 'veo',
+        provider,
         mediaType: 'video',
         body: {
           prompt: options.prompt,
           model: options.model ?? 'veo-3.1-generate-preview',
           references: options.references,
+          imageUrls: options.references, // Check if backend expects imageUrls for omnihuman
           providerOptions,
           avatarId: options.avatarId,
           avatarImageId: options.avatarImageId,
           productId: options.productId,
+          script: options.script,
+          voiceId: options.voiceId,
         },
         tracker,
         prompt: options.prompt,
         model: options.model ?? 'veo-3.1-generate-preview',
         signal: options.signal,
         timeoutMs: options.requestTimeoutMs,
-        pollTimeoutMs: options.pollTimeoutMs,
+        pollTimeoutMs: options.pollTimeoutMs ?? (isLipSync ? 600000 : undefined),
         pollIntervalMs: options.pollIntervalMs,
         requestTimeoutMs: options.pollRequestTimeoutMs,
         parseImmediateResult: (response) =>

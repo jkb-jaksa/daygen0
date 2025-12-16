@@ -636,7 +636,7 @@ const FullImageModal = memo(() => {
       return;
     }
 
-    const { prompt, referenceFiles, aspectRatio, model } = options;
+    const { prompt, referenceFiles, aspectRatio, model, script, voiceId, isLipSyncEnabled } = options;
 
     // Close modal so user sees the generation in progress
     setMakeVideoModalState(null);
@@ -680,6 +680,9 @@ const FullImageModal = memo(() => {
       avatarId: fullSizeImage.avatarId,
       avatarImageId: fullSizeImage.avatarImageId,
       productId: fullSizeImage.productId,
+      script,
+      voiceId,
+      isLipSyncEnabled,
     }).then((result) => {
       if (result && result.url) {
         // Add video to gallery when done

@@ -20,6 +20,12 @@ export type ProfileCardProps = {
   onRemoveProfilePic: () => void;
   onNameChange: (value: string) => void;
   onNameBlur: () => void;
+  onBioChange: (value: string) => void;
+  onBioBlur: () => void;
+  bio: string;
+  bioTouched: boolean;
+  isBioValid: boolean;
+  bioErrorMessage: string;
   onSaveProfile: () => void;
   onLogOut: () => void;
 };
@@ -30,6 +36,10 @@ export function ProfileCard({
   nameTouched,
   isNameValid,
   nameErrorMessage,
+  bio,
+  bioTouched,
+  isBioValid,
+  bioErrorMessage,
   saveError,
   canSaveProfile,
   isSavingProfile,
@@ -40,6 +50,8 @@ export function ProfileCard({
   onRemoveProfilePic,
   onNameChange,
   onNameBlur,
+  onBioChange,
+  onBioBlur,
   onSaveProfile,
   onLogOut,
 }: ProfileCardProps) {
@@ -137,6 +149,30 @@ export function ProfileCard({
             )}
           </div>
         </div>
+
+        <div className="-mt-4">
+          <label className="block text-sm text-theme-white mb-1 font-raleway" htmlFor="bio">
+            Bio
+          </label>
+          <textarea
+            id="bio"
+            className={`${inputs.base} min-h-[100px] resize-none py-2`}
+            value={bio}
+            onChange={(event) => onBioChange(event.target.value)}
+            onBlur={onBioBlur}
+            placeholder="Tell us about yourself..."
+            maxLength={500}
+          />
+          <div className="flex justify-between items-start min-h-[1rem] mt-1">
+            <div aria-live="polite" role="status">
+              {(bioTouched && !isBioValid) && (
+                <p className="text-xs font-raleway text-red-400">{bioErrorMessage}</p>
+              )}
+            </div>
+            <span className="text-xs text-theme-white/50">{bio.length}/500</span>
+          </div>
+        </div>
+
         <div className="-mt-4 mb-6">
           <label className="block text-sm text-theme-white mb-1 font-raleway" htmlFor="email">
             Email
