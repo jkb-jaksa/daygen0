@@ -40,6 +40,7 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const PaymentSuccess = lazy(() => import("./components/payments/PaymentSuccess"));
 const PaymentCancel = lazy(() => import("./pages/PaymentCancel"));
 const DebugPanel = lazy(() => import("./components/DebugPanel").then(({ DebugPanel }) => ({ default: DebugPanel })));
+const CreatorProfile = lazy(() => import("./pages/CreatorProfile"));
 
 function JobRedirect() {
   const { jobId } = useParams();
@@ -750,6 +751,7 @@ function AppContent() {
               <Route path="/courses" element={<Navigate to="/learn/courses" replace />} />
               <Route path="/about-us" element={<AboutUs />} />
               <Route path="/explore" element={<Explore />} />
+              <Route path="/creator/:userId" element={<CreatorProfile />} />
               <Route path="/learn/tools/:toolSlug" element={<LearnToolPage />} />
               <Route path="/create/*" element={<CreateRoutes />} />
               <Route element={<CreateProtectedLayout />}>

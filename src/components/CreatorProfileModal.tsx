@@ -413,20 +413,26 @@ export function CreatorProfileModal({
 
                     {/* Profile header */}
                     <div className="p-6 pb-4 border-b border-theme-dark/50">
-                        <div className="flex items-center gap-4">
+                        <div
+                            className="flex items-center gap-4 group/profile cursor-pointer"
+                            onClick={() => {
+                                onClose();
+                                navigate(`/creator/${userId}`);
+                            }}
+                        >
                             {profileImage ? (
                                 <img
                                     src={profileImage}
                                     alt={displayName}
-                                    className="w-16 h-16 rounded-full object-cover border-2 border-theme-dark/50 self-start"
+                                    className="w-16 h-16 rounded-full object-cover border-2 border-theme-dark/50 self-start transition-colors duration-200 group-hover/profile:border-theme-mid"
                                 />
                             ) : (
-                                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500/50 to-cyan-500/50 flex items-center justify-center border-2 border-theme-dark/50 self-start">
+                                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500/50 to-cyan-500/50 flex items-center justify-center border-2 border-theme-dark/50 self-start transition-colors duration-200 group-hover/profile:border-theme-mid">
                                     <User className="w-8 h-8 text-theme-white/80" />
                                 </div>
                             )}
                             <div className="flex-1 min-w-0">
-                                <h2 className="text-2xl font-raleway font-normal text-theme-text">{displayName}</h2>
+                                <h2 className="text-2xl font-raleway font-normal text-theme-text transition-colors duration-200 group-hover/profile:text-theme-white">{displayName}</h2>
                                 <p className="text-sm text-theme-white/60 mb-2">
                                     {profileData?.totalCount || 0} public generation{profileData?.totalCount !== 1 ? 's' : ''}
                                 </p>
