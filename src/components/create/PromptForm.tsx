@@ -267,11 +267,9 @@ const PromptForm = memo<PromptFormProps>(
       isAvatarPickerOpen,
       avatarButtonRef,
       avatarQuickUploadInputRef,
-      handleAvatarSelect,
       handleAvatarToggle,
       isAvatarSelected,
       clearAllAvatars,
-      removeSelectedAvatar,
       handleAvatarPickerClose,
       setIsAvatarPickerOpen,
       isAvatarCreationModalOpen,
@@ -292,7 +290,6 @@ const PromptForm = memo<PromptFormProps>(
       handleAvatarDelete,
       setCreationsModalAvatar,
       setAvatarToDelete,
-      setSelectedAvatars,
       setSelectedAvatarImageId,
     } = avatarHandlers;
     const {
@@ -302,11 +299,9 @@ const PromptForm = memo<PromptFormProps>(
       isProductPickerOpen,
       productButtonRef,
       productQuickUploadInputRef,
-      handleProductSelect,
       handleProductToggle,
       isProductSelected,
       clearAllProducts,
-      removeSelectedProduct,
       handleProductPickerClose,
       setIsProductPickerOpen,
       isProductCreationModalOpen,
@@ -327,7 +322,6 @@ const PromptForm = memo<PromptFormProps>(
       handleProductDelete,
       setCreationsModalProduct,
       setProductToDelete,
-      setSelectedProducts,
     } = productHandlers;
 
     const handleAvatarButtonClick = useCallback(() => {
