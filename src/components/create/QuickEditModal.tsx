@@ -856,7 +856,12 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         handleDragEnter,
         handleDragLeave,
         handleDrop,
-    } = useReferenceHandlers(selectedAvatar, selectedProduct, handleReferenceAdd, MAX_QUICK_EDIT_REFERENCES);
+    } = useReferenceHandlers(
+        selectedAvatar ? [selectedAvatar] : [],
+        selectedProduct ? [selectedProduct] : [],
+        handleReferenceAdd,
+        MAX_QUICK_EDIT_REFERENCES
+    );
 
     useEffect(() => {
         if (isOpen) {

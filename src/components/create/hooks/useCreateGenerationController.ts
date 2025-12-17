@@ -211,8 +211,8 @@ export function useCreateGenerationController(): CreateGenerationController {
   }, [selectedModel]);
 
   const referenceHandlers = useReferenceHandlers(
-    avatarHandlers.selectedAvatar,
-    productHandlers.selectedProduct,
+    avatarHandlers.selectedAvatars,
+    productHandlers.selectedProducts,
     () => { },
     maxReferences,
   );
@@ -622,8 +622,14 @@ export function useCreateGenerationController(): CreateGenerationController {
     setButtonSpinning(true);
 
     const referenceSources: (File | string)[] = [];
-    if (selectedAvatarImageUrl) referenceSources.push(selectedAvatarImageUrl);
-    if (selectedProductImageUrl) referenceSources.push(selectedProductImageUrl);
+    // Push all selected avatar image URLs (now supports multiple)
+    avatarHandlers.selectedAvatarImageUrls.forEach(url => {
+      if (url) referenceSources.push(url);
+    });
+    // Push all selected product image URLs (now supports multiple)
+    productHandlers.selectedProductImageUrls.forEach(url => {
+      if (url) referenceSources.push(url);
+    });
     if (referenceHandlers.referenceFiles.length > 0) {
       referenceSources.push(...referenceHandlers.referenceFiles);
     }

@@ -331,7 +331,12 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
         handleDragEnter: hookHandleDragEnter,
         handleDragLeave: hookHandleDragLeave,
         handleDrop: hookHandleDrop,
-    } = useReferenceHandlers(selectedAvatar, selectedProduct, handleReferenceAdd, MAX_REFERENCES);
+    } = useReferenceHandlers(
+        selectedAvatar ? [selectedAvatar] : [],
+        selectedProduct ? [selectedProduct] : [],
+        handleReferenceAdd,
+        MAX_REFERENCES
+    );
 
     // Wrap hook drag handlers to manage local state
     const handleDragOver = useCallback((e: React.DragEvent) => {

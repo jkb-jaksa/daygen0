@@ -4,8 +4,8 @@ import { debugError, debugLog } from '../../../utils/debug';
 const DEFAULT_REFERENCE_LIMIT = 3;
 
 export function useReferenceHandlers(
-  selectedAvatar: { id: string } | null,
-  selectedProduct: { id: string } | null,
+  selectedAvatars: { id: string }[],
+  selectedProducts: { id: string }[],
   onAddReferenceFiles: (files: File[]) => void,
   maxReferences: number = DEFAULT_REFERENCE_LIMIT
 ) {
@@ -19,11 +19,11 @@ export function useReferenceHandlers(
   const fileInputRef = useRef<HTMLInputElement>(null);
   const refsInputRef = useRef<HTMLInputElement>(null);
 
-  // Calculate reference limit
+  // Calculate reference limit based on selected avatars and products (now arrays)
   const referenceLimit = useMemo(() => {
-    const usedSlots = (selectedAvatar ? 1 : 0) + (selectedProduct ? 1 : 0);
+    const usedSlots = selectedAvatars.length + selectedProducts.length;
     return Math.max(0, maxReferences - usedSlots);
-  }, [selectedAvatar, selectedProduct, maxReferences]);
+  }, [selectedAvatars.length, selectedProducts.length, maxReferences]);
 
   // Handle adding reference files (declare before usages to avoid TDZ issues)
   const handleAddReferenceFiles = useCallback((items: (File | string)[]) => {

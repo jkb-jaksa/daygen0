@@ -28,6 +28,7 @@ import {
   Info,
   Trash2,
   Upload,
+  Check,
 } from 'lucide-react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useCreateGenerationController } from './hooks/useCreateGenerationController';
@@ -254,14 +255,23 @@ const PromptForm = memo<PromptFormProps>(
     // Preview state for full-size avatar/product view
     const [previewImage, setPreviewImage] = useState<string | null>(null);
 
+    // Modal state for viewing all selected avatars/products
+    const [showAllAvatarsModal, setShowAllAvatarsModal] = useState(false);
+    const [showAllProductsModal, setShowAllProductsModal] = useState(false);
+
     const {
       storedAvatars,
       selectedAvatar,
+      selectedAvatars,
       selectedAvatarImageId,
       isAvatarPickerOpen,
       avatarButtonRef,
       avatarQuickUploadInputRef,
       handleAvatarSelect,
+      handleAvatarToggle,
+      isAvatarSelected,
+      clearAllAvatars,
+      removeSelectedAvatar,
       handleAvatarPickerClose,
       setIsAvatarPickerOpen,
       isAvatarCreationModalOpen,
@@ -282,16 +292,21 @@ const PromptForm = memo<PromptFormProps>(
       handleAvatarDelete,
       setCreationsModalAvatar,
       setAvatarToDelete,
-      setSelectedAvatar,
+      setSelectedAvatars,
       setSelectedAvatarImageId,
     } = avatarHandlers;
     const {
       storedProducts,
       selectedProduct,
+      selectedProducts,
       isProductPickerOpen,
       productButtonRef,
       productQuickUploadInputRef,
       handleProductSelect,
+      handleProductToggle,
+      isProductSelected,
+      clearAllProducts,
+      removeSelectedProduct,
       handleProductPickerClose,
       setIsProductPickerOpen,
       isProductCreationModalOpen,
@@ -312,6 +327,7 @@ const PromptForm = memo<PromptFormProps>(
       handleProductDelete,
       setCreationsModalProduct,
       setProductToDelete,
+      setSelectedProducts,
     } = productHandlers;
 
     const handleAvatarButtonClick = useCallback(() => {
@@ -1130,8 +1146,8 @@ const PromptForm = memo<PromptFormProps>(
 
     const totalReferenceCount =
       referencePreviews.length +
-      (selectedAvatar ? 1 : 0) +
-      (selectedProduct ? 1 : 0);
+      selectedAvatars.length +
+      selectedProducts.length;
 
     const remainingReferenceSlots = Math.max(0, maxReferences - totalReferenceCount);
 
@@ -1564,6 +1580,7 @@ const PromptForm = memo<PromptFormProps>(
 
             {/* Right section: Avatar + Product + Style + Generate */}
             <div className="flex flex-row gap-2 flex-shrink-0 items-end">
+              {/* Avatar section - supports multiple selections */}
               <div className="relative">
                 <button
                   type="button"
@@ -1575,7 +1592,7 @@ const PromptForm = memo<PromptFormProps>(
                   onDrop={handleAvatarButtonDrop}
                   onMouseEnter={() => setIsAvatarButtonHovered(true)}
                   onMouseLeave={() => setIsAvatarButtonHovered(false)}
-                  className={`${glass.promptBorderless} ${isDraggingOverAvatarButton || avatarSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-theme-dark/10 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${selectedAvatar ? 'hover:border-theme-mid' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                  className={`${glass.promptBorderless} ${isDraggingOverAvatarButton || avatarSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-theme-dark/10 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${selectedAvatars.length > 0 ? 'hover:border-theme-mid' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                   onPointerMove={onPointerMove}
                   onPointerEnter={onPointerEnter}
                   onPointerLeave={onPointerLeave}
@@ -1595,7 +1612,9 @@ const PromptForm = memo<PromptFormProps>(
                       </div>
                     </>
                   )}
-                  {!selectedAvatar && !avatarDragPreviewUrl && !avatarSelection && (
+
+                  {/* Empty state - no avatars selected */}
+                  {selectedAvatars.length === 0 && !avatarDragPreviewUrl && !avatarSelection && (
                     <>
                       <div className="flex-1 flex items-center justify-center lg:mt-3">
                         {isAvatarButtonHovered ? (
@@ -1611,40 +1630,125 @@ const PromptForm = memo<PromptFormProps>(
                       </div>
                     </>
                   )}
-                  {(selectedAvatar || avatarSelection) && !avatarDragPreviewUrl && (
+
+                  {/* Single avatar - original full-size display */}
+                  {selectedAvatars.length === 1 && !avatarDragPreviewUrl && !avatarSelection && (
                     <>
                       <img
-                        src={avatarSelection?.imageUrl ?? avatarHandlers.selectedAvatarImage?.url ?? selectedAvatar?.imageUrl}
-                        alt={avatarSelection ? 'Avatar' : (selectedAvatar?.name ?? 'Avatar')}
+                        src={avatarHandlers.selectedAvatarImage?.url ?? selectedAvatars[0]?.imageUrl}
+                        alt={selectedAvatars[0]?.name ?? 'Avatar'}
                         loading="lazy"
-                        className={`absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover ${avatarSelection ? 'opacity-80' : ''}`}
-                        title={avatarSelection ? 'Avatar' : (selectedAvatar?.name ?? 'Avatar')}
+                        className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover"
+                        title={selectedAvatars[0]?.name ?? 'Avatar'}
                       />
-                      <div className={`hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 ${avatarSelection ? 'z-20' : ''}`}>
+                      <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
+                        <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center truncate px-1">
+                          {selectedAvatars[0]?.name ?? 'Avatar'}
+                        </span>
+                      </div>
+                    </>
+                  )}
+
+                  {/* 2-4 avatars - grid layout inside container */}
+                  {selectedAvatars.length >= 2 && selectedAvatars.length <= 4 && !avatarDragPreviewUrl && !avatarSelection && (
+                    <>
+                      <div className={`absolute inset-1 lg:inset-1.5 grid gap-0.5 ${selectedAvatars.length === 2 ? 'grid-cols-2' : 'grid-cols-2 grid-rows-2'}`}>
+                        {selectedAvatars.slice(0, 4).map((avatar, index) => (
+                          <img
+                            key={avatar.id}
+                            src={avatar.images[0]?.url ?? avatar.imageUrl}
+                            alt={avatar.name}
+                            loading="lazy"
+                            className={`w-full h-full object-cover ${selectedAvatars.length === 2 ? 'rounded-full lg:rounded-lg' : 'rounded-sm lg:rounded-md'} ${selectedAvatars.length === 3 && index === 2 ? 'col-span-2 mx-auto max-w-[50%]' : ''}`}
+                            title={avatar.name}
+                          />
+                        ))}
+                      </div>
+                      <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-10">
+                        <span className="text-xs font-raleway text-n-text text-center">
+                          {selectedAvatars.length} Avatars
+                        </span>
+                      </div>
+                    </>
+                  )}
+
+                  {/* 5+ avatars - grid of 4 with "See all" badge */}
+                  {selectedAvatars.length > 4 && !avatarDragPreviewUrl && !avatarSelection && (
+                    <>
+                      <div className="absolute inset-1 lg:inset-1.5 grid grid-cols-2 grid-rows-2 gap-0.5">
+                        {selectedAvatars.slice(0, 4).map((avatar) => (
+                          <img
+                            key={avatar.id}
+                            src={avatar.images[0]?.url ?? avatar.imageUrl}
+                            alt={avatar.name}
+                            loading="lazy"
+                            className="w-full h-full object-cover rounded-sm lg:rounded-md"
+                            title={avatar.name}
+                          />
+                        ))}
+                      </div>
+                      {/* Badge with count - bottom center, doesn't block picker clicks */}
+                      <div
+                        className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-10 cursor-pointer hover:from-black/95"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowAllAvatarsModal(true);
+                        }}
+                      >
+                        <span className="text-xs font-raleway text-white/90 hover:text-white">
+                          +{selectedAvatars.length - 4} more
+                        </span>
+                      </div>
+                      {/* Mobile: small badge overlay */}
+                      <div
+                        className="lg:hidden absolute bottom-0.5 right-0.5 bg-theme-black/80 rounded-full px-1 py-0.5 z-10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowAllAvatarsModal(true);
+                        }}
+                      >
+                        <span className="text-[10px] font-raleway text-white">+{selectedAvatars.length - 4}</span>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Avatar selection preview (during creation) */}
+                  {avatarSelection && !avatarDragPreviewUrl && (
+                    <>
+                      <img
+                        src={avatarSelection.imageUrl}
+                        alt="Avatar"
+                        loading="lazy"
+                        className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover opacity-80"
+                        title="Avatar"
+                      />
+                      <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-20">
                         <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
-                          {avatarSelection ? 'Avatar' : (selectedAvatar?.name ?? 'Avatar')}
+                          Avatar
                         </span>
                       </div>
                     </>
                   )}
                 </button>
-                {(selectedAvatar) && (
+
+                {/* Clear all avatars button - show when 1+ selected */}
+                {selectedAvatars.length > 0 && (
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleAvatarSelect(null);
+                      clearAllAvatars();
                     }}
-                    className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
-                    title="Remove avatar"
-                    aria-label="Remove avatar"
+                    className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove z-20"
+                    title="Remove all avatars"
+                    aria-label="Remove all avatars"
                   >
                     <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
                   </button>
                 )}
-
               </div>
 
+              {/* Product section - supports multiple selections */}
               <div className="relative">
                 <button
                   type="button"
@@ -1656,7 +1760,7 @@ const PromptForm = memo<PromptFormProps>(
                   onDrop={handleProductButtonDrop}
                   onMouseEnter={() => setIsProductButtonHovered(true)}
                   onMouseLeave={() => setIsProductButtonHovered(false)}
-                  className={`${glass.promptBorderless} ${isDraggingOverProductButton || productSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-theme-dark/10 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${selectedProduct || productSelection ? 'hover:border-theme-mid' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                  className={`${glass.promptBorderless} ${isDraggingOverProductButton || productSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-theme-dark/10 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${selectedProducts.length > 0 ? 'hover:border-theme-mid' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                   onPointerMove={onPointerMove}
                   onPointerEnter={onPointerEnter}
                   onPointerLeave={onPointerLeave}
@@ -1676,7 +1780,9 @@ const PromptForm = memo<PromptFormProps>(
                       </div>
                     </>
                   )}
-                  {!selectedProduct && !productDragPreviewUrl && !productSelection && (
+
+                  {/* Empty state - no products selected */}
+                  {selectedProducts.length === 0 && !productDragPreviewUrl && !productSelection && (
                     <>
                       <div className="flex-1 flex items-center justify-center lg:mt-3">
                         {isProductButtonHovered ? (
@@ -1692,33 +1798,118 @@ const PromptForm = memo<PromptFormProps>(
                       </div>
                     </>
                   )}
-                  {(selectedProduct || productSelection) && !productDragPreviewUrl && (
+
+                  {/* Single product - original full-size display */}
+                  {selectedProducts.length === 1 && !productDragPreviewUrl && !productSelection && (
                     <>
                       <img
-                        src={productSelection?.imageUrl ?? selectedProduct?.imageUrl}
-                        alt={productSelection ? 'Product' : (selectedProduct?.name ?? 'Product')}
+                        src={selectedProducts[0]?.images[0]?.url ?? selectedProducts[0]?.imageUrl}
+                        alt={selectedProducts[0]?.name ?? 'Product'}
                         loading="lazy"
-                        className={`absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover ${productSelection ? 'opacity-80' : ''}`}
-                        title={productSelection ? 'Product' : (selectedProduct?.name ?? 'Product')}
+                        className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover"
+                        title={selectedProducts[0]?.name ?? 'Product'}
                       />
-                      <div className={`hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 ${productSelection ? 'z-20' : ''}`}>
+                      <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
+                        <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center truncate px-1">
+                          {selectedProducts[0]?.name ?? 'Product'}
+                        </span>
+                      </div>
+                    </>
+                  )}
+
+                  {/* 2-4 products - grid layout inside container */}
+                  {selectedProducts.length >= 2 && selectedProducts.length <= 4 && !productDragPreviewUrl && !productSelection && (
+                    <>
+                      <div className={`absolute inset-1 lg:inset-1.5 grid gap-0.5 ${selectedProducts.length === 2 ? 'grid-cols-2' : 'grid-cols-2 grid-rows-2'}`}>
+                        {selectedProducts.slice(0, 4).map((product, index) => (
+                          <img
+                            key={product.id}
+                            src={product.images[0]?.url ?? product.imageUrl}
+                            alt={product.name}
+                            loading="lazy"
+                            className={`w-full h-full object-cover ${selectedProducts.length === 2 ? 'rounded-full lg:rounded-lg' : 'rounded-sm lg:rounded-md'} ${selectedProducts.length === 3 && index === 2 ? 'col-span-2 mx-auto max-w-[50%]' : ''}`}
+                            title={product.name}
+                          />
+                        ))}
+                      </div>
+                      <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-10">
+                        <span className="text-xs font-raleway text-n-text text-center">
+                          {selectedProducts.length} Products
+                        </span>
+                      </div>
+                    </>
+                  )}
+
+                  {/* 5+ products - grid of 4 with "See all" badge */}
+                  {selectedProducts.length > 4 && !productDragPreviewUrl && !productSelection && (
+                    <>
+                      <div className="absolute inset-1 lg:inset-1.5 grid grid-cols-2 grid-rows-2 gap-0.5">
+                        {selectedProducts.slice(0, 4).map((product) => (
+                          <img
+                            key={product.id}
+                            src={product.images[0]?.url ?? product.imageUrl}
+                            alt={product.name}
+                            loading="lazy"
+                            className="w-full h-full object-cover rounded-sm lg:rounded-md"
+                            title={product.name}
+                          />
+                        ))}
+                      </div>
+                      {/* Badge with count - bottom center, doesn't block picker clicks */}
+                      <div
+                        className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-10 cursor-pointer hover:from-black/95"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowAllProductsModal(true);
+                        }}
+                      >
+                        <span className="text-xs font-raleway text-white/90 hover:text-white">
+                          +{selectedProducts.length - 4} more
+                        </span>
+                      </div>
+                      {/* Mobile: small badge overlay */}
+                      <div
+                        className="lg:hidden absolute bottom-0.5 right-0.5 bg-theme-black/80 rounded-full px-1 py-0.5 z-10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowAllProductsModal(true);
+                        }}
+                      >
+                        <span className="text-[10px] font-raleway text-white">+{selectedProducts.length - 4}</span>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Product selection preview (during creation) */}
+                  {productSelection && !productDragPreviewUrl && (
+                    <>
+                      <img
+                        src={productSelection.imageUrl}
+                        alt="Product"
+                        loading="lazy"
+                        className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover opacity-80"
+                        title="Product"
+                      />
+                      <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-20">
                         <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
-                          {productSelection ? 'Product' : (selectedProduct?.name ?? 'Product')}
+                          Product
                         </span>
                       </div>
                     </>
                   )}
                 </button>
-                {selectedProduct && (
+
+                {/* Clear all products button - show when 1+ selected */}
+                {selectedProducts.length > 0 && (
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleProductSelect(null);
+                      clearAllProducts();
                     }}
-                    className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
-                    title="Remove product"
-                    aria-label="Remove product"
+                    className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove z-20"
+                    title="Remove all products"
+                    aria-label="Remove all products"
                   >
                     <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
                   </button>
@@ -1882,7 +2073,7 @@ const PromptForm = memo<PromptFormProps>(
                 }}
                 className="text-base font-raleway text-theme-text"
               >
-                Your Avatars
+                Your Avatars {selectedAvatars.length > 0 && <span className="text-sm text-n-text ml-1">({selectedAvatars.length} selected)</span>}
               </button>
               <button
                 type="button"
@@ -1896,26 +2087,32 @@ const PromptForm = memo<PromptFormProps>(
                 <Plus className="h-4 w-4" />
               </button>
             </div>
+            {remainingReferenceSlots === 0 && selectedAvatars.length > 0 && (
+              <div className="text-xs text-amber-400 px-1">Max references reached. Remove some to add more.</div>
+            )}
             {storedAvatars.length > 0 ? (
               <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
                 {storedAvatars.map(avatar => {
-                  const isActive = selectedAvatar?.id === avatar.id;
+                  const isActive = isAvatarSelected(avatar.id);
+                  const canSelect = remainingReferenceSlots > 0 || isActive;
                   return (
                     <div
                       key={avatar.id}
-                      className="rounded-2xl border border-theme-mid px-3 py-2 transition-colors duration-200 group hover:border-theme-mid hover:bg-theme-text/10"
+                      className={`rounded-2xl border px-3 py-2 transition-colors duration-200 group ${isActive ? 'border-theme-text bg-theme-text/10' : 'border-theme-mid hover:border-theme-mid hover:bg-theme-text/10'} ${!canSelect && !isActive ? 'opacity-50' : ''}`}
                     >
                       <div className="flex items-center gap-3">
                         <button
                           type="button"
                           onClick={() => {
-                            handleAvatarSelect(avatar);
-                            setIsAvatarPickerOpen(false);
+                            if (canSelect) {
+                              handleAvatarToggle(avatar);
+                            }
                           }}
+                          disabled={!canSelect}
                           className={`flex flex-1 items-center gap-3 ${isActive
                             ? 'text-theme-text'
                             : 'text-white'
-                            }`}
+                            } ${!canSelect ? 'cursor-not-allowed' : ''}`}
                         >
 
                           <div
@@ -1931,7 +2128,7 @@ const PromptForm = memo<PromptFormProps>(
                               src={avatar.imageUrl}
                               alt={avatar.name}
                               loading="lazy"
-                              className="h-full w-full rounded-lg object-cover"
+                              className={`h-full w-full rounded-lg object-cover ${isActive ? 'ring-2 ring-theme-text' : ''}`}
                             />
                           </div>
                           <div className="min-w-0 flex-1 text-left">
@@ -1974,7 +2171,7 @@ const PromptForm = memo<PromptFormProps>(
                           >
                             <Trash2 className="h-3 w-3 text-theme-white hover:text-theme-text" />
                           </button>
-                          {isActive && <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>}
+                          {isActive && <div className="w-2 h-2 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>}
                         </div>
                       </div>
                     </div>
@@ -2095,7 +2292,7 @@ const PromptForm = memo<PromptFormProps>(
                 }}
                 className="text-base font-raleway text-theme-text"
               >
-                Your Products
+                Your Products {selectedProducts.length > 0 && <span className="text-sm text-n-text ml-1">({selectedProducts.length} selected)</span>}
               </button>
               <button
                 type="button"
@@ -2109,26 +2306,32 @@ const PromptForm = memo<PromptFormProps>(
                 <Plus className="h-4 w-4" />
               </button>
             </div>
+            {remainingReferenceSlots === 0 && selectedProducts.length > 0 && (
+              <div className="text-xs text-amber-400 px-1">Max references reached. Remove some to add more.</div>
+            )}
             {storedProducts.length > 0 ? (
               <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
                 {storedProducts.map(product => {
-                  const isActive = selectedProduct?.id === product.id;
+                  const isActive = isProductSelected(product.id);
+                  const canSelect = remainingReferenceSlots > 0 || isActive;
                   return (
                     <div
                       key={product.id}
-                      className="rounded-2xl border border-theme-mid px-3 py-2 transition-colors duration-200 group hover:border-theme-mid hover:bg-theme-text/10"
+                      className={`rounded-2xl border px-3 py-2 transition-colors duration-200 group ${isActive ? 'border-theme-text bg-theme-text/10' : 'border-theme-mid hover:border-theme-mid hover:bg-theme-text/10'} ${!canSelect && !isActive ? 'opacity-50' : ''}`}
                     >
                       <div className="flex items-center gap-3">
                         <button
                           type="button"
                           onClick={() => {
-                            handleProductSelect(product);
-                            setIsProductPickerOpen(false);
+                            if (canSelect) {
+                              handleProductToggle(product);
+                            }
                           }}
+                          disabled={!canSelect}
                           className={`flex flex-1 items-center gap-3 ${isActive
                             ? 'text-theme-text'
                             : 'text-white'
-                            }`}
+                            } ${!canSelect ? 'cursor-not-allowed' : ''}`}
                         >
                           <div
                             onClick={(e) => {
@@ -2143,7 +2346,7 @@ const PromptForm = memo<PromptFormProps>(
                               src={product.imageUrl}
                               alt={product.name}
                               loading="lazy"
-                              className="h-full w-full rounded-lg object-cover"
+                              className={`h-full w-full rounded-lg object-cover ${isActive ? 'ring-2 ring-theme-text' : ''}`}
                             />
                           </div>
                           <div className="min-w-0 flex-1 text-left">
@@ -2186,7 +2389,7 @@ const PromptForm = memo<PromptFormProps>(
                           >
                             <Trash2 className="h-3 w-3 text-theme-white hover:text-theme-text" />
                           </button>
-                          {isActive && <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>}
+                          {isActive && <div className="w-2 h-2 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>}
                         </div>
                       </div>
                     </div>
@@ -2509,7 +2712,9 @@ const PromptForm = memo<PromptFormProps>(
                                   : 'border-theme-mid hover:border-theme-text hover:text-theme-text'
                                   }`}
                                 onClick={() => {
-                                  setSelectedAvatar(creationsModalAvatar);
+                                  if (creationsModalAvatar) {
+                                    handleAvatarToggle(creationsModalAvatar);
+                                  }
                                   setSelectedAvatarImageId(image.id);
                                   setCreationsModalAvatar(null);
                                 }}
@@ -2762,6 +2967,220 @@ const PromptForm = memo<PromptFormProps>(
             document.body
           )
         }
+        {/* Modal for viewing all selected avatars */}
+        {showAllAvatarsModal && (
+          <div
+            className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/80"
+            onClick={() => setShowAllAvatarsModal(false)}
+          >
+            <div
+              className={`${glass.promptDark} rounded-2xl w-full max-w-md mx-4 py-6 px-6 transition-colors duration-200`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-raleway font-normal text-theme-text">
+                  Avatars ({selectedAvatars.length} selected)
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowAllAvatarsModal(false)}
+                  className="inline-flex size-10 items-center justify-center rounded-full border border-theme-dark bg-theme-black text-theme-white transition-colors duration-200 hover:border-theme-mid hover:text-theme-text"
+                  aria-label="Close"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              {/* Slots info */}
+              {remainingReferenceSlots === 0 && (
+                <div className="text-xs text-amber-400 mb-3 px-1">Max references reached. Remove some to add more.</div>
+              )}
+              
+              {/* All avatars list with selection */}
+              <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+                {storedAvatars.map((avatar) => {
+                  const isSelected = isAvatarSelected(avatar.id);
+                  const canSelect = remainingReferenceSlots > 0 || isSelected;
+                  return (
+                    <div
+                      key={avatar.id}
+                      onClick={() => {
+                        if (canSelect) {
+                          handleAvatarToggle(avatar);
+                        }
+                      }}
+                      className={`flex items-center gap-3 p-2 rounded-xl border transition-colors cursor-pointer ${
+                        isSelected 
+                          ? 'border-theme-text bg-theme-text/10' 
+                          : 'border-theme-dark bg-theme-black/30 hover:bg-theme-black/50'
+                      } ${!canSelect && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      {/* Checkbox */}
+                      <div className={`flex-shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors ${
+                        isSelected 
+                          ? 'bg-theme-text border-theme-text' 
+                          : 'border-theme-mid bg-transparent'
+                      }`}>
+                        {isSelected && <Check className="w-3 h-3 text-theme-black" />}
+                      </div>
+                      <img
+                        src={avatar.images[0]?.url ?? avatar.imageUrl}
+                        alt={avatar.name}
+                        className="w-10 h-10 rounded-lg object-cover"
+                      />
+                      <span className={`flex-1 text-sm font-raleway font-normal truncate ${
+                        isSelected ? 'text-theme-text' : 'text-theme-white'
+                      }`}>
+                        {avatar.name}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              
+              {/* Footer buttons */}
+              <div className="flex justify-between items-center gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAllAvatarsModal(false);
+                    setIsAvatarPickerOpen(true);
+                  }}
+                  className={buttons.ghost}
+                >
+                  <Plus className="w-4 h-4" />
+                  Add New
+                </button>
+                <div className="flex gap-3">
+                  {selectedAvatars.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={clearAllAvatars}
+                      className="text-sm font-raleway text-theme-white/60 hover:text-theme-white transition-colors"
+                    >
+                      Clear All
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowAllAvatarsModal(false)}
+                    className={buttons.primary}
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal for viewing all selected products */}
+        {showAllProductsModal && (
+          <div
+            className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/80"
+            onClick={() => setShowAllProductsModal(false)}
+          >
+            <div
+              className={`${glass.promptDark} rounded-2xl w-full max-w-md mx-4 py-6 px-6 transition-colors duration-200`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-raleway font-normal text-theme-text">
+                  Products ({selectedProducts.length} selected)
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowAllProductsModal(false)}
+                  className="inline-flex size-10 items-center justify-center rounded-full border border-theme-dark bg-theme-black text-theme-white transition-colors duration-200 hover:border-theme-mid hover:text-theme-text"
+                  aria-label="Close"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              {/* Slots info */}
+              {remainingReferenceSlots === 0 && (
+                <div className="text-xs text-amber-400 mb-3 px-1">Max references reached. Remove some to add more.</div>
+              )}
+              
+              {/* All products list with selection */}
+              <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+                {storedProducts.map((product) => {
+                  const isSelected = isProductSelected(product.id);
+                  const canSelect = remainingReferenceSlots > 0 || isSelected;
+                  return (
+                    <div
+                      key={product.id}
+                      onClick={() => {
+                        if (canSelect) {
+                          handleProductToggle(product);
+                        }
+                      }}
+                      className={`flex items-center gap-3 p-2 rounded-xl border transition-colors cursor-pointer ${
+                        isSelected 
+                          ? 'border-theme-text bg-theme-text/10' 
+                          : 'border-theme-dark bg-theme-black/30 hover:bg-theme-black/50'
+                      } ${!canSelect && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      {/* Checkbox */}
+                      <div className={`flex-shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors ${
+                        isSelected 
+                          ? 'bg-theme-text border-theme-text' 
+                          : 'border-theme-mid bg-transparent'
+                      }`}>
+                        {isSelected && <Check className="w-3 h-3 text-theme-black" />}
+                      </div>
+                      <img
+                        src={product.images[0]?.url ?? product.imageUrl}
+                        alt={product.name}
+                        className="w-10 h-10 rounded-lg object-cover"
+                      />
+                      <span className={`flex-1 text-sm font-raleway font-normal truncate ${
+                        isSelected ? 'text-theme-text' : 'text-theme-white'
+                      }`}>
+                        {product.name}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              
+              {/* Footer buttons */}
+              <div className="flex justify-between items-center gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAllProductsModal(false);
+                    setIsProductPickerOpen(true);
+                  }}
+                  className={buttons.ghost}
+                >
+                  <Plus className="w-4 h-4" />
+                  Add New
+                </button>
+                <div className="flex gap-3">
+                  {selectedProducts.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={clearAllProducts}
+                      className="text-sm font-raleway text-theme-white/60 hover:text-theme-white transition-colors"
+                    >
+                      Clear All
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowAllProductsModal(false)}
+                    className={buttons.primary}
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <ReferencePreviewModal
           open={referencePreviewUrl !== null}
           imageUrl={referencePreviewUrl}
