@@ -329,11 +329,19 @@ export function useProductHandlers() {
 
   // Handle product save
   const handleProductSave = useCallback(
-    async (name: string, selection: ProductSelection) => {
-      if (!user?.id) return;
+    async (name: string, selection: ProductSelection): Promise<{ success: boolean; error?: string }> => {
+      if (!user?.id) return { success: false, error: 'You must be logged in to create a product.' };
 
       const trimmed = name.trim();
-      if (!trimmed || !selection?.imageUrl) return;
+      if (!trimmed || !selection?.imageUrl) return { success: false, error: 'Name and image are required.' };
+
+      // Check for duplicate name (case-insensitive)
+      const duplicateProduct = storedProducts.find(
+        (p) => p.name.toLowerCase() === trimmed.toLowerCase()
+      );
+      if (duplicateProduct) {
+        return { success: false, error: 'A product with this name already exists.' };
+      }
 
       try {
         const product = createProductRecord({
@@ -348,8 +356,10 @@ export function useProductHandlers() {
         setSelectedProduct(product);
         handleProductCreationModalClose();
         debugLog('[useProductHandlers] Created new product:', trimmed);
+        return { success: true };
       } catch (error) {
         debugError('[useProductHandlers] Error creating product:', error);
+        return { success: false, error: 'Failed to create product. Please try again.' };
       }
     },
     [user?.id, storedProducts, saveProduct, handleProductCreationModalClose],

@@ -3027,7 +3027,12 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                 disableSave={!avatarHandlers.avatarSelection || !avatarHandlers.avatarName.trim()}
                                 onClose={avatarHandlers.handleAvatarCreationModalClose}
                                 onAvatarNameChange={avatarHandlers.setAvatarName}
-                                onSave={() => avatarHandlers.handleAvatarSave(avatarHandlers.avatarName, avatarHandlers.avatarSelection!)}
+                                onSave={async () => {
+                                    const result = await avatarHandlers.handleAvatarSave(avatarHandlers.avatarName, avatarHandlers.avatarSelection!);
+                                    if (result && !result.success && result.error) {
+                                        avatarHandlers.setAvatarUploadError(result.error);
+                                    }
+                                }}
                                 onClearSelection={() => avatarHandlers.setAvatarSelection(null)}
                                 onProcessFile={avatarHandlers.processAvatarImageFile}
                                 onDragStateChange={avatarHandlers.setIsDraggingAvatar}
@@ -3049,7 +3054,12 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                 disableSave={!productHandlers.productSelection || !productHandlers.productName.trim()}
                                 onClose={productHandlers.handleProductCreationModalClose}
                                 onProductNameChange={productHandlers.setProductName}
-                                onSave={() => productHandlers.handleProductSave(productHandlers.productName, productHandlers.productSelection!)}
+                                onSave={async () => {
+                                    const result = await productHandlers.handleProductSave(productHandlers.productName, productHandlers.productSelection!);
+                                    if (result && !result.success && result.error) {
+                                        productHandlers.setProductUploadError(result.error);
+                                    }
+                                }}
                                 onClearSelection={() => productHandlers.setProductSelection(null)}
                                 onProcessFile={productHandlers.processProductImageFile}
                                 onDragStateChange={productHandlers.setIsDraggingProduct}

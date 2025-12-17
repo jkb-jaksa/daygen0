@@ -250,6 +250,10 @@ const PromptForm = memo<PromptFormProps>(
     const [isDraggingOverProductButton, setIsDraggingOverProductButton] = useState(false);
     const [avatarDragPreviewUrl, setAvatarDragPreviewUrl] = useState<string | null>(null);
     const [productDragPreviewUrl, setProductDragPreviewUrl] = useState<string | null>(null);
+
+    // Preview state for full-size avatar/product view
+    const [previewImage, setPreviewImage] = useState<string | null>(null);
+
     const {
       storedAvatars,
       selectedAvatar,
@@ -409,7 +413,10 @@ const PromptForm = memo<PromptFormProps>(
       }
       // Blur textarea before save to prevent browser focus restoration when modal closes
       textareaRef.current?.blur();
-      await persistAvatar(avatarName.trim(), avatarSelection);
+      const result = await persistAvatar(avatarName.trim(), avatarSelection);
+      if (result && !result.success && result.error) {
+        setAvatarUploadError(result.error);
+      }
     }, [avatarSelection, avatarName, persistAvatar, setAvatarUploadError]);
 
     const handleSaveNewProduct = useCallback(async () => {
@@ -419,7 +426,10 @@ const PromptForm = memo<PromptFormProps>(
       }
       // Blur textarea before save to prevent browser focus restoration when modal closes
       textareaRef.current?.blur();
-      await persistProduct(productName.trim(), productSelection);
+      const result = await persistProduct(productName.trim(), productSelection);
+      if (result && !result.success && result.error) {
+        setProductUploadError(result.error);
+      }
     }, [productSelection, productName, persistProduct, setProductUploadError]);
 
     const openImageByUrl = useCallback((imageUrl: string) => {
@@ -1907,12 +1917,23 @@ const PromptForm = memo<PromptFormProps>(
                             : 'text-white'
                             }`}
                         >
-                          <img
-                            src={avatar.imageUrl}
-                            alt={avatar.name}
-                            loading="lazy"
-                            className="h-10 w-10 rounded-lg object-cover"
-                          />
+
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewImage(avatar.imageUrl);
+                            }}
+                            className="h-10 w-10 flex-shrink-0 cursor-pointer transition-transform hover:scale-105"
+                            role="button"
+                            aria-label="View full size"
+                          >
+                            <img
+                              src={avatar.imageUrl}
+                              alt={avatar.name}
+                              loading="lazy"
+                              className="h-full w-full rounded-lg object-cover"
+                            />
+                          </div>
                           <div className="min-w-0 flex-1 text-left">
                             <p className="truncate text-sm font-raleway text-theme-white group-hover:text-n-text">
                               {avatar.name}
@@ -2109,12 +2130,22 @@ const PromptForm = memo<PromptFormProps>(
                             : 'text-white'
                             }`}
                         >
-                          <img
-                            src={product.imageUrl}
-                            alt={product.name}
-                            loading="lazy"
-                            className="h-10 w-10 rounded-lg object-cover"
-                          />
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewImage(product.imageUrl);
+                            }}
+                            className="h-10 w-10 flex-shrink-0 cursor-pointer transition-transform hover:scale-105"
+                            role="button"
+                            aria-label="View full size"
+                          >
+                            <img
+                              src={product.imageUrl}
+                              alt={product.name}
+                              loading="lazy"
+                              className="h-full w-full rounded-lg object-cover"
+                            />
+                          </div>
                           <div className="min-w-0 flex-1 text-left">
                             <p className="truncate text-sm font-raleway text-theme-white group-hover:text-n-text">
                               {product.name}
@@ -2369,234 +2400,263 @@ const PromptForm = memo<PromptFormProps>(
           </div>
         )}
 
-        {creationsModalAvatar && (
+        {previewImage && (
           <div
-            className="fixed inset-0 z-[10500] flex items-center justify-center bg-theme-black/80 px-4 py-10"
-            onClick={() => setCreationsModalAvatar(null)}
+            className="fixed inset-0 z-[20000] flex items-center justify-center bg-black/95 cursor-zoom-out animate-in fade-in duration-200"
+            onClick={() => setPreviewImage(null)}
           >
-            <div
-              className={`relative w-full max-w-5xl overflow-hidden rounded-[32px] shadow-2xl ${glass.promptDark}`}
-              onClick={(event) => event.stopPropagation()}
+            {/* Close button fixed to screen corner for safety */}
+            <button
+              onClick={() => setPreviewImage(null)}
+              className="fixed top-6 right-6 p-2 text-white/70 hover:text-white transition-colors z-[20010]"
             >
-              <button
-                type="button"
-                className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text z-10"
-                onClick={() => setCreationsModalAvatar(null)}
-                aria-label="Close Avatar details"
+              <X className="w-8 h-8" />
+              <span className="sr-only">Close</span>
+            </button>
+
+            <div className="relative max-w-[90vw] max-h-[90vh] flex flex-col items-center justify-center p-4">
+              <img
+                src={previewImage}
+                alt="Preview"
+                className="max-w-full max-h-[85vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          </div>
+        )}
+
+        {
+          creationsModalAvatar && (
+            <div
+              className="fixed inset-0 z-[10500] flex items-center justify-center bg-theme-black/80 px-4 py-10"
+              onClick={() => setCreationsModalAvatar(null)}
+            >
+              <div
+                className={`relative w-full max-w-5xl overflow-hidden rounded-[32px] shadow-2xl ${glass.promptDark}`}
+                onClick={(event) => event.stopPropagation()}
               >
-                <X className="h-5 w-5" />
-              </button>
+                <button
+                  type="button"
+                  className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text z-10"
+                  onClick={() => setCreationsModalAvatar(null)}
+                  aria-label="Close Avatar details"
+                >
+                  <X className="h-5 w-5" />
+                </button>
 
-              <div className="flex flex-col gap-6 p-6 lg:p-8 max-h-[80vh] overflow-y-auto">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="space-y-1">
-                    <h2 className="text-2xl font-raleway text-theme-text">
-                      Avatar: {creationsModalAvatar.name}
-                    </h2>
-                    <p className="text-sm font-raleway text-theme-white">
-                      Choose which avatar image you want to send with your next prompt.
-                    </p>
+                <div className="flex flex-col gap-6 p-6 lg:p-8 max-h-[80vh] overflow-y-auto">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="space-y-1">
+                      <h2 className="text-2xl font-raleway text-theme-text">
+                        Avatar: {creationsModalAvatar.name}
+                      </h2>
+                      <p className="text-sm font-raleway text-theme-white">
+                        Choose which avatar image you want to send with your next prompt.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        className={buttons.ghost}
+                        onClick={() => {
+                          navigate(`/app/avatars/${creationsModalAvatar.slug}`);
+                          setCreationsModalAvatar(null);
+                        }}
+                      >
+                        Manage avatar
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      className={buttons.ghost}
-                      onClick={() => {
-                        navigate(`/app/avatars/${creationsModalAvatar.slug}`);
-                        setCreationsModalAvatar(null);
-                      }}
-                    >
-                      Manage avatar
-                    </button>
-                  </div>
-                </div>
 
-                <div className="space-y-3">
-                  <h3 className="text-lg font-raleway text-theme-text">Avatar images</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {creationsModalAvatar.images.map((image, index) => {
-                      const isSelectedForPrompt =
-                        selectedAvatar?.id === creationsModalAvatar.id
-                          ? (selectedAvatarImageId ?? creationsModalAvatar.primaryImageId) === image.id
-                          : false;
-                      const isPrimary = creationsModalAvatar.primaryImageId === image.id;
-                      return (
-                        <div key={image.id} className="flex flex-col items-center gap-2">
-                          <div
-                            className={`relative aspect-square w-32 overflow-hidden rounded-2xl border ${isSelectedForPrompt ? 'border-theme-text ring-2 ring-theme-text/50' : 'border-theme-dark'
-                              } bg-theme-black/60`}
-                          >
-                            <img
-                              src={image.url}
-                              alt={`${creationsModalAvatar.name} variation ${index + 1}`}
-                              className="h-full w-full object-cover"
-                            />
-                            <div className="absolute left-2 top-2 flex flex-col gap-1">
-                              {isPrimary && (
-                                <span className={`${glass.promptDark} rounded-full px-2 py-0.5 text-[10px] font-raleway text-theme-text`}>
-                                  Primary
-                                </span>
-                              )}
-                              {isSelectedForPrompt && (
-                                <span className={`${glass.promptDark} rounded-full px-2 py-0.5 text-[10px] font-raleway text-theme-text`}>
-                                  In use
-                                </span>
-                              )}
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-raleway text-theme-text">Avatar images</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {creationsModalAvatar.images.map((image, index) => {
+                        const isSelectedForPrompt =
+                          selectedAvatar?.id === creationsModalAvatar.id
+                            ? (selectedAvatarImageId ?? creationsModalAvatar.primaryImageId) === image.id
+                            : false;
+                        const isPrimary = creationsModalAvatar.primaryImageId === image.id;
+                        return (
+                          <div key={image.id} className="flex flex-col items-center gap-2">
+                            <div
+                              className={`relative aspect-square w-32 overflow-hidden rounded-2xl border ${isSelectedForPrompt ? 'border-theme-text ring-2 ring-theme-text/50' : 'border-theme-dark'
+                                } bg-theme-black/60`}
+                            >
+                              <img
+                                src={image.url}
+                                alt={`${creationsModalAvatar.name} variation ${index + 1}`}
+                                className="h-full w-full object-cover"
+                              />
+                              <div className="absolute left-2 top-2 flex flex-col gap-1">
+                                {isPrimary && (
+                                  <span className={`${glass.promptDark} rounded-full px-2 py-0.5 text-[10px] font-raleway text-theme-text`}>
+                                    Primary
+                                  </span>
+                                )}
+                                {isSelectedForPrompt && (
+                                  <span className={`${glass.promptDark} rounded-full px-2 py-0.5 text-[10px] font-raleway text-theme-text`}>
+                                    In use
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-raleway text-theme-white/80">
+                              <button
+                                type="button"
+                                className={`rounded-full border px-3 py-1 transition-colors duration-200 ${isSelectedForPrompt
+                                  ? 'border-theme-text text-theme-text'
+                                  : 'border-theme-mid hover:border-theme-text hover:text-theme-text'
+                                  }`}
+                                onClick={() => {
+                                  setSelectedAvatar(creationsModalAvatar);
+                                  setSelectedAvatarImageId(image.id);
+                                  setCreationsModalAvatar(null);
+                                }}
+                              >
+                                {isSelectedForPrompt ? 'Using for prompts' : 'Use for prompts'}
+                              </button>
+                              <a
+                                href={image.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="rounded-full border border-theme-mid px-3 py-1 transition-colors duration-200 hover:border-theme-text hover:text-theme-text"
+                              >
+                                Open
+                              </a>
                             </div>
                           </div>
-                          <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-raleway text-theme-white/80">
-                            <button
-                              type="button"
-                              className={`rounded-full border px-3 py-1 transition-colors duration-200 ${isSelectedForPrompt
-                                ? 'border-theme-text text-theme-text'
-                                : 'border-theme-mid hover:border-theme-text hover:text-theme-text'
-                                }`}
-                              onClick={() => {
-                                setSelectedAvatar(creationsModalAvatar);
-                                setSelectedAvatarImageId(image.id);
-                                setCreationsModalAvatar(null);
-                              }}
-                            >
-                              {isSelectedForPrompt ? 'Using for prompts' : 'Use for prompts'}
-                            </button>
-                            <a
-                              href={image.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="rounded-full border border-theme-mid px-3 py-1 transition-colors duration-200 hover:border-theme-text hover:text-theme-text"
-                            >
-                              Open
-                            </a>
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
+                    <p className="text-xs font-raleway text-theme-white/60">
+                      You can add or edit avatar images from the manage avatar page.
+                    </p>
                   </div>
-                  <p className="text-xs font-raleway text-theme-white/60">
-                    You can add or edit avatar images from the manage avatar page.
-                  </p>
-                </div>
 
-                <div className="space-y-3">
-                  <h3 className="text-lg font-raleway text-theme-text">
-                    Creations with {creationsModalAvatar.name}
-                  </h3>
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-raleway text-theme-text">
+                      Creations with {creationsModalAvatar.name}
+                    </h3>
+                    <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-4">
+                      {galleryImages
+                        .filter((img: GalleryImageLike) => img.avatarId === creationsModalAvatar.id)
+                        .map((image: GalleryImageLike) => (
+                          <div key={image.url} className="relative aspect-square rounded-2xl overflow-hidden border border-theme-dark bg-theme-black group">
+                            <img
+                              src={image.url}
+                              alt={image.prompt || 'Generated image'}
+                              loading="lazy"
+                              className="h-full w-full object-cover cursor-pointer"
+                              onClick={() => {
+                                openImageByUrl(image.url);
+                              }}
+                            />
+                            {image.avatarImageId && (
+                              <span className={`${glass.promptDark} absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-raleway text-theme-text`}>
+                                Variation {Math.max(1, creationsModalAvatar.images.findIndex(img => img.id === image.avatarImageId) + 1)}
+                              </span>
+                            )}
+                            <div className="absolute inset-0 gallery-hover-gradient opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                              <div className="absolute bottom-0 left-0 right-0 p-2">
+                                <p className="text-xs font-raleway text-theme-white line-clamp-2">{image.prompt}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                    {galleryImages.filter((img: GalleryImageLike) => img.avatarId === creationsModalAvatar.id).length === 0 && (
+                      <div className="rounded-[24px] border border-theme-dark bg-theme-black/70 p-4 text-center">
+                        <p className="text-sm font-raleway text-theme-light">
+                          Generate a new image with this avatar to see it appear here.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        }
+
+        {
+          creationsModalProduct && (
+            <div
+              className="fixed inset-0 z-[10500] flex items-center justify-center bg-theme-black/80 px-4 py-10"
+              onClick={() => setCreationsModalProduct(null)}
+            >
+              <div
+                className={`relative w-full max-w-5xl overflow-hidden rounded-[32px] shadow-2xl ${glass.promptDark}`}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text z-10"
+                  onClick={() => setCreationsModalProduct(null)}
+                  aria-label="Close Product creations"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+
+                <div className="flex flex-col gap-6 p-6 lg:p-8 max-h-[80vh] overflow-y-auto">
+                  <div className="flex flex-col gap-2">
+                    <h2 className="text-2xl font-raleway text-theme-text">
+                      Creations with {creationsModalProduct.name}
+                    </h2>
+                    <p className="text-sm font-raleway text-theme-white">
+                      Manage creations featuring this product.
+                    </p>
+                  </div>
+
+                  <div className="flex justify-start">
+                    <div className="w-1/3 sm:w-1/5 lg:w-1/6">
+                      <div className="relative aspect-square rounded-2xl overflow-hidden border border-theme-dark">
+                        <img
+                          src={creationsModalProduct.imageUrl}
+                          alt={creationsModalProduct.name}
+                          loading="lazy"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <p className="mt-2 text-sm font-raleway text-theme-white text-center truncate">{creationsModalProduct.name}</p>
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-4">
                     {galleryImages
-                      .filter((img: GalleryImageLike) => img.avatarId === creationsModalAvatar.id)
-                      .map((image: GalleryImageLike) => (
-                        <div key={image.url} className="relative aspect-square rounded-2xl overflow-hidden border border-theme-dark bg-theme-black group">
+                      .filter((img: GalleryImageLike) => img.productId === creationsModalProduct.id)
+                      .map((img: GalleryImageLike, idx: number) => (
+                        <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border border-theme-dark bg-theme-black group">
                           <img
-                            src={image.url}
-                            alt={image.prompt || 'Generated image'}
+                            src={img.url}
+                            alt={img.prompt || 'Generated image'}
                             loading="lazy"
-                            className="h-full w-full object-cover cursor-pointer"
+                            className="w-full h-full object-cover cursor-pointer"
                             onClick={() => {
-                              openImageByUrl(image.url);
+                              openImageByUrl(img.url);
                             }}
                           />
-                          {image.avatarImageId && (
-                            <span className={`${glass.promptDark} absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-raleway text-theme-text`}>
-                              Variation {Math.max(1, creationsModalAvatar.images.findIndex(img => img.id === image.avatarImageId) + 1)}
-                            </span>
-                          )}
                           <div className="absolute inset-0 gallery-hover-gradient opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                             <div className="absolute bottom-0 left-0 right-0 p-2">
-                              <p className="text-xs font-raleway text-theme-white line-clamp-2">{image.prompt}</p>
+                              <p className="text-xs font-raleway text-theme-white line-clamp-2">{img.prompt}</p>
                             </div>
                           </div>
                         </div>
                       ))}
                   </div>
-                  {galleryImages.filter((img: GalleryImageLike) => img.avatarId === creationsModalAvatar.id).length === 0 && (
+
+                  {galleryImages.filter((img: GalleryImageLike) => img.productId === creationsModalProduct.id).length === 0 && (
                     <div className="rounded-[24px] border border-theme-dark bg-theme-black/70 p-4 text-center">
                       <p className="text-sm font-raleway text-theme-light">
-                        Generate a new image with this avatar to see it appear here.
+                        Generate a new image with this product to see it appear here.
                       </p>
                     </div>
                   )}
                 </div>
               </div>
             </div>
-          </div>
-        )}
-
-        {creationsModalProduct && (
-          <div
-            className="fixed inset-0 z-[10500] flex items-center justify-center bg-theme-black/80 px-4 py-10"
-            onClick={() => setCreationsModalProduct(null)}
-          >
-            <div
-              className={`relative w-full max-w-5xl overflow-hidden rounded-[32px] shadow-2xl ${glass.promptDark}`}
-              onClick={(event) => event.stopPropagation()}
-            >
-              <button
-                type="button"
-                className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text z-10"
-                onClick={() => setCreationsModalProduct(null)}
-                aria-label="Close Product creations"
-              >
-                <X className="h-5 w-5" />
-              </button>
-
-              <div className="flex flex-col gap-6 p-6 lg:p-8 max-h-[80vh] overflow-y-auto">
-                <div className="flex flex-col gap-2">
-                  <h2 className="text-2xl font-raleway text-theme-text">
-                    Creations with {creationsModalProduct.name}
-                  </h2>
-                  <p className="text-sm font-raleway text-theme-white">
-                    Manage creations featuring this product.
-                  </p>
-                </div>
-
-                <div className="flex justify-start">
-                  <div className="w-1/3 sm:w-1/5 lg:w-1/6">
-                    <div className="relative aspect-square rounded-2xl overflow-hidden border border-theme-dark">
-                      <img
-                        src={creationsModalProduct.imageUrl}
-                        alt={creationsModalProduct.name}
-                        loading="lazy"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <p className="mt-2 text-sm font-raleway text-theme-white text-center truncate">{creationsModalProduct.name}</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-4">
-                  {galleryImages
-                    .filter((img: GalleryImageLike) => img.productId === creationsModalProduct.id)
-                    .map((img: GalleryImageLike, idx: number) => (
-                      <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border border-theme-dark bg-theme-black group">
-                        <img
-                          src={img.url}
-                          alt={img.prompt || 'Generated image'}
-                          loading="lazy"
-                          className="w-full h-full object-cover cursor-pointer"
-                          onClick={() => {
-                            openImageByUrl(img.url);
-                          }}
-                        />
-                        <div className="absolute inset-0 gallery-hover-gradient opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                          <div className="absolute bottom-0 left-0 right-0 p-2">
-                            <p className="text-xs font-raleway text-theme-white line-clamp-2">{img.prompt}</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-
-                {galleryImages.filter((img: GalleryImageLike) => img.productId === creationsModalProduct.id).length === 0 && (
-                  <div className="rounded-[24px] border border-theme-dark bg-theme-black/70 p-4 text-center">
-                    <p className="text-sm font-raleway text-theme-light">
-                      Generate a new image with this product to see it appear here.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+          )
+        }
 
         <Suspense fallback={null}>
           <PromptsDropdown
@@ -2651,49 +2711,57 @@ const PromptForm = memo<PromptFormProps>(
 
         {error && <div className="text-sm text-theme-accent">{error}</div>}
 
-        {isSettingsOpen && (
-          <Suspense fallback={null}>
-            <SettingsMenu
-              anchorRef={settingsButtonRef}
-              open={isSettingsOpen}
-              onClose={handleSettingsClose}
-              {...settingsSections}
-            />
-          </Suspense>
-        )}
+        {
+          isSettingsOpen && (
+            <Suspense fallback={null}>
+              <SettingsMenu
+                anchorRef={settingsButtonRef}
+                open={isSettingsOpen}
+                onClose={handleSettingsClose}
+                {...settingsSections}
+              />
+            </Suspense>
+          )
+        }
 
-        {styleHandlers.isStyleModalOpen && (
-          <Suspense fallback={null}>
-            <StyleSelectionModal
-              open={styleHandlers.isStyleModalOpen}
-              onClose={styleHandlers.handleStyleModalClose}
-              styleHandlers={styleHandlers}
-              onApplySelectedStyles={handlePresetStylesApply}
-            />
-          </Suspense>
-        )}
-        {presetGenerationFlow.isOpen && (
-          <Suspense fallback={null}>
-            <PresetGenerationModal flow={presetGenerationFlow} />
-          </Suspense>
-        )}
+        {
+          styleHandlers.isStyleModalOpen && (
+            <Suspense fallback={null}>
+              <StyleSelectionModal
+                open={styleHandlers.isStyleModalOpen}
+                onClose={styleHandlers.handleStyleModalClose}
+                styleHandlers={styleHandlers}
+                onApplySelectedStyles={handlePresetStylesApply}
+              />
+            </Suspense>
+          )
+        }
+        {
+          presetGenerationFlow.isOpen && (
+            <Suspense fallback={null}>
+              <PresetGenerationModal flow={presetGenerationFlow} />
+            </Suspense>
+          )
+        }
 
         {/* Tooltip Portal - renders outside overflow:hidden containers */}
-        {activeTooltip && createPortal(
-          <div
-            className={`${tooltips.base} opacity-100`}
-            style={{
-              position: 'fixed',
-              top: activeTooltip.y,
-              left: activeTooltip.x,
-              transform: 'translate(-50%, -100%)',
-              zIndex: 99999,
-            }}
-          >
-            {activeTooltip.text}
-          </div>,
-          document.body
-        )}
+        {
+          activeTooltip && createPortal(
+            <div
+              className={`${tooltips.base} opacity-100`}
+              style={{
+                position: 'fixed',
+                top: activeTooltip.y,
+                left: activeTooltip.x,
+                transform: 'translate(-50%, -100%)',
+                zIndex: 99999,
+              }}
+            >
+              {activeTooltip.text}
+            </div>,
+            document.body
+          )
+        }
         <ReferencePreviewModal
           open={referencePreviewUrl !== null}
           imageUrl={referencePreviewUrl}

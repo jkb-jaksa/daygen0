@@ -496,6 +496,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
             onAspectRatioChange: () => { },
         },
         qwen: { enabled: false, size: '1024*1024', onSizeChange: () => { }, promptExtend: false, onPromptExtendChange: () => { }, watermark: false, onWatermarkChange: () => { } },
+        gptImage: { enabled: false, quality: 'auto' as const, onQualityChange: () => { } },
         kling: { enabled: false, model: 'kling-v2.1-master' as const, onModelChange: () => { }, aspectRatio: '16:9' as const, onAspectRatioChange: () => { }, duration: 5 as const, onDurationChange: () => { }, mode: 'standard' as const, onModeChange: () => { }, cfgScale: 0.5, onCfgScaleChange: () => { }, negativePrompt: '', onNegativePromptChange: () => { }, cameraType: 'none' as const, onCameraTypeChange: () => { }, cameraConfig: { horizontal: 0, vertical: 0, pan: 0, tilt: 0, roll: 0, zoom: 0 }, onCameraConfigChange: () => { } },
         lumaPhoton: { enabled: false, model: 'luma-photon-1' as const, onModelChange: () => { } },
         lumaRay: { enabled: false, variant: 'luma-ray-2' as const, onVariantChange: () => { } },
@@ -1314,7 +1315,12 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                             disableSave={!avatarHandlers.avatarSelection || !avatarHandlers.avatarName.trim()}
                             onClose={avatarHandlers.handleAvatarCreationModalClose}
                             onAvatarNameChange={avatarHandlers.setAvatarName}
-                            onSave={() => avatarHandlers.handleAvatarSave(avatarHandlers.avatarName, avatarHandlers.avatarSelection!)}
+                            onSave={async () => {
+                                const result = await avatarHandlers.handleAvatarSave(avatarHandlers.avatarName, avatarHandlers.avatarSelection!);
+                                if (result && !result.success && result.error) {
+                                    avatarHandlers.setAvatarUploadError(result.error);
+                                }
+                            }}
                             onClearSelection={() => avatarHandlers.setAvatarSelection(null)}
                             onProcessFile={avatarHandlers.processAvatarImageFile}
                             onDragStateChange={avatarHandlers.setIsDraggingAvatar}
@@ -1334,7 +1340,12 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                             disableSave={!productHandlers.productSelection || !productHandlers.productName.trim()}
                             onClose={productHandlers.handleProductCreationModalClose}
                             onProductNameChange={productHandlers.setProductName}
-                            onSave={() => productHandlers.handleProductSave(productHandlers.productName, productHandlers.productSelection!)}
+                            onSave={async () => {
+                                const result = await productHandlers.handleProductSave(productHandlers.productName, productHandlers.productSelection!);
+                                if (result && !result.success && result.error) {
+                                    productHandlers.setProductUploadError(result.error);
+                                }
+                            }}
                             onClearSelection={() => productHandlers.setProductSelection(null)}
                             onProcessFile={productHandlers.processProductImageFile}
                             onDragStateChange={productHandlers.setIsDraggingProduct}

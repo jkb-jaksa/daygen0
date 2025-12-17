@@ -359,11 +359,19 @@ export function useAvatarHandlers() {
 
   // Handle avatar save
   const handleAvatarSave = useCallback(
-    async (name: string, selection: AvatarSelection) => {
-      if (!user?.id) return;
+    async (name: string, selection: AvatarSelection): Promise<{ success: boolean; error?: string }> => {
+      if (!user?.id) return { success: false, error: 'You must be logged in to create an avatar.' };
 
       const trimmed = name.trim();
-      if (!trimmed || !selection?.imageUrl) return;
+      if (!trimmed || !selection?.imageUrl) return { success: false, error: 'Name and image are required.' };
+
+      // Check for duplicate name (case-insensitive)
+      const duplicateAvatar = storedAvatars.find(
+        (a) => a.name.toLowerCase() === trimmed.toLowerCase()
+      );
+      if (duplicateAvatar) {
+        return { success: false, error: 'An avatar with this name already exists.' };
+      }
 
       try {
         const avatar = createAvatarRecord({
@@ -378,8 +386,10 @@ export function useAvatarHandlers() {
         setSelectedAvatar(avatar);
         handleAvatarCreationModalClose();
         debugLog('[useAvatarHandlers] Created new avatar:', trimmed);
+        return { success: true };
       } catch (error) {
         debugError('[useAvatarHandlers] Error creating avatar:', error);
+        return { success: false, error: 'Failed to create avatar. Please try again.' };
       }
     },
     [user?.id, storedAvatars, saveAvatar, handleAvatarCreationModalClose],
