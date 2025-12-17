@@ -50,6 +50,8 @@ import { useCreateBridge, createInitialBridgeActions } from './contexts/hooks';
 import { usePresetGenerationFlow } from './hooks/usePresetGenerationFlow';
 import { isVideoModelId, REFERENCE_SUPPORTED_MODELS } from './constants';
 import { getDraggingImageUrl, setFloatingDragImageVisible } from './utils/dragState';
+import { useMentionSuggestions } from './hooks/useMentionSuggestions';
+import { MentionDropdown } from './MentionDropdown';
 
 const ModelSelector = lazy(() => import('./ModelSelector'));
 const SettingsMenu = lazy(() => import('./SettingsMenu'));
@@ -259,6 +261,9 @@ const PromptForm = memo<PromptFormProps>(
     const [showAllAvatarsModal, setShowAllAvatarsModal] = useState(false);
     const [showAllProductsModal, setShowAllProductsModal] = useState(false);
 
+    // Cursor position for @ mention detection
+    const [cursorPosition, setCursorPosition] = useState(0);
+
     const {
       storedAvatars,
       selectedAvatar,
@@ -291,6 +296,7 @@ const PromptForm = memo<PromptFormProps>(
       setCreationsModalAvatar,
       setAvatarToDelete,
       setSelectedAvatarImageId,
+      removeSelectedAvatar,
     } = avatarHandlers;
     const {
       storedProducts,
@@ -323,6 +329,16 @@ const PromptForm = memo<PromptFormProps>(
       setCreationsModalProduct,
       setProductToDelete,
     } = productHandlers;
+
+    // @ mention suggestions hook (avatars only)
+    const mentionSuggestions = useMentionSuggestions({
+      storedAvatars,
+      prompt,
+      cursorPosition,
+      onSelectAvatar: handleAvatarToggle,
+      onDeselectAvatar: removeSelectedAvatar,
+      selectedAvatars,
+    });
 
     const handleAvatarButtonClick = useCallback(() => {
       if (storedAvatars.length === 0) {
@@ -1221,14 +1237,61 @@ const PromptForm = memo<PromptFormProps>(
     });
 
     const handlePromptChangeInternal = useCallback(
-      (value: string) => {
+      (value: string, newCursorPos?: number) => {
         if (error) {
           clearError();
         }
         handlePromptChange(value);
+        // Update cursor position after state update
+        if (typeof newCursorPos === 'number') {
+          requestAnimationFrame(() => {
+            setCursorPosition(newCursorPos);
+          });
+        }
       },
       [clearError, error, handlePromptChange],
     );
+
+    // Update cursor position on selection change
+    const handleTextareaSelect = useCallback((event: React.SyntheticEvent<HTMLTextAreaElement>) => {
+      const target = event.currentTarget;
+      setCursorPosition(target.selectionStart);
+    }, []);
+
+    // Handle mention selection
+    const handleMentionSelect = useCallback((item: { id: string; name: string; imageUrl: string; type: 'avatar' }) => {
+      const result = mentionSuggestions.selectSuggestion(item);
+      if (result) {
+        handlePromptChangeInternal(result.newPrompt, result.newCursorPos);
+        // Move cursor to end of inserted mention
+        requestAnimationFrame(() => {
+          if (textareaRef.current) {
+            textareaRef.current.selectionStart = result.newCursorPos;
+            textareaRef.current.selectionEnd = result.newCursorPos;
+          }
+        });
+      }
+    }, [mentionSuggestions, handlePromptChangeInternal]);
+
+    // Combined keyboard handler: handle mentions first, then generate shortcuts
+    const handleTextareaKeyDown = useCallback((event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      // If mention dropdown is open and handles the key, don't propagate
+      if (mentionSuggestions.isOpen) {
+        const handled = mentionSuggestions.handleKeyDown(event);
+        if (handled) {
+          // If Enter/Tab was pressed, select the current suggestion
+          if (event.key === 'Enter' || event.key === 'Tab') {
+            const item = mentionSuggestions.suggestions[mentionSuggestions.selectedIndex];
+            if (item) {
+              handleMentionSelect(item);
+            }
+          }
+          return;
+        }
+      }
+      // Otherwise, use the generate shortcuts handler
+      onKeyDown(event);
+    }, [mentionSuggestions, handleMentionSelect, onKeyDown]);
 
     const handlePromptSelect = useCallback(
       (value: string) => {
@@ -1260,16 +1323,91 @@ const PromptForm = memo<PromptFormProps>(
             {/* Left section: Textarea + Controls */}
             <div className="flex-1 flex flex-col">
               {/* Textarea - first row */}
-              <div>
+              <div className="relative">
+                {/* Backdrop overlay for styled mentions - renders behind the transparent textarea */}
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-0 w-full min-h-[36px] max-h-40 bg-transparent text-n-text font-raleway text-base px-3 py-2 leading-normal whitespace-pre-wrap break-words rounded-lg overflow-hidden"
+                  style={{ wordBreak: 'break-word' }}
+                >
+                  {(() => {
+                    // Build styled text using parsedMentions
+                    const mentions = mentionSuggestions.parsedMentions;
+                    if (mentions.length === 0) {
+                      return <span className="pointer-events-none">{prompt}</span>;
+                    }
+
+                    const parts: React.ReactNode[] = [];
+                    let lastIndex = 0;
+
+                    mentions.forEach((mention, i) => {
+                      // Add text before this mention (not clickable)
+                      if (mention.startIndex > lastIndex) {
+                        parts.push(
+                          <span key={`text-${i}`} className="pointer-events-none">
+                            {prompt.slice(lastIndex, mention.startIndex)}
+                          </span>
+                        );
+                      }
+                      // Find the avatar for this mention
+                      const mentionAvatar = storedAvatars.find(
+                        a => a.name.toLowerCase() === mention.name.toLowerCase()
+                      );
+                      // Add the mention with subtle highlight styling and click handler
+                      parts.push(
+                        <span
+                          key={`mention-${i}`}
+                          className="text-n-text bg-n-text/10 rounded px-0.5 -mx-0.5 pointer-events-auto cursor-pointer hover:bg-n-text/20 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (mentionAvatar) {
+                              setCreationsModalAvatar(mentionAvatar);
+                            }
+                          }}
+                        >
+                          {prompt.slice(mention.startIndex, mention.endIndex)}
+                        </span>
+                      );
+                      lastIndex = mention.endIndex;
+                    });
+
+                    // Add remaining text after last mention (not clickable)
+                    if (lastIndex < prompt.length) {
+                      parts.push(
+                        <span key="text-end" className="pointer-events-none">{prompt.slice(lastIndex)}</span>
+                      );
+                    }
+
+                    return parts;
+                  })()}
+                </div>
                 <textarea
                   ref={textareaRef}
                   value={prompt}
-                  onChange={event => handlePromptChangeInternal(event.target.value)}
-                  onKeyDown={onKeyDown}
+                  onChange={event => {
+                    const newValue = event.target.value;
+                    const newCursorPos = event.target.selectionStart;
+                    handlePromptChangeInternal(newValue);
+                    setCursorPosition(newCursorPos);
+                  }}
+                  onKeyDown={handleTextareaKeyDown}
                   onPaste={handlePaste}
+                  onSelect={handleTextareaSelect}
+                  onClick={handleTextareaSelect}
                   placeholder="Describe what you want to create..."
                   rows={1}
-                  className={`w-full min-h-[36px] max-h-40 bg-transparent ${prompt.trim() ? 'text-n-text' : 'text-n-white'} placeholder-n-white border-0 focus:outline-none ring-0 focus:ring-0 focus:text-n-text font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-hidden overflow-y-auto text-left whitespace-pre-wrap break-words rounded-lg transition-[height] duration-150`}
+                  className={`relative w-full min-h-[36px] max-h-40 bg-transparent ${prompt.trim() ? 'text-transparent caret-n-text' : 'text-n-white'} placeholder-n-white border-0 focus:outline-none ring-0 focus:ring-0 font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-hidden overflow-y-auto text-left whitespace-pre-wrap break-words rounded-lg transition-[height] duration-150`}
+                  style={{ caretColor: 'var(--n-text)' }}
+                />
+                {/* @ Mention Dropdown */}
+                <MentionDropdown
+                  isOpen={mentionSuggestions.isOpen}
+                  suggestions={mentionSuggestions.suggestions}
+                  selectedIndex={mentionSuggestions.selectedIndex}
+                  anchorRef={textareaRef as React.RefObject<HTMLTextAreaElement>}
+                  onSelect={handleMentionSelect}
+                  onClose={mentionSuggestions.closeSuggestions}
+                  setSelectedIndex={mentionSuggestions.setSelectedIndex}
                 />
               </div>
 
@@ -1646,14 +1784,14 @@ const PromptForm = memo<PromptFormProps>(
                   {/* 2-4 avatars - grid layout inside container */}
                   {selectedAvatars.length >= 2 && selectedAvatars.length <= 4 && !avatarDragPreviewUrl && !avatarSelection && (
                     <>
-                      <div className={`absolute inset-1 lg:inset-1.5 grid gap-0.5 ${selectedAvatars.length === 2 ? 'grid-cols-2' : 'grid-cols-2 grid-rows-2'}`}>
+                      <div className={`absolute inset-0 grid gap-0.5 ${selectedAvatars.length === 2 ? 'grid-cols-2' : 'grid-cols-2 grid-rows-2'}`}>
                         {selectedAvatars.slice(0, 4).map((avatar, index) => (
                           <img
                             key={avatar.id}
                             src={avatar.images[0]?.url ?? avatar.imageUrl}
                             alt={avatar.name}
                             loading="lazy"
-                            className={`w-full h-full object-cover ${selectedAvatars.length === 2 ? 'rounded-full lg:rounded-lg' : 'rounded-sm lg:rounded-md'} ${selectedAvatars.length === 3 && index === 2 ? 'col-span-2 mx-auto max-w-[50%]' : ''}`}
+                            className={`w-full h-full object-cover ${selectedAvatars.length === 2 ? 'rounded-full lg:rounded-lg' : 'rounded-sm lg:rounded-md'} ${selectedAvatars.length === 3 && index === 2 ? 'col-span-2' : ''}`}
                             title={avatar.name}
                           />
                         ))}
@@ -1669,7 +1807,7 @@ const PromptForm = memo<PromptFormProps>(
                   {/* 5+ avatars - grid of 4 with "See all" badge */}
                   {selectedAvatars.length > 4 && !avatarDragPreviewUrl && !avatarSelection && (
                     <>
-                      <div className="absolute inset-1 lg:inset-1.5 grid grid-cols-2 grid-rows-2 gap-0.5">
+                      <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-0.5">
                         {selectedAvatars.slice(0, 4).map((avatar) => (
                           <img
                             key={avatar.id}
@@ -1814,14 +1952,14 @@ const PromptForm = memo<PromptFormProps>(
                   {/* 2-4 products - grid layout inside container */}
                   {selectedProducts.length >= 2 && selectedProducts.length <= 4 && !productDragPreviewUrl && !productSelection && (
                     <>
-                      <div className={`absolute inset-1 lg:inset-1.5 grid gap-0.5 ${selectedProducts.length === 2 ? 'grid-cols-2' : 'grid-cols-2 grid-rows-2'}`}>
+                      <div className={`absolute inset-0 grid gap-0.5 ${selectedProducts.length === 2 ? 'grid-cols-2' : 'grid-cols-2 grid-rows-2'}`}>
                         {selectedProducts.slice(0, 4).map((product, index) => (
                           <img
                             key={product.id}
                             src={product.images[0]?.url ?? product.imageUrl}
                             alt={product.name}
                             loading="lazy"
-                            className={`w-full h-full object-cover ${selectedProducts.length === 2 ? 'rounded-full lg:rounded-lg' : 'rounded-sm lg:rounded-md'} ${selectedProducts.length === 3 && index === 2 ? 'col-span-2 mx-auto max-w-[50%]' : ''}`}
+                            className={`w-full h-full object-cover ${selectedProducts.length === 2 ? 'rounded-full lg:rounded-lg' : 'rounded-sm lg:rounded-md'} ${selectedProducts.length === 3 && index === 2 ? 'col-span-2' : ''}`}
                             title={product.name}
                           />
                         ))}
@@ -1837,7 +1975,7 @@ const PromptForm = memo<PromptFormProps>(
                   {/* 5+ products - grid of 4 with "See all" badge */}
                   {selectedProducts.length > 4 && !productDragPreviewUrl && !productSelection && (
                     <>
-                      <div className="absolute inset-1 lg:inset-1.5 grid grid-cols-2 grid-rows-2 gap-0.5">
+                      <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-0.5">
                         {selectedProducts.slice(0, 4).map((product) => (
                           <img
                             key={product.id}
@@ -2122,7 +2260,7 @@ const PromptForm = memo<PromptFormProps>(
                               src={avatar.imageUrl}
                               alt={avatar.name}
                               loading="lazy"
-                              className={`h-full w-full rounded-lg object-cover ${isActive ? 'ring-2 ring-theme-text' : ''}`}
+                              className="h-full w-full rounded-lg object-cover"
                             />
                           </div>
                           <div className="min-w-0 flex-1 text-left">
@@ -2165,7 +2303,6 @@ const PromptForm = memo<PromptFormProps>(
                           >
                             <Trash2 className="h-3 w-3 text-theme-white hover:text-theme-text" />
                           </button>
-                          {isActive && <div className="w-2 h-2 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>}
                         </div>
                       </div>
                     </div>
@@ -2340,7 +2477,7 @@ const PromptForm = memo<PromptFormProps>(
                               src={product.imageUrl}
                               alt={product.name}
                               loading="lazy"
-                              className={`h-full w-full rounded-lg object-cover ${isActive ? 'ring-2 ring-theme-text' : ''}`}
+                              className="h-full w-full rounded-lg object-cover"
                             />
                           </div>
                           <div className="min-w-0 flex-1 text-left">
@@ -2383,7 +2520,6 @@ const PromptForm = memo<PromptFormProps>(
                           >
                             <Trash2 className="h-3 w-3 text-theme-white hover:text-theme-text" />
                           </button>
-                          {isActive && <div className="w-2 h-2 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>}
                         </div>
                       </div>
                     </div>
@@ -2984,12 +3120,12 @@ const PromptForm = memo<PromptFormProps>(
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              
+
               {/* Slots info */}
               {remainingReferenceSlots === 0 && (
                 <div className="text-xs text-amber-400 mb-3 px-1">Max references reached. Remove some to add more.</div>
               )}
-              
+
               {/* All avatars list with selection */}
               <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
                 {storedAvatars.map((avatar) => {
@@ -3003,18 +3139,16 @@ const PromptForm = memo<PromptFormProps>(
                           handleAvatarToggle(avatar);
                         }
                       }}
-                      className={`flex items-center gap-3 p-2 rounded-xl border transition-colors cursor-pointer ${
-                        isSelected 
-                          ? 'border-theme-text bg-theme-text/10' 
-                          : 'border-theme-dark bg-theme-black/30 hover:bg-theme-black/50'
-                      } ${!canSelect && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`flex items-center gap-3 p-2 rounded-xl border transition-colors cursor-pointer ${isSelected
+                        ? 'border-theme-text bg-theme-text/10'
+                        : 'border-theme-dark bg-theme-black/30 hover:bg-theme-black/50'
+                        } ${!canSelect && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       {/* Checkbox */}
-                      <div className={`flex-shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors ${
-                        isSelected 
-                          ? 'bg-theme-text border-theme-text' 
-                          : 'border-theme-mid bg-transparent'
-                      }`}>
+                      <div className={`flex-shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors ${isSelected
+                        ? 'bg-theme-text border-theme-text'
+                        : 'border-theme-mid bg-transparent'
+                        }`}>
                         {isSelected && <Check className="w-3 h-3 text-theme-black" />}
                       </div>
                       <img
@@ -3022,16 +3156,15 @@ const PromptForm = memo<PromptFormProps>(
                         alt={avatar.name}
                         className="w-10 h-10 rounded-lg object-cover"
                       />
-                      <span className={`flex-1 text-sm font-raleway font-normal truncate ${
-                        isSelected ? 'text-theme-text' : 'text-theme-white'
-                      }`}>
+                      <span className={`flex-1 text-sm font-raleway font-normal truncate ${isSelected ? 'text-theme-text' : 'text-theme-white'
+                        }`}>
                         {avatar.name}
                       </span>
                     </div>
                   );
                 })}
               </div>
-              
+
               {/* Footer buttons */}
               <div className="flex justify-between items-center gap-3 mt-6">
                 <button
@@ -3091,12 +3224,12 @@ const PromptForm = memo<PromptFormProps>(
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              
+
               {/* Slots info */}
               {remainingReferenceSlots === 0 && (
                 <div className="text-xs text-amber-400 mb-3 px-1">Max references reached. Remove some to add more.</div>
               )}
-              
+
               {/* All products list with selection */}
               <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
                 {storedProducts.map((product) => {
@@ -3110,18 +3243,16 @@ const PromptForm = memo<PromptFormProps>(
                           handleProductToggle(product);
                         }
                       }}
-                      className={`flex items-center gap-3 p-2 rounded-xl border transition-colors cursor-pointer ${
-                        isSelected 
-                          ? 'border-theme-text bg-theme-text/10' 
-                          : 'border-theme-dark bg-theme-black/30 hover:bg-theme-black/50'
-                      } ${!canSelect && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`flex items-center gap-3 p-2 rounded-xl border transition-colors cursor-pointer ${isSelected
+                        ? 'border-theme-text bg-theme-text/10'
+                        : 'border-theme-dark bg-theme-black/30 hover:bg-theme-black/50'
+                        } ${!canSelect && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       {/* Checkbox */}
-                      <div className={`flex-shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors ${
-                        isSelected 
-                          ? 'bg-theme-text border-theme-text' 
-                          : 'border-theme-mid bg-transparent'
-                      }`}>
+                      <div className={`flex-shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors ${isSelected
+                        ? 'bg-theme-text border-theme-text'
+                        : 'border-theme-mid bg-transparent'
+                        }`}>
                         {isSelected && <Check className="w-3 h-3 text-theme-black" />}
                       </div>
                       <img
@@ -3129,16 +3260,15 @@ const PromptForm = memo<PromptFormProps>(
                         alt={product.name}
                         className="w-10 h-10 rounded-lg object-cover"
                       />
-                      <span className={`flex-1 text-sm font-raleway font-normal truncate ${
-                        isSelected ? 'text-theme-text' : 'text-theme-white'
-                      }`}>
+                      <span className={`flex-1 text-sm font-raleway font-normal truncate ${isSelected ? 'text-theme-text' : 'text-theme-white'
+                        }`}>
                         {product.name}
                       </span>
                     </div>
                   );
                 })}
               </div>
-              
+
               {/* Footer buttons */}
               <div className="flex justify-between items-center gap-3 mt-6">
                 <button
