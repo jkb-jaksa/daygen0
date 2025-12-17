@@ -42,3 +42,11 @@ export const QWEN_ASPECT_RATIO_OPTIONS: ReadonlyArray<AspectRatioOption> = [
   { value: "1140*1472", label: "1140 × 1472", description: "3:4 Portrait" },
   { value: "928*1664", label: "928 × 1664", description: "9:16 Portrait" },
 ] as const;
+
+export const GPT_IMAGE_ASPECT_RATIO_OPTIONS: ReadonlyArray<AspectRatioOption> = [
+  { value: "auto", label: "Auto" },
+  { value: "1:1", label: "1:1 (Square)" },
+  { value: "2:3", label: "2:3 (Portrait)" },
+  { value: "3:2", label: "3:2 (Landscape)" },
+] as const;
+

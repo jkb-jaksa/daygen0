@@ -574,46 +574,46 @@ const tools: readonly LearnToolPage[] = [
     aliases: ["Imagen"],
   },
   {
-    slug: "chatgpt-image",
-    name: "ChatGPT",
-    tagline: "Popular image model. Available in ChatGPT.",
+    slug: "gpt-image-1.5",
+    name: "GPT Image 1.5",
+    tagline: "OpenAI's state-of-the-art image generation model.",
     overview:
-      "ChatGPT combines OpenAI's image models with conversational workflows. Create, edit, and upscale visuals without leaving the ChatGPT interface.",
+      "GPT Image 1.5 is OpenAI's latest image generation model, offering high-quality outputs with support for reference images, transparent backgrounds, and multiple sizes. It uses the Image API for generation and editing.",
     categories: ["image"],
     pricing:
-      "Included with ChatGPT Plus, Team, and Enterprise subscriptions. API usage is billed separately via OpenAI credits.",
+      "Available via OpenAI API with pay-as-you-go pricing. Also included in ChatGPT Plus, Team, and Enterprise subscriptions.",
     useCases: [
-      "Brainstorming early-stage creative directions with conversational guidance",
-      "Image editing and outpainting by following up inside the same chat",
-      "Generating visuals alongside copywriting and planning inside ChatGPT",
+      "High-quality image generation from text prompts",
+      "Image editing and variation with reference images",
+      "Generating visuals with transparent backgrounds for design workflows",
     ],
     features: [
       {
-        title: "Conversational iteration",
+        title: "Reference image support",
         description:
-          "Keep refining the same canvas with natural language instructions and reference uploads.",
+          "Upload up to 5 reference images for style transfer, editing, or variation with high input fidelity.",
       },
       {
-        title: "Integrated editing",
+        title: "Transparent backgrounds",
         description:
-          "Use the image brush, eraser, and mask tools directly inside ChatGPT for targeted adjustments.",
+          "Generate images with transparent backgrounds for direct use in design and compositing.",
       },
       {
-        title: "Cross-modal workflows",
+        title: "Multiple sizes and quality levels",
         description:
-          "Pair visual generations with code, copy, and planning tasks handled by GPT-4o.",
+          "Choose from various output sizes (1024x1024, 1024x1536, 1536x1024) and quality settings (low, medium, high).",
       },
     ],
     gettingStarted: [
-      "Open ChatGPT and start a new conversation in the GPT-4o model.",
-      "Describe the image you need or upload a reference for variation.",
-      "Use the edit tools to adjust regions, upscale, or download final assets.",
+      "Add your OpenAI API key to the settings.",
+      "Select GPT Image 1.5 from the model selector.",
+      "Describe the image you need or upload references for editing.",
     ],
     resources: [
+      { label: "OpenAI Image API", href: "https://platform.openai.com/docs/guides/images" },
       { label: "ChatGPT help centre", href: "https://help.openai.com" },
-      { label: "OpenAI platform", href: "https://platform.openai.com/docs/guides/images" },
     ],
-    aliases: ["ChatGPT", "DALL·E", "DALL-E"],
+    aliases: ["GPT Image 1.5", "gpt-image-1.5", "ChatGPT", "DALL·E", "DALL-E"],
   },
   {
     slug: "grok-image",

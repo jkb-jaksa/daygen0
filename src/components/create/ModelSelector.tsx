@@ -15,6 +15,7 @@ import { isVideoModelId, REFERENCE_SUPPORTED_MODELS } from './constants';
 // eslint-disable-next-line react-refresh/only-export-components
 export const AI_MODELS = [
   { name: "Gemini 3 Pro (Nano Banana)", desc: "Best image generation.", Icon: Sparkles, id: "gemini-3.0-pro-image" },
+  { name: "GPT Image 1.5", desc: "OpenAI's state-of-the-art image generation.", Icon: Sparkles, id: "gpt-image-1.5" },
   { name: "FLUX.2", desc: "High-quality text-to-image generation and editing.", Icon: Wand2, id: "flux-2" },
   { name: "Reve", desc: "Great text-to-image and image editing.", Icon: Sparkles, id: "reve-image" },
   { name: "Ideogram 3.0", desc: "Advanced image generation, editing, and enhancement.", Icon: Package, id: "ideogram" },
@@ -27,7 +28,6 @@ export const AI_MODELS = [
   { name: "Wan 2.2 Video", desc: "Alibaba's Wan 2.2 text-to-video model.", Icon: VideoIcon, id: "wan-video-2.2" },
   { name: "Hailuo 02", desc: "MiniMax video with start & end frame control.", Icon: VideoIcon, id: "hailuo-02" },
   { name: "Kling", desc: "ByteDance's cinematic video model.", Icon: VideoIcon, id: "kling-video" },
-  { name: "ChatGPT", desc: "Popular image model.", Icon: Sparkles, id: "chatgpt-image" },
   { name: "Veo 3.1", desc: "Google's advanced video generation model.", Icon: Film, id: "veo-3" },
   { name: "Seedance 1.0 Pro (Video)", desc: "Great quality text-to-image.", Icon: Film, id: "seedance-1.0-pro" },
   { name: "Luma Photon", desc: "High-quality image generation with Photon.", Icon: Sparkles, id: "luma-photon-1" },
@@ -358,7 +358,7 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
             // For safety compatibility with existing code, let's keep the check but update it to include all video models we saw.
 
             const isAvailable = [
-              "gemini-3.0-pro-image", "flux-2", "reve-image", "ideogram", "recraft", "grok-2-image", "qwen-image", "runway-gen4", "chatgpt-image", "luma-photon-1", // Images
+              "gemini-3.0-pro-image", "flux-2", "reve-image", "ideogram", "recraft", "grok-2-image", "qwen-image", "runway-gen4", "gpt-image-1.5", "luma-photon-1", // Images
               "veo-3", "sora-2", "runway-video-gen4", "wan-video-2.2", "hailuo-02", "seedance-1.0-pro", "kling-video", "luma-ray-2" // Videos
             ].includes(model.id);
 

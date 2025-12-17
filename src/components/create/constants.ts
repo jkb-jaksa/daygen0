@@ -24,4 +24,5 @@ export const isVideoModelId = (modelId?: string | null): modelId is VideoModelId
 export const REFERENCE_SUPPORTED_MODELS = [
   'gemini-3.0-pro-image',
   'veo-3',
+  'gpt-image-1.5',
 ];

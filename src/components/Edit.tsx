@@ -143,7 +143,7 @@ export default function Edit() {
 
   const isGemini = selectedModel === "gemini-3.0-pro-image";
   const isFlux = isFluxModelId(selectedModel);
-  const isChatGPT = selectedModel === "chatgpt-image";
+  const isChatGPT = selectedModel === "gpt-image-1.5";
   const isIdeogram = selectedModel === "ideogram";
 
   // Force Ideogram when mask mode is active (precise edit mode)

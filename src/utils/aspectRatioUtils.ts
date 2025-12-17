@@ -5,6 +5,7 @@ import {
   VIDEO_ASPECT_RATIO_OPTIONS,
   WAN_ASPECT_RATIO_OPTIONS,
   QWEN_ASPECT_RATIO_OPTIONS,
+  GPT_IMAGE_ASPECT_RATIO_OPTIONS,
 } from '../data/aspectRatios';
 
 /**
@@ -33,21 +34,34 @@ export function normalizeAspectRatio(ar: string | undefined): string | null {
     if (!isNaN(width) && !isNaN(height) && width > 0 && height > 0) {
       // Calculate aspect ratio
       const ratio = width / height;
-      
+
       // Map to common ratios with tolerance
       const tolerance = 0.01;
       if (Math.abs(ratio - 1) < tolerance) return '1:1';
-      if (Math.abs(ratio - 16/9) < tolerance) return '16:9';
-      if (Math.abs(ratio - 9/16) < tolerance) return '9:16';
-      if (Math.abs(ratio - 4/3) < tolerance) return '4:3';
-      if (Math.abs(ratio - 3/4) < tolerance) return '3:4';
-      if (Math.abs(ratio - 3/2) < tolerance) return '3:2';
-      if (Math.abs(ratio - 2/3) < tolerance) return '2:3';
-      if (Math.abs(ratio - 5/4) < tolerance) return '5:4';
-      if (Math.abs(ratio - 4/5) < tolerance) return '4:5';
-      if (Math.abs(ratio - 21/9) < tolerance) return '21:9';
-      
+      if (Math.abs(ratio - 16 / 9) < tolerance) return '16:9';
+      if (Math.abs(ratio - 9 / 16) < tolerance) return '9:16';
+      if (Math.abs(ratio - 4 / 3) < tolerance) return '4:3';
+      if (Math.abs(ratio - 3 / 4) < tolerance) return '3:4';
+      if (Math.abs(ratio - 3 / 2) < tolerance) return '3:2';
+      if (Math.abs(ratio - 2 / 3) < tolerance) return '2:3';
+      if (Math.abs(ratio - 5 / 4) < tolerance) return '5:4';
+      if (Math.abs(ratio - 4 / 5) < tolerance) return '4:5';
+      if (Math.abs(ratio - 21 / 9) < tolerance) return '21:9';
+
       // If no match, return original value
+      return trimmed;
+    }
+  }
+
+  // Handle GPT Image size-based format (e.g., "1024x1024")
+  if (trimmed.includes('x') && /^\d+x\d+$/.test(trimmed)) {
+    const [width, height] = trimmed.split('x').map(Number);
+    if (!isNaN(width) && !isNaN(height) && width > 0 && height > 0) {
+      const ratio = width / height;
+      const tolerance = 0.01;
+      if (Math.abs(ratio - 1) < tolerance) return '1:1';
+      if (Math.abs(ratio - 3 / 2) < tolerance) return '3:2';
+      if (Math.abs(ratio - 2 / 3) < tolerance) return '2:3';
       return trimmed;
     }
   }
@@ -87,6 +101,11 @@ export function getAspectRatiosForModel(modelId: string): AspectRatioOption[] {
   // Qwen uses size-based options
   if (modelId === 'qwen-image') {
     return [...QWEN_ASPECT_RATIO_OPTIONS];
+  }
+
+  // GPT Image 1.5 uses specific size options
+  if (modelId === 'gpt-image-1.5') {
+    return [...GPT_IMAGE_ASPECT_RATIO_OPTIONS];
   }
 
   // Default: basic aspect ratios for other models (Flux, Ideogram, Reve, etc.)
@@ -141,7 +160,7 @@ export function getAllAvailableAspectRatios(): AspectRatioOption[] {
     'recraft',
     'qwen-image',
     'runway-gen4',
-    'chatgpt-image',
+    'gpt-image-1.5',
     'luma-photon-1',
     'luma-photon-flash-1',
     'veo-3',

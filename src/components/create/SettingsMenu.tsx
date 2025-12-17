@@ -121,6 +121,12 @@ interface QwenSettingsProps {
   onWatermarkChange: (value: boolean) => void;
 }
 
+interface GptImageSettingsProps {
+  enabled: boolean;
+  quality: 'auto' | 'low' | 'medium' | 'high';
+  onQualityChange: (value: 'auto' | 'low' | 'medium' | 'high') => void;
+}
+
 interface LumaPhotonSettingsProps {
   enabled: boolean;
   model: "luma-photon-1" | "luma-photon-flash-1";
@@ -187,6 +193,7 @@ export interface SettingsMenuProps {
   grok: GrokSettingsProps;
   gemini: GeminiSettingsProps;
   qwen: QwenSettingsProps;
+  gptImage: GptImageSettingsProps;
   kling: KlingSettingsProps;
   lumaPhoton: LumaPhotonSettingsProps;
   lumaRay: LumaRaySettingsProps;
@@ -323,6 +330,7 @@ export function SettingsMenu({
   grok,
   gemini,
   qwen,
+  gptImage,
   kling,
   lumaPhoton,
   lumaRay,
@@ -1168,6 +1176,30 @@ export function SettingsMenu({
               />
             </div>
             <div className="text-xs text-theme-white font-raleway">Add watermark to generated images</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (gptImage.enabled) {
+    sections.push(
+      <div key="gpt-image" className="space-y-4">
+        <div className="text-base font-raleway text-theme-text mb-3">GPT Image 1.5 Settings</div>
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs font-raleway text-theme-white/80 mb-1">Quality</label>
+            <select
+              value={gptImage.quality}
+              onChange={event => gptImage.onQualityChange(event.target.value as 'auto' | 'low' | 'medium' | 'high')}
+              className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white focus:ring-2 focus:ring-theme-text focus:border-transparent outline-none"
+            >
+              <option value="auto">Auto (Recommended)</option>
+              <option value="high">High (Best quality, slower)</option>
+              <option value="medium">Medium (Balanced)</option>
+              <option value="low">Low (Fastest)</option>
+            </select>
+            <div className="text-xs text-theme-white/50 mt-1">Higher quality increases detail but takes longer and costs more.</div>
           </div>
         </div>
       </div>

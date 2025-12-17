@@ -63,7 +63,7 @@ const TOOL_LOGO_GROUPS: readonly ToolLogoGroup[] = [
   },
   {
     logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/openai logo.jpg',
-    names: ['ChatGPT', 'ChatGPT Voice', 'Sora'],
+    names: ['ChatGPT', 'ChatGPT Voice', 'Sora', 'GPT Image 1.5', 'gpt-image-1.5'],
   },
   {
     logo: '/sora logo.png',

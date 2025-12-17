@@ -73,12 +73,12 @@ export const MODEL_INFO: Record<string, ModelInfo> = {
     description: 'Qwen',
     isAvailable: true
   },
-  'chatgpt-image': {
-    id: 'chatgpt-image',
-    name: 'ChatGPT',
-    shortName: 'ChatGPT',
-    description: 'ChatGPT',
-    isAvailable: false
+  'gpt-image-1.5': {
+    id: 'gpt-image-1.5',
+    name: 'GPT Image 1.5',
+    shortName: 'GPT 1.5',
+    description: 'OpenAI GPT Image 1.5 - state-of-the-art image generation',
+    isAvailable: true
   },
   'ideogram': {
     id: 'ideogram',
@@ -203,7 +203,8 @@ export const normalizeModelId = (modelId: string): string => {
     // Other models
     'qwen-image': 'qwen-image',
     'ideogram': 'ideogram',
-    'chatgpt-image': 'chatgpt-image',
+    'gpt-image-1.5': 'gpt-image-1.5',
+    'chatgpt-image': 'gpt-image-1.5',
     'luma-photon-1': 'luma-photon-1',
     'luma-photon-flash-1': 'luma-photon-flash-1',
     'luma-ray-2': 'luma-ray-2',
