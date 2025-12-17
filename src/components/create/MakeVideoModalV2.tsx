@@ -29,6 +29,7 @@ const AvatarCreationModal = lazy(() => import('../avatars/AvatarCreationModal'))
 const ProductCreationModal = lazy(() => import('../products/ProductCreationModal'));
 
 import ImageBadgeRow from '../shared/ImageBadgeRow';
+import { ReferencePreviewModal } from '../shared/ReferencePreviewModal';
 
 export interface MakeVideoOptions {
     prompt: string;
@@ -189,6 +190,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
     const [isAvatarButtonHovered, setIsAvatarButtonHovered] = useState(false);
     const [isProductButtonHovered, setIsProductButtonHovered] = useState(false);
     const [isStyleButtonHovered, setIsStyleButtonHovered] = useState(false);
+    const [referencePreviewUrl, setReferencePreviewUrl] = useState<string | null>(null);
 
     // Voice selection state
     const [isVoiceDropdownOpen, setIsVoiceDropdownOpen] = useState(false);
@@ -1033,6 +1035,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                                 alt={`Reference ${index + 1}`}
                                                                 loading="lazy"
                                                                 className="w-9 h-9 rounded-lg object-cover border border-theme-mid cursor-pointer hover:bg-theme-light transition-colors duration-200"
+                                                                onClick={() => setReferencePreviewUrl(preview)}
                                                             />
                                                             <button
                                                                 type="button"
@@ -1520,6 +1523,11 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                 </div>,
                 document.body
             )}
+            <ReferencePreviewModal
+                open={referencePreviewUrl !== null}
+                imageUrl={referencePreviewUrl}
+                onClose={() => setReferencePreviewUrl(null)}
+            />
         </>,
         document.body
     );

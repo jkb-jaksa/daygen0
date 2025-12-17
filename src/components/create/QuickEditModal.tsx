@@ -30,6 +30,7 @@ const AvatarCreationModal = lazy(() => import('../avatars/AvatarCreationModal'))
 const ProductCreationModal = lazy(() => import('../products/ProductCreationModal'));
 
 import ImageBadgeRow from '../shared/ImageBadgeRow';
+import { ReferencePreviewModal } from '../shared/ReferencePreviewModal';
 import { useBadgeNavigation } from './hooks/useBadgeNavigation';
 import { getDraggingImageUrl, setFloatingDragImageVisible } from './utils/dragState';
 
@@ -107,6 +108,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     const savePromptModalRef = useRef<HTMLDivElement>(null);
     const [copiedState, setCopiedState] = useState<Record<string, boolean>>({});
     const [activeTooltip, setActiveTooltip] = useState<{ id: string; text: string; x: number; y: number } | null>(null);
+    const [referencePreviewUrl, setReferencePreviewUrl] = useState<string | null>(null);
 
     const {
         goToAvatarProfile,
@@ -1986,7 +1988,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         <div className="flex items-center gap-1.5">
                                                             {referencePreviews.map((preview, index) => (
                                                                 <div key={index} className="relative group">
-                                                                    <img src={preview} alt="Ref" className="w-9 h-9 rounded-lg object-cover border border-theme-mid cursor-pointer hover:bg-theme-light transition-colors duration-200" />
+                                                                    <img src={preview} alt="Ref" className="w-9 h-9 rounded-lg object-cover border border-theme-mid cursor-pointer hover:bg-theme-light transition-colors duration-200" onClick={() => setReferencePreviewUrl(preview)} />
                                                                     <button
                                                                         type="button"
                                                                         onClick={(e) => { e.stopPropagation(); clearReference(index); }}
@@ -2603,6 +2605,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                                     alt={`Reference ${index + 1}`}
                                                                     loading="lazy"
                                                                     className="w-9 h-9 rounded-lg object-cover border border-theme-mid cursor-pointer hover:bg-theme-light transition-colors duration-200"
+                                                                    onClick={() => setReferencePreviewUrl(preview)}
                                                                 />
                                                                 <button
                                                                     type="button"
@@ -3142,8 +3145,11 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                 </div>,
                 document.body
             )}
-
-
+            <ReferencePreviewModal
+                open={referencePreviewUrl !== null}
+                imageUrl={referencePreviewUrl}
+                onClose={() => setReferencePreviewUrl(null)}
+            />
         </>,
         document.body
     );

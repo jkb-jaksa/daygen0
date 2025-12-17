@@ -203,6 +203,10 @@ export function useCreateGenerationController(): CreateGenerationController {
     if (selectedModel === 'gemini-3.0-pro-image') {
       return 14;
     }
+    // GPT Image 1.5 supports up to 16 reference images per OpenAI docs
+    if (selectedModel === 'gpt-image-1.5') {
+      return 16;
+    }
     return 3;
   }, [selectedModel]);
 

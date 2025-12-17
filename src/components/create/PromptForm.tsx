@@ -62,6 +62,7 @@ const PromptsDropdown = lazy(() =>
 const AvatarCreationModal = lazy(() => import('../avatars/AvatarCreationModal'));
 const ProductCreationModal = lazy(() => import('../products/ProductCreationModal'));
 const PresetGenerationModal = lazy(() => import('./modals/PresetGenerationModal'));
+import { ReferencePreviewModal } from '../shared/ReferencePreviewModal';
 
 type GenerationMode = 'image' | 'video';
 
@@ -244,6 +245,7 @@ const PromptForm = memo<PromptFormProps>(
     const [isPromptFocused, setIsPromptFocused] = useState(false);
     const [isStyleButtonHovered, setIsStyleButtonHovered] = useState(false);
     const [activeTooltip, setActiveTooltip] = useState<{ id: string; text: string; x: number; y: number } | null>(null);
+    const [referencePreviewUrl, setReferencePreviewUrl] = useState<string | null>(null);
     const [isDraggingOverAvatarButton, setIsDraggingOverAvatarButton] = useState(false);
     const [isDraggingOverProductButton, setIsDraggingOverProductButton] = useState(false);
     const [avatarDragPreviewUrl, setAvatarDragPreviewUrl] = useState<string | null>(null);
@@ -1125,17 +1127,9 @@ const PromptForm = memo<PromptFormProps>(
 
     const handleReferencePreviewClick = useCallback(
       (preview: string) => {
-        setFullSizeImage(
-          {
-            url: preview,
-            prompt: '',
-            timestamp: new Date().toISOString(),
-          },
-          0,
-        );
-        setFullSizeOpen(true);
+        setReferencePreviewUrl(preview);
       },
-      [setFullSizeImage, setFullSizeOpen],
+      [],
     );
 
     const triggerGenerate = useCallback(() => {
@@ -2700,6 +2694,11 @@ const PromptForm = memo<PromptFormProps>(
           </div>,
           document.body
         )}
+        <ReferencePreviewModal
+          open={referencePreviewUrl !== null}
+          imageUrl={referencePreviewUrl}
+          onClose={() => setReferencePreviewUrl(null)}
+        />
       </>
     );
   }
