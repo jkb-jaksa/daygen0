@@ -222,12 +222,17 @@ describe('QuickEditModal', () => {
 
         expect(onSubmit).toHaveBeenCalledWith({
             prompt: 'test prompt',
-            referenceFile: undefined,
+            referenceFiles: undefined,
             aspectRatio: '1:1',
             batchSize: 1,
             avatarId: undefined,
             productId: undefined,
             styleId: undefined,
+            avatarImageUrl: undefined,
+            productImageUrl: undefined,
+            mask: undefined,
+            geminiMask: undefined,
+            model: 'gemini-3.0-pro-image',
         });
     });
 
