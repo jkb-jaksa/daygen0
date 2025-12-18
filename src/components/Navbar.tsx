@@ -4,6 +4,7 @@ import { useLocation, useNavigate, NavLink, Link } from "react-router-dom";
 import { useLayoutEffect, useRef, useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "../auth/useAuth";
+import { usePayments, type WalletBalance } from "../hooks/usePayments";
 import DiscordIcon from "./DiscordIcon";
 import XIcon from "./XIcon";
 import InstagramIcon from "./InstagramIcon";
@@ -69,6 +70,27 @@ export default function Navbar() {
   const { theme, toggleTheme } = useTheme();
   const isDay = theme === "day";
   const [isDevLoginLoading, setIsDevLoginLoading] = useState(false);
+
+  // Dual-wallet balance
+  const { getWalletBalance } = usePayments();
+  const [walletBalance, setWalletBalance] = useState<WalletBalance | null>(null);
+
+  // Fetch wallet balance when user is logged in
+  useEffect(() => {
+    if (!user) {
+      setWalletBalance(null);
+      return;
+    }
+    const fetchBalance = async () => {
+      try {
+        const balance = await getWalletBalance();
+        setWalletBalance(balance);
+      } catch (e) {
+        console.error('Failed to fetch wallet balance:', e);
+      }
+    };
+    fetchBalance();
+  }, [user, getWalletBalance]);
 
   const handleDevLogin = useCallback(async () => {
     setIsDevLoginLoading(true);
@@ -465,21 +487,34 @@ export default function Navbar() {
 
                 <div className="hidden lg:block h-6 w-px bg-theme-white/20"></div>
 
-                {/* Credit Usage Button */}
+                {/* Credit Usage Button - Dual Wallet Display */}
                 <button
                   onClick={() => {
                     setActiveMenu(null);
                     setMenuOpen(false);
                     navigate('/upgrade');
                   }}
-                  className={`${buttons.ghostSlim} hidden lg:flex items-center gap-1.5 rounded-full py-2 text-sm min-w-0`}
-                  aria-label="Credit usage"
+                  className={`${buttons.ghostSlim} hidden lg:flex items-center gap-2 rounded-full py-2 text-sm min-w-0 group relative`}
+                  aria-label="Credit balance"
+                  title={walletBalance
+                    ? `Subscription: ${walletBalance.subscriptionCredits} (resets monthly)\nTop-Up: ${walletBalance.topUpCredits} (never expires)`
+                    : `Credits: ${currentUser.credits}`}
                 >
                   <CreditCard className="w-4 h-4" />
-                  <span className="hidden xl:inline font-normal">
-                    Credits: {currentUser.credits}
+                  <span className="hidden xl:flex items-center gap-1.5 font-normal">
+                    {walletBalance ? (
+                      <>
+                        <span className="text-purple-400">{walletBalance.subscriptionCredits}</span>
+                        <span className="text-theme-white/40">+</span>
+                        <span className="text-emerald-400">{walletBalance.topUpCredits}</span>
+                      </>
+                    ) : (
+                      <span>{currentUser.credits}</span>
+                    )}
                   </span>
-                  <span className="lg:inline xl:hidden font-normal">{currentUser.credits}</span>
+                  <span className="lg:inline xl:hidden font-normal">
+                    {walletBalance ? walletBalance.totalCredits : currentUser.credits}
+                  </span>
                 </button>
 
                 {/* Upgrade Button */}
@@ -664,9 +699,26 @@ export default function Navbar() {
               <div className="space-y-4 border-t border-theme-dark/60 pt-4">
                 {user ? (
                   <>
-                    <div className="flex items-center justify-between rounded-xl border border-theme-dark px-3 py-2 text-sm text-theme-white">
-                      <span className="font-raleway uppercase tracking-[0.18em] text-xs text-theme-white/60">Credits</span>
-                      <span className="font-raleway text-base font-medium text-theme-text">{user?.credits ?? 0}</span>
+                    {/* Dual-wallet credit display for mobile */}
+                    <div className="rounded-xl border border-theme-dark p-3 text-sm text-theme-white space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-raleway text-xs text-theme-white/60">Subscription</span>
+                        <span className="font-raleway text-base font-medium text-purple-400">
+                          {walletBalance?.subscriptionCredits ?? 0}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-raleway text-xs text-theme-white/60">Top-Up</span>
+                        <span className="font-raleway text-base font-medium text-emerald-400">
+                          {walletBalance?.topUpCredits ?? user?.credits ?? 0}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between border-t border-theme-dark/60 pt-2">
+                        <span className="font-raleway uppercase tracking-[0.18em] text-xs text-theme-white/60">Total</span>
+                        <span className="font-raleway text-base font-medium text-theme-text">
+                          {walletBalance?.totalCredits ?? user?.credits ?? 0}
+                        </span>
+                      </div>
                     </div>
                     <button
                       onClick={() => {

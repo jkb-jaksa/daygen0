@@ -1,0 +1,134 @@
+.wallet-card {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 16px;
+  padding: 24px;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.wallet-card--compact {
+  padding: 12px 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(26, 26, 46, 0.9);
+  border-radius: 8px;
+}
+
+.wallet-card--loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+}
+
+.wallet-card__spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #8b5cf6;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.wallet-card__title {
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #a0a0b0;
+  margin: 0 0 20px;
+}
+
+.wallet-card__wallets {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.wallet-card__wallet {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.wallet-card__wallet--subscription {
+  border-left: 3px solid #8b5cf6;
+}
+
+.wallet-card__wallet--topup {
+  border-left: 3px solid #10b981;
+}
+
+.wallet-card__wallet-icon {
+  font-size: 24px;
+}
+
+.wallet-card__wallet-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wallet-card__wallet-label {
+  font-size: 12px;
+  color: #a0a0b0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.wallet-card__wallet-value {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.wallet-card__wallet-expires {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.wallet-card__total-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: rgba(139, 92, 246, 0.1);
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.wallet-card__total-label {
+  font-size: 14px;
+  color: #a0a0b0;
+}
+
+.wallet-card__total-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #8b5cf6;
+}
+
+.wallet-card--compact .wallet-card__total-value {
+  font-size: 18px;
+}
+
+.wallet-card--compact .wallet-card__total-label {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.wallet-card__hint {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0;
+  text-align: center;
+}

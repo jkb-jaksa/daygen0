@@ -29,11 +29,11 @@ export function useStripeConfig() {
     const fetchConfig = async () => {
       try {
         // Use public endpoint that doesn't require authentication
-        const response = await fetch(getApiUrl('/api/public-payments/config'));
+        const response = await fetch(getApiUrl('/api/payments/config'));
         if (!response.ok) {
           throw new Error('Failed to fetch Stripe config');
         }
-        
+
         const data = await response.json();
         setConfig({
           publishableKey: import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '',

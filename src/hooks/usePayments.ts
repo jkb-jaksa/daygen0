@@ -27,6 +27,15 @@ export interface SubscriptionInfo {
   billingPeriod: 'monthly' | 'yearly';
 }
 
+// Dual-Wallet Balance
+export interface WalletBalance {
+  subscriptionCredits: number;
+  topUpCredits: number;
+  totalCredits: number;
+  subscriptionExpiresAt: string | null;
+  graceLimit: number;
+}
+
 export function usePayments() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +66,7 @@ export function usePayments() {
       }
 
       const data = (await parseJsonSafe(response)) as { url?: string } | null;
-      
+
       // Redirect to Stripe Checkout
       if (data?.url) {
         window.location.href = data.url;
@@ -163,14 +172,14 @@ export function usePayments() {
       if (!response.ok) {
         const errorText = await response.text();
         let errorMessage = 'Failed to cancel subscription';
-        
+
         try {
           const errorData = JSON.parse(errorText);
           errorMessage = errorData.message || errorMessage;
         } catch {
           errorMessage = errorText || errorMessage;
         }
-        
+
         throw new Error(errorMessage);
       }
 
@@ -212,14 +221,14 @@ export function usePayments() {
       if (!response.ok) {
         const errorText = await response.text();
         let errorMessage = 'Failed to remove cancellation';
-        
+
         try {
           const errorData = JSON.parse(errorText);
           errorMessage = errorData.message || errorMessage;
         } catch {
           errorMessage = errorText || errorMessage;
         }
-        
+
         throw new Error(errorMessage);
       }
 
@@ -243,8 +252,8 @@ export function usePayments() {
 
   const getSessionStatus = async (sessionId: string) => {
     try {
-      const url = getApiUrl(`/api/public-payments/session/${sessionId}`);
-      
+      const url = getApiUrl(`/api/payments/session/${sessionId}/status`);
+
       // Use public endpoint that doesn't require authentication
       const response = await fetch(url);
 
@@ -264,8 +273,8 @@ export function usePayments() {
 
   const getSessionStatusQuick = async (sessionId: string) => {
     try {
-      const url = getApiUrl(`/api/public-payments/session/${sessionId}/quick-status`);
-      
+      const url = getApiUrl(`/api/payments/session/${sessionId}/quick-status`);
+
       // Use fast database-only endpoint
       const response = await fetch(url);
 
@@ -311,6 +320,48 @@ export function usePayments() {
     }
   };
 
+  // Dual-Wallet: Get user's wallet balance
+  const getWalletBalance = async (): Promise<WalletBalance> => {
+    if (!user || !token) {
+      throw new Error('User not authenticated');
+    }
+
+    try {
+      const response = await fetch(getApiUrl('/api/payments/wallet/balance'), {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        // Fallback to legacy credits if wallet endpoint fails
+        debugError('Failed to fetch wallet balance, using fallback');
+        const legacyCredits = (user as any).credits || 0;
+        return {
+          subscriptionCredits: 0,
+          topUpCredits: legacyCredits,
+          totalCredits: legacyCredits,
+          subscriptionExpiresAt: null,
+          graceLimit: 50,
+        };
+      }
+
+      const data = await parseJsonSafe(response);
+      return data as WalletBalance;
+    } catch (err) {
+      debugError('Error fetching wallet balance:', err);
+      // Return fallback on error
+      const legacyCredits = (user as any).credits || 0;
+      return {
+        subscriptionCredits: 0,
+        topUpCredits: legacyCredits,
+        totalCredits: legacyCredits,
+        subscriptionExpiresAt: null,
+        graceLimit: 50,
+      };
+    }
+  };
+
   return {
     createCheckoutSession,
     getPaymentHistory,
@@ -320,7 +371,9 @@ export function usePayments() {
     getSessionStatus,
     getSessionStatusQuick,
     openCustomerPortal,
+    getWalletBalance,
     loading,
     error,
   };
 }
+
