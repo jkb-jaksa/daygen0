@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, CreditCard, AlertCircle, CheckCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Calendar, CreditCard, AlertCircle, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { usePayments, type SubscriptionInfo } from '../../hooks/usePayments';
 import { glass, buttons } from '../../styles/designSystem';
 import { debugError } from '../../utils/debug';
@@ -20,10 +20,11 @@ type PaymentItem = {
   amount?: number;
   credits?: number;
   type?: 'ONE_TIME' | 'SUBSCRIPTION' | string;
+  status?: 'COMPLETED' | 'PENDING' | 'FAILED' | string;
 };
 
 export function SubscriptionManager() {
-  const { getSubscription, cancelSubscription, getPaymentHistory } = usePayments();
+  const { getSubscription, cancelSubscription, removeCancellation, getPaymentHistory } = usePayments();
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   const [paymentHistory, setPaymentHistory] = useState<PaymentItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,6 +48,7 @@ export function SubscriptionManager() {
           amount: Number(p.amount || 0),
           credits: Number(p.credits || 0),
           type: p.type,
+          status: p.status,
         })));
       } catch (err) {
         debugError('Unexpected error in fetchData:', err);
@@ -76,6 +78,24 @@ export function SubscriptionManager() {
     } catch (err) {
       debugError('Error cancelling subscription:', err);
       setError('Failed to cancel subscription');
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const handleRemoveCancellation = async () => {
+    if (!subscription) return;
+
+    setCancelling(true);
+    setError(null);
+
+    try {
+      await removeCancellation();
+      const subData = await getSubscription();
+      setSubscription(subData);
+    } catch (err) {
+      debugError('Error removing cancellation:', err);
+      setError('Failed to remove cancellation');
     } finally {
       setCancelling(false);
     }
@@ -193,13 +213,21 @@ export function SubscriptionManager() {
           </div>
         </div>
 
-        {!subscription.cancelAtPeriodEnd && (
+        {!subscription.cancelAtPeriodEnd ? (
           <button
             onClick={handleCancelSubscription}
             disabled={cancelling}
             className="btn btn-red text-sm"
           >
             {cancelling ? 'Cancelling...' : 'Cancel Subscription'}
+          </button>
+        ) : (
+          <button
+            onClick={handleRemoveCancellation}
+            disabled={cancelling}
+            className="btn btn-cyan text-sm"
+          >
+            {cancelling ? 'Processing...' : 'Keep Subscription'}
           </button>
         )}
       </div>
@@ -217,8 +245,26 @@ export function SubscriptionManager() {
                 className="flex items-center justify-between py-2 border-b border-theme-dark/50 last:border-b-0"
               >
                 <div>
-                  <div className="text-sm text-theme-white">
-                    {payment.type === 'ONE_TIME' ? 'Credit Purchase' : 'Subscription Payment'}
+                  <div className="flex items-center gap-2 text-sm text-theme-white">
+                    <span>{payment.type === 'ONE_TIME' ? 'Credit Purchase' : 'Subscription Payment'}</span>
+                    {/* Status Badge */}
+                    {payment.status === 'COMPLETED' && (
+                      <span className="flex items-center gap-1 text-xs text-green-400">
+                        <CheckCircle className="w-3 h-3" />
+                      </span>
+                    )}
+                    {payment.status === 'PENDING' && (
+                      <span className="flex items-center gap-1 text-xs text-orange-400">
+                        <Clock className="w-3 h-3" />
+                        Pending
+                      </span>
+                    )}
+                    {payment.status === 'FAILED' && (
+                      <span className="flex items-center gap-1 text-xs text-red-400">
+                        <XCircle className="w-3 h-3" />
+                        Failed
+                      </span>
+                    )}
                   </div>
                   <div className="text-xs text-theme-text">
                     {formatDate(payment.createdAt)}
@@ -226,7 +272,7 @@ export function SubscriptionManager() {
                 </div>
                 <div className="text-right">
                   <div className="text-sm text-theme-white">
-                    {formatPrice(payment.amount)}
+                    {formatPrice(payment.amount ?? 0)}
                   </div>
                   {typeof payment.credits === 'number' && (
                     <div className="text-xs text-theme-text">

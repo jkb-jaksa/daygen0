@@ -8,6 +8,7 @@ import { useAuth } from "../auth/useAuth";
 import { resolveSubscriptionErrorMessage } from "../utils/errorMessages";
 import { getApiUrl } from "../utils/api";
 import MessageModal from "./modals/MessageModal";
+import ConfirmCheckoutModal from "./modals/ConfirmCheckoutModal";
 import { debugError } from "../utils/debug";
 
 type PricingTier = {
@@ -24,145 +25,104 @@ type PricingTier = {
   accent: "emerald" | "yellow" | "blue" | "violet" | "pink" | "cyan" | "orange" | "lime" | "indigo";
 };
 
-const PRICING_TIERS: PricingTier[] = [
-  {
-    id: "free",
-    name: "Free",
-    description: "Perfect for getting started",
-    price: "$0",
-    period: "forever",
-    credits: 50,
-    features: [
-      "Light usage included (metered)",
-      "Basic image generation",
-      "Standard quality models",
-      "Community support",
-      "Basic editing tools"
-    ],
-    icon: Sparkles,
-    accent: "cyan"
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    description: "For creators and professionals",
-    price: "$29",
-    period: "per month",
-  credits: 1000,
-    features: [
-      "Metered usage billed monthly",
-      "All premium models",
-      "High-quality generation",
-      "Advanced editing tools",
-      "Priority support",
-      "Batch processing",
-      "Custom presets"
-    ],
-    popular: true,
-    icon: Zap,
-    accent: "orange"
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    description: "For teams and businesses",
-    price: "$99",
-    period: "per month",
-  credits: 5000,
-    features: [
-      "Metered usage billed monthly",
-      "All models & features",
-      "Ultra-high quality",
-      "Team collaboration",
-      "API access",
-      "Custom integrations",
-      "Dedicated support",
-      "Usage analytics"
-    ],
-    bestValue: true,
-    icon: Crown,
-    accent: "violet"
+// Backend API plan response type
+interface ApiSubscriptionPlan {
+  id: string;
+  name: string;
+  credits: number;
+  price: number; // cents
+  interval: 'month' | 'year';
+  badge?: 'POPULAR' | 'BEST_VALUE';
+  features?: string[];
+  videoMinutes?: number;
+}
+
+// Free tier constant (not from API)
+const FREE_TIER: PricingTier = {
+  id: "free",
+  name: "Free",
+  description: "Perfect for getting started",
+  price: "$0",
+  period: "forever",
+  credits: 50,
+  features: [
+    "Light usage included (metered)",
+    "Basic image generation",
+    "Standard quality models",
+    "Community support",
+    "Basic editing tools"
+  ],
+  icon: Sparkles,
+  accent: "cyan"
+};
+
+// Map backend plan to frontend tier format
+function mapApiPlanToTier(plan: ApiSubscriptionPlan): PricingTier {
+  const priceFormatted = `$${(plan.price / 100).toFixed(plan.price % 100 === 0 ? 0 : 2)}`;
+  const period = plan.interval === 'year' ? 'per year' : 'per month';
+
+  // Determine icon and accent based on plan name
+  let icon: React.ComponentType<{ className?: string }> = Zap;
+  let accent: PricingTier['accent'] = 'orange';
+  let description = 'For creators and professionals';
+
+  if (plan.name.toLowerCase().includes('agency')) {
+    icon = Crown;
+    accent = 'violet';
+    description = 'For teams and businesses';
+  } else if (plan.name.toLowerCase().includes('starter')) {
+    icon = Sparkles;
+    accent = 'cyan';
+    description = 'Great for occasional use';
   }
-];
 
-const YEARLY_PRICING_TIERS: PricingTier[] = [
-  {
-    id: "free",
-    name: "Free",
-    description: "Perfect for getting started",
-    price: "$0",
-    period: "forever",
-    credits: 50,
-    features: [
-      "Light usage included (metered)",
-      "Basic image generation",
-      "Standard quality models",
-      "Community support",
-      "Basic editing tools"
-    ],
-    icon: Sparkles,
-    accent: "cyan"
-  },
-  {
-    id: "pro-yearly",
-    name: "Pro",
-    description: "For creators and professionals",
-    price: "$290",
-    period: "per year",
-  credits: 12000,
-    features: [
-      "Metered usage billed yearly",
-      "All premium models",
-      "High-quality generation",
-      "Advanced editing tools",
-      "Priority support",
-      "Batch processing",
-      "Custom presets",
-      "20% savings"
-    ],
-    popular: true,
-    icon: Zap,
-    accent: "orange"
-  },
-  {
-    id: "enterprise-yearly",
-    name: "Enterprise",
-    description: "For teams and businesses",
-    price: "$990",
-    period: "per year",
-  credits: 60000,
-    features: [
-      "Metered usage billed yearly",
-      "All models & features",
-      "Ultra-high quality",
-      "Team collaboration",
-      "API access",
-      "Custom integrations",
-      "Dedicated support",
-      "Usage analytics",
-      "20% savings"
-    ],
-    bestValue: true,
-    icon: Crown,
-    accent: "violet"
+  // Build features list
+  const features: string[] = plan.features || [];
+  if (features.length === 0) {
+    // Default features based on plan
+    if (plan.videoMinutes) {
+      features.push(`~${plan.videoMinutes} min video/${plan.interval === 'year' ? 'year' : 'month'}`);
+    }
+    features.push(plan.interval === 'year' ? 'Billed yearly' : 'Billed monthly');
   }
-];
+
+  return {
+    id: plan.id,
+    name: plan.name,
+    description,
+    price: priceFormatted,
+    period,
+    credits: plan.credits,
+    features,
+    popular: plan.badge === 'POPULAR',
+    bestValue: plan.badge === 'BEST_VALUE',
+    icon,
+    accent,
+  };
+}
+
+// Map API plans to tiers array, filtering by interval
+function mapApiPlansToTiers(plans: ApiSubscriptionPlan[], interval: 'month' | 'year'): PricingTier[] {
+  const filtered = plans.filter(p => p.interval === interval);
+  const mapped = filtered.map(mapApiPlanToTier);
+  return [FREE_TIER, ...mapped];
+}
 
 
-function PricingCard({ 
-  tier, 
-  isSelected, 
-  onSelect, 
-  onPurchase, 
-  isCurrentPlan, 
+function PricingCard({
+  tier,
+  isSelected,
+  onSelect,
+  onPurchase,
+  isCurrentPlan,
   isUpgrade,
   onUpgrade,
   hasSubscription,
   onShowModal
-}: { 
-  tier: PricingTier; 
-  isSelected: boolean; 
-  onSelect?: () => void; 
+}: {
+  tier: PricingTier;
+  isSelected: boolean;
+  onSelect?: () => void;
   onPurchase?: () => void;
   isCurrentPlan?: boolean;
   isUpgrade?: boolean;
@@ -178,17 +138,14 @@ function PricingCard({
       onPointerMove={isCurrentPlan ? undefined : onPointerMove}
       onPointerEnter={isCurrentPlan ? undefined : onPointerEnter}
       onPointerLeave={isCurrentPlan ? undefined : onPointerLeave}
-      className={`${cards.shell} ${
-        isCurrentPlan 
-          ? 'border-green-400 bg-green-400/5 pricing-current opacity-90' 
-          : isSelected 
-            ? 'border-theme-light pricing-selected' 
-            : ''
-      } group relative overflow-hidden p-6 ${
-        isCurrentPlan ? 'cursor-default' : 'cursor-pointer'
-      } transition-all duration-200 ${
-        isCurrentPlan ? '' : 'parallax-small mouse-glow'
-      }`}
+      className={`${cards.shell} ${isCurrentPlan
+        ? 'border-green-400 bg-green-400/5 pricing-current opacity-90'
+        : isSelected
+          ? 'border-theme-light pricing-selected'
+          : ''
+        } group relative overflow-hidden p-6 ${isCurrentPlan ? 'cursor-default' : 'cursor-pointer'
+        } transition-all duration-200 ${isCurrentPlan ? '' : 'parallax-small mouse-glow'
+        }`}
     >
       {/* Current Plan badge */}
       {isCurrentPlan && (
@@ -223,29 +180,25 @@ function PricingCard({
       <div className="relative z-10 flex flex-col h-full">
         {/* Header */}
         <div className="mb-3">
-          <h3 className={`text-3xl font-raleway font-normal mb-1 ${
-            isCurrentPlan ? 'text-green-400' :
-            tier.id === 'free' ? 'text-theme-text' : 
-            tier.id === 'pro' ? 'text-cyan-lighter' : 
-            'text-red-lighter'
-          }`}>{tier.name}</h3>
-          <p className={`text-sm font-raleway ${
-            isCurrentPlan ? 'text-green-400/80' : 'text-theme-text'
-          }`}>{tier.description}</p>
+          <h3 className={`text-3xl font-raleway font-normal mb-1 ${isCurrentPlan ? 'text-green-400' :
+            tier.id === 'free' ? 'text-theme-text' :
+              tier.id === 'pro' ? 'text-cyan-lighter' :
+                'text-red-lighter'
+            }`}>{tier.name}</h3>
+          <p className={`text-sm font-raleway ${isCurrentPlan ? 'text-green-400/80' : 'text-theme-text'
+            }`}>{tier.description}</p>
         </div>
 
         {/* Pricing */}
         <div className="mb-4">
           <div className="flex items-baseline gap-2">
-            <span className={`text-4xl font-raleway font-normal ${
-              isCurrentPlan ? 'text-green-400' :
-              tier.id === 'free' ? 'text-theme-text' : 
-              tier.id === 'pro' ? 'text-cyan-lighter' : 
-              'text-red-lighter'
-            }`}>{tier.price}</span>
-            <span className={`font-raleway ${
-              isCurrentPlan ? 'text-green-400/70' : 'text-theme-text'
-            }`}>
+            <span className={`text-4xl font-raleway font-normal ${isCurrentPlan ? 'text-green-400' :
+              tier.id === 'free' ? 'text-theme-text' :
+                tier.id === 'pro' ? 'text-cyan-lighter' :
+                  'text-red-lighter'
+              }`}>{tier.price}</span>
+            <span className={`font-raleway ${isCurrentPlan ? 'text-green-400/70' : 'text-theme-text'
+              }`}>
               /{tier.period.includes('month') || tier.period.includes('year') ? (
                 <>
                   {tier.period.split(' ')[0]} <span className="font-medium">{tier.period.split(' ')[1]}</span>
@@ -261,16 +214,14 @@ function PricingCard({
         <div className="space-y-2 mb-6">
           {tier.features.map((feature, index) => (
             <div key={index} className="flex items-start gap-3">
-              <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5 ${
-                tier.id === 'free' ? 'bg-theme-text/20' : 
-                tier.id === 'pro' || tier.id === 'pro-yearly' ? 'bg-brand-cyan/20' : 
-                'bg-brand-red/20'
-              }`}>
-                <Check className={`w-3 h-3 ${
-                  tier.id === 'free' ? 'text-theme-text' : 
-                  tier.id === 'pro' || tier.id === 'pro-yearly' ? 'text-cyan-lighter' : 
-                  'text-red-lighter'
-                }`} />
+              <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5 ${tier.id === 'free' ? 'bg-theme-text/20' :
+                tier.id === 'pro' || tier.id === 'pro-yearly' ? 'bg-brand-cyan/20' :
+                  'bg-brand-red/20'
+                }`}>
+                <Check className={`w-3 h-3 ${tier.id === 'free' ? 'text-theme-text' :
+                  tier.id === 'pro' || tier.id === 'pro-yearly' ? 'text-cyan-lighter' :
+                    'text-red-lighter'
+                  }`} />
               </div>
               <span className="text-sm font-raleway font-normal text-theme-white leading-relaxed">{feature}</span>
             </div>
@@ -296,37 +247,36 @@ function PricingCard({
               Upgrade Now
             </button>
           ) : (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  
-                  // Safety check: if user has subscription, don't allow new purchases
-                  if (hasSubscription) {
-                    onShowModal?.(
-                      'Already Subscribed',
-                      'You already have an active subscription. Use the upgrade option instead.',
-                      AlertCircle,
-                      'text-orange-400'
-                    );
-                    return;
-                  }
-                  
-                  if (tier.id === 'free') {
-                    window.location.href = '/';
-                  } else if (onPurchase) {
-                    onPurchase();
-                  }
-                }}
-                className={`w-full btn font-raleway text-base font-medium transition-colors duration-200 parallax-large ${
-                  tier.id === 'free' 
-                    ? 'btn-white' 
-                    : tier.id === 'pro' || tier.id === 'pro-yearly'
-                    ? 'btn-cyan'
-                    : `btn-red ${tier.popular ? 'shadow-lg shadow-brand-red/25' : ''}`
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+
+                // Safety check: if user has subscription, don't allow new purchases
+                if (hasSubscription) {
+                  onShowModal?.(
+                    'Already Subscribed',
+                    'You already have an active subscription. Use the upgrade option instead.',
+                    AlertCircle,
+                    'text-orange-400'
+                  );
+                  return;
+                }
+
+                if (tier.id === 'free') {
+                  window.location.href = '/';
+                } else if (onPurchase) {
+                  onPurchase();
+                }
+              }}
+              className={`w-full btn font-raleway text-base font-medium transition-colors duration-200 parallax-large ${tier.id === 'free'
+                ? 'btn-white'
+                : tier.id.startsWith('pro') || tier.id.startsWith('starter')
+                  ? 'btn-cyan'
+                  : `btn-red ${tier.popular ? 'shadow-lg shadow-brand-red/25' : ''}`
                 }`}
-              >
-                {tier.id === 'free' ? 'Get Started' : 'Subscribe'}
-              </button>
+            >
+              {tier.id === 'free' ? 'Get Started' : 'Subscribe'}
+            </button>
           )}
         </div>
       </div>
@@ -368,7 +318,45 @@ export default function Pricing() {
   const { createCheckoutSession, getSubscription, openCustomerPortal } = usePayments();
   const { user, token } = useAuth();
 
-  const currentTiers = billingPeriod === 'yearly' ? YEARLY_PRICING_TIERS : PRICING_TIERS;
+  // State for API-fetched plans
+  const [apiPlans, setApiPlans] = useState<ApiSubscriptionPlan[]>([]);
+  const [plansLoading, setPlansLoading] = useState(true);
+
+  // State for checkout confirmation modal
+  const [checkoutModal, setCheckoutModal] = useState<{
+    isOpen: boolean;
+    planId: string;
+    planName: string;
+    planPrice: string;
+    planPeriod: string;
+    planCredits: number;
+  } | null>(null);
+
+  // Fetch subscription plans from backend API
+  useEffect(() => {
+    let active = true;
+    const fetchPlans = async () => {
+      try {
+        const response = await fetch(getApiUrl('/api/payments/config'));
+        if (!response.ok) throw new Error('Failed to fetch plans');
+        const data = await response.json();
+        if (active && data.subscriptionPlans) {
+          setApiPlans(data.subscriptionPlans);
+        }
+      } catch (error) {
+        debugError('Failed to fetch subscription plans:', error);
+      } finally {
+        if (active) setPlansLoading(false);
+      }
+    };
+    fetchPlans();
+    return () => { active = false; };
+  }, []);
+
+  // Compute current tiers based on billing period and API data
+  const currentTiers = apiPlans.length > 0
+    ? mapApiPlansToTiers(apiPlans, billingPeriod === 'yearly' ? 'year' : 'month')
+    : [FREE_TIER]; // Fallback to just free tier while loading
 
   // Safe plan selection that prevents selecting current plan
   const handlePlanSelection = (planId: string) => {
@@ -386,24 +374,30 @@ export default function Pricing() {
     if (!currentSubscription?.planId) {
       // Try to map from stripePriceId if planId is not available
       if (currentSubscription?.stripePriceId) {
-        // Map stripePriceId to plan tier
-        const planMapping = {
+        // Map stripePriceId to plan tier (using new backend plan IDs)
+        const planMapping: Record<string, string> = {
+          'price_starter': 'starter',
           'price_pro': 'pro',
-          'price_enterprise': 'enterprise',
-          'price_pro-yearly': 'pro-yearly',
-          'price_enterprise-yearly': 'enterprise-yearly',
+          'price_agency': 'agency',
+          'price_starter_yearly': 'starter-yearly',
+          'price_pro_yearly': 'pro-yearly',
+          'price_agency_yearly': 'agency-yearly',
+          // Legacy mappings
+          'price_enterprise': 'pro',
+          'price_enterprise-yearly': 'pro-yearly',
         };
-        
-        const mappedPlanId = planMapping[currentSubscription.stripePriceId as keyof typeof planMapping];
+
+        const mappedPlanId = planMapping[currentSubscription.stripePriceId];
         if (mappedPlanId) {
+          const baseName = mappedPlanId.replace('-yearly', '');
           return {
             id: mappedPlanId,
-            name: mappedPlanId.includes('pro') ? 'Pro' : 'Enterprise',
+            name: baseName.charAt(0).toUpperCase() + baseName.slice(1),
             billingPeriod: mappedPlanId.includes('yearly') ? 'yearly' : 'monthly'
           };
         }
       }
-      
+
       return null;
     }
 
@@ -411,10 +405,10 @@ export default function Pricing() {
     const planId = currentSubscription.planId;
     const planName = currentSubscription.planName || 'Unknown';
     const billingPeriod = currentSubscription.billingPeriod || 'monthly';
-    
-    return { 
-      id: planId, 
-      name: planName, 
+
+    return {
+      id: planId,
+      name: planName,
       billingPeriod: billingPeriod as 'monthly' | 'yearly'
     };
   }, [currentSubscription]);
@@ -432,20 +426,25 @@ export default function Pricing() {
       return currentTiers;
     }
 
-    // Define tier hierarchy
-    const tierHierarchy = { 
-      'free': 0, 
-      'pro': 1, 
-      'pro-yearly': 1, 
-      'enterprise': 2, 
-      'enterprise-yearly': 2 
+    // Define tier hierarchy (new backend plan IDs)
+    const tierHierarchy: Record<string, number> = {
+      'free': 0,
+      'starter': 1,
+      'starter-yearly': 1,
+      'pro': 2,
+      'pro-yearly': 2,
+      'agency': 3,
+      'agency-yearly': 3,
+      // Legacy support
+      'enterprise': 2,
+      'enterprise-yearly': 2,
     };
 
-    const currentTierLevel = tierHierarchy[currentPlan.id as keyof typeof tierHierarchy] || 0;
+    const currentTierLevel = tierHierarchy[currentPlan.id] || 0;
 
     // Filter to show only current tier and higher tiers (exclude lower tiers)
     return currentTiers.filter(tier => {
-      const tierLevel = tierHierarchy[tier.id as keyof typeof tierHierarchy] || 0;
+      const tierLevel = tierHierarchy[tier.id] || 0;
       return tierLevel >= currentTierLevel;
     });
   };
@@ -494,10 +493,28 @@ export default function Pricing() {
     };
   }, [user, getSubscription]);
 
-  const handleSubscriptionPurchase = async (planId: string) => {
+  // Show confirmation modal before checkout
+  const handleSubscriptionPurchase = (planId: string) => {
+    const tier = currentTiers.find(t => t.id === planId);
+    if (!tier) return;
+
+    setCheckoutModal({
+      isOpen: true,
+      planId: tier.id,
+      planName: tier.name,
+      planPrice: tier.price,
+      planPeriod: tier.period.includes('month') ? 'month' : 'year',
+      planCredits: tier.credits,
+    });
+  };
+
+  // Actually process checkout after confirmation
+  const confirmCheckout = async () => {
+    if (!checkoutModal) return;
+
     try {
       setLoading(true);
-      await createCheckoutSession('subscription', planId);
+      await createCheckoutSession('subscription', checkoutModal.planId);
     } catch (error) {
       debugError('Subscription purchase failed:', error);
       const errorMessage = resolveSubscriptionErrorMessage(error);
@@ -509,6 +526,7 @@ export default function Pricing() {
       );
     } finally {
       setLoading(false);
+      setCheckoutModal(null);
     }
   };
 
@@ -538,14 +556,14 @@ export default function Pricing() {
       if (!response.ok) {
         const errorText = await response.text();
         let errorMessage = 'Upgrade failed';
-        
+
         try {
           const errorData = JSON.parse(errorText);
           errorMessage = errorData.message || errorMessage;
         } catch {
           errorMessage = errorText || errorMessage;
         }
-        
+
         throw new Error(errorMessage);
       }
 
@@ -562,7 +580,7 @@ export default function Pricing() {
       // Refresh subscription data
       const subscription = await getSubscription();
       setCurrentSubscription(subscription);
-      
+
       showModal(
         'Upgrade Successful',
         'Subscription upgraded successfully!',
@@ -588,7 +606,7 @@ export default function Pricing() {
   const getPlanState = (tierId: string) => {
     // TEST MODE: Uncomment the line below to test current plan styling
     // if (tierId === 'pro') return { isCurrentPlan: true, isUpgrade: false };
-    
+
     if (!currentSubscription) {
       return { isCurrentPlan: false, isUpgrade: false };
     }
@@ -604,12 +622,12 @@ export default function Pricing() {
     }
 
     // Define tier hierarchy for comparison
-    const tierHierarchy = { 
-      'free': 0, 
-      'pro': 1, 
-      'pro-yearly': 1, 
-      'enterprise': 2, 
-      'enterprise-yearly': 2 
+    const tierHierarchy = {
+      'free': 0,
+      'pro': 1,
+      'pro-yearly': 1,
+      'enterprise': 2,
+      'enterprise-yearly': 2
     };
 
     const currentTierLevel = tierHierarchy[currentPlan.id as keyof typeof tierHierarchy] || 0;
@@ -625,7 +643,7 @@ export default function Pricing() {
   return (
     <div className="min-h-screen">
       <div className={layout.backdrop} aria-hidden="true" />
-      
+
       <div className="relative z-10">
         {/* Header Section */}
         <section className={`${layout.container} pt-4 pb-16`}>
@@ -641,21 +659,19 @@ export default function Pricing() {
             <div className="flex items-center justify-center gap-2 mb-8">
               <button
                 onClick={() => setActiveTab('credits')}
-                className={`px-6 py-2 rounded-full font-raleway text-base font-medium transition-colors duration-200 parallax-large ${
-                  activeTab === 'credits'
-                    ? 'bg-theme-text text-theme-black'
-                    : 'text-theme-white hover:text-theme-text'
-                }`}
+                className={`px-6 py-2 rounded-full font-raleway text-base font-medium transition-colors duration-200 parallax-large ${activeTab === 'credits'
+                  ? 'bg-theme-text text-theme-black'
+                  : 'text-theme-white hover:text-theme-text'
+                  }`}
               >
                 Buy Credits
               </button>
               <button
                 onClick={() => setActiveTab('subscriptions')}
-                className={`px-6 py-2 rounded-full font-raleway text-base font-medium transition-colors duration-200 parallax-large ${
-                  activeTab === 'subscriptions'
-                    ? 'bg-theme-text text-theme-black'
-                    : 'text-theme-white hover:text-theme-text'
-                }`}
+                className={`px-6 py-2 rounded-full font-raleway text-base font-medium transition-colors duration-200 parallax-large ${activeTab === 'subscriptions'
+                  ? 'bg-theme-text text-theme-black'
+                  : 'text-theme-white hover:text-theme-text'
+                  }`}
               >
                 Subscriptions
               </button>
@@ -668,13 +684,20 @@ export default function Pricing() {
                   Monthly
                 </span>
                 <button
-                  onClick={() => setBillingPeriod(billingPeriod === 'monthly' ? 'yearly' : 'monthly')}
+                  onClick={() => {
+                    // Preserve plan selection by mapping to equivalent plan in new billing period
+                    if (selectedPlan && selectedPlan !== 'free') {
+                      const basePlan = selectedPlan.replace('-yearly', '');
+                      const newPlanId = billingPeriod === 'monthly' ? `${basePlan}-yearly` : basePlan;
+                      setSelectedPlan(newPlanId);
+                    }
+                    setBillingPeriod(billingPeriod === 'monthly' ? 'yearly' : 'monthly');
+                  }}
                   className="relative w-14 h-7 bg-theme-dark rounded-full border border-theme-mid transition-colors duration-200 hover:border-theme-text parallax-large"
                 >
                   <div
-                    className={`absolute top-0.5 left-0.5 w-6 h-6 bg-theme-white rounded-full transition-transform duration-200 ${
-                      billingPeriod === 'yearly' ? 'translate-x-7' : 'translate-x-0'
-                    }`}
+                    className={`absolute top-0.5 left-0.5 w-6 h-6 bg-theme-white rounded-full transition-transform duration-200 ${billingPeriod === 'yearly' ? 'translate-x-7' : 'translate-x-0'
+                      }`}
                   />
                 </button>
                 <span className={`text-base font-raleway font-normal transition-colors ${billingPeriod === 'yearly' ? 'text-theme-text' : 'text-theme-white'}`}>
@@ -691,29 +714,42 @@ export default function Pricing() {
               <CreditPackages />
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-6xl mx-auto">
-              {loading ? (
-                <div className="col-span-full flex justify-center items-center py-8">
+            <div className="relative grid grid-cols-1 md:grid-cols-3 gap-4 max-w-6xl mx-auto">
+              {/* Show full spinner only for initial plans loading */}
+              {plansLoading ? (
+                <div className="col-span-full flex flex-col justify-center items-center py-8 gap-4">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-theme-text"></div>
+                  <p className="text-theme-text text-sm">Loading plans...</p>
                 </div>
               ) : (
-                filteredTiers.map((tier) => {
-                  const planState = getPlanState(tier.id);
-                  return (
-                    <PricingCard 
-                      key={`${tier.id}-${billingPeriod}`} 
-                      tier={tier} 
-                      isSelected={selectedPlan === tier.id}
-                      onSelect={planState.isCurrentPlan ? undefined : () => handlePlanSelection(tier.id)}
-                      onPurchase={() => handleSubscriptionPurchase(tier.id)}
-                      isCurrentPlan={planState.isCurrentPlan}
-                      isUpgrade={planState.isUpgrade}
-                      onUpgrade={() => handleUpgrade(tier.id)}
-                      hasSubscription={!!currentSubscription}
-                      onShowModal={showModal}
-                    />
-                  );
-                })
+                <>
+                  {/* Show subtle overlay during action operations (upgrade, purchase) */}
+                  {loading && (
+                    <div className="absolute inset-0 bg-theme-dark/50 z-20 flex items-center justify-center rounded-lg">
+                      <div className="flex items-center gap-2 bg-theme-black/80 px-4 py-2 rounded-lg">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-theme-text"></div>
+                        <span className="text-theme-text text-sm">Processing...</span>
+                      </div>
+                    </div>
+                  )}
+                  {filteredTiers.map((tier) => {
+                    const planState = getPlanState(tier.id);
+                    return (
+                      <PricingCard
+                        key={`${tier.id}-${billingPeriod}`}
+                        tier={tier}
+                        isSelected={selectedPlan === tier.id}
+                        onSelect={planState.isCurrentPlan ? undefined : () => handlePlanSelection(tier.id)}
+                        onPurchase={() => handleSubscriptionPurchase(tier.id)}
+                        isCurrentPlan={planState.isCurrentPlan}
+                        isUpgrade={planState.isUpgrade}
+                        onUpgrade={() => handleUpgrade(tier.id)}
+                        hasSubscription={!!currentSubscription}
+                        onShowModal={showModal}
+                      />
+                    );
+                  })}
+                </>
               )}
             </div>
           )}
@@ -723,7 +759,7 @@ export default function Pricing() {
             {currentSubscription && (
               <div className="mb-6">
                 <button
-                  onClick={() => openCustomerPortal().catch(() => showModal('Portal Error','Unable to open billing portal. Please try again.', AlertCircle, 'text-red-400'))}
+                  onClick={() => openCustomerPortal().catch(() => showModal('Portal Error', 'Unable to open billing portal. Please try again.', AlertCircle, 'text-red-400'))}
                   className="btn btn-white font-raleway text-base font-medium parallax-large"
                 >
                   Manage Billing
@@ -768,6 +804,20 @@ export default function Pricing() {
         icon={modalState.icon}
         iconColor={modalState.iconColor}
       />
+
+      {/* Checkout Confirmation Modal */}
+      {checkoutModal && (
+        <ConfirmCheckoutModal
+          isOpen={checkoutModal.isOpen}
+          onClose={() => setCheckoutModal(null)}
+          onConfirm={confirmCheckout}
+          planName={checkoutModal.planName}
+          planPrice={checkoutModal.planPrice}
+          planPeriod={checkoutModal.planPeriod}
+          planCredits={checkoutModal.planCredits}
+          isLoading={loading}
+        />
+      )}
     </div>
   );
 }

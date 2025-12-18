@@ -148,7 +148,7 @@ export function usePayments() {
       }
     } catch (err) {
       debugError('Error fetching subscription:', err);
-      throw err;
+      return null; // Return null on error instead of throwing (consistent with getPaymentHistory)
     }
   };
 

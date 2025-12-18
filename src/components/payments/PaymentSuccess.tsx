@@ -5,6 +5,7 @@ import { useAuth } from '../../auth/useAuth';
 import { usePayments } from '../../hooks/usePayments';
 import { layout, glass } from '../../styles/designSystem';
 import { debugError, debugLog, debugWarn } from '../../utils/debug';
+import { getApiUrl } from '../../utils/api';
 
 export function PaymentSuccess() {
   const [searchParams] = useSearchParams();
@@ -23,7 +24,7 @@ export function PaymentSuccess() {
 
   useEffect(() => {
     let isMounted = true; // Flag to prevent state updates after unmount
-    
+
     const checkSessionStatus = async (retryCount = 0, maxRetries = 5) => {
       if (!isMounted) return; // Don't run if component unmounted
       if (!sessionId) {
@@ -36,30 +37,30 @@ export function PaymentSuccess() {
       try {
         // Use quick status for first few attempts, then fall back to full status
         const useQuickStatus = retryCount < 3;
-        const status = useQuickStatus 
+        const status = useQuickStatus
           ? await getSessionStatusQuick(sessionId)
           : await getSessionStatus(sessionId);
-        
+
         if (!isMounted) return; // Check again after async operation
-        
+
         setSessionStatus(status);
-        
+
         // Set session mode and subscription info from the enhanced status
         setSessionMode(status.mode || 'payment');
-        
+
         if (status.mode === 'subscription' && status.metadata) {
           setSubscriptionInfo({
             planName: status.metadata.planName,
             billingPeriod: status.metadata.billingPeriod || 'monthly'
           });
         }
-        
+
         // If payment is still pending, show the manual completion button instead of retrying
         if (status.paymentStatus === 'PENDING') {
           setLoading(false);
           return;
         }
-        
+
         // Refresh user data to get updated credits after successful payment
         if (status.paymentStatus === 'COMPLETED' || status.status === 'complete' || status.status === 'paid') {
           try {
@@ -78,7 +79,7 @@ export function PaymentSuccess() {
         setLoading(false);
       } catch (err) {
         debugError('PaymentSuccess: Error checking session status:', err);
-        
+
         // Retry if we haven't exceeded max retries and component is still mounted
         if (retryCount < maxRetries && isMounted) {
           // Reduced delay: 500ms, 750ms, 1000ms, 1500ms, 2000ms
@@ -86,7 +87,7 @@ export function PaymentSuccess() {
           setTimeout(() => checkSessionStatus(retryCount + 1, maxRetries), delay);
           return;
         }
-        
+
         debugError('PaymentSuccess: Max retries exceeded, setting error');
         setError('Failed to verify payment');
         setLoading(false);
@@ -111,33 +112,38 @@ export function PaymentSuccess() {
 
   const handleManualComplete = async () => {
     if (!sessionId) return;
-    
+
     debugLog('🔄 Manual completion button clicked for session:', sessionId);
     setManuallyCompleting(true);
-    
+
     // Show optimistic UI immediately
     setManualCompleteSuccess(true);
     setLoading(false);
-    
+
     try {
       debugLog('📡 Calling systematic payment completion API...');
-      const response = await fetch('http://localhost:3000/api/payments-test/complete-payment-for-user', {
+
+      // Safety check: require authenticated user
+      if (!user?.authUserId) {
+        throw new Error('User not authenticated - cannot complete payment');
+      }
+
+      const response = await fetch(getApiUrl(`/api/payments/test/complete-payment/${sessionId}`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: user?.authUserId || 'ca915994-e791-4894-800d-671dd9d1d398', // Fallback to test user
+          userId: user.authUserId,
           sessionId: sessionId,
-          credits: 12000 // Pro plan credits
         })
       });
-      
+
       debugLog('📡 API Response status:', response.status);
-      
+
       if (response.ok) {
         debugLog('✅ Manual completion successful, refreshing user data...');
-        
+
         // Parallelize user refresh and session status check
         await Promise.all([
           refreshUser(),
@@ -146,7 +152,7 @@ export function PaymentSuccess() {
             return status;
           })
         ]);
-        
+
         // Hide success message after 5 seconds
         setTimeout(() => setManualCompleteSuccess(false), 5000);
       } else {
@@ -168,8 +174,12 @@ export function PaymentSuccess() {
     return (
       <main className={`${layout.page}`}>
         <section className={`${layout.container} pt-[calc(var(--nav-h,4rem)+16px)] pb-24`}>
-          <div className="flex justify-center items-center py-16">
+          <div className="flex flex-col justify-center items-center py-16 gap-4">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-theme-text"></div>
+            <div className="text-center">
+              <p className="text-theme-text font-raleway mb-1">Verifying your payment...</p>
+              <p className="text-sm text-theme-white/60">This may take a few seconds</p>
+            </div>
           </div>
         </section>
       </main>
@@ -178,7 +188,7 @@ export function PaymentSuccess() {
 
   if (error) {
     const isNetworkError = error.includes('Failed to fetch') || error.includes('ERR_BLOCKED_BY_CLIENT');
-    
+
     return (
       <main className={`${layout.page}`}>
         <section className={`${layout.container} pt-[calc(var(--nav-h,4rem)+16px)] pb-24`}>
@@ -190,16 +200,16 @@ export function PaymentSuccess() {
               <p className="text-theme-white mb-6">
                 {error}
               </p>
-              
+
               {isNetworkError && (
                 <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 mb-6">
                   <p className="text-yellow-400 text-sm">
-                    <strong>Note:</strong> If you're using an ad blocker, it may be interfering with payment verification. 
+                    <strong>Note:</strong> If you're using an ad blocker, it may be interfering with payment verification.
                     Try disabling it temporarily or whitelist this site for the best experience.
                   </p>
                 </div>
               )}
-              
+
               <button
                 onClick={() => navigate('/upgrade')}
                 className="btn btn-cyan"
@@ -230,7 +240,7 @@ export function PaymentSuccess() {
               {sessionMode === 'subscription' ? 'Subscription Successful!' : 'Payment Successful!'}
             </h1>
             <p className="text-theme-white mb-6">
-              {sessionMode === 'subscription' 
+              {sessionMode === 'subscription'
                 ? 'Your subscription has been activated and credits have been added to your account. You can now start generating amazing content.'
                 : 'Your credits have been added to your account. You can now start generating amazing content.'
               }
@@ -320,10 +330,10 @@ export function PaymentSuccess() {
                   disabled={manuallyCompleting}
                   className="w-full py-3 px-6 bg-yellow-500 hover:bg-yellow-400 text-black font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
-                  {manuallyCompleting 
-                    ? 'Processing...' 
-                    : sessionMode === 'subscription' 
-                      ? 'Activate Subscription Manually (Dev Only)' 
+                  {manuallyCompleting
+                    ? 'Processing...'
+                    : sessionMode === 'subscription'
+                      ? 'Activate Subscription Manually (Dev Only)'
                       : 'Complete Payment Manually (Dev Only)'
                   }
                 </button>
