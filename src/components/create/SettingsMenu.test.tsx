@@ -139,6 +139,11 @@ function createBaseProps(anchor: HTMLElement): SettingsMenuProps {
       watermark: false,
       onWatermarkChange: vi.fn(),
     },
+    gptImage: {
+      enabled: false,
+      quality: 'auto',
+      onQualityChange: vi.fn(),
+    },
     kling: {
       enabled: false,
       model: 'kling-v2.1-master',

@@ -30,6 +30,7 @@ import { useSoraVideoGeneration } from '../../../hooks/useSoraVideoGeneration';
 import {
   BASIC_ASPECT_RATIO_OPTIONS,
   GEMINI_ASPECT_RATIO_OPTIONS,
+  GPT_IMAGE_ASPECT_RATIO_OPTIONS,
   QWEN_ASPECT_RATIO_OPTIONS,
   VIDEO_ASPECT_RATIO_OPTIONS,
   WAN_ASPECT_RATIO_OPTIONS,
@@ -153,6 +154,8 @@ export function useCreateGenerationController(): CreateGenerationController {
     setKlingAspectRatio,
     setWanSize,
     setQwenSize,
+    setGptImageSize,
+    setGptImageQuality,
     setQwenPromptExtend,
     setQwenWatermark,
     setWanSeed,
@@ -175,6 +178,8 @@ export function useCreateGenerationController(): CreateGenerationController {
     klingAspectRatio,
     wanSize,
     qwenSize,
+    gptImageSize,
+    gptImageQuality,
     qwenPromptExtend,
     qwenWatermark,
     wanSeed,
@@ -198,12 +203,16 @@ export function useCreateGenerationController(): CreateGenerationController {
     if (selectedModel === 'gemini-3.0-pro-image') {
       return 14;
     }
+    // GPT Image 1.5 supports up to 16 reference images per OpenAI docs
+    if (selectedModel === 'gpt-image-1.5') {
+      return 16;
+    }
     return 3;
   }, [selectedModel]);
 
   const referenceHandlers = useReferenceHandlers(
-    avatarHandlers.selectedAvatar,
-    productHandlers.selectedProduct,
+    avatarHandlers.selectedAvatars,
+    productHandlers.selectedProducts,
     () => { },
     maxReferences,
   );
@@ -305,16 +314,20 @@ export function useCreateGenerationController(): CreateGenerationController {
         return makeControl(WAN_ASPECT_RATIO_OPTIONS, wanSize, setWanSize);
       case 'qwen-image':
         return makeControl(QWEN_ASPECT_RATIO_OPTIONS, qwenSize, setQwenSize);
+      case 'gpt-image-1.5':
+        return makeControl(GPT_IMAGE_ASPECT_RATIO_OPTIONS, gptImageSize, setGptImageSize);
       default:
         return null;
     }
   }, [
     geminiAspectRatio,
+    gptImageSize,
     klingAspectRatio,
     qwenSize,
     seedanceRatio,
     selectedModel,
     setGeminiAspectRatio,
+    setGptImageSize,
     setKlingAspectRatio,
     setQwenSize,
     setSeedanceRatio,
@@ -475,6 +488,11 @@ export function useCreateGenerationController(): CreateGenerationController {
         watermark: qwenWatermark,
         onWatermarkChange: value => setQwenWatermark(value),
       },
+      gptImage: {
+        enabled: selectedModel === 'gpt-image-1.5',
+        quality: gptImageQuality,
+        onQualityChange: value => setGptImageQuality(value),
+      },
       kling: {
         enabled: isKlingVideo,
         model: 'kling-v2.1-master',
@@ -525,6 +543,7 @@ export function useCreateGenerationController(): CreateGenerationController {
     qwenPromptExtend,
     qwenSize,
     qwenWatermark,
+    gptImageQuality,
     selectedModel,
     setBatchSize,
     setGeminiAspectRatio,
@@ -534,6 +553,7 @@ export function useCreateGenerationController(): CreateGenerationController {
     setQwenPromptExtend,
     setQwenSize,
     setQwenWatermark,
+    setGptImageQuality,
     setTemperature,
     setTopP,
     setWanNegativePrompt,
@@ -602,8 +622,14 @@ export function useCreateGenerationController(): CreateGenerationController {
     setButtonSpinning(true);
 
     const referenceSources: (File | string)[] = [];
-    if (selectedAvatarImageUrl) referenceSources.push(selectedAvatarImageUrl);
-    if (selectedProductImageUrl) referenceSources.push(selectedProductImageUrl);
+    // Push all selected avatar image URLs (now supports multiple)
+    avatarHandlers.selectedAvatarImageUrls.forEach(url => {
+      if (url) referenceSources.push(url);
+    });
+    // Push all selected product image URLs (now supports multiple)
+    productHandlers.selectedProductImageUrls.forEach(url => {
+      if (url) referenceSources.push(url);
+    });
     if (referenceHandlers.referenceFiles.length > 0) {
       referenceSources.push(...referenceHandlers.referenceFiles);
     }
@@ -884,19 +910,43 @@ export function useCreateGenerationController(): CreateGenerationController {
           });
           return;
         }
-        case 'chatgpt-image': {
+        case 'gpt-image-1.5': {
+          // Convert aspect ratio to API size
+          const gptSizeMap: Record<string, string> = {
+            'auto': 'auto',
+            '1:1': '1024x1024',
+            '2:3': '1024x1536',
+            '3:2': '1536x1024',
+          };
+          const apiSize = gptSizeMap[gptImageSize] ?? 'auto';
+
           const chatgptImage = await generateChatGPTImage({
             prompt: finalPrompt,
-            size: '1024x1024',
-            quality: 'high',
-            background: 'transparent',
+            size: apiSize as 'auto' | '1024x1024' | '1024x1536' | '1536x1024',
+            quality: gptImageQuality,
+            background: 'auto',
+            references,
             avatarId: selectedAvatarId,
             avatarImageId: activeAvatarImageId,
             productId: selectedProductId,
             styleId: selectedStyleId,
           });
 
-          persistImageResults(chatgptImage, { aspectRatio: '1:1' });
+          // Calculate actual aspect ratio from dimensions if available, otherwise use selected value
+          let actualAspectRatio = gptImageSize === 'auto' ? '1:1' : gptImageSize;
+          if (gptImageSize === 'auto' && chatgptImage?.width && chatgptImage?.height) {
+            const ratio = chatgptImage.width / chatgptImage.height;
+            const tolerance = 0.05;
+            if (Math.abs(ratio - 1) < tolerance) {
+              actualAspectRatio = '1:1';
+            } else if (Math.abs(ratio - 2 / 3) < tolerance) {
+              actualAspectRatio = '2:3';
+            } else if (Math.abs(ratio - 3 / 2) < tolerance) {
+              actualAspectRatio = '3:2';
+            }
+          }
+
+          persistImageResults(chatgptImage, { aspectRatio: actualAspectRatio });
           return;
         }
         case 'ideogram': {

@@ -137,6 +137,7 @@ interface ProfileData {
     user?: {
         displayName?: string;
         authUserId: string;
+        username?: string;
         profileImage?: string;
         bio?: string;
     };
@@ -417,27 +418,31 @@ export function CreatorProfileModal({
                             className="flex items-center gap-4 group/profile cursor-pointer"
                             onClick={() => {
                                 onClose();
-                                navigate(`/creator/${userId}`);
+                                // Prefer username over userId for cleaner URLs
+                                const profilePath = profileData?.user?.username
+                                    ? `/creator/${profileData.user.username}`
+                                    : `/creator/${userId}`;
+                                navigate(profilePath);
                             }}
                         >
                             {profileImage ? (
                                 <img
                                     src={profileImage}
                                     alt={displayName}
-                                    className="w-16 h-16 rounded-full object-cover border-2 border-theme-dark/50 self-start transition-colors duration-200 group-hover/profile:border-theme-mid"
+                                    className="w-16 h-16 rounded-full object-cover border-2 border-theme-dark/50 self-start transition-colors duration-200 group-hover/profile:border-theme-text"
                                 />
                             ) : (
-                                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500/50 to-cyan-500/50 flex items-center justify-center border-2 border-theme-dark/50 self-start transition-colors duration-200 group-hover/profile:border-theme-mid">
-                                    <User className="w-8 h-8 text-theme-white/80" />
+                                <div className="w-16 h-16 rounded-full bg-[conic-gradient(from_0deg,_rgba(245,158,11,0.6),_rgba(239,68,68,0.6),_rgba(59,130,246,0.6),_rgba(34,211,238,0.6),_rgba(245,158,11,0.6))] flex items-center justify-center border border-theme-white self-start transition-colors duration-200 group-hover/profile:border-theme-text">
+                                    <span className="text-2xl font-raleway font-medium text-theme-text">{displayName?.[0]?.toUpperCase() || '?'}</span>
                                 </div>
                             )}
                             <div className="flex-1 min-w-0">
-                                <h2 className="text-2xl font-raleway font-normal text-theme-text transition-colors duration-200 group-hover/profile:text-theme-white">{displayName}</h2>
-                                <p className="text-sm text-theme-white/60 mb-2">
+                                <h2 className="text-2xl font-raleway font-normal text-theme-text">{displayName}</h2>
+                                <p className="text-sm text-theme-white mb-2">
                                     {profileData?.totalCount || 0} public generation{profileData?.totalCount !== 1 ? 's' : ''}
                                 </p>
                                 {bio && (
-                                    <p className="text-sm font-raleway text-theme-white/80 leading-relaxed max-w-2xl whitespace-pre-wrap">
+                                    <p className="text-sm font-raleway text-theme-light leading-relaxed max-w-2xl whitespace-pre-wrap">
                                         {bio}
                                     </p>
                                 )}

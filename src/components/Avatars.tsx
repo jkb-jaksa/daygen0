@@ -37,6 +37,7 @@ import {
   Heart,
   RefreshCw,
   Fingerprint,
+  Mic,
 } from "lucide-react";
 import { layout, text, buttons, glass, headings, iconButtons, tooltips } from "../styles/designSystem";
 import { useAuth } from "../auth/useAuth";
@@ -58,6 +59,7 @@ import { STUDIO_BASE_PATH, deriveCategoryFromPath, pathForCategory } from "../ut
 import { VerticalGalleryNav } from "./shared/VerticalGalleryNav";
 import { useStyleModal } from "../contexts/useStyleModal";
 import useParallaxHover from "../hooks/useParallaxHover";
+import { VoiceUploader } from "./shared/VoiceUploader";
 
 type AvatarNavigationState = {
   openAvatarCreator?: boolean;
@@ -424,6 +426,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const hasAvatars = avatars.length > 0;
   const [draggedImageId, setDraggedImageId] = useState<string | null>(null);
   const [dragOverSlotIndex, setDragOverSlotIndex] = useState<number | null>(null);
+  const [isVoiceUploadModalOpen, setIsVoiceUploadModalOpen] = useState(false);
   const { images: galleryImages } = useGalleryImages();
 
   // Compute if any menu is open to keep all icons visible
@@ -2293,6 +2296,46 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
             )}
             <div className={`${isMasterSection ? 'flex flex-wrap gap-2' : 'grid grid-cols-1 gap-0.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-items-start'} ${isMasterSection ? 'mb-0' : ''}`}>
               {avatars.map(avatar => renderAvatarCard(avatar))}
+              {isMasterSection && (
+                <div
+                  className="group flex flex-col overflow-hidden rounded-[28px] border-2 border-dashed border-theme-white/10 bg-black shadow-lg transition-all duration-200 hover:border-theme-white/30 parallax-small max-w-[200px] w-full cursor-pointer relative"
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Add your voice"
+                  onClick={() => setIsVoiceUploadModalOpen(true)}
+                  onKeyDown={event => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setIsVoiceUploadModalOpen(true);
+                    }
+                  }}
+                >
+                  {/* Prominent Teal/Green Shade (Top Right) */}
+                  <div className="absolute -top-4 -right-4 w-36 h-36 bg-cyan-400/20 blur-[50px] rounded-full pointer-events-none" />
+
+                  {/* Secondary subtle glow */}
+                  <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-tr from-transparent via-transparent to-cyan-500/5 pointer-events-none" />
+
+                  <div className="relative aspect-square overflow-hidden flex flex-col items-center justify-center p-4 text-center">
+                    <div className="mb-2">
+                      <Mic className="h-8 w-8 text-cyan-400" strokeWidth={1.5} />
+                    </div>
+
+                    <h3 className="text-base font-raleway font-medium text-theme-text mb-1 tracking-tight">
+                      Add your voice
+                    </h3>
+
+                    <p className="text-[10px] leading-tight text-theme-white/40 font-raleway mb-4 max-w-[140px]">
+                      Click anywhere, drag and drop, or paste your audio to get started
+                    </p>
+
+                    <button className="flex items-center gap-2 bg-theme-text text-theme-black px-4 py-1.5 rounded-full text-xs font-bold hover:bg-theme-text/90 transition-colors">
+                      <Upload className="h-3 w-3 text-cyan-500" strokeWidth={3} />
+                      Upload
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           {isMasterSection && (
@@ -4305,6 +4348,26 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Voice Upload Modal */}
+      {isVoiceUploadModalOpen && (
+        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/90 px-4 py-10 overflow-y-auto">
+          <div className="w-full max-w-2xl relative">
+            <button
+              onClick={() => setIsVoiceUploadModalOpen(false)}
+              className="absolute -top-12 right-0 p-2 text-theme-white/60 hover:text-theme-text transition-colors"
+              aria-label="Close modal"
+            >
+              <X className="w-8 h-8" />
+            </button>
+            <VoiceUploader
+              onSuccess={() => {
+                setIsVoiceUploadModalOpen(false);
+              }}
+            />
           </div>
         </div>
       )}

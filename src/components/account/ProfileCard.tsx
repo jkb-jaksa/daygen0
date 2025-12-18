@@ -10,6 +10,10 @@ export type ProfileCardProps = {
   nameTouched: boolean;
   isNameValid: boolean;
   nameErrorMessage: string;
+  username: string;
+  usernameTouched: boolean;
+  isUsernameValid: boolean;
+  usernameErrorMessage: string;
   saveError: string | null;
   canSaveProfile: boolean;
   isSavingProfile: boolean;
@@ -20,6 +24,8 @@ export type ProfileCardProps = {
   onRemoveProfilePic: () => void;
   onNameChange: (value: string) => void;
   onNameBlur: () => void;
+  onUsernameChange: (value: string) => void;
+  onUsernameBlur: () => void;
   onBioChange: (value: string) => void;
   onBioBlur: () => void;
   bio: string;
@@ -36,6 +42,10 @@ export function ProfileCard({
   nameTouched,
   isNameValid,
   nameErrorMessage,
+  username,
+  usernameTouched,
+  isUsernameValid,
+  usernameErrorMessage,
   bio,
   bioTouched,
   isBioValid,
@@ -50,6 +60,8 @@ export function ProfileCard({
   onRemoveProfilePic,
   onNameChange,
   onNameBlur,
+  onUsernameChange,
+  onUsernameBlur,
   onBioChange,
   onBioBlur,
   onSaveProfile,
@@ -87,11 +99,11 @@ export function ProfileCard({
                 <img
                   src={`${user.profileImage}?t=${Date.now()}`}
                   alt="Profile"
-                  className="size-12 rounded-full object-cover border-2 border-theme-dark group-hover:opacity-80 transition-opacity"
+                  className="size-12 rounded-full object-cover border border-theme-white group-hover:opacity-80 transition-opacity"
                   key={user.profileImage} // Force re-render when URL changes
                 />
               ) : (
-                <div className="size-12 rounded-full flex items-center justify-center text-theme-text text-lg font-medium font-raleway border-2 border-theme-dark group-hover:opacity-80 transition-opacity bg-theme-dark">
+                <div className="size-12 rounded-full flex items-center justify-center text-theme-text text-lg font-medium font-raleway border border-theme-white group-hover:opacity-80 transition-opacity bg-[conic-gradient(from_0deg,_rgba(245,158,11,0.6),_rgba(239,68,68,0.6),_rgba(59,130,246,0.6),_rgba(34,211,238,0.6),_rgba(245,158,11,0.6))]">
                   {(user.displayName || user.email)[0]?.toUpperCase()}
                 </div>
               )}
@@ -133,7 +145,7 @@ export function ProfileCard({
       >
         <div className="-mt-2">
           <label className="block text-sm text-theme-white mb-1 font-raleway" htmlFor="display-name">
-            Display Name
+            User Name
           </label>
           <input
             id="display-name"
@@ -141,11 +153,38 @@ export function ProfileCard({
             value={name}
             onChange={(event) => onNameChange(event.target.value)}
             onBlur={onNameBlur}
-            placeholder="Enter your display name"
+            placeholder="Enter your user name"
           />
           <div aria-live="polite" role="status" className="min-h-[1rem]">
             {(saveError || (nameTouched && !isNameValid)) && (
               <p className="mt-1 text-xs font-raleway text-red-400">{saveError ?? nameErrorMessage}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="-mt-4">
+          <label className="block text-sm text-theme-white mb-1 font-raleway" htmlFor="username">
+            Profile URL <span className="text-red-400">*</span>
+          </label>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-theme-white/60 font-raleway">daygen.ai/creator/</span>
+            <input
+              id="username"
+              className={`${inputs.base} flex-1`}
+              value={username}
+              onChange={(event) => onUsernameChange(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+              onBlur={onUsernameBlur}
+              placeholder="your-username"
+            />
+          </div>
+          <div aria-live="polite" role="status" className="min-h-[1rem]">
+            {(usernameTouched && !isUsernameValid) && (
+              <p className="mt-1 text-xs font-raleway text-red-400">{usernameErrorMessage}</p>
+            )}
+            {isUsernameValid && username && (
+              <p className="mt-1 text-xs font-raleway text-theme-white/60">
+                Your profile: daygen.ai/creator/{username}
+              </p>
             )}
           </div>
         </div>

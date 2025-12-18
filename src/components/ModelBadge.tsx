@@ -109,11 +109,11 @@ const MODEL_CONFIG = {
     icon: '🧠',
     description: 'Qwen - Great for image editing and generation'
   },
-  'chatgpt-image': {
-    name: 'ChatGPT',
-    shortName: 'GPT',
-    icon: '💬',
-    description: 'ChatGPT - Popular image generation model'
+  'gpt-image-1.5': {
+    name: 'GPT Image 1.5',
+    shortName: 'GPT 1.5',
+    icon: '✨',
+    description: 'OpenAI GPT Image 1.5 - State-of-the-art image generation'
   },
   'reve-image-1.0': {
     name: 'Reve',

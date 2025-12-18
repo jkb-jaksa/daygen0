@@ -29,6 +29,7 @@ const AvatarCreationModal = lazy(() => import('../avatars/AvatarCreationModal'))
 const ProductCreationModal = lazy(() => import('../products/ProductCreationModal'));
 
 import ImageBadgeRow from '../shared/ImageBadgeRow';
+import { ReferencePreviewModal } from '../shared/ReferencePreviewModal';
 
 export interface MakeVideoOptions {
     prompt: string;
@@ -189,6 +190,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
     const [isAvatarButtonHovered, setIsAvatarButtonHovered] = useState(false);
     const [isProductButtonHovered, setIsProductButtonHovered] = useState(false);
     const [isStyleButtonHovered, setIsStyleButtonHovered] = useState(false);
+    const [referencePreviewUrl, setReferencePreviewUrl] = useState<string | null>(null);
 
     // Voice selection state
     const [isVoiceDropdownOpen, setIsVoiceDropdownOpen] = useState(false);
@@ -336,7 +338,12 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
         handleDragEnter: hookHandleDragEnter,
         handleDragLeave: hookHandleDragLeave,
         handleDrop: hookHandleDrop,
-    } = useReferenceHandlers(selectedAvatar, selectedProduct, handleReferenceAdd, MAX_REFERENCES);
+    } = useReferenceHandlers(
+        selectedAvatar ? [selectedAvatar] : [],
+        selectedProduct ? [selectedProduct] : [],
+        handleReferenceAdd,
+        MAX_REFERENCES
+    );
 
     // Wrap hook drag handlers to manage local state
     const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -1033,6 +1040,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                                 alt={`Reference ${index + 1}`}
                                                                 loading="lazy"
                                                                 className="w-9 h-9 rounded-lg object-cover border border-theme-mid cursor-pointer hover:bg-theme-light transition-colors duration-200"
+                                                                onClick={() => setReferencePreviewUrl(preview)}
                                                             />
                                                             <button
                                                                 type="button"
@@ -1404,7 +1412,12 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                             disableSave={!avatarHandlers.avatarSelection || !avatarHandlers.avatarName.trim()}
                             onClose={avatarHandlers.handleAvatarCreationModalClose}
                             onAvatarNameChange={avatarHandlers.setAvatarName}
-                            onSave={() => avatarHandlers.handleAvatarSave(avatarHandlers.avatarName, avatarHandlers.avatarSelection!)}
+                            onSave={async () => {
+                                const result = await avatarHandlers.handleAvatarSave(avatarHandlers.avatarName, avatarHandlers.avatarSelection!);
+                                if (result && !result.success && result.error) {
+                                    avatarHandlers.setAvatarUploadError(result.error);
+                                }
+                            }}
                             onClearSelection={() => avatarHandlers.setAvatarSelection(null)}
                             onProcessFile={avatarHandlers.processAvatarImageFile}
                             onDragStateChange={avatarHandlers.setIsDraggingAvatar}
@@ -1424,7 +1437,12 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                             disableSave={!productHandlers.productSelection || !productHandlers.productName.trim()}
                             onClose={productHandlers.handleProductCreationModalClose}
                             onProductNameChange={productHandlers.setProductName}
-                            onSave={() => productHandlers.handleProductSave(productHandlers.productName, productHandlers.productSelection!)}
+                            onSave={async () => {
+                                const result = await productHandlers.handleProductSave(productHandlers.productName, productHandlers.productSelection!);
+                                if (result && !result.success && result.error) {
+                                    productHandlers.setProductUploadError(result.error);
+                                }
+                            }}
                             onClearSelection={() => productHandlers.setProductSelection(null)}
                             onProcessFile={productHandlers.processProductImageFile}
                             onDragStateChange={productHandlers.setIsDraggingProduct}
@@ -1520,6 +1538,11 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                 </div>,
                 document.body
             )}
+            <ReferencePreviewModal
+                open={referencePreviewUrl !== null}
+                imageUrl={referencePreviewUrl}
+                onClose={() => setReferencePreviewUrl(null)}
+            />
         </>,
         document.body
     );

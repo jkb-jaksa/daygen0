@@ -33,7 +33,8 @@ export function useProductHandlers() {
 
   // Product state
   const [storedProducts, setStoredProducts] = useState<StoredProduct[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState<StoredProduct | null>(null);
+  // Support multiple selected products
+  const [selectedProducts, setSelectedProducts] = useState<StoredProduct[]>([]);
   const [pendingProductId, setPendingProductId] = useState<string | null>(null);
   const [isProductPickerOpen, setIsProductPickerOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<StoredProduct | null>(null);
@@ -59,6 +60,16 @@ export function useProductHandlers() {
     }
     return map;
   }, [storedProducts]);
+
+  // Backward compatibility: first selected product (for components that expect single product)
+  const selectedProduct = useMemo(() => selectedProducts[0] ?? null, [selectedProducts]);
+
+  // Get image URLs for all selected products (for reference generation)
+  const selectedProductImageUrls = useMemo(() => {
+    return selectedProducts.map(product => {
+      return product.images[0]?.url ?? product.imageUrl;
+    }).filter(Boolean) as string[];
+  }, [selectedProducts]);
 
   // Load stored products - fetch from backend, fallback to local storage
   const loadStoredProducts = useCallback(async () => {
@@ -241,10 +252,8 @@ export function useProductHandlers() {
       setStoredProducts(updated);
       dispatchStorageChange('products');
 
-      // Clear selection if deleted product was selected
-      if (selectedProduct?.id === productId) {
-        setSelectedProduct(null);
-      }
+      // Remove from selection if deleted product was selected
+      setSelectedProducts(prev => prev.filter(p => p.id !== productId));
 
       debugLog('[useProductHandlers] Deleted product:', productId);
     } catch (error) {
@@ -298,9 +307,36 @@ export function useProductHandlers() {
     }
   }, [storagePrefix, storedProducts, token]);
 
-  // Handle product selection
+  // Handle product selection (replaces all selections with single product for backward compatibility)
   const handleProductSelect = useCallback((product: StoredProduct | null) => {
-    setSelectedProduct(product);
+    setSelectedProducts(product ? [product] : []);
+  }, []);
+
+  // Toggle product in selection (add if not selected, remove if selected)
+  const handleProductToggle = useCallback((product: StoredProduct) => {
+    setSelectedProducts(prev => {
+      const isSelected = prev.some(p => p.id === product.id);
+      if (isSelected) {
+        return prev.filter(p => p.id !== product.id);
+      } else {
+        return [...prev, product];
+      }
+    });
+  }, []);
+
+  // Check if product is selected
+  const isProductSelected = useCallback((productId: string) => {
+    return selectedProducts.some(p => p.id === productId);
+  }, [selectedProducts]);
+
+  // Clear all selected products
+  const clearAllProducts = useCallback(() => {
+    setSelectedProducts([]);
+  }, []);
+
+  // Remove specific product from selection
+  const removeSelectedProduct = useCallback((productId: string) => {
+    setSelectedProducts(prev => prev.filter(p => p.id !== productId));
   }, []);
 
   // Handle product picker open
@@ -329,11 +365,19 @@ export function useProductHandlers() {
 
   // Handle product save
   const handleProductSave = useCallback(
-    async (name: string, selection: ProductSelection) => {
-      if (!user?.id) return;
+    async (name: string, selection: ProductSelection): Promise<{ success: boolean; error?: string }> => {
+      if (!user?.id) return { success: false, error: 'You must be logged in to create a product.' };
 
       const trimmed = name.trim();
-      if (!trimmed || !selection?.imageUrl) return;
+      if (!trimmed || !selection?.imageUrl) return { success: false, error: 'Name and image are required.' };
+
+      // Check for duplicate name (case-insensitive)
+      const duplicateProduct = storedProducts.find(
+        (p) => p.name.toLowerCase() === trimmed.toLowerCase()
+      );
+      if (duplicateProduct) {
+        return { success: false, error: 'A product with this name already exists.' };
+      }
 
       try {
         const product = createProductRecord({
@@ -344,12 +388,17 @@ export function useProductHandlers() {
           ownerId: user.id,
           existingProducts: storedProducts,
         });
-        await saveProduct(product);
-        setSelectedProduct(product);
+        const savedProduct = await saveProduct(product);
+        // Add the new product to selected products
+        if (savedProduct) {
+          setSelectedProducts(prev => [...prev, savedProduct]);
+        }
         handleProductCreationModalClose();
         debugLog('[useProductHandlers] Created new product:', trimmed);
+        return { success: true };
       } catch (error) {
         debugError('[useProductHandlers] Error creating product:', error);
+        return { success: false, error: 'Failed to create product. Please try again.' };
       }
     },
     [user?.id, storedProducts, saveProduct, handleProductCreationModalClose],
@@ -439,7 +488,9 @@ export function useProductHandlers() {
   return {
     // State
     storedProducts,
-    selectedProduct,
+    selectedProduct, // Backward compat: first selected product
+    selectedProducts, // New: all selected products
+    selectedProductImageUrls, // New: URLs of all selected product images
     pendingProductId,
     isProductPickerOpen,
     productToDelete,
@@ -462,6 +513,10 @@ export function useProductHandlers() {
     deleteProduct,
     updateProduct,
     handleProductSelect,
+    handleProductToggle, // New: toggle product in selection
+    isProductSelected, // New: check if product is selected
+    clearAllProducts, // New: clear all selected products
+    removeSelectedProduct, // New: remove specific product from selection
     handleProductPickerOpen,
     handleProductPickerClose,
     handleProductCreationModalOpen,
@@ -475,7 +530,7 @@ export function useProductHandlers() {
     resetProductCreationPanel,
 
     // Setters
-    setSelectedProduct,
+    setSelectedProducts, // New: set all selected products
     setPendingProductId,
     setIsProductPickerOpen,
     setProductToDelete,

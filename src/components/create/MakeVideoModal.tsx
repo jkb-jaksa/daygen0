@@ -29,6 +29,7 @@ const AvatarCreationModal = lazy(() => import('../avatars/AvatarCreationModal'))
 const ProductCreationModal = lazy(() => import('../products/ProductCreationModal'));
 
 import ImageBadgeRow from '../shared/ImageBadgeRow';
+import { ReferencePreviewModal } from '../shared/ReferencePreviewModal';
 
 export interface MakeVideoOptions {
     prompt: string;
@@ -186,6 +187,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
     const [isAvatarButtonHovered, setIsAvatarButtonHovered] = useState(false);
     const [isProductButtonHovered, setIsProductButtonHovered] = useState(false);
     const [isStyleButtonHovered, setIsStyleButtonHovered] = useState(false);
+    const [referencePreviewUrl, setReferencePreviewUrl] = useState<string | null>(null);
 
     // Voice selection state
     const [isVoiceDropdownOpen, setIsVoiceDropdownOpen] = useState(false);
@@ -329,7 +331,12 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
         handleDragEnter: hookHandleDragEnter,
         handleDragLeave: hookHandleDragLeave,
         handleDrop: hookHandleDrop,
-    } = useReferenceHandlers(selectedAvatar, selectedProduct, handleReferenceAdd, MAX_REFERENCES);
+    } = useReferenceHandlers(
+        selectedAvatar ? [selectedAvatar] : [],
+        selectedProduct ? [selectedProduct] : [],
+        handleReferenceAdd,
+        MAX_REFERENCES
+    );
 
     // Wrap hook drag handlers to manage local state
     const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -494,6 +501,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
             onAspectRatioChange: () => { },
         },
         qwen: { enabled: false, size: '1024*1024', onSizeChange: () => { }, promptExtend: false, onPromptExtendChange: () => { }, watermark: false, onWatermarkChange: () => { } },
+        gptImage: { enabled: false, quality: 'auto' as const, onQualityChange: () => { } },
         kling: { enabled: false, model: 'kling-v2.1-master' as const, onModelChange: () => { }, aspectRatio: '16:9' as const, onAspectRatioChange: () => { }, duration: 5 as const, onDurationChange: () => { }, mode: 'standard' as const, onModeChange: () => { }, cfgScale: 0.5, onCfgScaleChange: () => { }, negativePrompt: '', onNegativePromptChange: () => { }, cameraType: 'none' as const, onCameraTypeChange: () => { }, cameraConfig: { horizontal: 0, vertical: 0, pan: 0, tilt: 0, roll: 0, zoom: 0 }, onCameraConfigChange: () => { } },
         lumaPhoton: { enabled: false, model: 'luma-photon-1' as const, onModelChange: () => { } },
         lumaRay: { enabled: false, variant: 'luma-ray-2' as const, onVariantChange: () => { } },
@@ -1014,6 +1022,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                                 alt={`Reference ${index + 1}`}
                                                                 loading="lazy"
                                                                 className="w-9 h-9 rounded-lg object-cover border border-theme-mid cursor-pointer hover:bg-theme-light transition-colors duration-200"
+                                                                onClick={() => setReferencePreviewUrl(preview)}
                                                             />
                                                             <button
                                                                 type="button"
@@ -1311,7 +1320,12 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                             disableSave={!avatarHandlers.avatarSelection || !avatarHandlers.avatarName.trim()}
                             onClose={avatarHandlers.handleAvatarCreationModalClose}
                             onAvatarNameChange={avatarHandlers.setAvatarName}
-                            onSave={() => avatarHandlers.handleAvatarSave(avatarHandlers.avatarName, avatarHandlers.avatarSelection!)}
+                            onSave={async () => {
+                                const result = await avatarHandlers.handleAvatarSave(avatarHandlers.avatarName, avatarHandlers.avatarSelection!);
+                                if (result && !result.success && result.error) {
+                                    avatarHandlers.setAvatarUploadError(result.error);
+                                }
+                            }}
                             onClearSelection={() => avatarHandlers.setAvatarSelection(null)}
                             onProcessFile={avatarHandlers.processAvatarImageFile}
                             onDragStateChange={avatarHandlers.setIsDraggingAvatar}
@@ -1331,7 +1345,12 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                             disableSave={!productHandlers.productSelection || !productHandlers.productName.trim()}
                             onClose={productHandlers.handleProductCreationModalClose}
                             onProductNameChange={productHandlers.setProductName}
-                            onSave={() => productHandlers.handleProductSave(productHandlers.productName, productHandlers.productSelection!)}
+                            onSave={async () => {
+                                const result = await productHandlers.handleProductSave(productHandlers.productName, productHandlers.productSelection!);
+                                if (result && !result.success && result.error) {
+                                    productHandlers.setProductUploadError(result.error);
+                                }
+                            }}
                             onClearSelection={() => productHandlers.setProductSelection(null)}
                             onProcessFile={productHandlers.processProductImageFile}
                             onDragStateChange={productHandlers.setIsDraggingProduct}
@@ -1341,6 +1360,11 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                 )}
 
             </div>
+            <ReferencePreviewModal
+                open={referencePreviewUrl !== null}
+                imageUrl={referencePreviewUrl}
+                onClose={() => setReferencePreviewUrl(null)}
+            />
         </>,
         document.body
     );

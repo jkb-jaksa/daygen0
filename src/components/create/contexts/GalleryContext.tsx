@@ -570,13 +570,17 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     const targetItem = targetImage ?? targetVideo;
     const isVideo = targetVideo !== null;
 
+    // Use r2FileId as primary identifier, fall back to the passed id
     const apiIdentifier = targetItem?.r2FileId ?? id;
+    // Get the URL for fallback deletion
+    const fileUrl = targetItem?.url ?? (id.startsWith('http') ? id : undefined);
 
-    if (!apiIdentifier) {
+    if (!apiIdentifier && !fileUrl) {
       return false;
     }
 
-    const didDelete = await deleteImageFromService(apiIdentifier);
+    // Call deleteImageFromService with both r2FileId and fileUrl for fallback
+    const didDelete = await deleteImageFromService(apiIdentifier, fileUrl);
     if (!didDelete) {
       return false;
     }

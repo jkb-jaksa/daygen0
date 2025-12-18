@@ -141,9 +141,9 @@ const IMAGE_MODEL_OPTIONS: ReadonlyArray<ImageModelOption> = [
     Icon: Film,
   },
   {
-    id: "chatgpt-image",
-    name: "ChatGPT",
-    desc: "Popular image model.",
+    id: "gpt-image-1.5",
+    name: "GPT Image 1.5",
+    desc: "OpenAI's state-of-the-art image generation.",
     Icon: Sparkles,
   },
   {
@@ -1080,8 +1080,8 @@ const ChatMode: React.FC = () => {
                             onTouchStart={() => setPressedSession(session.id)}
                             onTouchEnd={() => setPressedSession(null)}
                             className={`relative overflow-hidden group w-full rounded-2xl px-3 py-2 text-left transition-colors duration-150 cursor-pointer ${isActive
-                                ? "border border-theme-dark text-theme-text"
-                                : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"
+                              ? "border border-theme-dark text-theme-text"
+                              : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"
                               }`}
                             style={insetShadow}
                             aria-pressed={isActive}
@@ -1138,8 +1138,8 @@ const ChatMode: React.FC = () => {
                     >
                       <div
                         className={`max-w-[min(720px,90%)] rounded-3xl px-4 py-3 text-sm font-raleway leading-relaxed ${message.role === "user"
-                            ? "bg-theme-dark text-theme-text"
-                            : "bg-theme-black text-theme-white"
+                          ? "bg-theme-dark text-theme-text"
+                          : "bg-theme-black text-theme-white"
                           }`}
                       >
                         {message.kind === "image" && message.imageUrl ? (
@@ -1560,8 +1560,8 @@ const ChatMode: React.FC = () => {
                                     setIsModelSelectorOpen(false);
                                   }}
                                   className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-2 text-left transition-colors duration-150 ${isActive
-                                      ? "border-theme-text bg-theme-text/10 text-theme-text"
-                                      : "border-theme-dark text-theme-white hover:border-theme-text/40 hover:bg-theme-text/10"
+                                    ? "border-theme-text bg-theme-text/10 text-theme-text"
+                                    : "border-theme-dark text-theme-white hover:border-theme-text/40 hover:bg-theme-text/10"
                                     }`}
                                 >
                                   {hasToolLogo(model.name) ? (
@@ -1921,8 +1921,8 @@ const ChatMode: React.FC = () => {
                             onTouchStart={() => setPressedSession(session.id)}
                             onTouchEnd={() => setPressedSession(null)}
                             className={`relative overflow-hidden group w-full rounded-2xl px-3 py-2 text-left transition-colors duration-150 cursor-pointer ${isActive
-                                ? "border border-theme-dark text-theme-text"
-                                : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"
+                              ? "border border-theme-dark text-theme-text"
+                              : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"
                               }`}
                             style={insetShadow}
                             aria-pressed={isActive}

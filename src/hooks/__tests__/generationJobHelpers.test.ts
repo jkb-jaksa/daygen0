@@ -93,14 +93,14 @@ describe('generationJobHelpers', () => {
       const result = await runGenerationJob({
         provider: 'chatgpt',
         mediaType: 'image',
-        body: { prompt: 'hi', model: 'chatgpt-image' },
+        body: { prompt: 'hi', model: 'gpt-image-1.5' },
         tracker,
         prompt: 'hi',
-        model: 'chatgpt-image',
+        model: 'gpt-image-1.5',
         parseImmediateResult: () => ({
           url: 'https://cdn/immediate.png',
           prompt: 'hi',
-          model: 'chatgpt-image',
+          model: 'gpt-image-1.5',
           timestamp: 'now',
         }),
         parseJobResult: () => {

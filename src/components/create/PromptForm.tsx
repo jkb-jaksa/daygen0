@@ -28,6 +28,7 @@ import {
   Info,
   Trash2,
   Upload,
+  Check,
 } from 'lucide-react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useCreateGenerationController } from './hooks/useCreateGenerationController';
@@ -49,6 +50,8 @@ import { useCreateBridge, createInitialBridgeActions } from './contexts/hooks';
 import { usePresetGenerationFlow } from './hooks/usePresetGenerationFlow';
 import { isVideoModelId, REFERENCE_SUPPORTED_MODELS } from './constants';
 import { getDraggingImageUrl, setFloatingDragImageVisible } from './utils/dragState';
+import { useMentionSuggestions } from './hooks/useMentionSuggestions';
+import { MentionDropdown } from './MentionDropdown';
 
 const ModelSelector = lazy(() => import('./ModelSelector'));
 const SettingsMenu = lazy(() => import('./SettingsMenu'));
@@ -62,6 +65,7 @@ const PromptsDropdown = lazy(() =>
 const AvatarCreationModal = lazy(() => import('../avatars/AvatarCreationModal'));
 const ProductCreationModal = lazy(() => import('../products/ProductCreationModal'));
 const PresetGenerationModal = lazy(() => import('./modals/PresetGenerationModal'));
+import { ReferencePreviewModal } from '../shared/ReferencePreviewModal';
 
 type GenerationMode = 'image' | 'video';
 
@@ -244,18 +248,33 @@ const PromptForm = memo<PromptFormProps>(
     const [isPromptFocused, setIsPromptFocused] = useState(false);
     const [isStyleButtonHovered, setIsStyleButtonHovered] = useState(false);
     const [activeTooltip, setActiveTooltip] = useState<{ id: string; text: string; x: number; y: number } | null>(null);
+    const [referencePreviewUrl, setReferencePreviewUrl] = useState<string | null>(null);
     const [isDraggingOverAvatarButton, setIsDraggingOverAvatarButton] = useState(false);
     const [isDraggingOverProductButton, setIsDraggingOverProductButton] = useState(false);
     const [avatarDragPreviewUrl, setAvatarDragPreviewUrl] = useState<string | null>(null);
     const [productDragPreviewUrl, setProductDragPreviewUrl] = useState<string | null>(null);
+
+    // Preview state for full-size avatar/product view
+    const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+    // Modal state for viewing all selected avatars/products
+    const [showAllAvatarsModal, setShowAllAvatarsModal] = useState(false);
+    const [showAllProductsModal, setShowAllProductsModal] = useState(false);
+
+    // Cursor position for @ mention detection
+    const [cursorPosition, setCursorPosition] = useState(0);
+
     const {
       storedAvatars,
       selectedAvatar,
+      selectedAvatars,
       selectedAvatarImageId,
       isAvatarPickerOpen,
       avatarButtonRef,
       avatarQuickUploadInputRef,
-      handleAvatarSelect,
+      handleAvatarToggle,
+      isAvatarSelected,
+      clearAllAvatars,
       handleAvatarPickerClose,
       setIsAvatarPickerOpen,
       isAvatarCreationModalOpen,
@@ -276,16 +295,19 @@ const PromptForm = memo<PromptFormProps>(
       handleAvatarDelete,
       setCreationsModalAvatar,
       setAvatarToDelete,
-      setSelectedAvatar,
       setSelectedAvatarImageId,
+      removeSelectedAvatar,
     } = avatarHandlers;
     const {
       storedProducts,
       selectedProduct,
+      selectedProducts,
       isProductPickerOpen,
       productButtonRef,
       productQuickUploadInputRef,
-      handleProductSelect,
+      handleProductToggle,
+      isProductSelected,
+      clearAllProducts,
       handleProductPickerClose,
       setIsProductPickerOpen,
       isProductCreationModalOpen,
@@ -307,6 +329,16 @@ const PromptForm = memo<PromptFormProps>(
       setCreationsModalProduct,
       setProductToDelete,
     } = productHandlers;
+
+    // @ mention suggestions hook (avatars only)
+    const mentionSuggestions = useMentionSuggestions({
+      storedAvatars,
+      prompt,
+      cursorPosition,
+      onSelectAvatar: handleAvatarToggle,
+      onDeselectAvatar: removeSelectedAvatar,
+      selectedAvatars,
+    });
 
     const handleAvatarButtonClick = useCallback(() => {
       if (storedAvatars.length === 0) {
@@ -407,7 +439,10 @@ const PromptForm = memo<PromptFormProps>(
       }
       // Blur textarea before save to prevent browser focus restoration when modal closes
       textareaRef.current?.blur();
-      await persistAvatar(avatarName.trim(), avatarSelection);
+      const result = await persistAvatar(avatarName.trim(), avatarSelection);
+      if (result && !result.success && result.error) {
+        setAvatarUploadError(result.error);
+      }
     }, [avatarSelection, avatarName, persistAvatar, setAvatarUploadError]);
 
     const handleSaveNewProduct = useCallback(async () => {
@@ -417,7 +452,10 @@ const PromptForm = memo<PromptFormProps>(
       }
       // Blur textarea before save to prevent browser focus restoration when modal closes
       textareaRef.current?.blur();
-      await persistProduct(productName.trim(), productSelection);
+      const result = await persistProduct(productName.trim(), productSelection);
+      if (result && !result.success && result.error) {
+        setProductUploadError(result.error);
+      }
     }, [productSelection, productName, persistProduct, setProductUploadError]);
 
     const openImageByUrl = useCallback((imageUrl: string) => {
@@ -1118,24 +1156,16 @@ const PromptForm = memo<PromptFormProps>(
 
     const totalReferenceCount =
       referencePreviews.length +
-      (selectedAvatar ? 1 : 0) +
-      (selectedProduct ? 1 : 0);
+      selectedAvatars.length +
+      selectedProducts.length;
 
     const remainingReferenceSlots = Math.max(0, maxReferences - totalReferenceCount);
 
     const handleReferencePreviewClick = useCallback(
       (preview: string) => {
-        setFullSizeImage(
-          {
-            url: preview,
-            prompt: '',
-            timestamp: new Date().toISOString(),
-          },
-          0,
-        );
-        setFullSizeOpen(true);
+        setReferencePreviewUrl(preview);
       },
-      [setFullSizeImage, setFullSizeOpen],
+      [],
     );
 
     const triggerGenerate = useCallback(() => {
@@ -1207,14 +1237,61 @@ const PromptForm = memo<PromptFormProps>(
     });
 
     const handlePromptChangeInternal = useCallback(
-      (value: string) => {
+      (value: string, newCursorPos?: number) => {
         if (error) {
           clearError();
         }
         handlePromptChange(value);
+        // Update cursor position after state update
+        if (typeof newCursorPos === 'number') {
+          requestAnimationFrame(() => {
+            setCursorPosition(newCursorPos);
+          });
+        }
       },
       [clearError, error, handlePromptChange],
     );
+
+    // Update cursor position on selection change
+    const handleTextareaSelect = useCallback((event: React.SyntheticEvent<HTMLTextAreaElement>) => {
+      const target = event.currentTarget;
+      setCursorPosition(target.selectionStart);
+    }, []);
+
+    // Handle mention selection
+    const handleMentionSelect = useCallback((item: { id: string; name: string; imageUrl: string; type: 'avatar' }) => {
+      const result = mentionSuggestions.selectSuggestion(item);
+      if (result) {
+        handlePromptChangeInternal(result.newPrompt, result.newCursorPos);
+        // Move cursor to end of inserted mention
+        requestAnimationFrame(() => {
+          if (textareaRef.current) {
+            textareaRef.current.selectionStart = result.newCursorPos;
+            textareaRef.current.selectionEnd = result.newCursorPos;
+          }
+        });
+      }
+    }, [mentionSuggestions, handlePromptChangeInternal]);
+
+    // Combined keyboard handler: handle mentions first, then generate shortcuts
+    const handleTextareaKeyDown = useCallback((event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      // If mention dropdown is open and handles the key, don't propagate
+      if (mentionSuggestions.isOpen) {
+        const handled = mentionSuggestions.handleKeyDown(event);
+        if (handled) {
+          // If Enter/Tab was pressed, select the current suggestion
+          if (event.key === 'Enter' || event.key === 'Tab') {
+            const item = mentionSuggestions.suggestions[mentionSuggestions.selectedIndex];
+            if (item) {
+              handleMentionSelect(item);
+            }
+          }
+          return;
+        }
+      }
+      // Otherwise, use the generate shortcuts handler
+      onKeyDown(event);
+    }, [mentionSuggestions, handleMentionSelect, onKeyDown]);
 
     const handlePromptSelect = useCallback(
       (value: string) => {
@@ -1246,16 +1323,91 @@ const PromptForm = memo<PromptFormProps>(
             {/* Left section: Textarea + Controls */}
             <div className="flex-1 flex flex-col">
               {/* Textarea - first row */}
-              <div>
+              <div className="relative">
+                {/* Backdrop overlay for styled mentions - renders behind the transparent textarea */}
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-0 w-full min-h-[36px] max-h-40 bg-transparent text-n-text font-raleway text-base px-3 py-2 leading-normal whitespace-pre-wrap break-words rounded-lg overflow-hidden"
+                  style={{ wordBreak: 'break-word' }}
+                >
+                  {(() => {
+                    // Build styled text using parsedMentions
+                    const mentions = mentionSuggestions.parsedMentions;
+                    if (mentions.length === 0) {
+                      return <span className="pointer-events-none">{prompt}</span>;
+                    }
+
+                    const parts: React.ReactNode[] = [];
+                    let lastIndex = 0;
+
+                    mentions.forEach((mention, i) => {
+                      // Add text before this mention (not clickable)
+                      if (mention.startIndex > lastIndex) {
+                        parts.push(
+                          <span key={`text-${i}`} className="pointer-events-none">
+                            {prompt.slice(lastIndex, mention.startIndex)}
+                          </span>
+                        );
+                      }
+                      // Find the avatar for this mention
+                      const mentionAvatar = storedAvatars.find(
+                        a => a.name.toLowerCase() === mention.name.toLowerCase()
+                      );
+                      // Add the mention with subtle highlight styling and click handler
+                      parts.push(
+                        <span
+                          key={`mention-${i}`}
+                          className="text-n-text bg-n-text/10 rounded px-0.5 -mx-0.5 pointer-events-auto cursor-pointer hover:bg-n-text/20 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (mentionAvatar) {
+                              setCreationsModalAvatar(mentionAvatar);
+                            }
+                          }}
+                        >
+                          {prompt.slice(mention.startIndex, mention.endIndex)}
+                        </span>
+                      );
+                      lastIndex = mention.endIndex;
+                    });
+
+                    // Add remaining text after last mention (not clickable)
+                    if (lastIndex < prompt.length) {
+                      parts.push(
+                        <span key="text-end" className="pointer-events-none">{prompt.slice(lastIndex)}</span>
+                      );
+                    }
+
+                    return parts;
+                  })()}
+                </div>
                 <textarea
                   ref={textareaRef}
                   value={prompt}
-                  onChange={event => handlePromptChangeInternal(event.target.value)}
-                  onKeyDown={onKeyDown}
+                  onChange={event => {
+                    const newValue = event.target.value;
+                    const newCursorPos = event.target.selectionStart;
+                    handlePromptChangeInternal(newValue);
+                    setCursorPosition(newCursorPos);
+                  }}
+                  onKeyDown={handleTextareaKeyDown}
                   onPaste={handlePaste}
+                  onSelect={handleTextareaSelect}
+                  onClick={handleTextareaSelect}
                   placeholder="Describe what you want to create..."
                   rows={1}
-                  className={`w-full min-h-[36px] max-h-40 bg-transparent ${prompt.trim() ? 'text-n-text' : 'text-n-white'} placeholder-n-white border-0 focus:outline-none ring-0 focus:ring-0 focus:text-n-text font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-hidden overflow-y-auto text-left whitespace-pre-wrap break-words rounded-lg transition-[height] duration-150`}
+                  className={`relative w-full min-h-[36px] max-h-40 bg-transparent ${prompt.trim() ? 'text-transparent caret-n-text' : 'text-n-white'} placeholder-n-white border-0 focus:outline-none ring-0 focus:ring-0 font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-hidden overflow-y-auto text-left whitespace-pre-wrap break-words rounded-lg transition-[height] duration-150`}
+                  style={{ caretColor: 'var(--n-text)' }}
+                />
+                {/* @ Mention Dropdown */}
+                <MentionDropdown
+                  isOpen={mentionSuggestions.isOpen}
+                  suggestions={mentionSuggestions.suggestions}
+                  selectedIndex={mentionSuggestions.selectedIndex}
+                  anchorRef={textareaRef as React.RefObject<HTMLTextAreaElement>}
+                  onSelect={handleMentionSelect}
+                  onClose={mentionSuggestions.closeSuggestions}
+                  setSelectedIndex={mentionSuggestions.setSelectedIndex}
                 />
               </div>
 
@@ -1560,6 +1712,7 @@ const PromptForm = memo<PromptFormProps>(
 
             {/* Right section: Avatar + Product + Style + Generate */}
             <div className="flex flex-row gap-2 flex-shrink-0 items-end">
+              {/* Avatar section - supports multiple selections */}
               <div className="relative">
                 <button
                   type="button"
@@ -1571,7 +1724,7 @@ const PromptForm = memo<PromptFormProps>(
                   onDrop={handleAvatarButtonDrop}
                   onMouseEnter={() => setIsAvatarButtonHovered(true)}
                   onMouseLeave={() => setIsAvatarButtonHovered(false)}
-                  className={`${glass.promptBorderless} ${isDraggingOverAvatarButton || avatarSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-theme-dark/10 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${selectedAvatar ? 'hover:border-theme-mid' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                  className={`${glass.promptBorderless} ${isDraggingOverAvatarButton || avatarSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-theme-dark/10 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${selectedAvatars.length > 0 ? 'hover:border-theme-mid' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                   onPointerMove={onPointerMove}
                   onPointerEnter={onPointerEnter}
                   onPointerLeave={onPointerLeave}
@@ -1591,7 +1744,9 @@ const PromptForm = memo<PromptFormProps>(
                       </div>
                     </>
                   )}
-                  {!selectedAvatar && !avatarDragPreviewUrl && !avatarSelection && (
+
+                  {/* Empty state - no avatars selected */}
+                  {selectedAvatars.length === 0 && !avatarDragPreviewUrl && !avatarSelection && (
                     <>
                       <div className="flex-1 flex items-center justify-center lg:mt-3">
                         {isAvatarButtonHovered ? (
@@ -1607,40 +1762,125 @@ const PromptForm = memo<PromptFormProps>(
                       </div>
                     </>
                   )}
-                  {(selectedAvatar || avatarSelection) && !avatarDragPreviewUrl && (
+
+                  {/* Single avatar - original full-size display */}
+                  {selectedAvatars.length === 1 && !avatarDragPreviewUrl && !avatarSelection && (
                     <>
                       <img
-                        src={avatarSelection?.imageUrl ?? avatarHandlers.selectedAvatarImage?.url ?? selectedAvatar?.imageUrl}
-                        alt={avatarSelection ? 'Avatar' : (selectedAvatar?.name ?? 'Avatar')}
+                        src={avatarHandlers.selectedAvatarImage?.url ?? selectedAvatars[0]?.imageUrl}
+                        alt={selectedAvatars[0]?.name ?? 'Avatar'}
                         loading="lazy"
-                        className={`absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover ${avatarSelection ? 'opacity-80' : ''}`}
-                        title={avatarSelection ? 'Avatar' : (selectedAvatar?.name ?? 'Avatar')}
+                        className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover"
+                        title={selectedAvatars[0]?.name ?? 'Avatar'}
                       />
-                      <div className={`hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 ${avatarSelection ? 'z-20' : ''}`}>
+                      <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
+                        <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center truncate px-1">
+                          {selectedAvatars[0]?.name ?? 'Avatar'}
+                        </span>
+                      </div>
+                    </>
+                  )}
+
+                  {/* 2-4 avatars - grid layout inside container */}
+                  {selectedAvatars.length >= 2 && selectedAvatars.length <= 4 && !avatarDragPreviewUrl && !avatarSelection && (
+                    <>
+                      <div className={`absolute inset-0 grid gap-0.5 ${selectedAvatars.length === 2 ? 'grid-cols-2' : 'grid-cols-2 grid-rows-2'}`}>
+                        {selectedAvatars.slice(0, 4).map((avatar, index) => (
+                          <img
+                            key={avatar.id}
+                            src={avatar.images[0]?.url ?? avatar.imageUrl}
+                            alt={avatar.name}
+                            loading="lazy"
+                            className={`w-full h-full object-cover ${selectedAvatars.length === 2 ? 'rounded-full lg:rounded-lg' : 'rounded-sm lg:rounded-md'} ${selectedAvatars.length === 3 && index === 2 ? 'col-span-2' : ''}`}
+                            title={avatar.name}
+                          />
+                        ))}
+                      </div>
+                      <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-10">
+                        <span className="text-xs font-raleway text-n-text text-center">
+                          {selectedAvatars.length} Avatars
+                        </span>
+                      </div>
+                    </>
+                  )}
+
+                  {/* 5+ avatars - grid of 4 with "See all" badge */}
+                  {selectedAvatars.length > 4 && !avatarDragPreviewUrl && !avatarSelection && (
+                    <>
+                      <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-0.5">
+                        {selectedAvatars.slice(0, 4).map((avatar) => (
+                          <img
+                            key={avatar.id}
+                            src={avatar.images[0]?.url ?? avatar.imageUrl}
+                            alt={avatar.name}
+                            loading="lazy"
+                            className="w-full h-full object-cover rounded-sm lg:rounded-md"
+                            title={avatar.name}
+                          />
+                        ))}
+                      </div>
+                      {/* Badge with count - bottom center, doesn't block picker clicks */}
+                      <div
+                        className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-10 cursor-pointer hover:from-black/95"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowAllAvatarsModal(true);
+                        }}
+                      >
+                        <span className="text-xs font-raleway text-white/90 hover:text-white">
+                          +{selectedAvatars.length - 4} more
+                        </span>
+                      </div>
+                      {/* Mobile: small badge overlay */}
+                      <div
+                        className="lg:hidden absolute bottom-0.5 right-0.5 bg-theme-black/80 rounded-full px-1 py-0.5 z-10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowAllAvatarsModal(true);
+                        }}
+                      >
+                        <span className="text-[10px] font-raleway text-white">+{selectedAvatars.length - 4}</span>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Avatar selection preview (during creation) */}
+                  {avatarSelection && !avatarDragPreviewUrl && (
+                    <>
+                      <img
+                        src={avatarSelection.imageUrl}
+                        alt="Avatar"
+                        loading="lazy"
+                        className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover opacity-80"
+                        title="Avatar"
+                      />
+                      <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-20">
                         <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
-                          {avatarSelection ? 'Avatar' : (selectedAvatar?.name ?? 'Avatar')}
+                          Avatar
                         </span>
                       </div>
                     </>
                   )}
                 </button>
-                {(selectedAvatar) && (
+
+                {/* Clear all avatars button - show when 1+ selected */}
+                {selectedAvatars.length > 0 && (
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleAvatarSelect(null);
+                      clearAllAvatars();
                     }}
-                    className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
-                    title="Remove avatar"
-                    aria-label="Remove avatar"
+                    className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove z-20"
+                    title="Remove all avatars"
+                    aria-label="Remove all avatars"
                   >
                     <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
                   </button>
                 )}
-
               </div>
 
+              {/* Product section - supports multiple selections */}
               <div className="relative">
                 <button
                   type="button"
@@ -1652,7 +1892,7 @@ const PromptForm = memo<PromptFormProps>(
                   onDrop={handleProductButtonDrop}
                   onMouseEnter={() => setIsProductButtonHovered(true)}
                   onMouseLeave={() => setIsProductButtonHovered(false)}
-                  className={`${glass.promptBorderless} ${isDraggingOverProductButton || productSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-theme-dark/10 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${selectedProduct || productSelection ? 'hover:border-theme-mid' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                  className={`${glass.promptBorderless} ${isDraggingOverProductButton || productSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-theme-dark/10 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${selectedProducts.length > 0 ? 'hover:border-theme-mid' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                   onPointerMove={onPointerMove}
                   onPointerEnter={onPointerEnter}
                   onPointerLeave={onPointerLeave}
@@ -1672,7 +1912,9 @@ const PromptForm = memo<PromptFormProps>(
                       </div>
                     </>
                   )}
-                  {!selectedProduct && !productDragPreviewUrl && !productSelection && (
+
+                  {/* Empty state - no products selected */}
+                  {selectedProducts.length === 0 && !productDragPreviewUrl && !productSelection && (
                     <>
                       <div className="flex-1 flex items-center justify-center lg:mt-3">
                         {isProductButtonHovered ? (
@@ -1688,33 +1930,118 @@ const PromptForm = memo<PromptFormProps>(
                       </div>
                     </>
                   )}
-                  {(selectedProduct || productSelection) && !productDragPreviewUrl && (
+
+                  {/* Single product - original full-size display */}
+                  {selectedProducts.length === 1 && !productDragPreviewUrl && !productSelection && (
                     <>
                       <img
-                        src={productSelection?.imageUrl ?? selectedProduct?.imageUrl}
-                        alt={productSelection ? 'Product' : (selectedProduct?.name ?? 'Product')}
+                        src={selectedProducts[0]?.images[0]?.url ?? selectedProducts[0]?.imageUrl}
+                        alt={selectedProducts[0]?.name ?? 'Product'}
                         loading="lazy"
-                        className={`absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover ${productSelection ? 'opacity-80' : ''}`}
-                        title={productSelection ? 'Product' : (selectedProduct?.name ?? 'Product')}
+                        className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover"
+                        title={selectedProducts[0]?.name ?? 'Product'}
                       />
-                      <div className={`hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 ${productSelection ? 'z-20' : ''}`}>
+                      <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
+                        <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center truncate px-1">
+                          {selectedProducts[0]?.name ?? 'Product'}
+                        </span>
+                      </div>
+                    </>
+                  )}
+
+                  {/* 2-4 products - grid layout inside container */}
+                  {selectedProducts.length >= 2 && selectedProducts.length <= 4 && !productDragPreviewUrl && !productSelection && (
+                    <>
+                      <div className={`absolute inset-0 grid gap-0.5 ${selectedProducts.length === 2 ? 'grid-cols-2' : 'grid-cols-2 grid-rows-2'}`}>
+                        {selectedProducts.slice(0, 4).map((product, index) => (
+                          <img
+                            key={product.id}
+                            src={product.images[0]?.url ?? product.imageUrl}
+                            alt={product.name}
+                            loading="lazy"
+                            className={`w-full h-full object-cover ${selectedProducts.length === 2 ? 'rounded-full lg:rounded-lg' : 'rounded-sm lg:rounded-md'} ${selectedProducts.length === 3 && index === 2 ? 'col-span-2' : ''}`}
+                            title={product.name}
+                          />
+                        ))}
+                      </div>
+                      <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-10">
+                        <span className="text-xs font-raleway text-n-text text-center">
+                          {selectedProducts.length} Products
+                        </span>
+                      </div>
+                    </>
+                  )}
+
+                  {/* 5+ products - grid of 4 with "See all" badge */}
+                  {selectedProducts.length > 4 && !productDragPreviewUrl && !productSelection && (
+                    <>
+                      <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-0.5">
+                        {selectedProducts.slice(0, 4).map((product) => (
+                          <img
+                            key={product.id}
+                            src={product.images[0]?.url ?? product.imageUrl}
+                            alt={product.name}
+                            loading="lazy"
+                            className="w-full h-full object-cover rounded-sm lg:rounded-md"
+                            title={product.name}
+                          />
+                        ))}
+                      </div>
+                      {/* Badge with count - bottom center, doesn't block picker clicks */}
+                      <div
+                        className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-10 cursor-pointer hover:from-black/95"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowAllProductsModal(true);
+                        }}
+                      >
+                        <span className="text-xs font-raleway text-white/90 hover:text-white">
+                          +{selectedProducts.length - 4} more
+                        </span>
+                      </div>
+                      {/* Mobile: small badge overlay */}
+                      <div
+                        className="lg:hidden absolute bottom-0.5 right-0.5 bg-theme-black/80 rounded-full px-1 py-0.5 z-10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowAllProductsModal(true);
+                        }}
+                      >
+                        <span className="text-[10px] font-raleway text-white">+{selectedProducts.length - 4}</span>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Product selection preview (during creation) */}
+                  {productSelection && !productDragPreviewUrl && (
+                    <>
+                      <img
+                        src={productSelection.imageUrl}
+                        alt="Product"
+                        loading="lazy"
+                        className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover opacity-80"
+                        title="Product"
+                      />
+                      <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-20">
                         <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
-                          {productSelection ? 'Product' : (selectedProduct?.name ?? 'Product')}
+                          Product
                         </span>
                       </div>
                     </>
                   )}
                 </button>
-                {selectedProduct && (
+
+                {/* Clear all products button - show when 1+ selected */}
+                {selectedProducts.length > 0 && (
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleProductSelect(null);
+                      clearAllProducts();
                     }}
-                    className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
-                    title="Remove product"
-                    aria-label="Remove product"
+                    className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove z-20"
+                    title="Remove all products"
+                    aria-label="Remove all products"
                   >
                     <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
                   </button>
@@ -1878,7 +2205,7 @@ const PromptForm = memo<PromptFormProps>(
                 }}
                 className="text-base font-raleway text-theme-text"
               >
-                Your Avatars
+                Your Avatars {selectedAvatars.length > 0 && <span className="text-sm text-n-text ml-1">({selectedAvatars.length} selected)</span>}
               </button>
               <button
                 type="button"
@@ -1892,33 +2219,50 @@ const PromptForm = memo<PromptFormProps>(
                 <Plus className="h-4 w-4" />
               </button>
             </div>
+            {remainingReferenceSlots === 0 && selectedAvatars.length > 0 && (
+              <div className="text-xs text-amber-400 px-1">Max references reached. Remove some to add more.</div>
+            )}
             {storedAvatars.length > 0 ? (
               <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
                 {storedAvatars.map(avatar => {
-                  const isActive = selectedAvatar?.id === avatar.id;
+                  const isActive = isAvatarSelected(avatar.id);
+                  const canSelect = remainingReferenceSlots > 0 || isActive;
                   return (
                     <div
                       key={avatar.id}
-                      className="rounded-2xl border border-theme-mid px-3 py-2 transition-colors duration-200 group hover:border-theme-mid hover:bg-theme-text/10"
+                      className={`rounded-2xl border px-3 py-2 transition-colors duration-200 group ${isActive ? 'border-theme-text bg-theme-text/10' : 'border-theme-mid hover:border-theme-mid hover:bg-theme-text/10'} ${!canSelect && !isActive ? 'opacity-50' : ''}`}
                     >
                       <div className="flex items-center gap-3">
                         <button
                           type="button"
                           onClick={() => {
-                            handleAvatarSelect(avatar);
-                            setIsAvatarPickerOpen(false);
+                            if (canSelect) {
+                              handleAvatarToggle(avatar);
+                            }
                           }}
+                          disabled={!canSelect}
                           className={`flex flex-1 items-center gap-3 ${isActive
                             ? 'text-theme-text'
                             : 'text-white'
-                            }`}
+                            } ${!canSelect ? 'cursor-not-allowed' : ''}`}
                         >
-                          <img
-                            src={avatar.imageUrl}
-                            alt={avatar.name}
-                            loading="lazy"
-                            className="h-10 w-10 rounded-lg object-cover"
-                          />
+
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewImage(avatar.imageUrl);
+                            }}
+                            className="h-10 w-10 flex-shrink-0 cursor-pointer transition-transform hover:scale-105"
+                            role="button"
+                            aria-label="View full size"
+                          >
+                            <img
+                              src={avatar.imageUrl}
+                              alt={avatar.name}
+                              loading="lazy"
+                              className="h-full w-full rounded-lg object-cover"
+                            />
+                          </div>
                           <div className="min-w-0 flex-1 text-left">
                             <p className="truncate text-sm font-raleway text-theme-white group-hover:text-n-text">
                               {avatar.name}
@@ -1959,7 +2303,6 @@ const PromptForm = memo<PromptFormProps>(
                           >
                             <Trash2 className="h-3 w-3 text-theme-white hover:text-theme-text" />
                           </button>
-                          {isActive && <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>}
                         </div>
                       </div>
                     </div>
@@ -2080,7 +2423,7 @@ const PromptForm = memo<PromptFormProps>(
                 }}
                 className="text-base font-raleway text-theme-text"
               >
-                Your Products
+                Your Products {selectedProducts.length > 0 && <span className="text-sm text-n-text ml-1">({selectedProducts.length} selected)</span>}
               </button>
               <button
                 type="button"
@@ -2094,33 +2437,49 @@ const PromptForm = memo<PromptFormProps>(
                 <Plus className="h-4 w-4" />
               </button>
             </div>
+            {remainingReferenceSlots === 0 && selectedProducts.length > 0 && (
+              <div className="text-xs text-amber-400 px-1">Max references reached. Remove some to add more.</div>
+            )}
             {storedProducts.length > 0 ? (
               <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
                 {storedProducts.map(product => {
-                  const isActive = selectedProduct?.id === product.id;
+                  const isActive = isProductSelected(product.id);
+                  const canSelect = remainingReferenceSlots > 0 || isActive;
                   return (
                     <div
                       key={product.id}
-                      className="rounded-2xl border border-theme-mid px-3 py-2 transition-colors duration-200 group hover:border-theme-mid hover:bg-theme-text/10"
+                      className={`rounded-2xl border px-3 py-2 transition-colors duration-200 group ${isActive ? 'border-theme-text bg-theme-text/10' : 'border-theme-mid hover:border-theme-mid hover:bg-theme-text/10'} ${!canSelect && !isActive ? 'opacity-50' : ''}`}
                     >
                       <div className="flex items-center gap-3">
                         <button
                           type="button"
                           onClick={() => {
-                            handleProductSelect(product);
-                            setIsProductPickerOpen(false);
+                            if (canSelect) {
+                              handleProductToggle(product);
+                            }
                           }}
+                          disabled={!canSelect}
                           className={`flex flex-1 items-center gap-3 ${isActive
                             ? 'text-theme-text'
                             : 'text-white'
-                            }`}
+                            } ${!canSelect ? 'cursor-not-allowed' : ''}`}
                         >
-                          <img
-                            src={product.imageUrl}
-                            alt={product.name}
-                            loading="lazy"
-                            className="h-10 w-10 rounded-lg object-cover"
-                          />
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewImage(product.imageUrl);
+                            }}
+                            className="h-10 w-10 flex-shrink-0 cursor-pointer transition-transform hover:scale-105"
+                            role="button"
+                            aria-label="View full size"
+                          >
+                            <img
+                              src={product.imageUrl}
+                              alt={product.name}
+                              loading="lazy"
+                              className="h-full w-full rounded-lg object-cover"
+                            />
+                          </div>
                           <div className="min-w-0 flex-1 text-left">
                             <p className="truncate text-sm font-raleway text-theme-white group-hover:text-n-text">
                               {product.name}
@@ -2161,7 +2520,6 @@ const PromptForm = memo<PromptFormProps>(
                           >
                             <Trash2 className="h-3 w-3 text-theme-white hover:text-theme-text" />
                           </button>
-                          {isActive && <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>}
                         </div>
                       </div>
                     </div>
@@ -2375,234 +2733,265 @@ const PromptForm = memo<PromptFormProps>(
           </div>
         )}
 
-        {creationsModalAvatar && (
+        {previewImage && (
           <div
-            className="fixed inset-0 z-[10500] flex items-center justify-center bg-theme-black/80 px-4 py-10"
-            onClick={() => setCreationsModalAvatar(null)}
+            className="fixed inset-0 z-[20000] flex items-center justify-center bg-black/95 cursor-zoom-out animate-in fade-in duration-200"
+            onClick={() => setPreviewImage(null)}
           >
-            <div
-              className={`relative w-full max-w-5xl overflow-hidden rounded-[32px] shadow-2xl ${glass.promptDark}`}
-              onClick={(event) => event.stopPropagation()}
+            {/* Close button fixed to screen corner for safety */}
+            <button
+              onClick={() => setPreviewImage(null)}
+              className="fixed top-6 right-6 p-2 text-white/70 hover:text-white transition-colors z-[20010]"
             >
-              <button
-                type="button"
-                className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text z-10"
-                onClick={() => setCreationsModalAvatar(null)}
-                aria-label="Close Avatar details"
+              <X className="w-8 h-8" />
+              <span className="sr-only">Close</span>
+            </button>
+
+            <div className="relative max-w-[90vw] max-h-[90vh] flex flex-col items-center justify-center p-4">
+              <img
+                src={previewImage}
+                alt="Preview"
+                className="max-w-full max-h-[85vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          </div>
+        )}
+
+        {
+          creationsModalAvatar && (
+            <div
+              className="fixed inset-0 z-[10500] flex items-center justify-center bg-theme-black/80 px-4 py-10"
+              onClick={() => setCreationsModalAvatar(null)}
+            >
+              <div
+                className={`relative w-full max-w-5xl overflow-hidden rounded-[32px] shadow-2xl ${glass.promptDark}`}
+                onClick={(event) => event.stopPropagation()}
               >
-                <X className="h-5 w-5" />
-              </button>
+                <button
+                  type="button"
+                  className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text z-10"
+                  onClick={() => setCreationsModalAvatar(null)}
+                  aria-label="Close Avatar details"
+                >
+                  <X className="h-5 w-5" />
+                </button>
 
-              <div className="flex flex-col gap-6 p-6 lg:p-8 max-h-[80vh] overflow-y-auto">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="space-y-1">
-                    <h2 className="text-2xl font-raleway text-theme-text">
-                      Avatar: {creationsModalAvatar.name}
-                    </h2>
-                    <p className="text-sm font-raleway text-theme-white">
-                      Choose which avatar image you want to send with your next prompt.
-                    </p>
+                <div className="flex flex-col gap-6 p-6 lg:p-8 max-h-[80vh] overflow-y-auto">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="space-y-1">
+                      <h2 className="text-2xl font-raleway text-theme-text">
+                        Avatar: {creationsModalAvatar.name}
+                      </h2>
+                      <p className="text-sm font-raleway text-theme-white">
+                        Choose which avatar image you want to send with your next prompt.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        className={buttons.ghost}
+                        onClick={() => {
+                          navigate(`/app/avatars/${creationsModalAvatar.slug}`);
+                          setCreationsModalAvatar(null);
+                        }}
+                      >
+                        Manage avatar
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      className={buttons.ghost}
-                      onClick={() => {
-                        navigate(`/app/avatars/${creationsModalAvatar.slug}`);
-                        setCreationsModalAvatar(null);
-                      }}
-                    >
-                      Manage avatar
-                    </button>
-                  </div>
-                </div>
 
-                <div className="space-y-3">
-                  <h3 className="text-lg font-raleway text-theme-text">Avatar images</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {creationsModalAvatar.images.map((image, index) => {
-                      const isSelectedForPrompt =
-                        selectedAvatar?.id === creationsModalAvatar.id
-                          ? (selectedAvatarImageId ?? creationsModalAvatar.primaryImageId) === image.id
-                          : false;
-                      const isPrimary = creationsModalAvatar.primaryImageId === image.id;
-                      return (
-                        <div key={image.id} className="flex flex-col items-center gap-2">
-                          <div
-                            className={`relative aspect-square w-32 overflow-hidden rounded-2xl border ${isSelectedForPrompt ? 'border-theme-text ring-2 ring-theme-text/50' : 'border-theme-dark'
-                              } bg-theme-black/60`}
-                          >
-                            <img
-                              src={image.url}
-                              alt={`${creationsModalAvatar.name} variation ${index + 1}`}
-                              className="h-full w-full object-cover"
-                            />
-                            <div className="absolute left-2 top-2 flex flex-col gap-1">
-                              {isPrimary && (
-                                <span className={`${glass.promptDark} rounded-full px-2 py-0.5 text-[10px] font-raleway text-theme-text`}>
-                                  Primary
-                                </span>
-                              )}
-                              {isSelectedForPrompt && (
-                                <span className={`${glass.promptDark} rounded-full px-2 py-0.5 text-[10px] font-raleway text-theme-text`}>
-                                  In use
-                                </span>
-                              )}
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-raleway text-theme-text">Avatar images</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {creationsModalAvatar.images.map((image, index) => {
+                        const isSelectedForPrompt =
+                          selectedAvatar?.id === creationsModalAvatar.id
+                            ? (selectedAvatarImageId ?? creationsModalAvatar.primaryImageId) === image.id
+                            : false;
+                        const isPrimary = creationsModalAvatar.primaryImageId === image.id;
+                        return (
+                          <div key={image.id} className="flex flex-col items-center gap-2">
+                            <div
+                              className={`relative aspect-square w-32 overflow-hidden rounded-2xl border ${isSelectedForPrompt ? 'border-theme-text ring-2 ring-theme-text/50' : 'border-theme-dark'
+                                } bg-theme-black/60`}
+                            >
+                              <img
+                                src={image.url}
+                                alt={`${creationsModalAvatar.name} variation ${index + 1}`}
+                                className="h-full w-full object-cover"
+                              />
+                              <div className="absolute left-2 top-2 flex flex-col gap-1">
+                                {isPrimary && (
+                                  <span className={`${glass.promptDark} rounded-full px-2 py-0.5 text-[10px] font-raleway text-theme-text`}>
+                                    Primary
+                                  </span>
+                                )}
+                                {isSelectedForPrompt && (
+                                  <span className={`${glass.promptDark} rounded-full px-2 py-0.5 text-[10px] font-raleway text-theme-text`}>
+                                    In use
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-raleway text-theme-white/80">
+                              <button
+                                type="button"
+                                className={`rounded-full border px-3 py-1 transition-colors duration-200 ${isSelectedForPrompt
+                                  ? 'border-theme-text text-theme-text'
+                                  : 'border-theme-mid hover:border-theme-text hover:text-theme-text'
+                                  }`}
+                                onClick={() => {
+                                  if (creationsModalAvatar) {
+                                    handleAvatarToggle(creationsModalAvatar);
+                                  }
+                                  setSelectedAvatarImageId(image.id);
+                                  setCreationsModalAvatar(null);
+                                }}
+                              >
+                                {isSelectedForPrompt ? 'Using for prompts' : 'Use for prompts'}
+                              </button>
+                              <a
+                                href={image.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="rounded-full border border-theme-mid px-3 py-1 transition-colors duration-200 hover:border-theme-text hover:text-theme-text"
+                              >
+                                Open
+                              </a>
                             </div>
                           </div>
-                          <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-raleway text-theme-white/80">
-                            <button
-                              type="button"
-                              className={`rounded-full border px-3 py-1 transition-colors duration-200 ${isSelectedForPrompt
-                                ? 'border-theme-text text-theme-text'
-                                : 'border-theme-mid hover:border-theme-text hover:text-theme-text'
-                                }`}
-                              onClick={() => {
-                                setSelectedAvatar(creationsModalAvatar);
-                                setSelectedAvatarImageId(image.id);
-                                setCreationsModalAvatar(null);
-                              }}
-                            >
-                              {isSelectedForPrompt ? 'Using for prompts' : 'Use for prompts'}
-                            </button>
-                            <a
-                              href={image.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="rounded-full border border-theme-mid px-3 py-1 transition-colors duration-200 hover:border-theme-text hover:text-theme-text"
-                            >
-                              Open
-                            </a>
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
+                    <p className="text-xs font-raleway text-theme-white/60">
+                      You can add or edit avatar images from the manage avatar page.
+                    </p>
                   </div>
-                  <p className="text-xs font-raleway text-theme-white/60">
-                    You can add or edit avatar images from the manage avatar page.
-                  </p>
-                </div>
 
-                <div className="space-y-3">
-                  <h3 className="text-lg font-raleway text-theme-text">
-                    Creations with {creationsModalAvatar.name}
-                  </h3>
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-raleway text-theme-text">
+                      Creations with {creationsModalAvatar.name}
+                    </h3>
+                    <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-4">
+                      {galleryImages
+                        .filter((img: GalleryImageLike) => img.avatarId === creationsModalAvatar.id)
+                        .map((image: GalleryImageLike) => (
+                          <div key={image.url} className="relative aspect-square rounded-2xl overflow-hidden border border-theme-dark bg-theme-black group">
+                            <img
+                              src={image.url}
+                              alt={image.prompt || 'Generated image'}
+                              loading="lazy"
+                              className="h-full w-full object-cover cursor-pointer"
+                              onClick={() => {
+                                openImageByUrl(image.url);
+                              }}
+                            />
+                            {image.avatarImageId && (
+                              <span className={`${glass.promptDark} absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-raleway text-theme-text`}>
+                                Variation {Math.max(1, creationsModalAvatar.images.findIndex(img => img.id === image.avatarImageId) + 1)}
+                              </span>
+                            )}
+                            <div className="absolute inset-0 gallery-hover-gradient opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                              <div className="absolute bottom-0 left-0 right-0 p-2">
+                                <p className="text-xs font-raleway text-theme-white line-clamp-2">{image.prompt}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                    {galleryImages.filter((img: GalleryImageLike) => img.avatarId === creationsModalAvatar.id).length === 0 && (
+                      <div className="rounded-[24px] border border-theme-dark bg-theme-black/70 p-4 text-center">
+                        <p className="text-sm font-raleway text-theme-light">
+                          Generate a new image with this avatar to see it appear here.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        }
+
+        {
+          creationsModalProduct && (
+            <div
+              className="fixed inset-0 z-[10500] flex items-center justify-center bg-theme-black/80 px-4 py-10"
+              onClick={() => setCreationsModalProduct(null)}
+            >
+              <div
+                className={`relative w-full max-w-5xl overflow-hidden rounded-[32px] shadow-2xl ${glass.promptDark}`}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text z-10"
+                  onClick={() => setCreationsModalProduct(null)}
+                  aria-label="Close Product creations"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+
+                <div className="flex flex-col gap-6 p-6 lg:p-8 max-h-[80vh] overflow-y-auto">
+                  <div className="flex flex-col gap-2">
+                    <h2 className="text-2xl font-raleway text-theme-text">
+                      Creations with {creationsModalProduct.name}
+                    </h2>
+                    <p className="text-sm font-raleway text-theme-white">
+                      Manage creations featuring this product.
+                    </p>
+                  </div>
+
+                  <div className="flex justify-start">
+                    <div className="w-1/3 sm:w-1/5 lg:w-1/6">
+                      <div className="relative aspect-square rounded-2xl overflow-hidden border border-theme-dark">
+                        <img
+                          src={creationsModalProduct.imageUrl}
+                          alt={creationsModalProduct.name}
+                          loading="lazy"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <p className="mt-2 text-sm font-raleway text-theme-white text-center truncate">{creationsModalProduct.name}</p>
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-4">
                     {galleryImages
-                      .filter((img: GalleryImageLike) => img.avatarId === creationsModalAvatar.id)
-                      .map((image: GalleryImageLike) => (
-                        <div key={image.url} className="relative aspect-square rounded-2xl overflow-hidden border border-theme-dark bg-theme-black group">
+                      .filter((img: GalleryImageLike) => img.productId === creationsModalProduct.id)
+                      .map((img: GalleryImageLike, idx: number) => (
+                        <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border border-theme-dark bg-theme-black group">
                           <img
-                            src={image.url}
-                            alt={image.prompt || 'Generated image'}
+                            src={img.url}
+                            alt={img.prompt || 'Generated image'}
                             loading="lazy"
-                            className="h-full w-full object-cover cursor-pointer"
+                            className="w-full h-full object-cover cursor-pointer"
                             onClick={() => {
-                              openImageByUrl(image.url);
+                              openImageByUrl(img.url);
                             }}
                           />
-                          {image.avatarImageId && (
-                            <span className={`${glass.promptDark} absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-raleway text-theme-text`}>
-                              Variation {Math.max(1, creationsModalAvatar.images.findIndex(img => img.id === image.avatarImageId) + 1)}
-                            </span>
-                          )}
                           <div className="absolute inset-0 gallery-hover-gradient opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                             <div className="absolute bottom-0 left-0 right-0 p-2">
-                              <p className="text-xs font-raleway text-theme-white line-clamp-2">{image.prompt}</p>
+                              <p className="text-xs font-raleway text-theme-white line-clamp-2">{img.prompt}</p>
                             </div>
                           </div>
                         </div>
                       ))}
                   </div>
-                  {galleryImages.filter((img: GalleryImageLike) => img.avatarId === creationsModalAvatar.id).length === 0 && (
+
+                  {galleryImages.filter((img: GalleryImageLike) => img.productId === creationsModalProduct.id).length === 0 && (
                     <div className="rounded-[24px] border border-theme-dark bg-theme-black/70 p-4 text-center">
                       <p className="text-sm font-raleway text-theme-light">
-                        Generate a new image with this avatar to see it appear here.
+                        Generate a new image with this product to see it appear here.
                       </p>
                     </div>
                   )}
                 </div>
               </div>
             </div>
-          </div>
-        )}
-
-        {creationsModalProduct && (
-          <div
-            className="fixed inset-0 z-[10500] flex items-center justify-center bg-theme-black/80 px-4 py-10"
-            onClick={() => setCreationsModalProduct(null)}
-          >
-            <div
-              className={`relative w-full max-w-5xl overflow-hidden rounded-[32px] shadow-2xl ${glass.promptDark}`}
-              onClick={(event) => event.stopPropagation()}
-            >
-              <button
-                type="button"
-                className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text z-10"
-                onClick={() => setCreationsModalProduct(null)}
-                aria-label="Close Product creations"
-              >
-                <X className="h-5 w-5" />
-              </button>
-
-              <div className="flex flex-col gap-6 p-6 lg:p-8 max-h-[80vh] overflow-y-auto">
-                <div className="flex flex-col gap-2">
-                  <h2 className="text-2xl font-raleway text-theme-text">
-                    Creations with {creationsModalProduct.name}
-                  </h2>
-                  <p className="text-sm font-raleway text-theme-white">
-                    Manage creations featuring this product.
-                  </p>
-                </div>
-
-                <div className="flex justify-start">
-                  <div className="w-1/3 sm:w-1/5 lg:w-1/6">
-                    <div className="relative aspect-square rounded-2xl overflow-hidden border border-theme-dark">
-                      <img
-                        src={creationsModalProduct.imageUrl}
-                        alt={creationsModalProduct.name}
-                        loading="lazy"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <p className="mt-2 text-sm font-raleway text-theme-white text-center truncate">{creationsModalProduct.name}</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-4">
-                  {galleryImages
-                    .filter((img: GalleryImageLike) => img.productId === creationsModalProduct.id)
-                    .map((img: GalleryImageLike, idx: number) => (
-                      <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border border-theme-dark bg-theme-black group">
-                        <img
-                          src={img.url}
-                          alt={img.prompt || 'Generated image'}
-                          loading="lazy"
-                          className="w-full h-full object-cover cursor-pointer"
-                          onClick={() => {
-                            openImageByUrl(img.url);
-                          }}
-                        />
-                        <div className="absolute inset-0 gallery-hover-gradient opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                          <div className="absolute bottom-0 left-0 right-0 p-2">
-                            <p className="text-xs font-raleway text-theme-white line-clamp-2">{img.prompt}</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-
-                {galleryImages.filter((img: GalleryImageLike) => img.productId === creationsModalProduct.id).length === 0 && (
-                  <div className="rounded-[24px] border border-theme-dark bg-theme-black/70 p-4 text-center">
-                    <p className="text-sm font-raleway text-theme-light">
-                      Generate a new image with this product to see it appear here.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+          )
+        }
 
         <Suspense fallback={null}>
           <PromptsDropdown
@@ -2657,49 +3046,270 @@ const PromptForm = memo<PromptFormProps>(
 
         {error && <div className="text-sm text-theme-accent">{error}</div>}
 
-        {isSettingsOpen && (
-          <Suspense fallback={null}>
-            <SettingsMenu
-              anchorRef={settingsButtonRef}
-              open={isSettingsOpen}
-              onClose={handleSettingsClose}
-              {...settingsSections}
-            />
-          </Suspense>
-        )}
+        {
+          isSettingsOpen && (
+            <Suspense fallback={null}>
+              <SettingsMenu
+                anchorRef={settingsButtonRef}
+                open={isSettingsOpen}
+                onClose={handleSettingsClose}
+                {...settingsSections}
+              />
+            </Suspense>
+          )
+        }
 
-        {styleHandlers.isStyleModalOpen && (
-          <Suspense fallback={null}>
-            <StyleSelectionModal
-              open={styleHandlers.isStyleModalOpen}
-              onClose={styleHandlers.handleStyleModalClose}
-              styleHandlers={styleHandlers}
-              onApplySelectedStyles={handlePresetStylesApply}
-            />
-          </Suspense>
-        )}
-        {presetGenerationFlow.isOpen && (
-          <Suspense fallback={null}>
-            <PresetGenerationModal flow={presetGenerationFlow} />
-          </Suspense>
-        )}
+        {
+          styleHandlers.isStyleModalOpen && (
+            <Suspense fallback={null}>
+              <StyleSelectionModal
+                open={styleHandlers.isStyleModalOpen}
+                onClose={styleHandlers.handleStyleModalClose}
+                styleHandlers={styleHandlers}
+                onApplySelectedStyles={handlePresetStylesApply}
+              />
+            </Suspense>
+          )
+        }
+        {
+          presetGenerationFlow.isOpen && (
+            <Suspense fallback={null}>
+              <PresetGenerationModal flow={presetGenerationFlow} />
+            </Suspense>
+          )
+        }
 
         {/* Tooltip Portal - renders outside overflow:hidden containers */}
-        {activeTooltip && createPortal(
+        {
+          activeTooltip && createPortal(
+            <div
+              className={`${tooltips.base} opacity-100`}
+              style={{
+                position: 'fixed',
+                top: activeTooltip.y,
+                left: activeTooltip.x,
+                transform: 'translate(-50%, -100%)',
+                zIndex: 99999,
+              }}
+            >
+              {activeTooltip.text}
+            </div>,
+            document.body
+          )
+        }
+        {/* Modal for viewing all selected avatars */}
+        {showAllAvatarsModal && (
           <div
-            className={`${tooltips.base} opacity-100`}
-            style={{
-              position: 'fixed',
-              top: activeTooltip.y,
-              left: activeTooltip.x,
-              transform: 'translate(-50%, -100%)',
-              zIndex: 99999,
-            }}
+            className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/80"
+            onClick={() => setShowAllAvatarsModal(false)}
           >
-            {activeTooltip.text}
-          </div>,
-          document.body
+            <div
+              className={`${glass.promptDark} rounded-2xl w-full max-w-md mx-4 py-6 px-6 transition-colors duration-200`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-raleway font-normal text-theme-text">
+                  Avatars ({selectedAvatars.length} selected)
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowAllAvatarsModal(false)}
+                  className="inline-flex size-10 items-center justify-center rounded-full border border-theme-dark bg-theme-black text-theme-white transition-colors duration-200 hover:border-theme-mid hover:text-theme-text"
+                  aria-label="Close"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Slots info */}
+              {remainingReferenceSlots === 0 && (
+                <div className="text-xs text-amber-400 mb-3 px-1">Max references reached. Remove some to add more.</div>
+              )}
+
+              {/* All avatars list with selection */}
+              <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+                {storedAvatars.map((avatar) => {
+                  const isSelected = isAvatarSelected(avatar.id);
+                  const canSelect = remainingReferenceSlots > 0 || isSelected;
+                  return (
+                    <div
+                      key={avatar.id}
+                      onClick={() => {
+                        if (canSelect) {
+                          handleAvatarToggle(avatar);
+                        }
+                      }}
+                      className={`flex items-center gap-3 p-2 rounded-xl border transition-colors cursor-pointer ${isSelected
+                        ? 'border-theme-text bg-theme-text/10'
+                        : 'border-theme-dark bg-theme-black/30 hover:bg-theme-black/50'
+                        } ${!canSelect && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      {/* Checkbox */}
+                      <div className={`flex-shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors ${isSelected
+                        ? 'bg-theme-text border-theme-text'
+                        : 'border-theme-mid bg-transparent'
+                        }`}>
+                        {isSelected && <Check className="w-3 h-3 text-theme-black" />}
+                      </div>
+                      <img
+                        src={avatar.images[0]?.url ?? avatar.imageUrl}
+                        alt={avatar.name}
+                        className="w-10 h-10 rounded-lg object-cover"
+                      />
+                      <span className={`flex-1 text-sm font-raleway font-normal truncate ${isSelected ? 'text-theme-text' : 'text-theme-white'
+                        }`}>
+                        {avatar.name}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Footer buttons */}
+              <div className="flex justify-between items-center gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAllAvatarsModal(false);
+                    setIsAvatarPickerOpen(true);
+                  }}
+                  className={buttons.ghost}
+                >
+                  <Plus className="w-4 h-4" />
+                  Add New
+                </button>
+                <div className="flex gap-3">
+                  {selectedAvatars.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={clearAllAvatars}
+                      className="text-sm font-raleway text-theme-white/60 hover:text-theme-white transition-colors"
+                    >
+                      Clear All
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowAllAvatarsModal(false)}
+                    className={buttons.primary}
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
+
+        {/* Modal for viewing all selected products */}
+        {showAllProductsModal && (
+          <div
+            className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/80"
+            onClick={() => setShowAllProductsModal(false)}
+          >
+            <div
+              className={`${glass.promptDark} rounded-2xl w-full max-w-md mx-4 py-6 px-6 transition-colors duration-200`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-raleway font-normal text-theme-text">
+                  Products ({selectedProducts.length} selected)
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowAllProductsModal(false)}
+                  className="inline-flex size-10 items-center justify-center rounded-full border border-theme-dark bg-theme-black text-theme-white transition-colors duration-200 hover:border-theme-mid hover:text-theme-text"
+                  aria-label="Close"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Slots info */}
+              {remainingReferenceSlots === 0 && (
+                <div className="text-xs text-amber-400 mb-3 px-1">Max references reached. Remove some to add more.</div>
+              )}
+
+              {/* All products list with selection */}
+              <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+                {storedProducts.map((product) => {
+                  const isSelected = isProductSelected(product.id);
+                  const canSelect = remainingReferenceSlots > 0 || isSelected;
+                  return (
+                    <div
+                      key={product.id}
+                      onClick={() => {
+                        if (canSelect) {
+                          handleProductToggle(product);
+                        }
+                      }}
+                      className={`flex items-center gap-3 p-2 rounded-xl border transition-colors cursor-pointer ${isSelected
+                        ? 'border-theme-text bg-theme-text/10'
+                        : 'border-theme-dark bg-theme-black/30 hover:bg-theme-black/50'
+                        } ${!canSelect && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      {/* Checkbox */}
+                      <div className={`flex-shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors ${isSelected
+                        ? 'bg-theme-text border-theme-text'
+                        : 'border-theme-mid bg-transparent'
+                        }`}>
+                        {isSelected && <Check className="w-3 h-3 text-theme-black" />}
+                      </div>
+                      <img
+                        src={product.images[0]?.url ?? product.imageUrl}
+                        alt={product.name}
+                        className="w-10 h-10 rounded-lg object-cover"
+                      />
+                      <span className={`flex-1 text-sm font-raleway font-normal truncate ${isSelected ? 'text-theme-text' : 'text-theme-white'
+                        }`}>
+                        {product.name}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Footer buttons */}
+              <div className="flex justify-between items-center gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAllProductsModal(false);
+                    setIsProductPickerOpen(true);
+                  }}
+                  className={buttons.ghost}
+                >
+                  <Plus className="w-4 h-4" />
+                  Add New
+                </button>
+                <div className="flex gap-3">
+                  {selectedProducts.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={clearAllProducts}
+                      className="text-sm font-raleway text-theme-white/60 hover:text-theme-white transition-colors"
+                    >
+                      Clear All
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowAllProductsModal(false)}
+                    className={buttons.primary}
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <ReferencePreviewModal
+          open={referencePreviewUrl !== null}
+          imageUrl={referencePreviewUrl}
+          onClose={() => setReferencePreviewUrl(null)}
+        />
       </>
     );
   }

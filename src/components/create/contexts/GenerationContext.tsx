@@ -41,6 +41,8 @@ type GenerationState = {
   klingAspectRatio: string;
   wanSize: string;
   qwenSize: string;
+  gptImageSize: string;
+  gptImageQuality: 'auto' | 'low' | 'medium' | 'high';
   qwenPromptExtend: boolean;
   qwenWatermark: boolean;
   wanSeed: string;
@@ -61,6 +63,8 @@ type GenerationAction =
   | { type: 'SET_KLING_ASPECT_RATIO'; payload: string }
   | { type: 'SET_WAN_SIZE'; payload: string }
   | { type: 'SET_QWEN_SIZE'; payload: string }
+  | { type: 'SET_GPT_IMAGE_SIZE'; payload: string }
+  | { type: 'SET_GPT_IMAGE_QUALITY'; payload: 'auto' | 'low' | 'medium' | 'high' }
   | { type: 'SET_QWEN_PROMPT_EXTEND'; payload: boolean }
   | { type: 'SET_QWEN_WATERMARK'; payload: boolean }
   | { type: 'SET_WAN_SEED'; payload: string }
@@ -106,6 +110,8 @@ const initialState: GenerationState = {
   klingAspectRatio: '16:9',
   wanSize: '1920*1080',
   qwenSize: '1328*1328',
+  gptImageSize: 'auto',
+  gptImageQuality: 'auto',
   qwenPromptExtend: true,
   qwenWatermark: false,
   wanSeed: '',
@@ -138,6 +144,10 @@ function generationReducer(state: GenerationState, action: GenerationAction): Ge
       return { ...state, wanSize: action.payload };
     case 'SET_QWEN_SIZE':
       return { ...state, qwenSize: action.payload };
+    case 'SET_GPT_IMAGE_SIZE':
+      return { ...state, gptImageSize: action.payload };
+    case 'SET_GPT_IMAGE_QUALITY':
+      return { ...state, gptImageQuality: action.payload };
     case 'SET_QWEN_PROMPT_EXTEND':
       return { ...state, qwenPromptExtend: action.payload };
     case 'SET_QWEN_WATERMARK':
@@ -253,6 +263,8 @@ type GenerationContextType = {
   setKlingAspectRatio: (ratio: string) => void;
   setWanSize: (size: string) => void;
   setQwenSize: (size: string) => void;
+  setGptImageSize: (size: string) => void;
+  setGptImageQuality: (quality: 'auto' | 'low' | 'medium' | 'high') => void;
   setQwenPromptExtend: (extend: boolean) => void;
   setQwenWatermark: (watermark: boolean) => void;
   setWanSeed: (seed: string) => void;
@@ -439,6 +451,14 @@ export function GenerationProvider({ children }: { children: React.ReactNode }) 
     dispatch({ type: 'SET_QWEN_SIZE', payload: size });
   }, []);
 
+  const setGptImageSize = useCallback((size: string) => {
+    dispatch({ type: 'SET_GPT_IMAGE_SIZE', payload: size });
+  }, []);
+
+  const setGptImageQuality = useCallback((quality: 'auto' | 'low' | 'medium' | 'high') => {
+    dispatch({ type: 'SET_GPT_IMAGE_QUALITY', payload: quality });
+  }, []);
+
   const setQwenPromptExtend = useCallback((extend: boolean) => {
     dispatch({ type: 'SET_QWEN_PROMPT_EXTEND', payload: extend });
   }, []);
@@ -555,6 +575,8 @@ export function GenerationProvider({ children }: { children: React.ReactNode }) 
     setKlingAspectRatio,
     setWanSize,
     setQwenSize,
+    setGptImageSize,
+    setGptImageQuality,
     setQwenPromptExtend,
     setQwenWatermark,
     setWanSeed,
@@ -582,6 +604,8 @@ export function GenerationProvider({ children }: { children: React.ReactNode }) 
     setKlingAspectRatio,
     setWanSize,
     setQwenSize,
+    setGptImageSize,
+    setGptImageQuality,
     setQwenPromptExtend,
     setQwenWatermark,
     setWanSeed,

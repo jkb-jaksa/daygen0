@@ -4,6 +4,7 @@ import { User, Copy, RefreshCw, BookmarkPlus, BookmarkCheck, Heart, MoreHorizont
 import { createPortal } from 'react-dom';
 import { glass, layout } from '../styles/designSystem';
 import { useAuth } from "../auth/useAuth";
+import { createCardImageStyle } from '../utils/cardImageStyle';
 
 const ModelBadge = lazy(() => import('../components/ModelBadge'));
 const AspectRatioBadge = lazy(() => import('../components/shared/AspectRatioBadge'));
@@ -129,6 +130,7 @@ interface ProfileData {
     user?: {
         displayName?: string;
         authUserId: string;
+        username?: string;
         profileImage?: string;
         bio?: string;
     };
@@ -137,12 +139,19 @@ interface ProfileData {
     nextCursor: string | null;
 }
 
+// Helper to detect if a string is a UUID
+const isUUID = (str: string): boolean => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(str);
+};
+
 export default function CreatorProfile() {
-    const { userId } = useParams<{ userId: string }>();
+    const { userId: userIdOrUsername } = useParams<{ userId: string }>();
     const [profileData, setProfileData] = useState<ProfileData | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [fullViewIndex, setFullViewIndex] = useState<number | null>(null);
+    const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
 
     // Action menu states
     const [moreActionMenu, setMoreActionMenu] = useState<{ id: string; anchor: HTMLElement | null } | null>(null);
@@ -153,8 +162,41 @@ export default function CreatorProfile() {
     const { token } = useAuth();
     const navigate = useNavigate();
 
+    // Resolve username to userId if needed
+    useEffect(() => {
+        const resolveUser = async () => {
+            if (!userIdOrUsername) return;
+
+            // If it's already a UUID, use it directly
+            if (isUUID(userIdOrUsername)) {
+                setResolvedUserId(userIdOrUsername);
+                return;
+            }
+
+            // Otherwise, treat it as a username and look it up
+            try {
+                const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+                const response = await fetch(`${apiBase}/api/users/by-username/${userIdOrUsername}`);
+
+                if (response.ok) {
+                    const userData = await response.json() as { id: string; username: string };
+                    setResolvedUserId(userData.id);
+                } else {
+                    setError('User not found');
+                    setResolvedUserId(null);
+                }
+            } catch (err) {
+                console.error('Failed to resolve username:', err);
+                setError('Failed to find user');
+                setResolvedUserId(null);
+            }
+        };
+
+        void resolveUser();
+    }, [userIdOrUsername]);
+
     const fetchProfile = useCallback(async () => {
-        if (!userId) return;
+        if (!resolvedUserId) return;
 
         setIsLoading(true);
         setError(null);
@@ -166,7 +208,7 @@ export default function CreatorProfile() {
                 headers['Authorization'] = `Bearer ${token}`;
             }
 
-            const response = await fetch(`${apiBase}/api/r2files/public/user/${userId}?limit=30`, {
+            const response = await fetch(`${apiBase}/api/r2files/public/user/${resolvedUserId}?limit=30`, {
                 headers
             });
 
@@ -190,7 +232,7 @@ export default function CreatorProfile() {
         } finally {
             setIsLoading(false);
         }
-    }, [userId, token]);
+    }, [resolvedUserId, token]);
 
     const toggleLike = async (item: ProfileGeneration, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -332,10 +374,10 @@ export default function CreatorProfile() {
     };
 
     useEffect(() => {
-        if (userId) {
+        if (resolvedUserId) {
             void fetchProfile();
         }
-    }, [userId, fetchProfile]);
+    }, [resolvedUserId, fetchProfile]);
 
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
@@ -373,11 +415,11 @@ export default function CreatorProfile() {
                             <img
                                 src={profileImage}
                                 alt={displayName}
-                                className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-theme-dark/50"
+                                className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border border-theme-white"
                             />
                         ) : (
-                            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gradient-to-br from-purple-500/50 to-cyan-500/50 flex items-center justify-center border-4 border-theme-dark/50">
-                                <User className="w-10 h-10 sm:w-14 sm:h-14 text-theme-white/80" />
+                            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-[conic-gradient(from_0deg,_rgba(245,158,11,0.6),_rgba(239,68,68,0.6),_rgba(59,130,246,0.6),_rgba(34,211,238,0.6),_rgba(245,158,11,0.6))] flex items-center justify-center border border-theme-white">
+                                <span className="text-4xl sm:text-5xl font-raleway font-medium text-theme-text">{displayName?.[0]?.toUpperCase() || '?'}</span>
                             </div>
                         )}
                     </div>
@@ -387,15 +429,13 @@ export default function CreatorProfile() {
                         <h1 className="text-3xl sm:text-4xl font-raleway font-normal text-theme-text mb-2">
                             {displayName}
                         </h1>
-                        <p className="text-theme-white/60 mb-4 font-raleway">
+                        <p className="text-theme-white mb-2 font-raleway">
                             {profileData?.totalCount || 0} public generation{profileData?.totalCount !== 1 ? 's' : ''}
                         </p>
                         {bio && (
-                            <div className="max-w-2xl bg-theme-black/20 rounded-xl p-4 border border-theme-dark/30">
-                                <p className="text-theme-white/90 font-raleway leading-relaxed whitespace-pre-wrap">
-                                    {bio}
-                                </p>
-                            </div>
+                            <p className="text-theme-light font-raleway leading-relaxed whitespace-pre-wrap max-w-2xl">
+                                {bio}
+                            </p>
                         )}
                     </div>
                 </div>
@@ -428,15 +468,21 @@ export default function CreatorProfile() {
                             return (
                                 <div
                                     key={item.id}
-                                    className="group relative overflow-hidden rounded-xl bg-theme-black/40 border border-theme-dark/50 hover:border-theme-mid transition-colors duration-200 aspect-square cursor-pointer parallax-large"
+                                    className="group relative flex flex-col overflow-hidden rounded-[24px] bg-theme-black border border-theme-dark hover:bg-theme-dark hover:border-theme-mid transition-all duration-100 cursor-pointer parallax-large shadow-lg"
                                     onClick={() => setFullViewIndex(index)}
                                 >
-                                    <img
-                                        src={item.fileUrl}
-                                        alt={item.prompt || 'AI Generated'}
-                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                        loading="lazy"
-                                    />
+                                    <div
+                                        className="relative aspect-square overflow-hidden card-media-frame"
+                                        data-has-image={Boolean(item.fileUrl)}
+                                        style={createCardImageStyle(item.fileUrl)}
+                                    >
+                                        <img
+                                            src={item.fileUrl}
+                                            alt={item.prompt || 'AI Generated'}
+                                            className="relative z-[1] w-full h-full object-cover"
+                                            loading="lazy"
+                                        />
+                                    </div>
 
                                     {/* Action Buttons Overlay */}
                                     <div className="image-gallery-actions absolute left-3 top-3 flex items-center gap-2 transition-opacity duration-200 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto z-20">

@@ -543,11 +543,11 @@ export default function Navbar() {
                       <img
                         src={`${currentUser.profileImage}?t=${Date.now()}`}
                         alt="Profile"
-                        className="size-5 rounded-full object-cover"
+                        className="size-5 rounded-full object-cover border border-theme-white"
                       />
                     ) : (
                       <span
-                        className="inline-grid place-items-center size-5 rounded-full text-theme-black text-xs font-medium font-raleway bg-theme-white/90"
+                        className="inline-grid place-items-center size-5 rounded-full text-theme-text text-xs font-medium font-raleway border border-theme-white bg-[conic-gradient(from_0deg,_rgba(245,158,11,0.6),_rgba(239,68,68,0.6),_rgba(59,130,246,0.6),_rgba(34,211,238,0.6),_rgba(245,158,11,0.6))]"
                       >
                         {(currentUser.displayName || currentUser.email)[0]?.toUpperCase()}
                       </span>

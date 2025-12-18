@@ -33,7 +33,8 @@ export function useAvatarHandlers() {
 
   // Avatar state
   const [storedAvatars, setStoredAvatars] = useState<StoredAvatar[]>([]);
-  const [selectedAvatar, setSelectedAvatar] = useState<StoredAvatar | null>(null);
+  // Support multiple selected avatars
+  const [selectedAvatars, setSelectedAvatars] = useState<StoredAvatar[]>([]);
   const [selectedAvatarImageId, setSelectedAvatarImageId] = useState<string | null>(null);
   const [pendingAvatarId, setPendingAvatarId] = useState<string | null>(null);
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
@@ -62,7 +63,10 @@ export function useAvatarHandlers() {
     return map;
   }, [storedAvatars]);
 
-  // Selected avatar image
+  // Backward compatibility: first selected avatar (for components that expect single avatar)
+  const selectedAvatar = useMemo(() => selectedAvatars[0] ?? null, [selectedAvatars]);
+
+  // Selected avatar image (based on first selected avatar for backward compatibility)
   const selectedAvatarImage = useMemo(() => {
     if (!selectedAvatar) return null;
     const targetId = selectedAvatarImageId ?? selectedAvatar.primaryImageId;
@@ -82,6 +86,13 @@ export function useAvatarHandlers() {
     if (!selectedAvatar) return null;
     return selectedAvatarImage?.id ?? selectedAvatarImageId ?? selectedAvatar.primaryImageId ?? selectedAvatar.images[0]?.id ?? null;
   }, [selectedAvatar, selectedAvatarImage, selectedAvatarImageId]);
+
+  // Get image URLs for all selected avatars (for reference generation)
+  const selectedAvatarImageUrls = useMemo(() => {
+    return selectedAvatars.map(avatar => {
+      return avatar.images[0]?.url ?? avatar.imageUrl;
+    }).filter(Boolean) as string[];
+  }, [selectedAvatars]);
 
   // Load stored avatars - fetch from backend, fallback to local storage
   const loadStoredAvatars = useCallback(async () => {
@@ -264,9 +275,10 @@ export function useAvatarHandlers() {
       setStoredAvatars(updated);
       dispatchStorageChange('avatars');
 
-      // Clear selection if deleted avatar was selected
+      // Remove from selection if deleted avatar was selected
+      setSelectedAvatars(prev => prev.filter(a => a.id !== avatarId));
+      // Clear image selection if deleted avatar's image was selected
       if (selectedAvatar?.id === avatarId) {
-        setSelectedAvatar(null);
         setSelectedAvatarImageId(null);
       }
 
@@ -322,10 +334,38 @@ export function useAvatarHandlers() {
     }
   }, [storagePrefix, storedAvatars, token]);
 
-  // Handle avatar selection
+  // Handle avatar selection (replaces all selections with single avatar for backward compatibility)
   const handleAvatarSelect = useCallback((avatar: StoredAvatar | null) => {
-    setSelectedAvatar(avatar);
+    setSelectedAvatars(avatar ? [avatar] : []);
     setSelectedAvatarImageId(null);
+  }, []);
+
+  // Toggle avatar in selection (add if not selected, remove if selected)
+  const handleAvatarToggle = useCallback((avatar: StoredAvatar) => {
+    setSelectedAvatars(prev => {
+      const isSelected = prev.some(a => a.id === avatar.id);
+      if (isSelected) {
+        return prev.filter(a => a.id !== avatar.id);
+      } else {
+        return [...prev, avatar];
+      }
+    });
+  }, []);
+
+  // Check if avatar is selected
+  const isAvatarSelected = useCallback((avatarId: string) => {
+    return selectedAvatars.some(a => a.id === avatarId);
+  }, [selectedAvatars]);
+
+  // Clear all selected avatars
+  const clearAllAvatars = useCallback(() => {
+    setSelectedAvatars([]);
+    setSelectedAvatarImageId(null);
+  }, []);
+
+  // Remove specific avatar from selection
+  const removeSelectedAvatar = useCallback((avatarId: string) => {
+    setSelectedAvatars(prev => prev.filter(a => a.id !== avatarId));
   }, []);
 
   // Handle avatar image selection
@@ -359,11 +399,19 @@ export function useAvatarHandlers() {
 
   // Handle avatar save
   const handleAvatarSave = useCallback(
-    async (name: string, selection: AvatarSelection) => {
-      if (!user?.id) return;
+    async (name: string, selection: AvatarSelection): Promise<{ success: boolean; error?: string }> => {
+      if (!user?.id) return { success: false, error: 'You must be logged in to create an avatar.' };
 
       const trimmed = name.trim();
-      if (!trimmed || !selection?.imageUrl) return;
+      if (!trimmed || !selection?.imageUrl) return { success: false, error: 'Name and image are required.' };
+
+      // Check for duplicate name (case-insensitive)
+      const duplicateAvatar = storedAvatars.find(
+        (a) => a.name.toLowerCase() === trimmed.toLowerCase()
+      );
+      if (duplicateAvatar) {
+        return { success: false, error: 'An avatar with this name already exists.' };
+      }
 
       try {
         const avatar = createAvatarRecord({
@@ -374,12 +422,17 @@ export function useAvatarHandlers() {
           ownerId: user.id,
           existingAvatars: storedAvatars,
         });
-        await saveAvatar(avatar);
-        setSelectedAvatar(avatar);
+        const savedAvatar = await saveAvatar(avatar);
+        // Add the new avatar to selected avatars
+        if (savedAvatar) {
+          setSelectedAvatars(prev => [...prev, savedAvatar]);
+        }
         handleAvatarCreationModalClose();
         debugLog('[useAvatarHandlers] Created new avatar:', trimmed);
+        return { success: true };
       } catch (error) {
         debugError('[useAvatarHandlers] Error creating avatar:', error);
+        return { success: false, error: 'Failed to create avatar. Please try again.' };
       }
     },
     [user?.id, storedAvatars, saveAvatar, handleAvatarCreationModalClose],
@@ -469,7 +522,9 @@ export function useAvatarHandlers() {
   return {
     // State
     storedAvatars,
-    selectedAvatar,
+    selectedAvatar, // Backward compat: first selected avatar
+    selectedAvatars, // New: all selected avatars
+    selectedAvatarImageUrls, // New: URLs of all selected avatar images
     selectedAvatarImageId,
     pendingAvatarId,
     isAvatarPickerOpen,
@@ -497,6 +552,10 @@ export function useAvatarHandlers() {
     deleteAvatar,
     updateAvatar,
     handleAvatarSelect,
+    handleAvatarToggle, // New: toggle avatar in selection
+    isAvatarSelected, // New: check if avatar is selected
+    clearAllAvatars, // New: clear all selected avatars
+    removeSelectedAvatar, // New: remove specific avatar from selection
     handleAvatarImageSelect,
     handleAvatarPickerOpen,
     handleAvatarPickerClose,
@@ -511,7 +570,7 @@ export function useAvatarHandlers() {
     resetAvatarCreationPanel,
 
     // Setters
-    setSelectedAvatar,
+    setSelectedAvatars, // New: set all selected avatars
     setSelectedAvatarImageId,
     setPendingAvatarId,
     setIsAvatarPickerOpen,

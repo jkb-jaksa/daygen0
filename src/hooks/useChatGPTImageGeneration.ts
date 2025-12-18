@@ -22,6 +22,8 @@ export interface ChatGPTGeneratedImage {
   avatarImageId?: string;
   styleId?: string;
   jobId?: string;
+  width?: number;
+  height?: number;
 }
 
 export interface ChatGPTImageGenerationState {
@@ -35,13 +37,15 @@ export interface ChatGPTImageGenerationState {
 export interface ChatGPTImageGenerationOptions {
   prompt: string;
   n?: number;
-  size?: '256x256' | '512x512' | '1024x1024' | '1024x1536' | '1536x1024';
-  quality?: 'standard' | 'high';
-  background?: 'transparent' | 'white' | 'black';
+  size?: '1024x1024' | '1024x1536' | '1536x1024' | 'auto';
+  quality?: 'low' | 'medium' | 'high' | 'auto';
+  background?: 'auto' | 'transparent' | 'opaque';
+  references?: string[];
   avatarId?: string;
   avatarImageId?: string;
   productId?: string;
   styleId?: string;
+  clientJobId?: string;
   signal?: AbortSignal;
   requestTimeoutMs?: number;
   pollTimeoutMs?: number;
@@ -86,10 +90,14 @@ const parseChatGPTJobResult = (
     throw new Error('Job completed but no result URL was provided.');
   }
 
+  // Extract dimensions from response payload
+  const payloadWidth = typeof response.payload?.width === 'number' ? response.payload.width : undefined;
+  const payloadHeight = typeof response.payload?.height === 'number' ? response.payload.height : undefined;
+
   return {
     url,
     prompt,
-    model: 'chatgpt-image',
+    model: 'gpt-image-1.5',
     timestamp: new Date().toISOString(),
     size,
     quality,
@@ -99,6 +107,8 @@ const parseChatGPTJobResult = (
     styleId,
     ownerId,
     jobId: response.jobId ?? snapshot.job.id ?? undefined,
+    width: payloadWidth,
+    height: payloadHeight,
   };
 };
 
@@ -125,10 +135,14 @@ const parseImmediateResponse = (
     return undefined;
   }
 
+  // Extract dimensions from response payload
+  const payloadWidth = typeof payload?.width === 'number' ? payload.width : undefined;
+  const payloadHeight = typeof payload?.height === 'number' ? payload.height : undefined;
+
   return {
     url,
     prompt,
-    model: 'chatgpt-image',
+    model: 'gpt-image-1.5',
     timestamp: new Date().toISOString(),
     size,
     quality,
@@ -137,6 +151,8 @@ const parseImmediateResponse = (
     avatarImageId,
     styleId,
     ownerId,
+    width: payloadWidth,
+    height: payloadHeight,
   };
 };
 
@@ -157,8 +173,8 @@ export const useChatGPTImageGeneration = () => {
         prompt,
         n = 1,
         size = '1024x1024',
-        quality = 'high',
-        background = 'transparent',
+        quality = 'auto',
+        background = 'auto',
         signal,
       } = options;
 
@@ -181,15 +197,17 @@ export const useChatGPTImageGeneration = () => {
             size,
             quality,
             background,
-            model: 'chatgpt-image',
+            model: 'gpt-image-1.5',
             avatarId: options.avatarId,
             avatarImageId: options.avatarImageId,
             styleId: options.styleId,
+            references: options.references,
           },
           tracker,
           prompt,
-          model: 'chatgpt-image',
+          model: 'gpt-image-1.5',
           signal,
+          clientJobId: options.clientJobId,
           timeoutMs: options.requestTimeoutMs,
           pollTimeoutMs: options.pollTimeoutMs,
           pollIntervalMs: options.pollIntervalMs,
@@ -238,7 +256,7 @@ export const useChatGPTImageGeneration = () => {
 
         return result;
       } catch (error) {
-        debugError('[chatgpt-image] Generation failed:', error);
+        debugError('[gpt-image-1.5] Generation failed:', error);
         const message = resolveGenerationCatchError(
           error,
           'ChatGPT couldn’t generate that image. Try again in a moment.',
