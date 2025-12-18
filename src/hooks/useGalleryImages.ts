@@ -369,11 +369,24 @@ export const useGalleryImages = () => {
 
   // Delete an image (soft delete)
   // Supports deletion by r2FileId or by fileUrl as fallback
+  // For orphan items (local-only), removes from state even if API fails
   const deleteImage = useCallback(async (imageId: string, fileUrl?: string) => {
     if (!token) {
       setState(prev => ({ ...prev, error: 'Not authenticated' }));
       return false;
     }
+
+    // Helper to remove item from local state
+    const removeFromLocalState = () => {
+      setState(prev => ({
+        ...prev,
+        images: prev.images.filter(img =>
+          img.r2FileId !== imageId &&
+          img.url !== imageId &&
+          (fileUrl ? img.url !== fileUrl : true)
+        ),
+      }));
+    };
 
     try {
       // First, try to delete by r2FileId
@@ -389,12 +402,15 @@ export const useGalleryImages = () => {
       });
 
       if (response.ok) {
-        // Remove the image from local state
-        setState(prev => ({
-          ...prev,
-          images: prev.images.filter(img => img.r2FileId !== imageId && img.url !== imageId),
-        }));
+        removeFromLocalState();
         debugLog('[gallery] Image deleted successfully by id');
+        return true;
+      }
+
+      // Handle 404 - file doesn't exist in backend, treat as success and remove locally
+      if (response.status === 404) {
+        debugLog('[gallery] Image not found in backend (404), removing from local state');
+        removeFromLocalState();
         return true;
       }
 
@@ -412,24 +428,36 @@ export const useGalleryImages = () => {
         });
 
         if (byUrlResponse.ok) {
-          // Remove the image from local state
-          setState(prev => ({
-            ...prev,
-            images: prev.images.filter(img => img.url !== fileUrl && img.r2FileId !== imageId),
-          }));
+          removeFromLocalState();
           debugLog('[gallery] Image deleted successfully by URL');
+          return true;
+        }
+
+        // Also handle 404 for URL-based delete
+        if (byUrlResponse.status === 404) {
+          debugLog('[gallery] Image not found by URL (404), removing from local state');
+          removeFromLocalState();
           return true;
         }
       }
 
-      throw new Error(`Failed to delete image: ${response.status}`);
+      // Fallback: if all API calls fail with non-404 errors,
+      // still remove from local state for orphan cleanup
+      debugLog('[gallery] API deletion failed, force-removing from local state as fallback');
+      removeFromLocalState();
+      return true;
     } catch (error) {
-      debugError('[gallery] Failed to delete image:', error);
+      // Even on network errors, remove from local state to allow cleanup
+      debugError('[gallery] Delete API error, removing from local state anyway:', error);
       setState(prev => ({
         ...prev,
-        error: error instanceof Error ? error.message : 'Failed to delete image',
+        images: prev.images.filter(img =>
+          img.r2FileId !== imageId &&
+          img.url !== imageId &&
+          (fileUrl ? img.url !== fileUrl : true)
+        ),
       }));
-      return false;
+      return true;
     }
   }, [token]);
 

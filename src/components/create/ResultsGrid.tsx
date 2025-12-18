@@ -16,6 +16,7 @@ import { useToast } from '../../hooks/useToast';
 import { loadSavedPrompts } from '../../lib/savedPrompts';
 import { useGeminiImageGeneration } from '../../hooks/useGeminiImageGeneration';
 import { useIdeogramImageGeneration } from '../../hooks/useIdeogramImageGeneration';
+import { useChatGPTImageGeneration } from '../../hooks/useChatGPTImageGeneration';
 import { useVeoVideoGeneration } from '../../hooks/useVeoVideoGeneration';
 import type { GalleryImageLike, GalleryVideoLike } from './types';
 import type { StoredAvatar } from '../avatars/types';
@@ -185,6 +186,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
 
   const { generateImage: generateGeminiImage } = useGeminiImageGeneration();
   const { generateImage: generateIdeogramImage } = useIdeogramImageGeneration();
+  const { generateImage: generateChatGPTImage } = useChatGPTImageGeneration();
   const { startGeneration: startVeoGeneration } = useVeoVideoGeneration();
   const {
     handleImageActionMenu,
@@ -721,7 +723,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       reader.readAsDataURL(file);
     });
 
-  const handleQuickEditSubmit = useCallback(async ({ prompt, referenceFiles, avatarImageUrl, productImageUrl, mask, resizeParams }: QuickEditOptions) => {
+  const handleQuickEditSubmit = useCallback(async ({ prompt, referenceFiles, avatarImageUrl, productImageUrl, mask, resizeParams, model, aspectRatio }: QuickEditOptions) => {
     if (!quickEditModalState?.item || !quickEditModalState.item.url) {
       showToast('No image URL available');
       return;
@@ -909,6 +911,43 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           showToast('Failed to edit image');
           finalizeQuickEditJob(syntheticJobId, 'failed');
         });
+      } else if (model === 'gpt-image-1.5') {
+        // Use ChatGPT for GPT Image 1.5 model
+        // Convert aspect ratio to API size
+        const gptSizeMap: Record<string, string> = {
+          'auto': 'auto',
+          '1:1': '1024x1024',
+          '2:3': '1024x1536',
+          '3:2': '1536x1024',
+        };
+        const apiSize = (aspectRatio && gptSizeMap[aspectRatio]) || 'auto';
+
+        generateChatGPTImage({
+          prompt: prompt,
+          references: references,
+          size: apiSize as 'auto' | '1024x1024' | '1024x1536' | '1536x1024',
+        }).then(async (result) => {
+          if (result) {
+            await addImage({
+              url: result.url,
+              prompt: result.prompt,
+              model: result.model,
+              timestamp: new Date().toISOString(),
+              ownerId: item.ownerId,
+              isLiked: false,
+              isPublic: false,
+              jobId: result.jobId,
+            });
+            finalizeQuickEditJob(syntheticJobId, 'completed');
+          } else {
+            showToast('Failed to edit image');
+            finalizeQuickEditJob(syntheticJobId, 'failed');
+          }
+        }).catch((error) => {
+          debugError('Failed to quick edit image (GPT Image 1.5):', error);
+          showToast('Failed to edit image');
+          finalizeQuickEditJob(syntheticJobId, 'failed');
+        });
       } else {
         // Use Gemini for non-mask editing (references, style transfer, general edits)
         generateGeminiImage({
@@ -945,7 +984,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       showToast('Failed to start edit');
       finalizeQuickEditJob(syntheticJobId, 'failed');
     }
-  }, [quickEditModalState, generateGeminiImage, generateIdeogramImage, addImage, showToast, startQuickEditJob, finalizeQuickEditJob, startResizeJob, finalizeResizeJob]);
+  }, [quickEditModalState, generateGeminiImage, generateIdeogramImage, generateChatGPTImage, addImage, showToast, startQuickEditJob, finalizeQuickEditJob, startResizeJob, finalizeResizeJob]);
 
   const handleQuickEditClose = useCallback(() => {
     setQuickEditModalState(null);

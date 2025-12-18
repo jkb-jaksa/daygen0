@@ -10,6 +10,7 @@ import { useAvatarHandlers } from './hooks/useAvatarHandlers';
 import { useProductHandlers } from './hooks/useProductHandlers';
 import { useStyleHandlers } from './hooks/useStyleHandlers';
 import { GEMINI_ASPECT_RATIO_OPTIONS } from '../../data/aspectRatios';
+import { getAspectRatiosForModel } from '../../utils/aspectRatioUtils';
 import type { GeminiAspectRatio } from '../../types/aspectRatio';
 import AvatarPickerPortal from './AvatarPickerPortal';
 import { useSavedPrompts } from '../../hooks/useSavedPrompts';
@@ -1178,8 +1179,8 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                 productImageUrl: selectedProduct?.imageUrl,
                 mask: finalMask,
                 geminiMask: finalGeminiMask,
-                // Use Gemini for mask editing by default (supports inpainting)
-                model: undefined
+                // Pass the selected model for editing
+                model: effectiveModel,
             });
         }
     };
@@ -1244,7 +1245,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         runway: { enabled: false, model: 'runway-gen4' as const, onModelChange: () => { } },
         grok: { enabled: false, model: 'grok-2-image' as const, onModelChange: () => { } },
         gemini: {
-            enabled: true,
+            enabled: effectiveModel === 'gemini-3.0-pro-image',
             temperature: 1,
             onTemperatureChange: () => { },
             outputLength: 1024,
@@ -1255,11 +1256,16 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
             onAspectRatioChange: setAspectRatio,
         },
         qwen: { enabled: false, size: '1024*1024', onSizeChange: () => { }, promptExtend: false, onPromptExtendChange: () => { }, watermark: false, onWatermarkChange: () => { } },
+        gptImage: {
+            enabled: effectiveModel === 'gpt-image-1.5',
+            quality: 'auto' as const,
+            onQualityChange: () => { },
+        },
         kling: { enabled: false, model: 'kling-v2.1-master' as const, onModelChange: () => { }, aspectRatio: '16:9' as const, onAspectRatioChange: () => { }, duration: 5 as const, onDurationChange: () => { }, mode: 'standard' as const, onModeChange: () => { }, cfgScale: 0.5, onCfgScaleChange: () => { }, negativePrompt: '', onNegativePromptChange: () => { }, cameraType: 'none' as const, onCameraTypeChange: () => { }, cameraConfig: { horizontal: 0, vertical: 0, pan: 0, tilt: 0, roll: 0, zoom: 0 }, onCameraConfigChange: () => { } },
         lumaPhoton: { enabled: false, model: 'luma-photon-1' as const, onModelChange: () => { } },
         lumaRay: { enabled: false, variant: 'luma-ray-2' as const, onVariantChange: () => { } },
         sora: { enabled: false, aspectRatio: '16:9' as const, onAspectRatioChange: () => { }, duration: 5, onDurationChange: () => { }, withSound: true, onWithSoundChange: () => { } },
-    }), [batchSize, aspectRatio, isSettingsOpen]);
+    }), [batchSize, aspectRatio, isSettingsOpen, effectiveModel]);
 
     if (!isOpen) return null;
 
@@ -2642,12 +2648,13 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                             isGenerating={isLoading}
                                                             activeCategory="image"
                                                             hasReferences={referenceFiles.length > 0}
-                                                            allowedModels={['ideogram', 'gemini-3.0-pro-image']}
-                                                            disabledModels={isMaskToolbarVisible ? ['gemini-3.0-pro-image'] : undefined}
+                                                            allowedModels={['ideogram', 'gemini-3.0-pro-image', 'gpt-image-1.5']}
+                                                            disabledModels={isMaskToolbarVisible ? ['gemini-3.0-pro-image', 'gpt-image-1.5'] : undefined}
                                                             readOnly={isMaskToolbarVisible}
                                                             customDescriptions={{
                                                                 'gemini-3.0-pro-image': 'Best image editing (text and reference).',
                                                                 'ideogram': 'Best inpainting.',
+                                                                'gpt-image-1.5': 'Best image generation.',
                                                             }}
                                                             customTooltips={{
                                                                 'ideogram': 'Inpaint uses Ideogram for precise editing. If you don\'t want to draw a mask for precise editing, disable Inpaint mode.',
@@ -2703,7 +2710,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                             anchorRef={aspectRatioButtonRef}
                                                             open={isAspectRatioOpen}
                                                             onClose={() => setIsAspectRatioOpen(false)}
-                                                            options={GEMINI_ASPECT_RATIO_OPTIONS}
+                                                            options={effectiveModel === 'ideogram' ? GEMINI_ASPECT_RATIO_OPTIONS : getAspectRatiosForModel(effectiveModel)}
                                                             selectedValue={aspectRatio}
                                                             onSelect={(val) => {
                                                                 setAspectRatio(val as GeminiAspectRatio);
