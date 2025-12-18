@@ -45,6 +45,7 @@ export interface ChatGPTImageGenerationOptions {
   avatarImageId?: string;
   productId?: string;
   styleId?: string;
+  clientJobId?: string;
   signal?: AbortSignal;
   requestTimeoutMs?: number;
   pollTimeoutMs?: number;
@@ -206,6 +207,7 @@ export const useChatGPTImageGeneration = () => {
           prompt,
           model: 'gpt-image-1.5',
           signal,
+          clientJobId: options.clientJobId,
           timeoutMs: options.requestTimeoutMs,
           pollTimeoutMs: options.pollTimeoutMs,
           pollIntervalMs: options.pollIntervalMs,

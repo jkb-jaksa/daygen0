@@ -724,6 +724,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     });
 
   const handleQuickEditSubmit = useCallback(async ({ prompt, referenceFiles, avatarImageUrl, productImageUrl, mask, resizeParams, model, aspectRatio }: QuickEditOptions) => {
+    console.log('[QuickEdit] Model received:', model, '| Will use:', model === 'gpt-image-1.5' ? 'ChatGPT' : (mask ? 'Ideogram' : 'Gemini'));
+
     if (!quickEditModalState?.item || !quickEditModalState.item.url) {
       showToast('No image URL available');
       return;
@@ -926,6 +928,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           prompt: prompt,
           references: references,
           size: apiSize as 'auto' | '1024x1024' | '1024x1536' | '1536x1024',
+          clientJobId: syntheticJobId,
         }).then(async (result) => {
           if (result) {
             await addImage({
