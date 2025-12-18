@@ -336,7 +336,7 @@ export function usePayments() {
       if (!response.ok) {
         // Fallback to legacy credits if wallet endpoint fails
         debugError('Failed to fetch wallet balance, using fallback');
-        const legacyCredits = (user as any).credits || 0;
+        const legacyCredits = ('credits' in user && typeof (user as { credits?: number }).credits === 'number' ? (user as { credits?: number }).credits : 0) || 0;
         return {
           subscriptionCredits: 0,
           topUpCredits: legacyCredits,
@@ -351,7 +351,7 @@ export function usePayments() {
     } catch (err) {
       debugError('Error fetching wallet balance:', err);
       // Return fallback on error
-      const legacyCredits = (user as any).credits || 0;
+      const legacyCredits = ('credits' in user && typeof (user as { credits?: number }).credits === 'number' ? (user as { credits?: number }).credits : 0) || 0;
       return {
         subscriptionCredits: 0,
         topUpCredits: legacyCredits,
