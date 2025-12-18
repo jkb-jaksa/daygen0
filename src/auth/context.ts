@@ -4,6 +4,7 @@ type User = {
   id: string;
   authUserId: string;
   email: string;
+  username: string | null;
   displayName: string | null;
   credits: number;
   profileImage: string | null;
@@ -15,6 +16,7 @@ type User = {
 
 type UpdateProfilePayload = {
   displayName?: string | null;
+  username?: string | null;
   profileImage?: string | null;
   bio?: string | null;
 };

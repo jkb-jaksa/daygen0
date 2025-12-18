@@ -368,15 +368,17 @@ export const useGalleryImages = () => {
   }, [token, storagePrefix, loadLocalImages, convertR2FileToGalleryItem, mergeImages, isR2Url]);
 
   // Delete an image (soft delete)
-  const deleteImage = useCallback(async (imageId: string) => {
+  // Supports deletion by r2FileId or by fileUrl as fallback
+  const deleteImage = useCallback(async (imageId: string, fileUrl?: string) => {
     if (!token) {
       setState(prev => ({ ...prev, error: 'Not authenticated' }));
       return false;
     }
 
     try {
+      // First, try to delete by r2FileId
       const apiUrl = getApiUrl(`/api/r2files/${imageId}`);
-      debugLog('[gallery] Deleting image:', apiUrl);
+      debugLog('[gallery] Deleting image by id:', apiUrl);
 
       const response = await fetch(apiUrl, {
         method: 'DELETE',
@@ -386,18 +388,41 @@ export const useGalleryImages = () => {
         },
       });
 
-      if (!response.ok) {
-        throw new Error(`Failed to delete image: ${response.status}`);
+      if (response.ok) {
+        // Remove the image from local state
+        setState(prev => ({
+          ...prev,
+          images: prev.images.filter(img => img.r2FileId !== imageId && img.url !== imageId),
+        }));
+        debugLog('[gallery] Image deleted successfully by id');
+        return true;
       }
 
-      // Remove the image from local state
-      setState(prev => ({
-        ...prev,
-        images: prev.images.filter(img => img.r2FileId !== imageId),
-      }));
+      // If delete by id failed and we have a fileUrl, try delete by URL
+      if (fileUrl) {
+        debugLog('[gallery] Delete by id failed, trying by URL:', fileUrl);
+        const byUrlApiUrl = getApiUrl('/api/r2files/by-url');
+        const byUrlResponse = await fetch(byUrlApiUrl, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ fileUrl }),
+        });
 
-      debugLog('[gallery] Image deleted successfully');
-      return true;
+        if (byUrlResponse.ok) {
+          // Remove the image from local state
+          setState(prev => ({
+            ...prev,
+            images: prev.images.filter(img => img.url !== fileUrl && img.r2FileId !== imageId),
+          }));
+          debugLog('[gallery] Image deleted successfully by URL');
+          return true;
+        }
+      }
+
+      throw new Error(`Failed to delete image: ${response.status}`);
     } catch (error) {
       debugError('[gallery] Failed to delete image:', error);
       setState(prev => ({

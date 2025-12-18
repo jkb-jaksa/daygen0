@@ -22,6 +22,7 @@ const createFallbackUser = (authUser: SupabaseUser): AppUser => ({
   id: authUser.id,
   authUserId: authUser.id,
   email: authUser.email ?? '',
+  username: null,
   displayName:
     (authUser.user_metadata?.display_name as string | undefined)?.trim() ||
     (authUser.user_metadata?.full_name as string | undefined)?.trim() ||
@@ -42,6 +43,9 @@ const normalizeBackendUser = (payload: Record<string, unknown>): AppUser => ({
     (payload.auth_user_id as string | undefined) ??
     (payload.id as string),
   email: (payload.email as string | undefined) ?? '',
+  username:
+    (payload.username as string | undefined) ??
+    null,
   displayName:
     (payload.displayName as string | undefined) ??
     (payload.display_name as string | undefined) ??
@@ -71,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const lastProfileUpdateRef = useRef<number>(0);
   const userRef = useRef<AppUser | null>(null);
-  
+
   // Derive a per-user storage prefix to avoid cross-account bleed
   const storagePrefix = useMemo(() => {
     const uid = user?.authUserId || user?.id;
@@ -112,13 +116,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
-        
+
         // Suppress connection errors when backend is unavailable
-        const isConnectionError = errorMessage.includes('failed to fetch') || 
-                                 errorMessage.includes('connection refused') ||
-                                 errorMessage.includes('err_connection_refused') ||
-                                 errorMessage.includes('networkerror');
-        
+        const isConnectionError = errorMessage.includes('failed to fetch') ||
+          errorMessage.includes('connection refused') ||
+          errorMessage.includes('err_connection_refused') ||
+          errorMessage.includes('networkerror');
+
         if (errorMessage.includes('email_change') || errorMessage.includes('converting null')) {
           debugWarn('Backend sync failed due to database schema issue (email_change NULL). This is a known issue and does not affect authentication.');
         } else if (!isConnectionError) {
@@ -184,11 +188,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch (error) {
           // Suppress connection refused errors when backend is unavailable
           const errorMessage = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
-          const isConnectionError = errorMessage.includes('failed to fetch') || 
-                                   errorMessage.includes('connection refused') ||
-                                   errorMessage.includes('err_connection_refused') ||
-                                   errorMessage.includes('networkerror');
-          
+          const isConnectionError = errorMessage.includes('failed to fetch') ||
+            errorMessage.includes('connection refused') ||
+            errorMessage.includes('err_connection_refused') ||
+            errorMessage.includes('networkerror');
+
           if (!isConnectionError) {
             debugWarn('Error fetching backend profile:', error);
           }
@@ -236,7 +240,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Copy legacy unscoped values into scoped prefix if missing
       const newPrefix = `daygen:${profile.authUserId || profile.id}:`;
       const keys: Array<Parameters<typeof setPersistedValue>[1]> = [
-        'gallery','favorites','folders','editGallery','inspirations','avatars','avatar-favorites'
+        'gallery', 'favorites', 'folders', 'editGallery', 'inspirations', 'avatars', 'avatar-favorites'
       ];
       for (const key of keys) {
         const [legacy, scoped] = await Promise.all([
@@ -295,7 +299,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       void migrateKeyToIndexedDb('daygen:', 'avatar-favorites');
       const newPrefix = `daygen:${profile.authUserId || profile.id}:`;
       const keys: Array<Parameters<typeof setPersistedValue>[1]> = [
-        'gallery','favorites','folders','editGallery','inspirations','avatars','avatar-favorites'
+        'gallery', 'favorites', 'folders', 'editGallery', 'inspirations', 'avatars', 'avatar-favorites'
       ];
       for (const key of keys) {
         const [legacy, scoped] = await Promise.all([
@@ -498,18 +502,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const payload = await parseJsonSafe(response);
     const updatedProfile = normalizeBackendUser(payload);
-    
+
     debugLog('Profile picture upload successful, updated profile:', updatedProfile);
-    
+
     // Set timestamp to prevent overwriting this update
     lastProfileUpdateRef.current = Date.now();
-    
+
     // Force a state update by creating a new object reference
     setUser({ ...updatedProfile });
-    
+
     // Don't call refreshUser here as it might overwrite our changes
     // The backend should have the updated profile image now
-    
+
     return updatedProfile;
   }, [session?.access_token]);
 
@@ -535,10 +539,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const payload = await parseJsonSafe(response);
     const updatedProfile = normalizeBackendUser(payload);
-    
+
     // Set timestamp to prevent overwriting this update
     lastProfileUpdateRef.current = Date.now();
-    
+
     setUser(updatedProfile);
     return updatedProfile;
   }, [session?.access_token]);
@@ -577,12 +581,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let isMounted = true;
-    
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, nextSession) => {
       if (!isMounted) return;
-      
+
       // Only log non-INITIAL_SESSION events, or INITIAL_SESSION when there's actually a session
       if (event !== 'INITIAL_SESSION' || nextSession) {
         debugLog('Auth state changed:', event, nextSession?.user?.email);
@@ -599,7 +603,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const timeSinceLastUpdate = Date.now() - lastProfileUpdateRef.current;
             const isRecentUpdate = timeSinceLastUpdate < 5000;
             const currentUser = userRef.current;
-            
+
             // Only update if this is a significant change (not just a token refresh)
             // or if we don't have a user yet, or if it's not a recent profile update
             if (!currentUser || event === 'SIGNED_IN' || event === 'SIGNED_OUT' || !isRecentUpdate) {
