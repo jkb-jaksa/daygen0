@@ -1,7 +1,6 @@
 import React, { memo, useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
 import { Heart, MoreHorizontal, Check, Image as ImageIcon, Video as VideoIcon, Copy, BookmarkPlus, Bookmark, Square, Trash2, FileText } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
@@ -16,8 +15,6 @@ import { useToast } from '../../hooks/useToast';
 import { loadSavedPrompts } from '../../lib/savedPrompts';
 import { useGeminiImageGeneration } from '../../hooks/useGeminiImageGeneration';
 import { useIdeogramImageGeneration } from '../../hooks/useIdeogramImageGeneration';
-import { useChatGPTImageGeneration } from '../../hooks/useChatGPTImageGeneration';
-import { useVeoVideoGeneration } from '../../hooks/useVeoVideoGeneration';
 import type { GalleryImageLike, GalleryVideoLike } from './types';
 import type { StoredAvatar } from '../avatars/types';
 import type { StoredProduct } from '../products/types';
@@ -41,16 +38,7 @@ const PublicBadge = lazy(() => import('./PublicBadge'));
 const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
 import QuickEditModal, { type QuickEditOptions } from './QuickEditModal';
 const MakeVideoModal = lazy(() => import('./MakeVideoModal'));
-import type { MakeVideoOptions } from './MakeVideoModal';
-const ChangeAngleModal = lazy(() => import('./ChangeAngleModal'));
-import type { AngleOption } from './hooks/useAngleHandlers';
-import { ReferencePreviewModal } from '../shared/ReferencePreviewModal';
-
-
-
 const GenerationProgress = lazy(() => import('./GenerationProgress'));
-import { renderComposedCanvas, generateExtensionPrompt } from './utils/resizeUtils';
-import { uploadBase64ToR2 } from '../../utils/uploadToR2';
 
 // Helper to get consistent item identifier for UI actions (jobId → r2FileId → url)
 const getItemIdentifier = (item: GalleryImageLike | GalleryVideoLike): string | null => {
@@ -181,14 +169,11 @@ const GridVideoItem = memo<GridVideoItemProps>(({
 const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, onFocusPrompt, filterIds }) => {
   const { user, storagePrefix } = useAuth();
   const { showToast } = useToast();
-  const navigate = useNavigate();
-  const { state, toggleItemSelection, isLoading, filteredItems: contextFilteredItems, addImage, addVideo, openFullSize, loadMore, hasMore } = useGallery();
+  const { state, toggleItemSelection, isLoading, filteredItems: contextFilteredItems, addImage, openFullSize, loadMore, hasMore } = useGallery();
   const { isFullSizeOpen } = state;
 
   const { generateImage: generateGeminiImage } = useGeminiImageGeneration();
   const { generateImage: generateIdeogramImage } = useIdeogramImageGeneration();
-  const { generateImage: generateChatGPTImage } = useChatGPTImageGeneration();
-  const { startGeneration: startVeoGeneration } = useVeoVideoGeneration();
   const {
     handleImageActionMenu,
     handleBulkActionsMenu,
@@ -209,11 +194,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const [expandedVideoPrompts, setExpandedVideoPrompts] = useState<Set<string>>(() => new Set());
   const [quickEditModalState, setQuickEditModalState] = useState<{ isOpen: boolean; initialPrompt: string; item: GalleryImageLike } | null>(null);
   const [makeVideoModalState, setMakeVideoModalState] = useState<{ isOpen: boolean; initialPrompt: string; item: GalleryImageLike } | null>(null);
-  const [changeAngleModalState, setChangeAngleModalState] = useState<{ isOpen: boolean; item: GalleryImageLike; selectedAngle: AngleOption | null } | null>(null);
-
   const [isQuickEditLoading] = useState(false);
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement }>({});
-  const [referencePreviewUrls, setReferencePreviewUrls] = useState<string[]>([]);
   const {
     goToAvatarProfile,
     goToProductProfile,
@@ -570,6 +552,33 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   }, [handleToggleLike]);
 
 
+  // Handle delete
+  const onDelete = useCallback((event: React.MouseEvent, item: GalleryImageLike | GalleryVideoLike) => {
+    event.stopPropagation();
+    const itemId = getItemIdentifier(item);
+    if (itemId) {
+      void handleDeleteImage(itemId);
+    }
+  }, [handleDeleteImage]);
+
+  const handleVideo = useCallback((item?: GalleryImageLike) => {
+    if (item) {
+      setMakeVideoModalState({
+        isOpen: true,
+        initialPrompt: item.prompt || '',
+        item,
+      });
+    } else {
+      handleMakeVideo();
+    }
+  }, [handleMakeVideo]);
+
+  // Check if item is selected
+  const isItemSelected = useCallback((item: GalleryImageLike | GalleryVideoLike) => {
+    const itemId = getItemIdentifier(item);
+    return itemId ? selectedItems.has(itemId) : false;
+  }, [selectedItems]);
+
   // Check if item is video
   const isVideo = useCallback((item: GalleryImageLike | GalleryVideoLike) => {
     if ('type' in item && item.type === 'video') {
@@ -593,35 +602,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       return next;
     });
   }, []);
-
-  // Handle delete
-  const onDelete = useCallback((event: React.MouseEvent, item: GalleryImageLike | GalleryVideoLike) => {
-    event.stopPropagation();
-    const itemId = getItemIdentifier(item);
-    if (itemId) {
-      void handleDeleteImage(itemId, isVideo(item));
-    }
-  }, [handleDeleteImage, isVideo]);
-
-  const handleVideo = useCallback((item?: GalleryImageLike) => {
-    if (item) {
-      setMakeVideoModalState({
-        isOpen: true,
-        initialPrompt: item.prompt || '',
-        item,
-      });
-    } else {
-      handleMakeVideo();
-    }
-  }, [handleMakeVideo]);
-
-  // Check if item is selected
-  const isItemSelected = useCallback((item: GalleryImageLike | GalleryVideoLike) => {
-    const itemId = getItemIdentifier(item);
-    return itemId ? selectedItems.has(itemId) : false;
-  }, [selectedItems]);
-
-
 
 
 
@@ -654,68 +634,13 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   }, [removeActiveJob, updateJobStatus]);
 
   const handleQuickEdit = useCallback((item: GalleryImageLike) => {
+
     setQuickEditModalState({
       isOpen: true,
       initialPrompt: '',
       item,
     });
   }, []);
-
-  const handleChangeAngle = useCallback((item: GalleryImageLike) => {
-    setChangeAngleModalState({
-      isOpen: true,
-      item,
-      selectedAngle: null,
-    });
-  }, []);
-
-
-
-  const handleChangeAngleClose = useCallback(() => {
-    setChangeAngleModalState(null);
-  }, []);
-
-  const handleAngleSelect = useCallback((angle: AngleOption) => {
-    setChangeAngleModalState(prev => prev ? { ...prev, selectedAngle: prev.selectedAngle?.id === angle.id ? null : angle } : null);
-  }, []);
-
-  const handleAngleApply = useCallback(() => {
-    // TODO: Implement angle application logic
-    setChangeAngleModalState(null);
-  }, []);
-
-  const startResizeJob = useCallback((image: GalleryImageLike, prompt: string) => {
-    const syntheticId = buildSyntheticJobId(image);
-    const timestamp = Date.now();
-
-    addActiveJob({
-      id: syntheticId,
-      prompt: prompt,
-      model: 'gemini-3-pro-image-preview',
-      status: 'processing',
-      progress: 5,
-      backendProgress: 5,
-      backendProgressUpdatedAt: timestamp,
-      startedAt: timestamp,
-      jobId: syntheticId,
-    });
-
-    return syntheticId;
-  }, [addActiveJob]);
-
-  const finalizeResizeJob = useCallback((jobId: string, status: 'completed' | 'failed') => {
-    updateJobStatus(jobId, status, {
-      progress: status === 'completed' ? 100 : undefined,
-      backendProgress: status === 'completed' ? 100 : undefined,
-      backendProgressUpdatedAt: Date.now(),
-    });
-    removeActiveJob(jobId);
-  }, [removeActiveJob, updateJobStatus]);
-
-
-
-
-
 
   const fileToDataUrl = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
@@ -725,9 +650,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       reader.readAsDataURL(file);
     });
 
-  const handleQuickEditSubmit = useCallback(async ({ prompt, referenceFiles, avatarImageUrl, productImageUrl, mask, resizeParams, model, aspectRatio }: QuickEditOptions) => {
-    console.log('[QuickEdit] Model received:', model, '| Will use:', model === 'gpt-image-1.5' ? 'ChatGPT' : (mask ? 'Ideogram' : 'Gemini'));
-
+  const handleQuickEditSubmit = useCallback(async ({ prompt, referenceFiles, avatarImageUrl, productImageUrl, mask, model }: QuickEditOptions) => {
     if (!quickEditModalState?.item || !quickEditModalState.item.url) {
       showToast('No image URL available');
       return;
@@ -738,122 +661,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     // Close modal immediately
     setQuickEditModalState(null);
 
-    // Handle resize mode (when resizeParams is provided)
-    if (resizeParams) {
-      const { aspectRatio, position, scale, userPrompt: resizeUserPrompt } = resizeParams;
-
-      // Track job ID for error handling
-      let syntheticJobId: string | null = null;
-
-      try {
-        // Render the composed canvas with positioned image
-        console.log('[Resize via QuickEdit] Rendering composed canvas...');
-        const { dataUrl: composedImageDataUrl, isPureCrop } = await renderComposedCanvas({
-          imageUrl: item.url,
-          targetAspectRatio: aspectRatio,
-          position,
-          scale,
-        });
-        console.log('[Resize via QuickEdit] Canvas rendered, isPureCrop:', isPureCrop, 'dataUrl length:', composedImageDataUrl.length);
-
-        // If this is a pure crop AND no user prompt, skip AI and upload directly
-        const hasUserPrompt = resizeUserPrompt.trim().length > 0;
-
-        if (isPureCrop && !hasUserPrompt) {
-          console.log('[Resize via QuickEdit] Pure crop detected - uploading directly without AI');
-          showToast('Cropping image...');
-
-          // Upload cropped image directly to R2
-          const uploadResult = await uploadBase64ToR2(composedImageDataUrl, {
-            folder: 'cropped-images',
-            prompt: `Cropped to ${aspectRatio}`,
-            model: 'crop',
-          });
-
-          if (uploadResult.success && uploadResult.url) {
-            await addImage({
-              url: uploadResult.url,
-              prompt: `Cropped to ${aspectRatio}`,
-              model: 'crop',
-              timestamp: new Date().toISOString(),
-              ownerId: item.ownerId,
-              isLiked: false,
-              isPublic: false,
-            });
-            showToast('Image cropped successfully!');
-          } else {
-            showToast(`Failed to crop: ${uploadResult.error || 'Unknown error'}`);
-          }
-          return;
-        }
-
-        // Generate the smart extension prompt (for AI generation)
-        const extensionPrompt = generateExtensionPrompt({
-          position,
-          scale,
-          targetRatio: aspectRatio,
-          userPrompt: resizeUserPrompt.trim() || undefined,
-        });
-
-        // Create display prompt for the gallery and job animation
-        // Use user's prompt if provided, otherwise fall back to generic "Resize to X"
-        const displayPrompt = resizeUserPrompt.trim() || `Resize to ${aspectRatio}`;
-
-        // Start the resize job for tracking (use display prompt for UI)
-        syntheticJobId = startResizeJob(item, displayPrompt);
-        console.log('[Resize via QuickEdit] Job started:', syntheticJobId);
-
-        // Determine jobType: IMAGE_EDIT if user provided a prompt, IMAGE_RESIZE for pure resize/extension
-        const resizeJobType = hasUserPrompt ? 'IMAGE_EDIT' : 'IMAGE_RESIZE';
-
-        // Call Gemini with the composed image as reference
-        console.log('[Resize via QuickEdit] Calling Gemini for AI extension, jobType:', resizeJobType);
-        generateGeminiImage({
-          prompt: extensionPrompt,
-          references: [composedImageDataUrl],
-          model: 'gemini-3-pro-image-preview',
-          aspectRatio: aspectRatio,
-          clientJobId: syntheticJobId,
-          jobType: resizeJobType,
-        }).then(async (result) => {
-          console.log('[Resize via QuickEdit] Gemini result:', result);
-          if (result) {
-            await addImage({
-              url: result.url,
-              prompt: displayPrompt, // Use short display prompt for gallery
-              model: result.model,
-              timestamp: new Date().toISOString(),
-              ownerId: item.ownerId,
-              isLiked: false,
-              isPublic: false,
-              r2FileId: result.r2FileId,
-            });
-            finalizeResizeJob(syntheticJobId!, 'completed');
-            showToast('Image extended successfully!');
-          } else {
-            showToast('Failed to extend image');
-            finalizeResizeJob(syntheticJobId!, 'failed');
-          }
-        }).catch((error) => {
-          console.error('[Resize via QuickEdit] Gemini error:', error);
-          debugError('Failed to extend image:', error);
-          showToast('Failed to extend image');
-          finalizeResizeJob(syntheticJobId!, 'failed');
-        });
-      } catch (error) {
-        console.error('[Resize via QuickEdit] Process error:', error);
-        debugError('Failed to process resize:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        showToast(`Failed to resize: ${errorMessage}`);
-        // Finalize the job if it was started
-        if (syntheticJobId) {
-          finalizeResizeJob(syntheticJobId, 'failed');
-        }
-      }
-      return; // Exit after handling resize
-    }
-
-    // Start background job for normal quick edit
+    // Start background job
     const syntheticJobId = startQuickEditJob(item, prompt);
 
     try {
@@ -881,8 +689,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
         }
       }
 
-      if (mask) {
-        // Use Ideogram for mask-based editing (reliable pixel-mask inpainting)
+      if (model === 'ideogram' && mask) {
+        // Ideogram Masked Edit
         generateIdeogramImage({
           prompt: prompt,
           mask: mask,
@@ -891,7 +699,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           aspect_ratio: '1:1',
           rendering_speed: 'DEFAULT',
           num_images: 1,
-          jobType: 'IMAGE_EDIT',
         }).then(async (results) => {
           if (results && results.length > 0) {
             const result = results[0];
@@ -915,52 +722,13 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           showToast('Failed to edit image');
           finalizeQuickEditJob(syntheticJobId, 'failed');
         });
-      } else if (model === 'gpt-image-1.5') {
-        // Use ChatGPT for GPT Image 1.5 model
-        // Convert aspect ratio to API size
-        const gptSizeMap: Record<string, string> = {
-          'auto': 'auto',
-          '1:1': '1024x1024',
-          '2:3': '1024x1536',
-          '3:2': '1536x1024',
-        };
-        const apiSize = (aspectRatio && gptSizeMap[aspectRatio]) || 'auto';
-
-        generateChatGPTImage({
-          prompt: prompt,
-          references: references,
-          size: apiSize as 'auto' | '1024x1024' | '1024x1536' | '1536x1024',
-          clientJobId: syntheticJobId,
-        }).then(async (result) => {
-          if (result) {
-            await addImage({
-              url: result.url,
-              prompt: result.prompt,
-              model: result.model,
-              timestamp: new Date().toISOString(),
-              ownerId: item.ownerId,
-              isLiked: false,
-              isPublic: false,
-              jobId: result.jobId,
-            });
-            finalizeQuickEditJob(syntheticJobId, 'completed');
-          } else {
-            showToast('Failed to edit image');
-            finalizeQuickEditJob(syntheticJobId, 'failed');
-          }
-        }).catch((error) => {
-          debugError('Failed to quick edit image (GPT Image 1.5):', error);
-          showToast('Failed to edit image');
-          finalizeQuickEditJob(syntheticJobId, 'failed');
-        });
       } else {
-        // Use Gemini for non-mask editing (references, style transfer, general edits)
+        // Default Gemini Edit
         generateGeminiImage({
           prompt: prompt,
           references: references,
           model: 'gemini-3-pro-image-preview',
           clientJobId: syntheticJobId,
-          jobType: 'IMAGE_EDIT',
         }).then(async (result) => {
           if (result) {
             await addImage({
@@ -989,92 +757,13 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       showToast('Failed to start edit');
       finalizeQuickEditJob(syntheticJobId, 'failed');
     }
-  }, [quickEditModalState, generateGeminiImage, generateIdeogramImage, generateChatGPTImage, addImage, showToast, startQuickEditJob, finalizeQuickEditJob, startResizeJob, finalizeResizeJob]);
+  }, [quickEditModalState, generateGeminiImage, generateIdeogramImage, addImage, showToast, startQuickEditJob, finalizeQuickEditJob]);
 
   const handleQuickEditClose = useCallback(() => {
     setQuickEditModalState(null);
   }, []);
 
-  // Handler for Make Video modal submission
-  const handleMakeVideoSubmit = useCallback(async (options: MakeVideoOptions) => {
-    if (!makeVideoModalState?.item || !makeVideoModalState.item.url) {
-      showToast('No image URL available');
-      return;
-    }
 
-    const { prompt, referenceFiles, aspectRatio, model, script, voiceId, isLipSyncEnabled } = options;
-    const item = makeVideoModalState.item;
-
-    // Close modal so user sees the generation in progress
-    setMakeVideoModalState(null);
-
-    // Prepare references - pass URLs directly, backend handles downloading
-    const references: string[] = [];
-
-    // 1. Add initial image URL as first reference
-    references.push(item.url);
-
-    // 2. Add uploaded reference files (convert Files to data URLs)
-    if (referenceFiles && referenceFiles.length > 0) {
-      for (const referenceItem of referenceFiles) {
-        try {
-          if (typeof referenceItem === 'string') {
-            // Pass URLs/data URLs directly
-            references.push(referenceItem.trim());
-          } else {
-            // Convert File objects to data URLs
-            const base64 = await new Promise<string>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve(reader.result as string);
-              reader.onerror = reject;
-              reader.readAsDataURL(referenceItem);
-            });
-            references.push(base64);
-          }
-        } catch (e) {
-          debugError('Failed to convert reference file for video', e);
-        }
-      }
-    }
-
-    // Start Veo generation (Fire and forget, handle result in background)
-    startVeoGeneration({
-      prompt: prompt,
-      model: model as 'veo-3.1-generate-preview' | 'veo-3.1-fast-generate-preview' || 'veo-3.1-generate-preview',
-      aspectRatio: aspectRatio as '16:9' | '9:16',
-      references: references,
-      avatarId: item.avatarId,
-      avatarImageId: item.avatarImageId,
-      productId: item.productId,
-      script,
-      voiceId,
-      isLipSyncEnabled,
-    }).then((result) => {
-      if (result && result.url) {
-        // Add video to gallery when done
-        addVideo({
-          url: result.url,
-          prompt: prompt,
-          model: result.model || model || 'veo-3.1-generate-preview',
-          timestamp: result.timestamp || new Date().toISOString(),
-          jobId: result.jobId,
-          type: 'video',
-          aspectRatio: aspectRatio as string,
-          avatarId: item.avatarId,
-          avatarImageId: item.avatarImageId,
-          productId: item.productId,
-        });
-        showToast('Video generation complete!');
-      }
-    }).catch((error) => {
-      debugError('Failed to start video generation', error);
-      showToast('Failed to generate video');
-    });
-
-    // Immediate feedback and redirect
-    showToast('Video generation started');
-    navigate('/app/video');
-  }, [makeVideoModalState, startVeoGeneration, showToast, addVideo, navigate]);
 
   if (showLoadingState) {
     return (
@@ -1351,7 +1040,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                               isGallery={false}
                               anyMenuOpen={isMenuActive}
                               onMakeVideo={() => handleVideo(item as GalleryImageLike)}
-                              onChangeAngle={() => handleChangeAngle(item as GalleryImageLike)}
                               onQuickEdit={() => handleQuickEdit(item as GalleryImageLike)}
                             />
                           </Suspense>
@@ -1375,7 +1063,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                 isGallery={true}
                                 anyMenuOpen={isMenuActive}
                                 onMakeVideo={() => handleVideo(item as GalleryImageLike)}
-                                onChangeAngle={() => handleChangeAngle(item as GalleryImageLike)}
                                 onQuickEdit={() => handleQuickEdit(item as GalleryImageLike)}
                               />
                             </Suspense>
@@ -1591,7 +1278,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                           hideHoverTooltip(`save-${tooltipId}`);
                                         }}
                                         className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
-                                        aria-label={isPromptSaved(promptForActions) ? "Remove from saved" : "Save prompt"}
                                       >
                                         {isPromptSaved(promptForActions) ? (
                                           <Bookmark className="w-3 h-3 fill-current" />
@@ -1606,28 +1292,32 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                             </div>
                           </div>
 
-                          {/* Reference images thumbnails - only show if there are references that aren't already
-                              represented by Avatar/Product badges (those have their own display) */}
-                          {item.references && item.references.length > 0 && !item.avatarId && !item.productId && !avatarForImage && !productForImage && (
-                            <button
-                              className="flex items-center gap-1.5 mb-2 cursor-pointer group/ref"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setReferencePreviewUrls(item.references!);
-                              }}
-                            >
-                              <div className="relative parallax-small">
-                                <img
-                                  src={item.references[0]}
-                                  alt="Reference"
-                                  loading="lazy"
-                                  className="w-6 h-6 rounded object-cover border border-theme-mid group-hover/ref:border-theme-text transition-colors duration-100"
-                                />
+                          {/* Reference images thumbnails */}
+                          {item.references && item.references.length > 0 && (
+                            <div className="flex items-center gap-1.5 mb-2">
+                              <div className="flex gap-1">
+                                {item.references.map((ref, refIdx) => (
+                                  <div key={refIdx} className="relative">
+                                    <img
+                                      src={ref}
+                                      alt={`Reference ${refIdx + 1} `}
+                                      loading="lazy"
+                                      className="w-6 h-6 rounded object-cover border border-theme-mid cursor-pointer hover:border-theme-text transition-colors duration-200"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        // Could open in modal if that functionality is added
+                                      }}
+                                    />
+                                    <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
+                                      {refIdx + 1}
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
-                              <span className="text-xs font-raleway text-theme-white group-hover/ref:text-theme-text transition-colors duration-100">
-                                {item.references.length} reference{item.references.length > 1 ? 's' : ''}
+                              <span className="text-xs font-raleway text-theme-white/70">
+                                {item.references.length} ref{item.references.length > 1 ? 's' : ''}
                               </span>
-                            </button>
+                            </div>
                           )}
 
                           {(() => {
@@ -2006,33 +1696,13 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
           <MakeVideoModal
             isOpen={makeVideoModalState.isOpen}
             onClose={() => setMakeVideoModalState(null)}
-            onSubmit={handleMakeVideoSubmit}
             initialPrompt={makeVideoModalState.initialPrompt}
             imageUrl={makeVideoModalState.item.url}
             item={makeVideoModalState.item}
           />
         </Suspense>
       )}
-
-      {/* Change Angle Modal */}
-      {changeAngleModalState && (
-        <Suspense fallback={null}>
-          <ChangeAngleModal
-            open={changeAngleModalState.isOpen}
-            onClose={handleChangeAngleClose}
-            selectedAngle={changeAngleModalState.selectedAngle}
-            onSelectAngle={handleAngleSelect}
-            onApply={handleAngleApply}
-          />
-        </Suspense>
-      )}
-
-      {/* Reference Image Preview Modal */}
-      <ReferencePreviewModal
-        open={referencePreviewUrls.length > 0}
-        imageUrls={referencePreviewUrls}
-        onClose={() => setReferencePreviewUrls([])}
-      />    </>
+    </>
   );
 });
 

@@ -190,7 +190,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
     const [isAvatarButtonHovered, setIsAvatarButtonHovered] = useState(false);
     const [isProductButtonHovered, setIsProductButtonHovered] = useState(false);
     const [isStyleButtonHovered, setIsStyleButtonHovered] = useState(false);
-    const [referencePreviewUrls, setReferencePreviewUrls] = useState<string[]>([]);
+    const [referencePreviewUrl, setReferencePreviewUrl] = useState<string | null>(null);
 
     // Voice selection state
     const [isVoiceDropdownOpen, setIsVoiceDropdownOpen] = useState(false);
@@ -638,25 +638,29 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                         <div className="mt-2 flex flex-col justify-center items-center gap-2">
                                             {/* Reference images thumbnails */}
                                             {item.references && item.references.length > 0 && (
-                                                <button
-                                                    className="flex items-center gap-1.5 cursor-pointer group/ref"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setReferencePreviewUrls(item.references!);
-                                                    }}
-                                                >
-                                                    <div className="relative parallax-small">
-                                                        <img
-                                                            src={item.references[0]}
-                                                            alt="Reference"
-                                                            loading="lazy"
-                                                            className="w-6 h-6 rounded object-cover border border-theme-mid group-hover/ref:border-theme-text transition-colors duration-100"
-                                                        />
+                                                <div className="flex items-center gap-1.5">
+                                                    <div className="flex gap-1">
+                                                        {item.references.map((ref, refIdx) => (
+                                                            <div key={refIdx} className="relative">
+                                                                <img
+                                                                    src={ref}
+                                                                    alt={`Reference ${refIdx + 1}`}
+                                                                    loading="lazy"
+                                                                    className="w-6 h-6 rounded object-cover border border-theme-mid cursor-pointer hover:border-theme-text transition-colors duration-200"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                    }}
+                                                                />
+                                                                <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
+                                                                    {refIdx + 1}
+                                                                </div>
+                                                            </div>
+                                                        ))}
                                                     </div>
-                                                    <span className="text-xs font-raleway text-theme-white group-hover/ref:text-theme-text transition-colors duration-100">
-                                                        {item.references.length} reference{item.references.length > 1 ? 's' : ''}
+                                                    <span className="text-xs font-raleway text-theme-white/70">
+                                                        {item.references.length} ref{item.references.length > 1 ? 's' : ''}
                                                     </span>
-                                                </button>
+                                                </div>
                                             )}
 
                                             <ImageBadgeRow
@@ -1036,7 +1040,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                                 alt={`Reference ${index + 1}`}
                                                                 loading="lazy"
                                                                 className="w-9 h-9 rounded-lg object-cover border border-theme-mid cursor-pointer hover:bg-theme-light transition-colors duration-200"
-                                                                onClick={() => setReferencePreviewUrls([preview])}
+                                                                onClick={() => setReferencePreviewUrl(preview)}
                                                             />
                                                             <button
                                                                 type="button"
@@ -1535,9 +1539,9 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                 document.body
             )}
             <ReferencePreviewModal
-                open={referencePreviewUrls.length > 0}
-                imageUrls={referencePreviewUrls}
-                onClose={() => setReferencePreviewUrls([])}
+                open={referencePreviewUrl !== null}
+                imageUrl={referencePreviewUrl}
+                onClose={() => setReferencePreviewUrl(null)}
             />
         </>,
         document.body
