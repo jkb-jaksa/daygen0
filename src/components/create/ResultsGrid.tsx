@@ -44,6 +44,7 @@ const MakeVideoModal = lazy(() => import('./MakeVideoModal'));
 import type { MakeVideoOptions } from './MakeVideoModal';
 const ChangeAngleModal = lazy(() => import('./ChangeAngleModal'));
 import type { AngleOption } from './hooks/useAngleHandlers';
+import { ReferencePreviewModal } from '../shared/ReferencePreviewModal';
 
 
 
@@ -212,6 +213,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
 
   const [isQuickEditLoading] = useState(false);
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement }>({});
+  const [referencePreviewUrl, setReferencePreviewUrl] = useState<string | null>(null);
   const {
     goToAvatarProfile,
     goToProductProfile,
@@ -1604,11 +1606,12 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                             </div>
                           </div>
 
-                          {/* Reference images thumbnails */}
-                          {item.references && item.references.length > 0 && (
+                          {/* Reference images thumbnails - only show if there are references that aren't already
+                              represented by Avatar/Product badges (those have their own display) */}
+                          {item.references && item.references.length > 0 && !item.avatarId && !item.productId && !avatarForImage && !productForImage && (
                             <div className="flex items-center gap-1.5 mb-2">
                               <div className="flex gap-1">
-                                {item.references.map((ref, refIdx) => (
+                                {item.references.slice(0, 4).map((ref, refIdx) => (
                                   <div key={refIdx} className="relative">
                                     <img
                                       src={ref}
@@ -1617,7 +1620,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                       className="w-6 h-6 rounded object-cover border border-theme-mid cursor-pointer hover:border-theme-text transition-colors duration-200"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        // Could open in modal if that functionality is added
+                                        setReferencePreviewUrl(ref);
                                       }}
                                     />
                                     <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
@@ -1625,6 +1628,11 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                     </div>
                                   </div>
                                 ))}
+                                {item.references.length > 4 && (
+                                  <div className="flex items-center justify-center w-6 h-6 rounded bg-theme-dark border border-theme-mid text-theme-white text-[10px] font-medium font-raleway">
+                                    +{item.references.length - 4}
+                                  </div>
+                                )}
                               </div>
                               <span className="text-xs font-raleway text-theme-white/70">
                                 {item.references.length} ref{item.references.length > 1 ? 's' : ''}
@@ -2029,8 +2037,12 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
         </Suspense>
       )}
 
-
-    </>
+      {/* Reference Image Preview Modal */}
+      <ReferencePreviewModal
+        open={!!referencePreviewUrl}
+        imageUrl={referencePreviewUrl}
+        onClose={() => setReferencePreviewUrl(null)}
+      />    </>
   );
 });
 
