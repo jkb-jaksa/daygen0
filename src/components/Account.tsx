@@ -11,6 +11,8 @@ import { ProfileCard } from "./account/ProfileCard";
 import { AtAGlance } from "./account/AtAGlance";
 import { useToast } from "../hooks/useToast";
 import SubscriptionManager from "./payments/SubscriptionManager";
+import { WalletBalanceCard } from "./payments/WalletBalanceCard";
+import { usePayments, type WalletBalance } from "../hooks/usePayments";
 import AuthModal from "./AuthModal";
 
 type GalleryItem = { url: string; prompt: string; model: string; timestamp: string; ownerId?: string };
@@ -61,6 +63,8 @@ function AccountAuthScreen({ nextPath }: AccountAuthScreenProps) {
 export default function Account() {
   const { user, updateProfile, uploadProfilePicture, removeProfilePicture, logOut, storagePrefix, isLoading } = useAuth();
   const { showToast } = useToast();
+  const { getWalletBalance } = usePayments();
+  const [walletBalance, setWalletBalance] = useState<WalletBalance | null>(null);
   const [name, setName] = useState(user?.displayName ?? "");
   const [username, setUsername] = useState(user?.username ?? "");
   const [bio, setBio] = useState(user?.bio ?? "");
@@ -139,6 +143,17 @@ export default function Account() {
       cancelled = true;
     };
   }, [storagePrefix]);
+
+  // Fetch wallet balance when user is available
+  useEffect(() => {
+    if (!user) {
+      setWalletBalance(null);
+      return;
+    }
+    getWalletBalance()
+      .then(setWalletBalance)
+      .catch((err) => debugError("Account - Error loading wallet balance:", err));
+  }, [user, getWalletBalance]);
 
   const resetFileInput = useCallback(() => {
     if (fileInputRef.current) {
@@ -472,7 +487,14 @@ export default function Account() {
           onLogOut={handleLogOut}
         />
 
-        <AtAGlance generatedCount={gallery.length} creditsRemaining={user.credits} />
+        <AtAGlance
+          generatedCount={gallery.length}
+          creditsRemaining={walletBalance?.totalCredits ?? user.credits}
+          subscriptionCredits={walletBalance?.subscriptionCredits}
+          topUpCredits={walletBalance?.topUpCredits}
+        />
+
+        <WalletBalanceCard className="mt-4" />
       </section>
 
       {/* Subscription Management */}

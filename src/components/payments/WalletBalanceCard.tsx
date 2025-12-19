@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
-import { usePayments, WalletBalance } from '../../hooks/usePayments';
+import { useState, useEffect, useCallback } from 'react';
+import { usePayments } from '../../hooks/usePayments';
+import type { WalletBalance } from '../../hooks/usePayments';
+import { RefreshCw } from 'lucide-react';
 import './WalletBalanceCard.css';
 
 interface WalletBalanceCardProps {
@@ -11,25 +13,58 @@ export function WalletBalanceCard({ className = '', compact = false }: WalletBal
     const { getWalletBalance } = usePayments();
     const [balance, setBalance] = useState<WalletBalance | null>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
+
+    const fetchBalance = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(false);
+            const data = await getWalletBalance();
+            setBalance(data);
+        } catch (err) {
+            console.error('Failed to fetch wallet balance:', err);
+            setError(true);
+        } finally {
+            setLoading(false);
+        }
+    }, [getWalletBalance]);
 
     useEffect(() => {
-        const fetchBalance = async () => {
-            try {
-                const data = await getWalletBalance();
-                setBalance(data);
-            } catch (error) {
-                console.error('Failed to fetch wallet balance:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchBalance();
-    }, [getWalletBalance]);
+    }, [fetchBalance]);
 
     if (loading) {
         return (
-            <div className={`wallet-card wallet-card--loading ${className}`}>
-                <div className="wallet-card__spinner" />
+            <div className={`wallet-card wallet-card--skeleton ${className}`}>
+                <div className="wallet-card__skeleton-row">
+                    <div className="wallet-card__skeleton-label" />
+                    <div className="wallet-card__skeleton-value" />
+                </div>
+                <div className="wallet-card__skeleton-row">
+                    <div className="wallet-card__skeleton-label" />
+                    <div className="wallet-card__skeleton-value" />
+                </div>
+                {!compact && (
+                    <div className="wallet-card__skeleton-row wallet-card__skeleton-row--total">
+                        <div className="wallet-card__skeleton-label" />
+                        <div className="wallet-card__skeleton-value wallet-card__skeleton-value--large" />
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className={`wallet-card wallet-card--error ${className}`}>
+                <p className="wallet-card__error-text">Failed to load balance</p>
+                <button
+                    onClick={fetchBalance}
+                    className="wallet-card__retry-btn"
+                >
+                    <RefreshCw className="w-4 h-4" />
+                    Retry
+                </button>
             </div>
         );
     }
@@ -50,7 +85,7 @@ export function WalletBalanceCard({ className = '', compact = false }: WalletBal
         return (
             <div className={`wallet-card wallet-card--compact ${className}`}>
                 <div className="wallet-card__total">
-                    <span className="wallet-card__total-value">{balance.totalCredits}</span>
+                    <span className="wallet-card__total-value">{balance.totalCredits.toLocaleString()}</span>
                     <span className="wallet-card__total-label">credits</span>
                 </div>
             </div>
@@ -67,7 +102,7 @@ export function WalletBalanceCard({ className = '', compact = false }: WalletBal
                     <div className="wallet-card__wallet-icon">📅</div>
                     <div className="wallet-card__wallet-info">
                         <span className="wallet-card__wallet-label">Subscription</span>
-                        <span className="wallet-card__wallet-value">{balance.subscriptionCredits}</span>
+                        <span className="wallet-card__wallet-value">{balance.subscriptionCredits.toLocaleString()}</span>
                         {balance.subscriptionExpiresAt && (
                             <span className="wallet-card__wallet-expires">
                                 Expires {formatDate(balance.subscriptionExpiresAt)}
@@ -81,7 +116,7 @@ export function WalletBalanceCard({ className = '', compact = false }: WalletBal
                     <div className="wallet-card__wallet-icon">💎</div>
                     <div className="wallet-card__wallet-info">
                         <span className="wallet-card__wallet-label">Top-Up</span>
-                        <span className="wallet-card__wallet-value">{balance.topUpCredits}</span>
+                        <span className="wallet-card__wallet-value">{balance.topUpCredits.toLocaleString()}</span>
                         <span className="wallet-card__wallet-expires">Never expires</span>
                     </div>
                 </div>
@@ -89,7 +124,7 @@ export function WalletBalanceCard({ className = '', compact = false }: WalletBal
 
             <div className="wallet-card__total-section">
                 <span className="wallet-card__total-label">Total Available</span>
-                <span className="wallet-card__total-value">{balance.totalCredits} credits</span>
+                <span className="wallet-card__total-value">{balance.totalCredits.toLocaleString()} credits</span>
             </div>
 
             <p className="wallet-card__hint">

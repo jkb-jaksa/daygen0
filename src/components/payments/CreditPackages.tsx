@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Check, Star, Crown } from 'lucide-react';
 import { usePayments } from '../../hooks/usePayments';
 import { useStripeConfig } from '../../hooks/useStripeConfig';
@@ -14,9 +14,14 @@ export function CreditPackages({ onPurchase }: CreditPackagesProps) {
   const { config, loading: configLoading } = useStripeConfig();
   const { createCheckoutSession, loading, error } = usePayments();
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
+  const [isCheckoutLocked, setIsCheckoutLocked] = useState(false);
 
   const handlePurchase = async (packageId: string) => {
+    // Prevent multiple simultaneous checkout attempts
+    if (isCheckoutLocked) return;
+
     try {
+      setIsCheckoutLocked(true);
       setSelectedPackage(packageId);
       await createCheckoutSession('one_time', packageId);
       onPurchase?.();
@@ -24,6 +29,7 @@ export function CreditPackages({ onPurchase }: CreditPackagesProps) {
       debugError('Purchase failed:', err);
     } finally {
       setSelectedPackage(null);
+      setIsCheckoutLocked(false);
     }
   };
 
@@ -67,6 +73,7 @@ export function CreditPackages({ onPurchase }: CreditPackagesProps) {
             package={pkg}
             isSelected={selectedPackage === pkg.id}
             isLoading={loading && selectedPackage === pkg.id}
+            isDisabled={isCheckoutLocked && selectedPackage !== pkg.id}
             onPurchase={() => handlePurchase(pkg.id)}
           />
         ))}
@@ -85,10 +92,11 @@ interface CreditPackageCardProps {
   };
   isSelected: boolean;
   isLoading: boolean;
+  isDisabled?: boolean;
   onPurchase: () => void;
 }
 
-function CreditPackageCard({ package: pkg, isSelected, isLoading, onPurchase }: CreditPackageCardProps) {
+function CreditPackageCard({ package: pkg, isSelected, isLoading, isDisabled = false, onPurchase }: CreditPackageCardProps) {
   const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLDivElement>();
 
   const formatPrice = (priceInCents: number) => {
@@ -97,13 +105,12 @@ function CreditPackageCard({ package: pkg, isSelected, isLoading, onPurchase }: 
 
   return (
     <div
-      onClick={onPurchase}
-      onPointerMove={onPointerMove}
-      onPointerEnter={onPointerEnter}
-      onPointerLeave={onPointerLeave}
-      className={`${cards.shell} ${isSelected ? 'border-theme-light' : ''} group relative overflow-hidden p-6 cursor-pointer transition-all duration-200 parallax-small mouse-glow ${
-        isLoading ? 'opacity-50 cursor-not-allowed' : ''
-      }`}
+      onClick={isLoading || isDisabled ? undefined : onPurchase}
+      onPointerMove={isLoading || isDisabled ? undefined : onPointerMove}
+      onPointerEnter={isLoading || isDisabled ? undefined : onPointerEnter}
+      onPointerLeave={isLoading || isDisabled ? undefined : onPointerLeave}
+      className={`${cards.shell} ${isSelected ? 'border-theme-light' : ''} group relative overflow-hidden p-6 cursor-pointer transition-all duration-200 parallax-small mouse-glow ${isLoading || isDisabled ? 'opacity-50 cursor-not-allowed' : ''
+        }`}
     >
       {/* Badge */}
       {pkg.badge && (
@@ -170,9 +177,8 @@ function CreditPackageCard({ package: pkg, isSelected, isLoading, onPurchase }: 
         <div className="mt-auto">
           <button
             disabled={isLoading}
-            className={`w-full btn font-raleway text-base font-medium transition-colors duration-200 parallax-large ${
-              isLoading ? 'opacity-50 cursor-not-allowed btn-white' : 'btn-white'
-            }`}
+            className={`w-full btn font-raleway text-base font-medium transition-colors duration-200 parallax-large ${isLoading ? 'opacity-50 cursor-not-allowed btn-white' : 'btn-white'
+              }`}
           >
             {isLoading ? 'Processing...' : 'Buy Now'}
           </button>

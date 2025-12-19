@@ -1,4 +1,4 @@
-import React from 'react';
+import { useEffect, useRef } from 'react';
 import { AlertTriangle, RefreshCw, CreditCard, X } from 'lucide-react';
 import { PAYMENT_FAILED_MESSAGE } from '../../utils/errorMessages';
 
@@ -7,6 +7,7 @@ interface PaymentStatusBannerProps {
   onClose: () => void;
   onRetry: () => void;
   onViewHistory: () => void;
+  autoDismissMs?: number; // Auto-dismiss timeout in milliseconds, default 30000 (30s)
   failedPayments?: Array<{
     id: string;
     amount: number;
@@ -20,8 +21,27 @@ export function PaymentStatusBanner({
   onClose,
   onRetry,
   onViewHistory,
+  autoDismissMs = 30000,
   failedPayments = []
 }: PaymentStatusBannerProps) {
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-dismiss after timeout
+  useEffect(() => {
+    if (isOpen && failedPayments.length > 0 && autoDismissMs > 0) {
+      timerRef.current = setTimeout(() => {
+        onClose();
+      }, autoDismissMs);
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [isOpen, failedPayments.length, autoDismissMs, onClose]);
+
   if (!isOpen || failedPayments.length === 0) return null;
 
 
@@ -31,7 +51,7 @@ export function PaymentStatusBanner({
         <div className="w-8 h-8 bg-red-500/20 border border-red-500/50 rounded-full flex items-center justify-center flex-shrink-0">
           <AlertTriangle className="w-4 h-4 text-red-400" />
         </div>
-        
+
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h3 className="text-sm font-raleway font-medium text-red-400">
@@ -44,7 +64,7 @@ export function PaymentStatusBanner({
               <X className="w-4 h-4" />
             </button>
           </div>
-          
+
           <p className="text-theme-white text-sm mb-3">
             {PAYMENT_FAILED_MESSAGE}
           </p>
@@ -56,7 +76,7 @@ export function PaymentStatusBanner({
               </p>
             </div>
           )}
-          
+
           <div className="flex flex-wrap gap-2">
             <button
               onClick={onRetry}
@@ -65,7 +85,7 @@ export function PaymentStatusBanner({
               <RefreshCw className="w-3 h-3" />
               Retry Payment
             </button>
-            
+
             <button
               onClick={onViewHistory}
               className="btn btn-ghost font-raleway text-sm font-medium px-3 py-1.5 h-auto flex items-center gap-1"

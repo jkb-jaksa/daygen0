@@ -2,16 +2,28 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { CheckCircle, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../auth/useAuth';
-import { usePayments } from '../../hooks/usePayments';
+import { usePayments, type WalletBalance } from '../../hooks/usePayments';
 import { layout, glass } from '../../styles/designSystem';
 import { debugError, debugLog, debugWarn } from '../../utils/debug';
 import { getApiUrl } from '../../utils/api';
+
+// Session status type from API
+interface SessionStatus {
+  status: string;
+  paymentStatus?: string;
+  mode?: 'payment' | 'subscription';
+  metadata?: {
+    planName?: string;
+    billingPeriod?: string;
+  };
+}
 
 export function PaymentSuccess() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user, refreshUser } = useAuth();
-  const { getSessionStatus, getSessionStatusQuick } = usePayments();
+  const { getSessionStatus, getSessionStatusQuick, getWalletBalance } = usePayments();
+  const [walletBalance, setWalletBalance] = useState<WalletBalance | null>(null);
   const [sessionStatus, setSessionStatus] = useState<{ status: string; paymentStatus?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,9 +49,9 @@ export function PaymentSuccess() {
       try {
         // Use quick status for first few attempts, then fall back to full status
         const useQuickStatus = retryCount < 3;
-        const status = useQuickStatus
+        const status = (useQuickStatus
           ? await getSessionStatusQuick(sessionId)
-          : await getSessionStatus(sessionId);
+          : await getSessionStatus(sessionId)) as SessionStatus;
 
         if (!isMounted) return; // Check again after async operation
 
@@ -64,11 +76,15 @@ export function PaymentSuccess() {
         // Refresh user data to get updated credits after successful payment
         if (status.paymentStatus === 'COMPLETED' || status.status === 'complete' || status.status === 'paid') {
           try {
-            // Parallelize user refresh and final status check
-            await Promise.all([
+            // Parallelize user refresh, wallet balance, and final status check
+            const [, balance] = await Promise.all([
               refreshUser(),
+              getWalletBalance(),
               useQuickStatus ? getSessionStatus(sessionId) : Promise.resolve(status)
             ]);
+            setWalletBalance(balance);
+            // Dispatch event to refresh navbar wallet display
+            window.dispatchEvent(new CustomEvent('wallet:refresh'));
             debugLog('User credits refreshed after payment');
           } catch (refreshError) {
             debugWarn('Failed to refresh user after payment:', refreshError);
@@ -144,14 +160,18 @@ export function PaymentSuccess() {
       if (response.ok) {
         debugLog('✅ Manual completion successful, refreshing user data...');
 
-        // Parallelize user refresh and session status check
-        await Promise.all([
+        // Parallelize user refresh, wallet balance, and session status check
+        const [, balance] = await Promise.all([
           refreshUser(),
+          getWalletBalance(),
           getSessionStatus(sessionId).then(status => {
-            setSessionStatus(status);
+            setSessionStatus(status as SessionStatus);
             return status;
           })
         ]);
+        setWalletBalance(balance);
+        // Dispatch event to refresh navbar wallet display
+        window.dispatchEvent(new CustomEvent('wallet:refresh'));
 
         // Hide success message after 5 seconds
         setTimeout(() => setManualCompleteSuccess(false), 5000);
@@ -246,13 +266,36 @@ export function PaymentSuccess() {
               }
             </p>
 
-            {/* User Info */}
+            {/* User Info - Dual Wallet Display */}
             {user && (
               <div className="bg-theme-dark/50 rounded-lg p-4 mb-6">
-                <div className="text-sm text-theme-text mb-2">Current Credits</div>
-                <div className="text-2xl font-raleway font-medium text-theme-white">
-                  {user.credits.toLocaleString()}
-                </div>
+                <div className="text-sm text-theme-text mb-3">Credit Balance</div>
+                {walletBalance ? (
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-theme-text">Subscription</span>
+                      <span className="text-lg font-raleway font-medium text-purple-400">
+                        {walletBalance.subscriptionCredits.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-theme-text">Top-Up</span>
+                      <span className="text-lg font-raleway font-medium text-emerald-400">
+                        {walletBalance.topUpCredits.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="border-t border-theme-dark/50 pt-2 flex justify-between items-center">
+                      <span className="text-sm text-theme-text font-medium">Total</span>
+                      <span className="text-xl font-raleway font-bold text-theme-white">
+                        {walletBalance.totalCredits.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-2xl font-raleway font-medium text-theme-white">
+                    {user.credits.toLocaleString()}
+                  </div>
+                )}
               </div>
             )}
 
@@ -314,30 +357,36 @@ export function PaymentSuccess() {
               </button>
             </div>
 
-            {/* Development: Manual Complete Button */}
+            {/* Development: Manual Complete Button (collapsed by default) */}
             {sessionStatus && sessionStatus.paymentStatus === 'PENDING' && import.meta.env.MODE !== 'production' && (
-              <div className="mt-6 p-6 bg-yellow-500/10 border-2 border-yellow-500/30 rounded-lg hover:bg-yellow-500/15 transition-colors">
-                <p className="text-yellow-400 text-sm mb-3">
-                  Development Mode: {sessionMode === 'subscription' ? 'Subscription' : 'Payment'} is still pending. This usually means the webhook didn't fire.
-                </p>
-                {sessionMode === 'subscription' && subscriptionInfo && (
-                  <div className="text-theme-text text-sm mb-4">
-                    <strong>Subscription:</strong> {subscriptionInfo.planName} ({subscriptionInfo.billingPeriod})
-                  </div>
-                )}
-                <button
-                  onClick={handleManualComplete}
-                  disabled={manuallyCompleting}
-                  className="w-full py-3 px-6 bg-yellow-500 hover:bg-yellow-400 text-black font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                >
-                  {manuallyCompleting
-                    ? 'Processing...'
-                    : sessionMode === 'subscription'
-                      ? 'Activate Subscription Manually (Dev Only)'
-                      : 'Complete Payment Manually (Dev Only)'
-                  }
-                </button>
-              </div>
+              <details className="mt-6 text-left">
+                <summary className="text-sm text-yellow-400/70 cursor-pointer hover:text-yellow-400 transition-colors">
+                  🔧 Developer Options
+                </summary>
+                <div className="mt-3 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                  <p className="text-yellow-400 text-xs mb-3">
+                    <strong>Local Development:</strong> The Stripe webhook may not have fired in your local environment.
+                    Use this button to manually simulate the webhook callback.
+                  </p>
+                  {sessionMode === 'subscription' && subscriptionInfo && (
+                    <div className="text-theme-text text-xs mb-3">
+                      <strong>Subscription:</strong> {subscriptionInfo.planName} ({subscriptionInfo.billingPeriod})
+                    </div>
+                  )}
+                  <button
+                    onClick={handleManualComplete}
+                    disabled={manuallyCompleting}
+                    className="w-full py-2 px-4 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs border border-yellow-500/30"
+                  >
+                    {manuallyCompleting
+                      ? 'Simulating webhook...'
+                      : sessionMode === 'subscription'
+                        ? 'Simulate Webhook (Activate Subscription)'
+                        : 'Simulate Webhook (Complete Payment)'
+                    }
+                  </button>
+                </div>
+              </details>
             )}
           </div>
         </div>

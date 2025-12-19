@@ -3,6 +3,7 @@ import { Calendar, CreditCard, AlertCircle, CheckCircle, Clock, XCircle } from '
 import { usePayments, type SubscriptionInfo } from '../../hooks/usePayments';
 import { glass, buttons } from '../../styles/designSystem';
 import { debugError } from '../../utils/debug';
+import CancelSubscriptionModal from '../modals/CancelSubscriptionModal';
 
 interface PaymentHistoryItem {
   id: string;
@@ -30,6 +31,9 @@ export function SubscriptionManager() {
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const PAGE_SIZE = 10;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -64,10 +68,7 @@ export function SubscriptionManager() {
   const handleCancelSubscription = async () => {
     if (!subscription) return;
 
-    if (!confirm('Are you sure you want to cancel your subscription? Metered billing will stop at the end of the current billing period.')) {
-      return;
-    }
-
+    setShowCancelModal(false);
     setCancelling(true);
     setError(null);
 
@@ -215,7 +216,7 @@ export function SubscriptionManager() {
 
         {!subscription.cancelAtPeriodEnd ? (
           <button
-            onClick={handleCancelSubscription}
+            onClick={() => setShowCancelModal(true)}
             disabled={cancelling}
             className="btn btn-red text-sm"
           >
@@ -238,53 +239,85 @@ export function SubscriptionManager() {
         {paymentHistory.length === 0 ? (
           <p className="text-theme-white">No payment history found.</p>
         ) : (
-          <div className="space-y-3">
-            {paymentHistory.slice(0, 10).map((payment) => (
-              <div
-                key={payment.id}
-                className="flex items-center justify-between py-2 border-b border-theme-dark/50 last:border-b-0"
-              >
-                <div>
-                  <div className="flex items-center gap-2 text-sm text-theme-white">
-                    <span>{payment.type === 'ONE_TIME' ? 'Credit Purchase' : 'Subscription Payment'}</span>
-                    {/* Status Badge */}
-                    {payment.status === 'COMPLETED' && (
-                      <span className="flex items-center gap-1 text-xs text-green-400">
-                        <CheckCircle className="w-3 h-3" />
-                      </span>
-                    )}
-                    {payment.status === 'PENDING' && (
-                      <span className="flex items-center gap-1 text-xs text-orange-400">
-                        <Clock className="w-3 h-3" />
-                        Pending
-                      </span>
-                    )}
-                    {payment.status === 'FAILED' && (
-                      <span className="flex items-center gap-1 text-xs text-red-400">
-                        <XCircle className="w-3 h-3" />
-                        Failed
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-xs text-theme-text">
-                    {formatDate(payment.createdAt)}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm text-theme-white">
-                    {formatPrice(payment.amount ?? 0)}
-                  </div>
-                  {typeof payment.credits === 'number' && (
-                    <div className="text-xs text-theme-text">
-                      {payment.credits} credits
+          <>
+            <div className="space-y-3">
+              {paymentHistory.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((payment) => (
+                <div
+                  key={payment.id}
+                  className="flex items-center justify-between py-2 border-b border-theme-dark/50 last:border-b-0"
+                >
+                  <div>
+                    <div className="flex items-center gap-2 text-sm text-theme-white">
+                      <span>{payment.type === 'ONE_TIME' ? 'Credit Purchase' : 'Subscription Payment'}</span>
+                      {/* Status Badge */}
+                      {payment.status === 'COMPLETED' && (
+                        <span className="flex items-center gap-1 text-xs text-green-400">
+                          <CheckCircle className="w-3 h-3" />
+                        </span>
+                      )}
+                      {payment.status === 'PENDING' && (
+                        <span className="flex items-center gap-1 text-xs text-orange-400">
+                          <Clock className="w-3 h-3" />
+                          Pending
+                        </span>
+                      )}
+                      {payment.status === 'FAILED' && (
+                        <span className="flex items-center gap-1 text-xs text-red-400">
+                          <XCircle className="w-3 h-3" />
+                          Failed
+                        </span>
+                      )}
                     </div>
-                  )}
+                    <div className="text-xs text-theme-text">
+                      {formatDate(payment.createdAt)}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-theme-white">
+                      {payment.amount ? formatPrice(payment.amount) : '—'}
+                    </div>
+                    {typeof payment.credits === 'number' && (
+                      <div className="text-xs text-theme-text">
+                        {payment.credits.toLocaleString()} credits
+                      </div>
+                    )}
+                  </div>
                 </div>
+              ))}
+            </div>
+            {/* Pagination Controls */}
+            {paymentHistory.length > PAGE_SIZE && (
+              <div className="flex items-center justify-between mt-4 pt-4 border-t border-theme-dark/50">
+                <button
+                  onClick={() => setPage(p => Math.max(0, p - 1))}
+                  disabled={page === 0}
+                  className="text-sm text-theme-text hover:text-theme-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  ← Previous
+                </button>
+                <span className="text-xs text-theme-text">
+                  Page {page + 1} of {Math.ceil(paymentHistory.length / PAGE_SIZE)}
+                </span>
+                <button
+                  onClick={() => setPage(p => Math.min(Math.ceil(paymentHistory.length / PAGE_SIZE) - 1, p + 1))}
+                  disabled={page >= Math.ceil(paymentHistory.length / PAGE_SIZE) - 1}
+                  className="text-sm text-theme-text hover:text-theme-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next →
+                </button>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
+
+      {/* Cancel Subscription Confirmation Modal */}
+      <CancelSubscriptionModal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={handleCancelSubscription}
+        isLoading={cancelling}
+      />
     </div>
   );
 }

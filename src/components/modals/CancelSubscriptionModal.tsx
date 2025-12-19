@@ -1,28 +1,20 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { glass, buttons } from '../../styles/designSystem';
-import { CreditCard, X } from 'lucide-react';
+import { AlertTriangle, X } from 'lucide-react';
 
-interface ConfirmCheckoutModalProps {
+interface CancelSubscriptionModalProps {
     isOpen: boolean;
     onClose: () => void;
     onConfirm: () => void;
-    planName: string;
-    planPrice: string;
-    planPeriod: string;
-    planCredits: number;
     isLoading?: boolean;
 }
 
-export function ConfirmCheckoutModal({
+export function CancelSubscriptionModal({
     isOpen,
     onClose,
     onConfirm,
-    planName,
-    planPrice,
-    planPeriod,
-    planCredits,
     isLoading = false,
-}: ConfirmCheckoutModalProps) {
+}: CancelSubscriptionModalProps) {
     const modalRef = useRef<HTMLDivElement>(null);
     const confirmButtonRef = useRef<HTMLButtonElement>(null);
     const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -61,9 +53,9 @@ export function ConfirmCheckoutModal({
 
         document.addEventListener('keydown', handleKeyDown);
 
-        // Focus the confirm button when modal opens
+        // Focus the close/keep button when modal opens (safer action)
         const timer = setTimeout(() => {
-            confirmButtonRef.current?.focus();
+            closeButtonRef.current?.focus();
         }, 50);
 
         // Prevent background scrolling
@@ -84,7 +76,7 @@ export function ConfirmCheckoutModal({
             className="fixed inset-0 z-[110] flex items-center justify-center bg-theme-black/80 py-12"
             role="dialog"
             aria-modal="true"
-            aria-labelledby="checkout-modal-title"
+            aria-labelledby="cancel-modal-title"
             onClick={(e) => {
                 // Close on backdrop click
                 if (e.target === e.currentTarget && !isLoading) {
@@ -98,7 +90,6 @@ export function ConfirmCheckoutModal({
             >
                 {/* Close button */}
                 <button
-                    ref={closeButtonRef}
                     onClick={onClose}
                     className="absolute top-4 right-4 text-theme-text hover:text-theme-white transition-colors"
                     disabled={isLoading}
@@ -110,58 +101,50 @@ export function ConfirmCheckoutModal({
                 <div className="text-center space-y-6">
                     {/* Header */}
                     <div className="space-y-3">
-                        <CreditCard className="w-12 h-12 mx-auto text-brand-cyan" />
+                        <AlertTriangle className="w-12 h-12 mx-auto text-orange-400" />
                         <h3
-                            id="checkout-modal-title"
+                            id="cancel-modal-title"
                             className="text-xl font-raleway font-normal text-theme-text"
                         >
-                            Confirm Subscription
+                            Cancel Subscription?
                         </h3>
                     </div>
 
-                    {/* Plan Details */}
-                    <div className="bg-theme-dark/50 rounded-lg p-4 space-y-2">
-                        <div className="flex justify-between items-center">
-                            <span className="text-sm text-theme-text">Plan</span>
-                            <span className="text-sm font-medium text-theme-white">{planName}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-sm text-theme-text">Price</span>
-                            <span className="text-sm font-medium text-theme-white">{planPrice}/{planPeriod}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-sm text-theme-text">Credits</span>
-                            <span className="text-sm font-medium text-theme-white">{planCredits.toLocaleString()} credits</span>
-                        </div>
+                    {/* Warning Details */}
+                    <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-4 space-y-2 text-left">
+                        <p className="text-sm text-theme-white">
+                            Are you sure you want to cancel your subscription?
+                        </p>
+                        <ul className="text-sm text-theme-text space-y-1 list-disc list-inside">
+                            <li>Metered billing will stop at the end of the current billing period</li>
+                            <li>You'll keep access until your current period ends</li>
+                            <li>Remaining subscription credits will expire</li>
+                        </ul>
                     </div>
-
-                    {/* Info text */}
-                    <p className="text-xs text-theme-text">
-                        You'll be redirected to Stripe to complete your payment securely.
-                    </p>
 
                     {/* Actions */}
                     <div className="flex gap-3 justify-center">
                         <button
+                            ref={closeButtonRef}
                             onClick={onClose}
-                            className="btn btn-white text-sm"
+                            className={`${buttons.primary} min-w-[120px]`}
                             disabled={isLoading}
                         >
-                            Cancel
+                            Keep Subscription
                         </button>
                         <button
                             ref={confirmButtonRef}
                             onClick={onConfirm}
-                            className={`${buttons.primary} min-w-[120px]`}
+                            className="btn btn-red text-sm min-w-[100px]"
                             disabled={isLoading}
                         >
                             {isLoading ? (
                                 <span className="flex items-center gap-2">
-                                    <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-theme-black"></span>
-                                    Processing...
+                                    <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+                                    Cancelling...
                                 </span>
                             ) : (
-                                'Continue to Payment'
+                                'Yes, Cancel'
                             )}
                         </button>
                     </div>
@@ -171,4 +154,4 @@ export function ConfirmCheckoutModal({
     );
 }
 
-export default ConfirmCheckoutModal;
+export default CancelSubscriptionModal;

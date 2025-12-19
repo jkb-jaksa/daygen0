@@ -621,17 +621,22 @@ export default function Pricing() {
       return { isCurrentPlan: true, isUpgrade: false };
     }
 
-    // Define tier hierarchy for comparison
-    const tierHierarchy = {
+    // Define tier hierarchy for comparison (unified with getFilteredTiers)
+    const tierHierarchy: Record<string, number> = {
       'free': 0,
-      'pro': 1,
-      'pro-yearly': 1,
+      'starter': 1,
+      'starter-yearly': 1,
+      'pro': 2,
+      'pro-yearly': 2,
+      'agency': 3,
+      'agency-yearly': 3,
+      // Legacy support
       'enterprise': 2,
       'enterprise-yearly': 2
     };
 
-    const currentTierLevel = tierHierarchy[currentPlan.id as keyof typeof tierHierarchy] || 0;
-    const targetTierLevel = tierHierarchy[tierId as keyof typeof tierHierarchy] || 0;
+    const currentTierLevel = tierHierarchy[currentPlan.id] || 0;
+    const targetTierLevel = tierHierarchy[tierId] || 0;
 
     if (targetTierLevel > currentTierLevel) {
       return { isCurrentPlan: false, isUpgrade: true };
@@ -759,7 +764,25 @@ export default function Pricing() {
             {currentSubscription && (
               <div className="mb-6">
                 <button
-                  onClick={() => openCustomerPortal().catch(() => showModal('Portal Error', 'Unable to open billing portal. Please try again.', AlertCircle, 'text-red-400'))}
+                  onClick={() => {
+                    openCustomerPortal().catch((error) => {
+                      // Provide specific error messages based on error type
+                      let errorMessage = 'Unable to open billing portal. Please try again.';
+                      const errorStr = String(error);
+
+                      if (errorStr.includes('network') || errorStr.includes('fetch')) {
+                        errorMessage = 'Network error. Please check your connection and try again.';
+                      } else if (errorStr.includes('401') || errorStr.includes('unauthorized')) {
+                        errorMessage = 'Session expired. Please sign in again.';
+                      } else if (errorStr.includes('404')) {
+                        errorMessage = 'Billing portal not available. Please contact support.';
+                      } else if (errorStr.includes('stripe')) {
+                        errorMessage = 'Stripe service temporarily unavailable. Please try again later.';
+                      }
+
+                      showModal('Portal Error', errorMessage, AlertCircle, 'text-red-400');
+                    });
+                  }}
                   className="btn btn-white font-raleway text-base font-medium parallax-large"
                 >
                   Manage Billing

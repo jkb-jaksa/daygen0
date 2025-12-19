@@ -75,22 +75,32 @@ export default function Navbar() {
   const { getWalletBalance } = usePayments();
   const [walletBalance, setWalletBalance] = useState<WalletBalance | null>(null);
 
+  // Refresh wallet balance function
+  const refreshWalletBalance = useCallback(async () => {
+    if (!user) return;
+    try {
+      const balance = await getWalletBalance();
+      setWalletBalance(balance);
+    } catch (e) {
+      console.error('Failed to fetch wallet balance:', e);
+    }
+  }, [user, getWalletBalance]);
+
   // Fetch wallet balance when user is logged in
   useEffect(() => {
     if (!user) {
       setWalletBalance(null);
       return;
     }
-    const fetchBalance = async () => {
-      try {
-        const balance = await getWalletBalance();
-        setWalletBalance(balance);
-      } catch (e) {
-        console.error('Failed to fetch wallet balance:', e);
-      }
-    };
-    fetchBalance();
-  }, [user, getWalletBalance]);
+    refreshWalletBalance();
+  }, [user, refreshWalletBalance]);
+
+  // Listen for wallet refresh events from other components (e.g., after payment)
+  useEffect(() => {
+    const handleRefresh = () => refreshWalletBalance();
+    window.addEventListener('wallet:refresh', handleRefresh);
+    return () => window.removeEventListener('wallet:refresh', handleRefresh);
+  }, [refreshWalletBalance]);
 
   const handleDevLogin = useCallback(async () => {
     setIsDevLoginLoading(true);
@@ -497,23 +507,23 @@ export default function Navbar() {
                   className={`${buttons.ghostSlim} hidden lg:flex items-center gap-2 rounded-full py-2 text-sm min-w-0 group relative`}
                   aria-label="Credit balance"
                   title={walletBalance
-                    ? `Subscription: ${walletBalance.subscriptionCredits} (resets monthly)\nTop-Up: ${walletBalance.topUpCredits} (never expires)`
-                    : `Credits: ${currentUser.credits}`}
+                    ? `Subscription: ${walletBalance.subscriptionCredits.toLocaleString()} (resets monthly)\nTop-Up: ${walletBalance.topUpCredits.toLocaleString()} (never expires)`
+                    : `Credits: ${currentUser.credits.toLocaleString()}`}
                 >
                   <CreditCard className="w-4 h-4" />
                   <span className="hidden xl:flex items-center gap-1.5 font-normal">
                     {walletBalance ? (
                       <>
-                        <span className="text-purple-400">{walletBalance.subscriptionCredits}</span>
+                        <span className="text-purple-400">{walletBalance.subscriptionCredits.toLocaleString()}</span>
                         <span className="text-theme-white/40">+</span>
-                        <span className="text-emerald-400">{walletBalance.topUpCredits}</span>
+                        <span className="text-emerald-400">{walletBalance.topUpCredits.toLocaleString()}</span>
                       </>
                     ) : (
-                      <span>{currentUser.credits}</span>
+                      <span>{currentUser.credits.toLocaleString()}</span>
                     )}
                   </span>
                   <span className="lg:inline xl:hidden font-normal">
-                    {walletBalance ? walletBalance.totalCredits : currentUser.credits}
+                    {walletBalance ? walletBalance.totalCredits.toLocaleString() : currentUser.credits.toLocaleString()}
                   </span>
                 </button>
 
@@ -701,24 +711,35 @@ export default function Navbar() {
                   <>
                     {/* Dual-wallet credit display for mobile */}
                     <div className="rounded-xl border border-theme-dark p-3 text-sm text-theme-white space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="font-raleway text-xs text-theme-white/60">Subscription</span>
-                        <span className="font-raleway text-base font-medium text-purple-400">
-                          {walletBalance?.subscriptionCredits ?? 0}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="font-raleway text-xs text-theme-white/60">Top-Up</span>
-                        <span className="font-raleway text-base font-medium text-emerald-400">
-                          {walletBalance?.topUpCredits ?? user?.credits ?? 0}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between border-t border-theme-dark/60 pt-2">
-                        <span className="font-raleway uppercase tracking-[0.18em] text-xs text-theme-white/60">Total</span>
-                        <span className="font-raleway text-base font-medium text-theme-text">
-                          {walletBalance?.totalCredits ?? user?.credits ?? 0}
-                        </span>
-                      </div>
+                      {walletBalance ? (
+                        <>
+                          <div className="flex items-center justify-between">
+                            <span className="font-raleway text-xs text-theme-white/60">Subscription</span>
+                            <span className="font-raleway text-base font-medium text-purple-400">
+                              {walletBalance.subscriptionCredits.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="font-raleway text-xs text-theme-white/60">Top-Up</span>
+                            <span className="font-raleway text-base font-medium text-emerald-400">
+                              {walletBalance.topUpCredits.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between border-t border-theme-dark/60 pt-2">
+                            <span className="font-raleway uppercase tracking-[0.18em] text-xs text-theme-white/60">Total</span>
+                            <span className="font-raleway text-base font-medium text-theme-text">
+                              {walletBalance.totalCredits.toLocaleString()}
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex items-center justify-between">
+                          <span className="font-raleway text-xs text-theme-white/60">Credits</span>
+                          <span className="font-raleway text-base font-medium text-theme-text">
+                            {(user?.credits ?? 0).toLocaleString()}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <button
                       onClick={() => {
