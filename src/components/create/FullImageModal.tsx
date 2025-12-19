@@ -28,6 +28,7 @@ import { scrollLockExemptAttr, useGlobalScrollLock } from '../../hooks/useGlobal
 import { useGeminiImageGeneration } from '../../hooks/useGeminiImageGeneration';
 import { useIdeogramImageGeneration } from '../../hooks/useIdeogramImageGeneration';
 import { useVeoVideoGeneration } from '../../hooks/useVeoVideoGeneration';
+import { ReferenceHoverGallery } from '../shared/ReferenceHoverGallery';
 
 // Lazy load VerticalGalleryNav
 const VerticalGalleryNav = lazy(() => import('../shared/VerticalGalleryNav'));
@@ -135,6 +136,10 @@ const FullImageModal = memo(() => {
   const [quickEditModalState, setQuickEditModalState] = useState<{ isOpen: boolean; initialPrompt: string } | null>(null);
   const [makeVideoModalState, setMakeVideoModalState] = useState<{ isOpen: boolean; initialPrompt: string } | null>(null);
   const [changeAngleModalState, setChangeAngleModalState] = useState<{ isOpen: boolean; selectedAngle: AngleOption | null } | null>(null);
+  
+  // Reference hover gallery state
+  const [isReferenceHoverVisible, setIsReferenceHoverVisible] = useState(false);
+  const referenceHoverTriggerRef = useRef<HTMLDivElement>(null);
 
 
   // Save prompt functionality
@@ -1375,7 +1380,12 @@ const FullImageModal = memo(() => {
                     <div className="mt-2 flex flex-col justify-center items-center gap-2">
                       {/* Reference images thumbnails */}
                       {fullSizeImage.references && fullSizeImage.references.length > 0 && (
-                        <div className="flex items-center gap-1.5">
+                        <div 
+                          ref={referenceHoverTriggerRef}
+                          className="flex items-center gap-1.5 cursor-pointer"
+                          onMouseEnter={() => setIsReferenceHoverVisible(true)}
+                          onMouseLeave={() => setIsReferenceHoverVisible(false)}
+                        >
                           <div className="flex gap-1">
                             {fullSizeImage.references.map((ref, refIdx) => (
                               <div key={refIdx} className="relative">
@@ -1383,11 +1393,7 @@ const FullImageModal = memo(() => {
                                   src={ref}
                                   alt={`Reference ${refIdx + 1}`}
                                   loading="lazy"
-                                  className="w-6 h-6 rounded object-cover border border-theme-mid cursor-pointer hover:border-theme-text transition-colors duration-200"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    window.open(ref, '_blank');
-                                  }}
+                                  className="w-6 h-6 rounded object-cover border border-theme-dark hover:border-theme-mid transition-colors duration-100"
                                 />
                                 <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
                                   {refIdx + 1}
@@ -1395,8 +1401,8 @@ const FullImageModal = memo(() => {
                               </div>
                             ))}
                           </div>
-                          <span className="text-xs font-raleway text-theme-white/70">
-                            {fullSizeImage.references.length} ref{fullSizeImage.references.length > 1 ? 's' : ''}
+                          <span className="text-xs font-raleway text-theme-white hover:text-theme-text transition-colors duration-100">
+                            {fullSizeImage.references.length} Reference{fullSizeImage.references.length > 1 ? 's' : ''}
                           </span>
                         </div>
                       )}
@@ -1797,6 +1803,16 @@ const FullImageModal = memo(() => {
         </Suspense>
       )}
 
+      {/* Reference Hover Gallery */}
+      {fullSizeImage?.references && fullSizeImage.references.length > 0 && (
+        <ReferenceHoverGallery
+          imageUrls={fullSizeImage.references}
+          triggerRef={referenceHoverTriggerRef}
+          isVisible={isReferenceHoverVisible}
+          onMouseEnter={() => setIsReferenceHoverVisible(true)}
+          onMouseLeave={() => setIsReferenceHoverVisible(false)}
+        />
+      )}
 
     </>
   );

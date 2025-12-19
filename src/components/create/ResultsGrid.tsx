@@ -27,6 +27,7 @@ import { STORAGE_CHANGE_EVENT } from '../../utils/storageEvents';
 import { CircularProgressRing } from '../CircularProgressRing';
 import { VideoPlayer } from '../shared/VideoPlayer';
 import { setDraggingImageUrl, clearDraggingImageUrl, showFloatingDragImage, updateFloatingDragImage, hideFloatingDragImage } from './utils/dragState';
+import { ReferenceHoverGallery } from '../shared/ReferenceHoverGallery';
 
 // Lazy load components
 const ModelBadge = lazy(() => import('../ModelBadge'));
@@ -196,6 +197,12 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const [makeVideoModalState, setMakeVideoModalState] = useState<{ isOpen: boolean; initialPrompt: string; item: GalleryImageLike } | null>(null);
   const [isQuickEditLoading] = useState(false);
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement }>({});
+  
+  // Reference hover gallery state - track which item's references are being hovered
+  const [hoveredReferenceItemId, setHoveredReferenceItemId] = useState<string | null>(null);
+  const referenceHoverTriggerRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const hoveredItemReferences = useRef<string[]>([]);
+  
   const {
     goToAvatarProfile,
     goToProductProfile,
@@ -1294,7 +1301,21 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
 
                           {/* Reference images thumbnails */}
                           {item.references && item.references.length > 0 && (
-                            <div className="flex items-center gap-1.5 mb-2">
+                            <div 
+                              ref={(el) => {
+                                if (el) {
+                                  referenceHoverTriggerRefs.current.set(baseActionTooltipId, el);
+                                }
+                              }}
+                              className="flex items-center gap-1.5 mb-2 cursor-pointer"
+                              onMouseEnter={() => {
+                                setHoveredReferenceItemId(baseActionTooltipId);
+                                hoveredItemReferences.current = item.references || [];
+                              }}
+                              onMouseLeave={() => {
+                                setHoveredReferenceItemId(null);
+                              }}
+                            >
                               <div className="flex gap-1">
                                 {item.references.map((ref, refIdx) => (
                                   <div key={refIdx} className="relative">
@@ -1302,11 +1323,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                       src={ref}
                                       alt={`Reference ${refIdx + 1} `}
                                       loading="lazy"
-                                      className="w-6 h-6 rounded object-cover border border-theme-mid cursor-pointer hover:border-theme-text transition-colors duration-200"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        // Could open in modal if that functionality is added
-                                      }}
+                                      className="w-6 h-6 rounded object-cover border border-theme-dark hover:border-theme-mid transition-colors duration-100"
                                     />
                                     <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
                                       {refIdx + 1}
@@ -1314,8 +1331,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                                   </div>
                                 ))}
                               </div>
-                              <span className="text-xs font-raleway text-theme-white/70">
-                                {item.references.length} ref{item.references.length > 1 ? 's' : ''}
+                              <span className="text-xs font-raleway text-theme-white hover:text-theme-text transition-colors duration-100">
+                                {item.references.length} Reference{item.references.length > 1 ? 's' : ''}
                               </span>
                             </div>
                           )}
@@ -1701,6 +1718,21 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
             item={makeVideoModalState.item}
           />
         </Suspense>
+      )}
+
+      {/* Reference Hover Gallery */}
+      {hoveredReferenceItemId && hoveredItemReferences.current.length > 0 && (
+        <ReferenceHoverGallery
+          imageUrls={hoveredItemReferences.current}
+          triggerRef={{ current: referenceHoverTriggerRefs.current.get(hoveredReferenceItemId) || null }}
+          isVisible={true}
+          onMouseEnter={() => {
+            // Keep visible when hovering the gallery
+          }}
+          onMouseLeave={() => {
+            setHoveredReferenceItemId(null);
+          }}
+        />
       )}
     </>
   );
