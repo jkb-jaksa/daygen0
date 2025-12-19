@@ -920,6 +920,7 @@ const Explore: React.FC = () => {
           isLiked?: boolean;
           owner?: {
             displayName?: string;
+            username?: string;
             authUserId: string;
             profileImage?: string;
           };
@@ -930,8 +931,12 @@ const Explore: React.FC = () => {
 
       // Transform API response to GalleryItem format
       const transformedItems: GalleryItem[] = data.items.map((item, index) => {
-        const creatorName = item.owner?.displayName || 'Community Creator';
-        const creatorHandle = `@${item.owner?.authUserId?.slice(0, 8) || 'user'}`;
+        // Use username (Profile URL) as the creator name, with displayName as fallback
+        const creatorName = item.owner?.username || item.owner?.displayName || 'Community Creator';
+        // Use username for handle if available, otherwise use truncated authUserId
+        const creatorHandle = item.owner?.username
+          ? `@${item.owner.username}`
+          : `@${item.owner?.authUserId?.slice(0, 8) || 'user'}`;
         const gradientIndex = (index + (cursor ? parseInt(cursor.slice(-2), 16) : 0)) % avatarGradients.length;
 
         return {
@@ -1574,8 +1579,12 @@ const Explore: React.FC = () => {
           const galleryItem: GalleryItem = {
             id: item.id,
             creator: {
-              name: item.owner?.displayName || 'Community Creator',
-              handle: `@${item.owner?.authUserId?.slice(0, 8) || 'user'}`,
+              // Use username (Profile URL) as the creator name, with displayName as fallback
+              name: item.owner?.username || item.owner?.displayName || 'Community Creator',
+              // Use username for handle if available, otherwise use truncated authUserId
+              handle: item.owner?.username
+                ? `@${item.owner.username}`
+                : `@${item.owner?.authUserId?.slice(0, 8) || 'user'}`,
               avatarColor: avatarGradients[0], // Default gradient as we don't have index context
               location: "Daygen.ai",
               profileImage: item.owner?.profileImage,

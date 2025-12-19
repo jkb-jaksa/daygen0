@@ -38,6 +38,7 @@ const MakeVideoModal = lazy(() => import('./MakeVideoModal'));
 import type { MakeVideoOptions } from './MakeVideoModal';
 const ChangeAngleModal = lazy(() => import('./ChangeAngleModal'));
 import type { AngleOption } from './hooks/useAngleHandlers';
+import { ReferencePreviewModal } from '../shared/ReferencePreviewModal';
 
 
 
@@ -135,6 +136,7 @@ const FullImageModal = memo(() => {
   const [quickEditModalState, setQuickEditModalState] = useState<{ isOpen: boolean; initialPrompt: string } | null>(null);
   const [makeVideoModalState, setMakeVideoModalState] = useState<{ isOpen: boolean; initialPrompt: string } | null>(null);
   const [changeAngleModalState, setChangeAngleModalState] = useState<{ isOpen: boolean; selectedAngle: AngleOption | null } | null>(null);
+  const [referencePreviewUrls, setReferencePreviewUrls] = useState<string[]>([]);
 
 
   // Save prompt functionality
@@ -1373,39 +1375,27 @@ const FullImageModal = memo(() => {
                       })()}
                     </div>
                     <div className="mt-2 flex flex-col justify-center items-center gap-2">
-                      {/* Reference images thumbnails - only show if there are references that aren't
-                          already represented by Avatar/Product badges */}
                       {fullSizeImage.references && fullSizeImage.references.length > 0 &&
                         !fullSizeImage.avatarId && !fullSizeImage.productId && (
-                          <div className="flex items-center gap-1.5">
-                            <div className="flex gap-1">
-                              {fullSizeImage.references.slice(0, 4).map((ref, refIdx) => (
-                                <div key={refIdx} className="relative">
-                                  <img
-                                    src={ref}
-                                    alt={`Reference ${refIdx + 1}`}
-                                    loading="lazy"
-                                    className="w-6 h-6 rounded object-cover border border-theme-mid cursor-pointer hover:border-theme-text transition-colors duration-200"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      window.open(ref, '_blank');
-                                    }}
-                                  />
-                                  <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
-                                    {refIdx + 1}
-                                  </div>
-                                </div>
-                              ))}
-                              {fullSizeImage.references.length > 4 && (
-                                <div className="flex items-center justify-center w-6 h-6 rounded bg-theme-dark border border-theme-mid text-theme-white text-[10px] font-medium font-raleway">
-                                  +{fullSizeImage.references.length - 4}
-                                </div>
-                              )}
+                          <button
+                            className="flex items-center gap-1.5 cursor-pointer group/ref"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setReferencePreviewUrls(fullSizeImage.references!);
+                            }}
+                          >
+                            <div className="relative parallax-small">
+                              <img
+                                src={fullSizeImage.references[0]}
+                                alt="Reference"
+                                loading="lazy"
+                                className="w-6 h-6 rounded object-cover border border-theme-mid group-hover/ref:border-theme-text transition-colors duration-100"
+                              />
                             </div>
-                            <span className="text-xs font-raleway text-theme-white/70">
-                              {fullSizeImage.references.length} ref{fullSizeImage.references.length > 1 ? 's' : ''}
+                            <span className="text-xs font-raleway text-theme-white group-hover/ref:text-theme-text transition-colors duration-100">
+                              {fullSizeImage.references.length} reference{fullSizeImage.references.length > 1 ? 's' : ''}
                             </span>
-                          </div>
+                          </button>
                         )}
 
                       <ImageBadgeRow
@@ -1804,6 +1794,12 @@ const FullImageModal = memo(() => {
         </Suspense>
       )}
 
+      {/* Reference Image Preview Modal */}
+      <ReferencePreviewModal
+        open={referencePreviewUrls.length > 0}
+        imageUrls={referencePreviewUrls}
+        onClose={() => setReferencePreviewUrls([])}
+      />
 
     </>
   );
