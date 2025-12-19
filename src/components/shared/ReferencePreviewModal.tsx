@@ -167,7 +167,7 @@ export function ReferencePreviewModal({ open, imageUrl, imageUrls, onClose }: Re
         >
             {/* Gallery container - using glass.promptDark styling */}
             <div
-                className={`${glass.promptDark} relative rounded-xl p-5 max-w-[90vw] max-h-[80vh] overflow-auto`}
+                className={`${glass.promptDark} relative rounded-xl p-6 w-[90vw] max-w-[800px] max-h-[85vh] overflow-auto`}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
@@ -186,19 +186,21 @@ export function ReferencePreviewModal({ open, imageUrl, imageUrls, onClose }: Re
                 </div>
 
                 {/* Gallery grid */}
-                <div className={`grid gap-3 ${images.length === 1 ? 'grid-cols-1' : images.length === 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3'}`}>
+                <div className={`grid gap-4 ${images.length === 1 ? 'grid-cols-1 max-w-[300px] mx-auto' : images.length === 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'}`}>
                     {images.map((url, index) => (
                         <div
                             key={index}
                             className="relative group cursor-pointer parallax-small"
                             onClick={() => setFullSizeIndex(index)}
                         >
-                            <img
-                                src={url}
-                                alt={`Reference ${index + 1}`}
-                                loading="lazy"
-                                className="w-full h-32 sm:h-40 object-cover rounded-lg border border-theme-mid group-hover:border-theme-text transition-colors duration-100"
-                            />
+                            <div className="aspect-square bg-theme-black/40 rounded-lg border border-theme-dark group-hover:border-theme-mid transition-colors duration-100 overflow-hidden">
+                                <img
+                                    src={url}
+                                    alt={`Reference ${index + 1}`}
+                                    loading="lazy"
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
                             {/* Reference number badge */}
                             <div className="absolute top-2 left-2 bg-theme-black/70 text-theme-white text-[10px] px-1.5 py-0.5 rounded font-raleway font-medium">
                                 {index + 1}

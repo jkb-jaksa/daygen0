@@ -28,7 +28,7 @@ import { scrollLockExemptAttr, useGlobalScrollLock } from '../../hooks/useGlobal
 import { useGeminiImageGeneration } from '../../hooks/useGeminiImageGeneration';
 import { useIdeogramImageGeneration } from '../../hooks/useIdeogramImageGeneration';
 import { useVeoVideoGeneration } from '../../hooks/useVeoVideoGeneration';
-import { ReferenceHoverGallery } from '../shared/ReferenceHoverGallery';
+import { ReferencePreviewModal } from '../shared/ReferencePreviewModal';
 
 // Lazy load VerticalGalleryNav
 const VerticalGalleryNav = lazy(() => import('../shared/VerticalGalleryNav'));
@@ -136,10 +136,9 @@ const FullImageModal = memo(() => {
   const [quickEditModalState, setQuickEditModalState] = useState<{ isOpen: boolean; initialPrompt: string } | null>(null);
   const [makeVideoModalState, setMakeVideoModalState] = useState<{ isOpen: boolean; initialPrompt: string } | null>(null);
   const [changeAngleModalState, setChangeAngleModalState] = useState<{ isOpen: boolean; selectedAngle: AngleOption | null } | null>(null);
-  
-  // Reference hover gallery state
-  const [isReferenceHoverVisible, setIsReferenceHoverVisible] = useState(false);
-  const referenceHoverTriggerRef = useRef<HTMLDivElement>(null);
+
+  // Reference modal state
+  const [isReferenceModalOpen, setIsReferenceModalOpen] = useState(false);
 
 
   // Save prompt functionality
@@ -1380,11 +1379,12 @@ const FullImageModal = memo(() => {
                     <div className="mt-2 flex flex-col justify-center items-center gap-2">
                       {/* Reference images thumbnails */}
                       {fullSizeImage.references && fullSizeImage.references.length > 0 && (
-                        <div 
-                          ref={referenceHoverTriggerRef}
+                        <div
                           className="flex items-center gap-1.5 cursor-pointer"
-                          onMouseEnter={() => setIsReferenceHoverVisible(true)}
-                          onMouseLeave={() => setIsReferenceHoverVisible(false)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsReferenceModalOpen(true);
+                          }}
                         >
                           <div className="flex gap-1">
                             {fullSizeImage.references.map((ref, refIdx) => (
@@ -1803,14 +1803,12 @@ const FullImageModal = memo(() => {
         </Suspense>
       )}
 
-      {/* Reference Hover Gallery */}
+      {/* Reference Preview Modal */}
       {fullSizeImage?.references && fullSizeImage.references.length > 0 && (
-        <ReferenceHoverGallery
+        <ReferencePreviewModal
+          open={isReferenceModalOpen}
           imageUrls={fullSizeImage.references}
-          triggerRef={referenceHoverTriggerRef}
-          isVisible={isReferenceHoverVisible}
-          onMouseEnter={() => setIsReferenceHoverVisible(true)}
-          onMouseLeave={() => setIsReferenceHoverVisible(false)}
+          onClose={() => setIsReferenceModalOpen(false)}
         />
       )}
 

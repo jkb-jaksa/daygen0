@@ -32,7 +32,6 @@ const ProductCreationModal = lazy(() => import('../products/ProductCreationModal
 
 import ImageBadgeRow from '../shared/ImageBadgeRow';
 import { ReferencePreviewModal } from '../shared/ReferencePreviewModal';
-import { ReferenceHoverGallery } from '../shared/ReferenceHoverGallery';
 import { useBadgeNavigation } from './hooks/useBadgeNavigation';
 import { getDraggingImageUrl, setFloatingDragImageVisible } from './utils/dragState';
 
@@ -111,10 +110,9 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     const [copiedState, setCopiedState] = useState<Record<string, boolean>>({});
     const [activeTooltip, setActiveTooltip] = useState<{ id: string; text: string; x: number; y: number } | null>(null);
     const [referencePreviewUrl, setReferencePreviewUrl] = useState<string | null>(null);
-    
-    // Reference hover gallery state
-    const [isReferenceHoverVisible, setIsReferenceHoverVisible] = useState(false);
-    const referenceHoverTriggerRef = useRef<HTMLDivElement>(null);
+
+    // Reference modal state - track which item's references to display
+    const [referenceModalReferences, setReferenceModalReferences] = useState<string[] | null>(null);
 
     const {
         goToAvatarProfile,
@@ -1666,11 +1664,12 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                 <div className="mt-2 flex flex-col justify-center items-center gap-2">
                                                     {/* Reference images thumbnails */}
                                                     {item.references && item.references.length > 0 && (
-                                                        <div 
-                                                            ref={referenceHoverTriggerRef}
+                                                        <div
                                                             className="flex items-center gap-1.5 cursor-pointer"
-                                                            onMouseEnter={() => setIsReferenceHoverVisible(true)}
-                                                            onMouseLeave={() => setIsReferenceHoverVisible(false)}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setReferenceModalReferences(item.references || []);
+                                                            }}
                                                         >
                                                             <div className="flex gap-1">
                                                                 {item.references.map((ref, refIdx) => (
@@ -3178,14 +3177,12 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                 imageUrl={referencePreviewUrl}
                 onClose={() => setReferencePreviewUrl(null)}
             />
-            {/* Reference Hover Gallery for PromptDescriptionBar */}
-            {item?.references && item.references.length > 0 && (
-                <ReferenceHoverGallery
-                    imageUrls={item.references}
-                    triggerRef={referenceHoverTriggerRef}
-                    isVisible={isReferenceHoverVisible}
-                    onMouseEnter={() => setIsReferenceHoverVisible(true)}
-                    onMouseLeave={() => setIsReferenceHoverVisible(false)}
+            {/* Reference Preview Modal - for viewing item's references */}
+            {referenceModalReferences && referenceModalReferences.length > 0 && (
+                <ReferencePreviewModal
+                    open={true}
+                    imageUrls={referenceModalReferences}
+                    onClose={() => setReferenceModalReferences(null)}
                 />
             )}
         </>,
