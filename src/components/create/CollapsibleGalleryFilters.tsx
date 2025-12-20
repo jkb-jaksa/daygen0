@@ -130,17 +130,13 @@ const CollapsibleGalleryFilters = memo<CollapsibleGalleryFiltersProps>(({ active
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${hasActiveFilters || isExpanded
-              ? "text-theme-text border-theme-mid bg-theme-white/10"
-              : "text-theme-white border-theme-dark hover:border-theme-mid hover:text-theme-text"
+            ? "text-theme-text border-theme-mid bg-theme-white/10"
+            : "text-theme-white border-theme-dark hover:border-theme-mid hover:text-theme-text"
             }`}
         >
           <SlidersHorizontal className="w-3.5 h-3.5" />
           <span>Filters</span>
-          {hasActiveFilters && (
-            <span className="ml-1 px-1.5 py-0.5 bg-theme-text/20 rounded-full text-[10px] text-theme-text">
-              Active
-            </span>
-          )}
+
           {isExpanded ? (
             <ChevronUp className="w-3.5 h-3.5 ml-0.5" />
           ) : (

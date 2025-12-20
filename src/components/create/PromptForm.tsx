@@ -328,16 +328,21 @@ const PromptForm = memo<PromptFormProps>(
       handleProductDelete,
       setCreationsModalProduct,
       setProductToDelete,
+      removeSelectedProduct,
     } = productHandlers;
 
-    // @ mention suggestions hook (avatars only)
+    // @ mention suggestions hook (avatars and products)
     const mentionSuggestions = useMentionSuggestions({
       storedAvatars,
+      storedProducts,
       prompt,
       cursorPosition,
       onSelectAvatar: handleAvatarToggle,
       onDeselectAvatar: removeSelectedAvatar,
       selectedAvatars,
+      onSelectProduct: handleProductToggle,
+      onDeselectProduct: removeSelectedProduct,
+      selectedProducts,
     });
 
     const handleAvatarButtonClick = useCallback(() => {
@@ -1349,21 +1354,37 @@ const PromptForm = memo<PromptFormProps>(
                           </span>
                         );
                       }
-                      // Find the avatar for this mention
-                      const mentionAvatar = storedAvatars.find(
-                        a => a.name.toLowerCase() === mention.name.toLowerCase()
-                      );
+
+                      let onClickHandler;
+
+                      if (mention.type === 'avatar') {
+                        const avatar = storedAvatars.find(
+                          a => a.name.toLowerCase() === mention.name.toLowerCase()
+                        );
+                        if (avatar) {
+                          onClickHandler = (e: React.MouseEvent) => {
+                            e.stopPropagation();
+                            setCreationsModalAvatar(avatar);
+                          };
+                        }
+                      } else if (mention.type === 'product') {
+                        const product = storedProducts.find(
+                          p => p.name.toLowerCase() === mention.name.toLowerCase()
+                        );
+                        if (product) {
+                          onClickHandler = (e: React.MouseEvent) => {
+                            e.stopPropagation();
+                            setCreationsModalProduct(product);
+                          };
+                        }
+                      }
+
                       // Add the mention with subtle highlight styling and click handler
                       parts.push(
                         <span
                           key={`mention-${i}`}
                           className="text-n-text bg-n-text/10 rounded px-0.5 -mx-0.5 pointer-events-auto cursor-pointer hover:bg-n-text/20 transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (mentionAvatar) {
-                              setCreationsModalAvatar(mentionAvatar);
-                            }
-                          }}
+                          onClick={onClickHandler}
                         >
                           {prompt.slice(mention.startIndex, mention.endIndex)}
                         </span>
@@ -1408,6 +1429,7 @@ const PromptForm = memo<PromptFormProps>(
                   onSelect={handleMentionSelect}
                   onClose={mentionSuggestions.closeSuggestions}
                   setSelectedIndex={mentionSuggestions.setSelectedIndex}
+                  mentionType={mentionSuggestions.currentMentionType}
                 />
               </div>
 

@@ -44,7 +44,9 @@ import type { AngleOption } from './hooks/useAngleHandlers';
 
 
 const MasterSidebar = lazy(() => import('../master/MasterSidebar'));
-// Individual badges are rendered via ImageBadgeRow
+// Individual badges for avatar/product - shown in reference area with modal functionality
+const AvatarBadge = lazy(() => import('../avatars/AvatarBadge'));
+const ProductBadge = lazy(() => import('../products/ProductBadge'));
 
 // Helper function to get initials from name
 const getInitials = (name: string) =>
@@ -139,6 +141,10 @@ const FullImageModal = memo(() => {
 
   // Reference modal state
   const [isReferenceModalOpen, setIsReferenceModalOpen] = useState(false);
+
+  // Avatar/Product creations modal state
+  const [creationsModalAvatar, setCreationsModalAvatar] = useState<StoredAvatar | null>(null);
+  const [creationsModalProduct, setCreationsModalProduct] = useState<StoredProduct | null>(null);
 
 
   // Save prompt functionality
@@ -1378,34 +1384,108 @@ const FullImageModal = memo(() => {
                     </div>
                     <div className="mt-2 flex flex-col justify-center items-center gap-2">
                       {/* Reference images thumbnails */}
-                      {fullSizeImage.references && fullSizeImage.references.length > 0 && (
-                        <div
-                          className="flex items-center gap-1.5 cursor-pointer"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setIsReferenceModalOpen(true);
-                          }}
-                        >
-                          <div className="flex gap-1">
-                            {fullSizeImage.references.map((ref, refIdx) => (
-                              <div key={refIdx} className="relative">
-                                <img
-                                  src={ref}
-                                  alt={`Reference ${refIdx + 1}`}
-                                  loading="lazy"
-                                  className="w-6 h-6 rounded object-cover border border-theme-dark hover:border-theme-mid transition-colors duration-100"
-                                />
-                                <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
-                                  {refIdx + 1}
+                      {(() => {
+                        const avatarForImage = fullSizeImage.avatarId ? avatarMap.get(fullSizeImage.avatarId) : undefined;
+                        const productForImage = fullSizeImage.productId ? productMap.get(fullSizeImage.productId) : undefined;
+
+                        // Filter out avatar and product images from references to avoid duplication
+                        const avatarUrl = avatarForImage?.imageUrl;
+                        const productUrl = productForImage?.imageUrl;
+
+                        // Create a set of URLs to exclude (avatar/product images)
+                        const excludedUrls = new Set<string>();
+                        if (avatarUrl) excludedUrls.add(avatarUrl);
+                        if (productUrl) excludedUrls.add(productUrl);
+
+                        // Also add all avatar variation images if available
+                        if (avatarForImage?.images) {
+                          avatarForImage.images.forEach(img => {
+                            if (img.url) excludedUrls.add(img.url);
+                          });
+                        }
+
+                        const displayReferences = fullSizeImage.references?.filter(ref => !excludedUrls.has(ref)) || [];
+
+                        if (displayReferences.length === 0) return null;
+
+                        return (
+                          <div
+                            className="flex items-center gap-1.5 cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setIsReferenceModalOpen(true);
+                            }}
+                          >
+                            <div className="flex gap-1">
+                              {displayReferences.map((ref, refIdx) => (
+                                <div key={refIdx} className="relative">
+                                  <img
+                                    src={ref}
+                                    alt={`Reference ${refIdx + 1}`}
+                                    loading="lazy"
+                                    className="w-6 h-6 rounded object-cover border border-theme-dark hover:border-theme-mid transition-colors duration-100"
+                                  />
+                                  <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
+                                    {refIdx + 1}
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
+                            <span className="text-xs font-raleway text-theme-white hover:text-theme-text transition-colors duration-100">
+                              {displayReferences.length} Reference{displayReferences.length > 1 ? 's' : ''}
+                            </span>
                           </div>
-                          <span className="text-xs font-raleway text-theme-white hover:text-theme-text transition-colors duration-100">
-                            {fullSizeImage.references.length} Reference{fullSizeImage.references.length > 1 ? 's' : ''}
-                          </span>
-                        </div>
-                      )}
+                        );
+                      })()}
+
+                      {/* Avatar/Product badges - clickable to open modals */}
+                      {(() => {
+                        const avatarForImage = fullSizeImage.avatarId ? avatarMap.get(fullSizeImage.avatarId) : undefined;
+                        const productForImage = fullSizeImage.productId ? productMap.get(fullSizeImage.productId) : undefined;
+                        if (!avatarForImage && !productForImage) return null;
+                        return (
+                          <div className="flex items-center gap-1.5">
+                            {avatarForImage && (
+                              <div
+                                className="cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setCreationsModalAvatar(avatarForImage);
+                                }}
+                              >
+                                <Suspense fallback={null}>
+                                  <AvatarBadge
+                                    avatar={avatarForImage}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setCreationsModalAvatar(avatarForImage);
+                                    }}
+                                  />
+                                </Suspense>
+                              </div>
+                            )}
+                            {productForImage && (
+                              <div
+                                className="cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setCreationsModalProduct(productForImage);
+                                }}
+                              >
+                                <Suspense fallback={null}>
+                                  <ProductBadge
+                                    product={productForImage}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setCreationsModalProduct(productForImage);
+                                    }}
+                                  />
+                                </Suspense>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
 
                       <ImageBadgeRow
                         align="center"
@@ -1414,22 +1494,8 @@ const FullImageModal = memo(() => {
                           size: 'md',
                           onClick: () => goToModelGallery(fullSizeImage.model, fullSizeItemType)
                         }}
-                        avatars={
-                          fullSizeImage.avatarId
-                            ? (() => {
-                              const avatarForImage = avatarMap.get(fullSizeImage.avatarId!);
-                              return avatarForImage ? [{ data: avatarForImage, onClick: () => goToAvatarProfile(avatarForImage) }] : [];
-                            })()
-                            : []
-                        }
-                        products={
-                          fullSizeImage.productId
-                            ? (() => {
-                              const productForImage = productMap.get(fullSizeImage.productId!);
-                              return productForImage ? [{ data: productForImage, onClick: () => goToProductProfile(productForImage) }] : [];
-                            })()
-                            : []
-                        }
+                        avatars={[]}  // Avatar shown above with modal
+                        products={[]}  // Product shown above with modal
                         styles={
                           fullSizeImage.styleId
                             ? (() => {
@@ -1810,6 +1876,210 @@ const FullImageModal = memo(() => {
           imageUrls={fullSizeImage.references}
           onClose={() => setIsReferenceModalOpen(false)}
         />
+      )}
+
+      {/* Avatar Creations Modal */}
+      {creationsModalAvatar && (
+        <div
+          className="fixed inset-0 z-[10500] flex items-center justify-center bg-theme-black/80 px-4 py-10"
+          onClick={() => setCreationsModalAvatar(null)}
+        >
+          <div
+            className={`relative w-full max-w-5xl overflow-hidden rounded-[32px] shadow-2xl ${glass.promptDark}`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text z-10"
+              onClick={() => setCreationsModalAvatar(null)}
+              aria-label="Close Avatar details"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="flex flex-col gap-6 p-6 lg:p-8 max-h-[80vh] overflow-y-auto">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <h2 className="text-2xl font-raleway text-theme-text">
+                    Avatar: {creationsModalAvatar.name}
+                  </h2>
+                  <p className="text-sm font-raleway text-theme-white">
+                    Choose which avatar image you want to send with your next prompt.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    className={buttons.ghost}
+                    onClick={() => {
+                      navigate(`/app/avatars/${creationsModalAvatar.slug}`);
+                      setCreationsModalAvatar(null);
+                    }}
+                  >
+                    Manage avatar
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h3 className="text-lg font-raleway text-theme-text">Avatar images</h3>
+                <div className="flex flex-wrap gap-2">
+                  {creationsModalAvatar.images.map((image, index) => {
+                    const isPrimary = creationsModalAvatar.primaryImageId === image.id;
+                    return (
+                      <div key={image.id} className="flex flex-col items-center gap-2">
+                        <div
+                          className={`relative aspect-square w-32 overflow-hidden rounded-2xl border border-theme-dark bg-theme-black/60`}
+                        >
+                          <img
+                            src={image.url}
+                            alt={`${creationsModalAvatar.name} variation ${index + 1}`}
+                            className="h-full w-full object-cover"
+                          />
+                          <div className="absolute left-2 top-2 flex flex-col gap-1">
+                            {isPrimary && (
+                              <span className={`${glass.promptDark} rounded-full px-2 py-0.5 text-[10px] font-raleway text-theme-text`}>
+                                Primary
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-raleway text-theme-white/80">
+                          <a
+                            href={image.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="rounded-full border border-theme-mid px-3 py-1 transition-colors duration-200 hover:border-theme-text hover:text-theme-text"
+                          >
+                            Open
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-xs font-raleway text-theme-white/60">
+                  You can add or edit avatar images from the manage avatar page.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <h3 className="text-lg font-raleway text-theme-text">
+                  Creations with {creationsModalAvatar.name}
+                </h3>
+                <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-4">
+                  {filteredItems
+                    .filter((img) => img.avatarId === creationsModalAvatar.id)
+                    .map((image, idx) => (
+                      <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border border-theme-dark bg-theme-black group">
+                        <img
+                          src={image.url}
+                          alt={image.prompt || 'Generated image'}
+                          loading="lazy"
+                          className="h-full w-full object-cover cursor-pointer"
+                          onClick={() => {
+                            openFullSize(image, filteredItems.indexOf(image));
+                            setCreationsModalAvatar(null);
+                          }}
+                        />
+                        <div className="absolute inset-0 gallery-hover-gradient opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <div className="absolute bottom-0 left-0 right-0 p-2">
+                            <p className="text-xs font-raleway text-theme-white line-clamp-2">{image.prompt}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+                {filteredItems.filter((img) => img.avatarId === creationsModalAvatar.id).length === 0 && (
+                  <div className="rounded-[24px] border border-theme-dark bg-theme-black/70 p-4 text-center">
+                    <p className="text-sm font-raleway text-theme-light">
+                      Generate a new image with this avatar to see it appear here.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Product Creations Modal */}
+      {creationsModalProduct && (
+        <div
+          className="fixed inset-0 z-[10500] flex items-center justify-center bg-theme-black/80 px-4 py-10"
+          onClick={() => setCreationsModalProduct(null)}
+        >
+          <div
+            className={`relative w-full max-w-5xl overflow-hidden rounded-[32px] shadow-2xl ${glass.promptDark}`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text z-10"
+              onClick={() => setCreationsModalProduct(null)}
+              aria-label="Close Product creations"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="flex flex-col gap-6 p-6 lg:p-8 max-h-[80vh] overflow-y-auto">
+              <div className="flex flex-col gap-2">
+                <h2 className="text-2xl font-raleway text-theme-text">
+                  Creations with {creationsModalProduct.name}
+                </h2>
+                <p className="text-sm font-raleway text-theme-white">
+                  Manage creations featuring this product.
+                </p>
+              </div>
+
+              <div className="flex justify-start">
+                <div className="w-1/3 sm:w-1/5 lg:w-1/6">
+                  <div className="relative aspect-square rounded-2xl overflow-hidden border border-theme-dark">
+                    <img
+                      src={creationsModalProduct.imageUrl}
+                      alt={creationsModalProduct.name}
+                      loading="lazy"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <p className="mt-2 text-sm font-raleway text-theme-white text-center truncate">{creationsModalProduct.name}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-4">
+                {filteredItems
+                  .filter((img) => img.productId === creationsModalProduct.id)
+                  .map((img, idx) => (
+                    <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border border-theme-dark bg-theme-black group">
+                      <img
+                        src={img.url}
+                        alt={img.prompt || 'Generated image'}
+                        loading="lazy"
+                        className="w-full h-full object-cover cursor-pointer"
+                        onClick={() => {
+                          openFullSize(img, filteredItems.indexOf(img));
+                          setCreationsModalProduct(null);
+                        }}
+                      />
+                      <div className="absolute inset-0 gallery-hover-gradient opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <div className="absolute bottom-0 left-0 right-0 p-2">
+                          <p className="text-xs font-raleway text-theme-white line-clamp-2">{img.prompt}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+
+              {filteredItems.filter((img) => img.productId === creationsModalProduct.id).length === 0 && (
+                <div className="rounded-[24px] border border-theme-dark bg-theme-black/70 p-4 text-center">
+                  <p className="text-sm font-raleway text-theme-light">
+                    Generate a new image with this product to see it appear here.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
     </>
