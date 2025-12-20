@@ -25,6 +25,7 @@ export interface R2FileResponse {
   styleId?: string;
   aspectRatio?: string;
   jobId?: string;
+  references?: string[];  // Reference image URLs used during generation
   createdAt: string;
   updatedAt: string;
 }
@@ -100,6 +101,7 @@ export const useGalleryImages = () => {
         productId: r2File.productId,
         styleId: r2File.styleId,
         aspectRatio: r2File.aspectRatio,
+        references: r2File.references,
       };
 
       const mimeType = r2File.mimeType?.toLowerCase() ?? '';

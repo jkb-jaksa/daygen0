@@ -188,6 +188,8 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
     const [isProductButtonHovered, setIsProductButtonHovered] = useState(false);
     const [isStyleButtonHovered, setIsStyleButtonHovered] = useState(false);
     const [referencePreviewUrl, setReferencePreviewUrl] = useState<string | null>(null);
+    // Reference modal state - track which item's references to display
+    const [referenceModalReferences, setReferenceModalReferences] = useState<string[] | null>(null);
 
     // Voice selection state
     const [isVoiceDropdownOpen, setIsVoiceDropdownOpen] = useState(false);
@@ -619,7 +621,13 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                             <div className="mt-2 flex flex-col justify-center items-center gap-2">
                                                 {/* Reference images thumbnails */}
                                                 {item.references && item.references.length > 0 && (
-                                                    <div className="flex items-center gap-1.5">
+                                                    <div
+                                                        className="flex items-center gap-1.5 cursor-pointer"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setReferenceModalReferences(item.references || []);
+                                                        }}
+                                                    >
                                                         <div className="flex gap-1">
                                                             {item.references.map((ref, refIdx) => (
                                                                 <div key={refIdx} className="relative">
@@ -627,10 +635,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                                         src={ref}
                                                                         alt={`Reference ${refIdx + 1}`}
                                                                         loading="lazy"
-                                                                        className="w-6 h-6 rounded object-cover border border-theme-mid cursor-pointer hover:border-theme-text transition-colors duration-200"
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                        }}
+                                                                        className="w-6 h-6 rounded object-cover border border-theme-mid hover:border-theme-text transition-colors duration-200"
                                                                     />
                                                                     <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
                                                                         {refIdx + 1}
@@ -638,8 +643,8 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                                 </div>
                                                             ))}
                                                         </div>
-                                                        <span className="text-xs font-raleway text-theme-white/70">
-                                                            {item.references.length} ref{item.references.length > 1 ? 's' : ''}
+                                                        <span className="text-xs font-raleway text-theme-white hover:text-theme-text transition-colors duration-100">
+                                                            {item.references.length} Reference{item.references.length > 1 ? 's' : ''}
                                                         </span>
                                                     </div>
                                                 )}
@@ -1365,6 +1370,14 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                 imageUrl={referencePreviewUrl}
                 onClose={() => setReferencePreviewUrl(null)}
             />
+            {/* Reference Preview Modal - for viewing item's references */}
+            {referenceModalReferences && referenceModalReferences.length > 0 && (
+                <ReferencePreviewModal
+                    open={true}
+                    imageUrls={referenceModalReferences}
+                    onClose={() => setReferenceModalReferences(null)}
+                />
+            )}
         </>,
         document.body
     );

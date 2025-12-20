@@ -111,6 +111,9 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     const [activeTooltip, setActiveTooltip] = useState<{ id: string; text: string; x: number; y: number } | null>(null);
     const [referencePreviewUrl, setReferencePreviewUrl] = useState<string | null>(null);
 
+    // Reference modal state - track which item's references to display
+    const [referenceModalReferences, setReferenceModalReferences] = useState<string[] | null>(null);
+
     const {
         goToAvatarProfile,
         goToProductProfile,
@@ -1661,7 +1664,13 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                 <div className="mt-2 flex flex-col justify-center items-center gap-2">
                                                     {/* Reference images thumbnails */}
                                                     {item.references && item.references.length > 0 && (
-                                                        <div className="flex items-center gap-1.5">
+                                                        <div
+                                                            className="flex items-center gap-1.5 cursor-pointer"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setReferenceModalReferences(item.references || []);
+                                                            }}
+                                                        >
                                                             <div className="flex gap-1">
                                                                 {item.references.map((ref, refIdx) => (
                                                                     <div key={refIdx} className="relative">
@@ -1669,11 +1678,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                                             src={ref}
                                                                             alt={`Reference ${refIdx + 1}`}
                                                                             loading="lazy"
-                                                                            className="w-6 h-6 rounded object-cover border border-theme-mid cursor-pointer hover:border-theme-text transition-colors duration-200"
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                window.open(ref, '_blank');
-                                                                            }}
+                                                                            className="w-6 h-6 rounded object-cover border border-theme-dark hover:border-theme-mid transition-colors duration-100"
                                                                         />
                                                                         <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
                                                                             {refIdx + 1}
@@ -1681,8 +1686,8 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                                     </div>
                                                                 ))}
                                                             </div>
-                                                            <span className="text-xs font-raleway text-theme-white/70">
-                                                                {item.references.length} ref{item.references.length > 1 ? 's' : ''}
+                                                            <span className="text-xs font-raleway text-theme-white hover:text-theme-text transition-colors duration-100">
+                                                                {item.references.length} Reference{item.references.length > 1 ? 's' : ''}
                                                             </span>
                                                         </div>
                                                     )}
@@ -3172,6 +3177,14 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                 imageUrl={referencePreviewUrl}
                 onClose={() => setReferencePreviewUrl(null)}
             />
+            {/* Reference Preview Modal - for viewing item's references */}
+            {referenceModalReferences && referenceModalReferences.length > 0 && (
+                <ReferencePreviewModal
+                    open={true}
+                    imageUrls={referenceModalReferences}
+                    onClose={() => setReferenceModalReferences(null)}
+                />
+            )}
         </>,
         document.body
     );

@@ -6,10 +6,6 @@ import { buttons, glass, inputs } from "../../styles/designSystem";
 
 export type ProfileCardProps = {
   user: User;
-  name: string;
-  nameTouched: boolean;
-  isNameValid: boolean;
-  nameErrorMessage: string;
   username: string;
   usernameTouched: boolean;
   isUsernameValid: boolean;
@@ -22,8 +18,6 @@ export type ProfileCardProps = {
   fileInputRef: RefObject<HTMLInputElement | null>;
   onProfilePicChange: (event: ChangeEvent<HTMLInputElement>) => void;
   onRemoveProfilePic: () => void;
-  onNameChange: (value: string) => void;
-  onNameBlur: () => void;
   onUsernameChange: (value: string) => void;
   onUsernameBlur: () => void;
   onBioChange: (value: string) => void;
@@ -38,10 +32,6 @@ export type ProfileCardProps = {
 
 export function ProfileCard({
   user,
-  name,
-  nameTouched,
-  isNameValid,
-  nameErrorMessage,
   username,
   usernameTouched,
   isUsernameValid,
@@ -58,8 +48,6 @@ export function ProfileCard({
   fileInputRef,
   onProfilePicChange,
   onRemoveProfilePic,
-  onNameChange,
-  onNameBlur,
   onUsernameChange,
   onUsernameBlur,
   onBioChange,
@@ -104,7 +92,7 @@ export function ProfileCard({
                 />
               ) : (
                 <div className="size-12 rounded-full flex items-center justify-center text-theme-text text-lg font-medium font-raleway border border-theme-white group-hover:opacity-80 transition-opacity bg-[conic-gradient(from_0deg,_rgba(245,158,11,0.6),_rgba(239,68,68,0.6),_rgba(59,130,246,0.6),_rgba(34,211,238,0.6),_rgba(245,158,11,0.6))]">
-                  {(user.displayName || user.email)[0]?.toUpperCase()}
+                  {(user.username || user.displayName || user.email)[0]?.toUpperCase()}
                 </div>
               )}
               <div className="pointer-events-none absolute inset-0 bg-theme-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
@@ -143,26 +131,21 @@ export function ProfileCard({
           onSaveProfile();
         }}
       >
-        <div className="-mt-2">
-          <label className="block text-sm text-theme-white mb-1 font-raleway" htmlFor="display-name">
-            User Name
+        <div className="-mt-2 mb-4">
+          <label className="block text-sm text-theme-white mb-1 font-raleway" htmlFor="email">
+            Email
           </label>
           <input
-            id="display-name"
+            id="email"
             className={inputs.base}
-            value={name}
-            onChange={(event) => onNameChange(event.target.value)}
-            onBlur={onNameBlur}
-            placeholder="Enter your user name"
+            value={user.email}
+            readOnly
+            disabled
+            title="Email cannot be changed"
           />
-          <div aria-live="polite" role="status" className="min-h-[1rem]">
-            {(saveError || (nameTouched && !isNameValid)) && (
-              <p className="mt-1 text-xs font-raleway text-red-400">{saveError ?? nameErrorMessage}</p>
-            )}
-          </div>
         </div>
 
-        <div className="-mt-4">
+        <div className="-mt-2">
           <label className="block text-sm text-theme-white mb-1 font-raleway" htmlFor="username">
             Profile URL <span className="text-red-400">*</span>
           </label>
@@ -178,8 +161,8 @@ export function ProfileCard({
             />
           </div>
           <div aria-live="polite" role="status" className="min-h-[1rem]">
-            {(usernameTouched && !isUsernameValid) && (
-              <p className="mt-1 text-xs font-raleway text-red-400">{usernameErrorMessage}</p>
+            {(saveError || (usernameTouched && !isUsernameValid)) && (
+              <p className="mt-1 text-xs font-raleway text-red-400">{saveError ?? usernameErrorMessage}</p>
             )}
             {isUsernameValid && username && (
               <p className="mt-1 text-xs font-raleway text-theme-white/60">
@@ -212,19 +195,7 @@ export function ProfileCard({
           </div>
         </div>
 
-        <div className="-mt-4 mb-6">
-          <label className="block text-sm text-theme-white mb-1 font-raleway" htmlFor="email">
-            Email
-          </label>
-          <input
-            id="email"
-            className={inputs.base}
-            value={user.email}
-            readOnly
-            disabled
-            title="Email cannot be changed"
-          />
-        </div>
+
         <div className="flex gap-2 items-center">
           <button type="button" className={buttons.ghost} onClick={onLogOut}>
             Log out

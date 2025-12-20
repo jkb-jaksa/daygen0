@@ -552,10 +552,10 @@ export default function Navbar() {
                       <span
                         className="inline-grid place-items-center size-5 rounded-full text-theme-text text-xs font-medium font-raleway border border-theme-white bg-[conic-gradient(from_0deg,_rgba(245,158,11,0.6),_rgba(239,68,68,0.6),_rgba(59,130,246,0.6),_rgba(34,211,238,0.6),_rgba(245,158,11,0.6))]"
                       >
-                        {(currentUser.displayName || currentUser.email)[0]?.toUpperCase()}
+                        {(currentUser.username || currentUser.displayName || currentUser.email)[0]?.toUpperCase()}
                       </span>
                     )}
-                    <span className="hidden xl:inline font-raleway text-base py-0.5 font-normal">{currentUser.displayName || currentUser.email}</span>
+                    <span className="hidden xl:inline font-raleway text-base py-0.5 font-normal">{currentUser.username || currentUser.displayName || currentUser.email}</span>
                   </button>
                 </div>
               </>
