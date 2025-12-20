@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-// eslint-disable-next-line react-refresh/only-export-components
 import type { ReactNode } from 'react';
 import { useAuth } from '../auth/useAuth';
 import { usePayments } from '../hooks/usePayments';
@@ -73,6 +72,7 @@ export function PaymentsProvider({ children }: { children: ReactNode }) {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function usePaymentsContext() {
     const context = useContext(PaymentsContext);
     if (context === undefined) {
