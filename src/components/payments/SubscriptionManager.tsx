@@ -10,9 +10,9 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Crown, Zap, History, Receipt, ExternalLink } from 'lucide-react';
+import { Crown, Zap, History, Receipt, ExternalLink, AlertTriangle, CreditCard } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { usePayments, type SubscriptionInfo } from '../../hooks/usePayments';
+import { usePayments, type SubscriptionInfo, type WalletBalance } from '../../hooks/usePayments';
 import { glass } from '../../styles/designSystem';
 import { debugError } from '../../utils/debug';
 
@@ -27,9 +27,10 @@ interface PaymentHistoryItem {
 
 export function SubscriptionManager() {
   const navigate = useNavigate();
-  const { getSubscription, getPaymentHistory, openCustomerPortal } = usePayments();
+  const { getSubscription, getPaymentHistory, openCustomerPortal, getWalletBalance } = usePayments();
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistoryItem[]>([]);
+  const [walletBalance, setWalletBalance] = useState<WalletBalance | null>(null);
   const [loading, setLoading] = useState(true);
   const [portalLoading, setPortalLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,14 +40,16 @@ export function SubscriptionManager() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [subData, historyData] = await Promise.all([
+        const [subData, historyData, balanceData] = await Promise.all([
           getSubscription().catch((err) => {
             debugError('Subscription fetch error:', err);
             return null;
           }),
           getPaymentHistory().catch(() => []),
+          getWalletBalance().catch(() => null),
         ]);
         setSubscription(subData);
+        setWalletBalance(balanceData);
         setPaymentHistory(historyData as PaymentHistoryItem[]);
       } catch (err) {
         debugError('Error fetching data:', err);
@@ -57,7 +60,7 @@ export function SubscriptionManager() {
     };
 
     fetchData();
-  }, [getSubscription, getPaymentHistory]);
+  }, [getSubscription, getPaymentHistory, getWalletBalance]);
 
   const handleManageBilling = async () => {
     setPortalLoading(true);
@@ -103,6 +106,21 @@ export function SubscriptionManager() {
     if (!status) return false;
     const normalizedStatus = status.toUpperCase();
     return normalizedStatus === 'ACTIVE' || normalizedStatus === 'TRIALING';
+  };
+
+  const isSubscriptionPastDue = (status: string | undefined) => {
+    if (!status) return false;
+    return status.toUpperCase() === 'PAST_DUE';
+  };
+
+  // Calculate credit usage percentage (subscription credits used this cycle)
+  const getCreditUsagePercentage = () => {
+    if (!subscription || !walletBalance) return 0;
+    const totalCredits = subscription.credits;
+    const remaining = walletBalance.subscriptionCredits;
+    if (totalCredits === 0) return 0;
+    const used = totalCredits - remaining;
+    return Math.min(Math.max((used / totalCredits) * 100, 0), 100);
   };
 
   if (loading) {
@@ -151,12 +169,53 @@ export function SubscriptionManager() {
     );
   }
 
-  // Active subscription view
+  // Active subscription view (or PAST_DUE)
   const progress = getProgressPercentage(subscription.currentPeriodStart, subscription.currentPeriodEnd);
   const daysRemaining = getDaysRemaining(subscription.currentPeriodEnd);
+  const creditUsageProgress = getCreditUsagePercentage();
+  const creditsUsed = subscription.credits - (walletBalance?.subscriptionCredits ?? 0);
+  const isPastDue = isSubscriptionPastDue(subscription.status);
 
   return (
     <div className="space-y-8">
+      {/* Payment Failure Recovery CTA */}
+      {isPastDue && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-red-500/10 border border-red-500/30 rounded-2xl p-4 md:p-6"
+        >
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="flex items-center gap-3 flex-1">
+              <div className="p-2 rounded-full bg-red-500/20">
+                <AlertTriangle className="w-6 h-6 text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-raleway font-semibold text-red-400">Payment Failed</h3>
+                <p className="text-sm text-red-300/80">Your subscription payment couldn't be processed. Update your payment method to continue.</p>
+              </div>
+            </div>
+            <button
+              onClick={handleManageBilling}
+              disabled={portalLoading}
+              className="px-4 py-2.5 rounded-lg bg-red-500 text-white hover:bg-red-400 text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap disabled:opacity-50"
+            >
+              {portalLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                  Opening...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="w-4 h-4" />
+                  Update Payment Method
+                </>
+              )}
+            </button>
+          </div>
+        </motion.div>
+      )}
+
       {/* Current Subscription Card */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-white/5 shadow-2xl p-6 md:p-8 group">
         <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
@@ -168,8 +227,8 @@ export function SubscriptionManager() {
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wider uppercase ${isSubscriptionActive(subscription.status)
-                    ? 'bg-green-400/10 text-green-400 border border-green-400/20'
-                    : 'bg-red-400/10 text-red-400 border border-red-400/20'
+                  ? 'bg-green-400/10 text-green-400 border border-green-400/20'
+                  : 'bg-red-400/10 text-red-400 border border-red-400/20'
                   }`}>
                   <div className={`w-1.5 h-1.5 rounded-full ${isSubscriptionActive(subscription.status) ? 'bg-green-400' : 'bg-red-400'
                     } animate-pulse`} />
@@ -204,6 +263,32 @@ export function SubscriptionManager() {
                 />
               </div>
             </div>
+
+            {/* Credit Usage Progress */}
+            {walletBalance && subscription.credits > 0 && (
+              <div className="max-w-md">
+                <div className="flex justify-between text-xs text-theme-text font-raleway mb-2">
+                  <span>Credits Used This Cycle</span>
+                  <span className="text-white">
+                    {Math.max(0, creditsUsed).toLocaleString()} / {subscription.credits.toLocaleString()}
+                  </span>
+                </div>
+                <div className="h-2 bg-theme-white/10 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${creditUsageProgress}%` }}
+                    transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
+                    className={`h-full rounded-full ${creditUsageProgress > 80 ? 'bg-orange-400 shadow-[0_0_10px_rgba(251,146,60,0.5)]' : 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]'}`}
+                  />
+                </div>
+                <div className="flex justify-between text-xs text-theme-white/40 mt-1">
+                  <span>{walletBalance.subscriptionCredits.toLocaleString()} remaining</span>
+                  {walletBalance.topUpCredits > 0 && (
+                    <span className="text-purple-400">+{walletBalance.topUpCredits.toLocaleString()} top-up</span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Single CTA: Manage Billing via Stripe Portal */}
@@ -276,10 +361,10 @@ export function SubscriptionManager() {
                       </td>
                       <td className="p-4">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${payment.status === 'COMPLETED'
-                            ? 'bg-green-500/10 text-green-400 border border-green-500/20'
-                            : payment.status === 'PENDING'
-                              ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20'
-                              : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                          ? 'bg-green-500/10 text-green-400 border border-green-500/20'
+                          : payment.status === 'PENDING'
+                            ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20'
+                            : 'bg-red-500/10 text-red-400 border border-red-500/20'
                           }`}>
                           {payment.status === 'COMPLETED' ? 'Paid' : payment.status}
                         </span>

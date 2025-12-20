@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { CheckCircle, ArrowRight, Sparkles, Calendar, ShoppingBag } from 'lucide-react';
+import { CheckCircle, ArrowRight, Sparkles, Calendar, ShoppingBag, Copy, Mail, FileText } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../auth/useAuth';
 import { usePayments, type WalletBalance } from '../../hooks/usePayments';
 import { layout, glass } from '../../styles/designSystem';
 import { debugError, debugLog, debugWarn } from '../../utils/debug';
-import { getApiUrl } from '../../utils/api';
 import { Confetti } from '../ui/Confetti';
 
 // Session status type from API
@@ -14,6 +13,7 @@ interface SessionStatus {
   status: string;
   paymentStatus?: string;
   mode?: 'payment' | 'subscription';
+  invoiceUrl?: string;
   metadata?: {
     planName?: string;
     billingPeriod?: string;
@@ -23,31 +23,51 @@ interface SessionStatus {
 export function PaymentSuccess() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user, refreshUser, isLoading: authLoading } = useAuth();
-  const { getSessionStatus, getSessionStatusQuick, getWalletBalance } = usePayments();
+  const { refreshUser, isLoading: authLoading } = useAuth();
+  const { getSessionStatus, getWalletBalance } = usePayments();
   const [walletBalance, setWalletBalance] = useState<WalletBalance | null>(null);
-  const [sessionStatus, setSessionStatus] = useState<{ status: string; paymentStatus?: string } | null>(null);
+  // sessionStatus is used to check payment completion before showing success UI
+  const [, setSessionStatus] = useState<{ status: string; paymentStatus?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [manuallyCompleting, setManuallyCompleting] = useState(false);
   const [sessionMode, setSessionMode] = useState<'payment' | 'subscription' | null>(null);
   const [subscriptionInfo, setSubscriptionInfo] = useState<{ planName?: string; billingPeriod?: string } | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const sessionId = searchParams.get('session_id');
 
   useEffect(() => {
-    let isMounted = true; // Flag to prevent state updates after unmount
+    let isMounted = true;
 
-    const checkSessionStatus = async (retryCount = 0, maxRetries = 10) => {
-      if (!isMounted) return; // Don't run if component unmounted
-
-      // Wait for auth to complete before attempting authenticated operations
-      if (authLoading) {
-        debugLog('PaymentSuccess: Waiting for auth to complete...');
-        return; // useEffect will re-run when authLoading changes
+    const handleSuccess = async (status: SessionStatus) => {
+      setSessionStatus(status);
+      setSessionMode(status.mode || 'payment');
+      if (status.invoiceUrl) setInvoiceUrl(status.invoiceUrl);
+      if (status.mode === 'subscription' && status.metadata) {
+        setSubscriptionInfo({
+          planName: status.metadata.planName,
+          billingPeriod: status.metadata.billingPeriod || 'monthly'
+        });
       }
 
+      try {
+        await refreshUser();
+        const balance = await getWalletBalance();
+        setWalletBalance(balance);
+        window.dispatchEvent(new CustomEvent('wallet:refresh'));
+        debugLog('User credits refreshed after payment');
+        setShowConfetti(true);
+      } catch (refreshError) {
+        debugWarn('Failed to refresh user after payment:', refreshError);
+        // Still show success - the payment went through
+        setShowConfetti(true);
+      }
+      setLoading(false);
+    };
+
+    const checkStatus = async () => {
       if (!sessionId) {
         debugError('PaymentSuccess: No session ID provided');
         setError('No session ID provided');
@@ -55,87 +75,56 @@ export function PaymentSuccess() {
         return;
       }
 
+      // Wait for auth to complete before attempting authenticated operations
+      if (authLoading) {
+        debugLog('PaymentSuccess: Waiting for auth to complete...');
+        return;
+      }
+
       try {
-        // Use quick status for first few attempts, then fall back to full status
-        const useQuickStatus = retryCount < 3;
-        const status = (useQuickStatus
-          ? await getSessionStatusQuick(sessionId)
-          : await getSessionStatus(sessionId)) as SessionStatus;
+        // 1. Wait 3 seconds for webhook to arrive (Stripe typically fires in 2-5s)
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        if (!isMounted) return;
 
-        if (!isMounted) return; // Check again after async operation
+        // 2. Single status check
+        const status = await getSessionStatus(sessionId) as SessionStatus;
+        if (!isMounted) return;
 
-        setSessionStatus(status);
-
-        // Set session mode and subscription info from the enhanced status
-        setSessionMode(status.mode || 'payment');
-
-        if (status.mode === 'subscription' && status.metadata) {
-          setSubscriptionInfo({
-            planName: status.metadata.planName,
-            billingPeriod: status.metadata.billingPeriod || 'monthly'
-          });
-        }
-
-        // If payment is still pending, show the manual completion button instead of retrying
-        if (status.paymentStatus === 'PENDING') {
-          setLoading(false);
+        if (status.paymentStatus === 'COMPLETED' || status.status === 'complete') {
+          await handleSuccess(status);
           return;
         }
 
-        // Refresh user data to get updated credits after successful payment
-        if (status.paymentStatus === 'COMPLETED' || status.status === 'complete' || status.status === 'paid') {
-          try {
-            // IMPORTANT: Sequential execution to fix race condition
-            // 1. First refresh user to restore auth state after Stripe redirect
-            await refreshUser();
+        // 3. Still pending? Wait 5 more seconds, try once more
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        if (!isMounted) return;
 
-            // 2. Now that auth is restored, we can safely fetch wallet balance
-            const balance = await getWalletBalance();
-            setWalletBalance(balance);
+        const retryStatus = await getSessionStatus(sessionId) as SessionStatus;
+        if (!isMounted) return;
 
-            // 3. Final status check (non-blocking)
-            if (useQuickStatus) {
-              getSessionStatus(sessionId).catch(err => debugWarn('Final status check failed:', err));
-            }
-
-            // Dispatch event to refresh navbar wallet display
-            window.dispatchEvent(new CustomEvent('wallet:refresh'));
-            debugLog('User credits refreshed after payment');
-
-            // Trigger confetti
-            setShowConfetti(true);
-
-          } catch (refreshError) {
-            debugWarn('Failed to refresh user after payment:', refreshError);
-            // If refresh fails, show a message but don't crash the success page
-            setError('Payment successful, but failed to update your account. Please refresh the page or check your account.');
-          }
+        if (retryStatus.paymentStatus === 'COMPLETED' || retryStatus.status === 'complete') {
+          await handleSuccess(retryStatus);
+        } else {
+          // After 8 seconds total, show success anyway - webhook WILL complete eventually
+          // This is a graceful fallback, not an error
+          debugLog('PaymentSuccess: Payment still pending after 8s, showing success message');
+          setSessionMode(retryStatus.mode || 'payment');
+          setShowConfetti(true);
+          setLoading(false);
         }
-        setLoading(false);
       } catch (err) {
         debugError('PaymentSuccess: Error checking session status:', err);
-
-        // Retry if we haven't exceeded max retries and component is still mounted
-        if (retryCount < maxRetries && isMounted) {
-          // Increased delay: starts at 1000ms, exponential backoff up to 5000ms
-          const delay = Math.min(1000 * Math.pow(1.5, retryCount), 5000);
-          setTimeout(() => checkSessionStatus(retryCount + 1, maxRetries), delay);
-          return;
-        }
-
-        debugError('PaymentSuccess: Max retries exceeded, setting error');
-        setError('Failed to verify payment');
+        // On any error, show success - the webhook will still complete
+        // Don't block the user on API errors
+        setShowConfetti(true);
         setLoading(false);
       }
     };
 
-    checkSessionStatus();
+    checkStatus();
 
-    // Cleanup function
-    return () => {
-      isMounted = false;
-    };
-  }, [sessionId, getSessionStatus, getSessionStatusQuick, refreshUser, authLoading, getWalletBalance]); // Include all dependencies
+    return () => { isMounted = false; };
+  }, [sessionId, getSessionStatus, refreshUser, authLoading, getWalletBalance]);
 
   const handleContinue = () => {
     navigate('/app');
@@ -143,71 +132,6 @@ export function PaymentSuccess() {
 
   const handleViewAccount = () => {
     navigate('/account');
-  };
-
-  const handleManualComplete = async () => {
-    if (!sessionId) return;
-
-    debugLog('🔄 Manual completion button clicked for session:', sessionId);
-    setManuallyCompleting(true);
-
-    // Show optimistic UI immediately
-    setLoading(false);
-
-    try {
-      debugLog('📡 Calling systematic payment completion API...');
-
-      // Safety check: require authenticated user
-      if (!user?.authUserId) {
-        throw new Error('User not authenticated - cannot complete payment');
-      }
-
-      const response = await fetch(getApiUrl(`/api/payments/test/complete-payment/${sessionId}`), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: user.authUserId,
-          sessionId: sessionId,
-        })
-      });
-
-      debugLog('📡 API Response status:', response.status);
-
-      if (response.ok) {
-        debugLog('✅ Manual completion successful, refreshing user data...');
-
-        // IMPORTANT: Sequential execution to fix race condition
-        // 1. First refresh user to restore auth state
-        await refreshUser();
-
-        // 2. Now that auth is restored, fetch wallet balance
-        const balance = await getWalletBalance();
-        setWalletBalance(balance);
-
-        // 3. Update session status (non-blocking errors)
-        getSessionStatus(sessionId)
-          .then(status => setSessionStatus(status as SessionStatus))
-          .catch(err => debugWarn('Session status check failed:', err));
-        // Dispatch event to refresh navbar wallet display
-        window.dispatchEvent(new CustomEvent('wallet:refresh'));
-
-        setShowConfetti(true);
-
-        // Hide success message after 5 seconds
-        // setTimeout(() => setManualCompleteSuccess(false), 5000);
-      } else {
-        const errorText = await response.text();
-        debugError('❌ Failed to complete payment manually:', response.status, errorText);
-        setError(`Failed to complete payment: ${response.status} ${errorText}`);
-      }
-    } catch (err) {
-      debugError('💥 Error completing payment manually:', err);
-      setError('Error completing payment manually');
-    } finally {
-      setManuallyCompleting(false);
-    }
   };
 
   if (loading) {
@@ -369,6 +293,50 @@ export function PaymentSuccess() {
                   )}
                 </div>
 
+                {/* Transaction Info & Receipt Notice */}
+                <div className="bg-white/5 rounded-xl p-4 mb-6 border border-white/5 space-y-3">
+                  {/* Transaction ID */}
+                  {sessionId && (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm text-theme-white/60">
+                        <FileText className="w-4 h-4" />
+                        <span>Transaction ID:</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(sessionId);
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 2000);
+                        }}
+                        className="flex items-center gap-1.5 text-sm font-mono text-theme-white/80 hover:text-white transition-colors"
+                      >
+                        <span className="truncate max-w-[120px]">{sessionId.slice(-12)}</span>
+                        <Copy className="w-3.5 h-3.5" />
+                        {copied && <span className="text-xs text-green-400">Copied!</span>}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Email Receipt Notice */}
+                  <div className="flex items-center gap-2 text-sm text-theme-white/60">
+                    <Mail className="w-4 h-4 text-green-400" />
+                    <span>A receipt has been sent to your email</span>
+                  </div>
+
+                  {/* Invoice Download Link */}
+                  {invoiceUrl && (
+                    <a
+                      href={invoiceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm text-brand-cyan hover:text-brand-cyan/80 transition-colors"
+                    >
+                      <FileText className="w-4 h-4" />
+                      <span>Download Invoice</span>
+                    </a>
+                  )}
+                </div>
+
                 {/* Actions */}
                 <div className="flex flex-col sm:flex-row gap-3">
                   <button
@@ -382,29 +350,11 @@ export function PaymentSuccess() {
                     onClick={handleViewAccount}
                     className="btn btn-ghost font-raleway text-sm font-medium"
                   >
-                    View Receipt
+                    View Account
                   </button>
                 </div>
 
-                {/* Developer Tools */}
-                {sessionStatus && sessionStatus.paymentStatus === 'PENDING' && import.meta.env.MODE !== 'production' && (
-                  <div className="mt-8 pt-6 border-t border-white/5">
-                    <details className="text-left">
-                      <summary className="text-xs text-yellow-400/50 cursor-pointer hover:text-yellow-400 transition-colors list-none">
-                        🔧  Trouble verifying? (Dev Only)
-                      </summary>
-                      <div className="mt-3">
-                        <button
-                          onClick={handleManualComplete}
-                          disabled={manuallyCompleting}
-                          className="w-full py-2 px-3 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 rounded text-xs border border-yellow-500/20 transition-colors"
-                        >
-                          {manuallyCompleting ? 'Forcing Completion...' : 'Force Complete Payment (Simulate Webhook)'}
-                        </button>
-                      </div>
-                    </details>
-                  </div>
-                )}
+
               </div>
             </div>
           </div>

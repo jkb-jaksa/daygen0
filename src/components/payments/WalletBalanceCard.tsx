@@ -1,5 +1,6 @@
 import { usePaymentsContext } from '../../contexts/PaymentsContext';
 import { RefreshCw, Calendar, Diamond } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { cards, glass, text } from '../../styles/designSystem';
 
 interface WalletBalanceCardProps {
@@ -109,6 +110,30 @@ export function WalletBalanceCard({ className = '', compact = false, embedded = 
                             </div>
                         </div>
                     </div>
+                    {/* Credit Usage Progress Bar */}
+                    {walletBalance.subscriptionTotalCredits && walletBalance.subscriptionTotalCredits > 0 && (
+                        <div className="mt-3">
+                            <div className="flex justify-between text-xs text-purple-200/60 mb-1">
+                                <span>Used this cycle</span>
+                                <span>
+                                    {Math.max(0, walletBalance.subscriptionTotalCredits - walletBalance.subscriptionCredits)} / {walletBalance.subscriptionTotalCredits}
+                                </span>
+                            </div>
+                            <div className="h-1.5 bg-purple-500/10 rounded-full overflow-hidden">
+                                <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{
+                                        width: `${Math.min(100, ((walletBalance.subscriptionTotalCredits - walletBalance.subscriptionCredits) / walletBalance.subscriptionTotalCredits) * 100)}%`
+                                    }}
+                                    transition={{ duration: 0.8, ease: "easeOut" }}
+                                    className={`h-full rounded-full transition-colors ${((walletBalance.subscriptionTotalCredits - walletBalance.subscriptionCredits) / walletBalance.subscriptionTotalCredits) > 0.8
+                                            ? 'bg-orange-400'
+                                            : 'bg-purple-400'
+                                        }`}
+                                />
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Top-Up Wallet */}

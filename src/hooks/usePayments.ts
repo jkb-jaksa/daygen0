@@ -34,6 +34,7 @@ export interface WalletBalance {
   totalCredits: number;
   subscriptionExpiresAt: string | null;
   graceLimit: number;
+  subscriptionTotalCredits?: number | null; // Total credits per cycle from subscription plan
 }
 
 export function usePayments() {
@@ -252,9 +253,8 @@ export function usePayments() {
 
   const getSessionStatus = async (sessionId: string) => {
     try {
+      // Single, fast, DB-only endpoint
       const url = getApiUrl(`/api/payments/session/${sessionId}/status`);
-
-      // Use public endpoint that doesn't require authentication
       const response = await fetch(url);
 
       if (!response.ok) {
@@ -267,27 +267,6 @@ export function usePayments() {
       return data;
     } catch (err) {
       debugError('usePayments: Error fetching session status:', err);
-      throw err;
-    }
-  };
-
-  const getSessionStatusQuick = async (sessionId: string) => {
-    try {
-      const url = getApiUrl(`/api/payments/session/${sessionId}/quick-status`);
-
-      // Use fast database-only endpoint
-      const response = await fetch(url);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        debugError('usePayments: Quick session status API error:', response.status, errorText);
-        throw new Error(`Failed to fetch quick session status: ${response.status} ${errorText}`);
-      }
-
-      const data = await parseJsonSafe(response);
-      return data;
-    } catch (err) {
-      debugError('usePayments: Error fetching quick session status:', err);
       throw err;
     }
   };
@@ -377,7 +356,6 @@ export function usePayments() {
     cancelSubscription,
     removeCancellation,
     getSessionStatus,
-    getSessionStatusQuick,
     openCustomerPortal,
     getWalletBalance,
     loading,

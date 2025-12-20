@@ -29,14 +29,47 @@ export function StripePricingTable({ className, defaultPeriod = 'monthly' }: Str
 
     const currentPricingTableId = billingPeriod === 'yearly' ? pricingTableYearly : pricingTableMonthly;
 
+    // Skeleton loading component for better perceived performance
+    const PricingSkeleton = () => (
+        <div className={`${className || ''}`}>
+            {/* Toggle skeleton */}
+            <div className="flex items-center justify-center gap-4 mb-8">
+                <div className="h-5 w-16 bg-theme-white/10 rounded animate-pulse" />
+                <div className="w-14 h-7 bg-theme-white/10 rounded-full animate-pulse" />
+                <div className="h-5 w-24 bg-theme-white/10 rounded animate-pulse" />
+            </div>
+            {/* Pricing cards skeleton */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                    <div key={i} className={`${glass.surface} p-6 rounded-2xl border border-white/5`}>
+                        {/* Plan header */}
+                        <div className="h-4 w-20 bg-theme-white/10 rounded animate-pulse mb-2" />
+                        <div className="h-8 w-32 bg-theme-white/10 rounded animate-pulse mb-4" />
+                        {/* Price */}
+                        <div className="flex items-baseline gap-1 mb-6">
+                            <div className="h-10 w-20 bg-theme-white/10 rounded animate-pulse" />
+                            <div className="h-4 w-12 bg-theme-white/10 rounded animate-pulse" />
+                        </div>
+                        {/* Features list */}
+                        <div className="space-y-3 mb-6">
+                            {[1, 2, 3, 4].map((j) => (
+                                <div key={j} className="flex items-center gap-2">
+                                    <div className="h-4 w-4 bg-theme-white/10 rounded-full animate-pulse" />
+                                    <div className="h-4 flex-1 bg-theme-white/10 rounded animate-pulse" />
+                                </div>
+                            ))}
+                        </div>
+                        {/* CTA button */}
+                        <div className="h-12 w-full bg-theme-white/10 rounded-lg animate-pulse" />
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+
     // Show loading state while fetching Stripe config
     if (loading) {
-        return (
-            <div className={`${glass.surface} p-12 flex flex-col items-center justify-center ${className || ''}`}>
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-cyan mb-4" />
-                <p className="text-theme-white/60 font-raleway">Loading pricing options...</p>
-            </div>
-        );
+        return <PricingSkeleton />;
     }
 
     // Show error state if Stripe config failed to load
