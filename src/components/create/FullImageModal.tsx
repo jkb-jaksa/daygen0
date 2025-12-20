@@ -154,6 +154,27 @@ const FullImageModal = memo(() => {
   const { showToast } = useToast();
 
 
+  // Load stored avatars/products for badge display
+  useEffect(() => {
+    async function loadData() {
+      if (!storagePrefix) return;
+      try {
+        const avatars = await getPersistedValue<StoredAvatar[]>(storagePrefix, 'avatars');
+        if (avatars) {
+          setStoredAvatars(normalizeStoredAvatars(avatars, { ownerId: user?.id }));
+        }
+
+        const products = await getPersistedValue<StoredProduct[]>(storagePrefix, 'products');
+        if (products) {
+          setStoredProducts(normalizeStoredProducts(products, { ownerId: user?.id }));
+        }
+      } catch (error) {
+        debugError('Failed to load avatars/products in FullImageModal', error);
+      }
+    }
+    loadData();
+  }, [storagePrefix, user?.id]);
+
   const startQuickEditJob = useCallback((image: GalleryImageLike, prompt: string) => {
     const syntheticId = buildModalVariateJobId(image); // Reuse ID builder for consistency
     const timestamp = Date.now();
@@ -240,6 +261,39 @@ const FullImageModal = memo(() => {
     const map = new Map<string, StoredProduct>();
     for (const product of storedProducts) {
       map.set(product.id, product);
+    }
+    return map;
+  }, [storedProducts]);
+
+  // Create reverse maps for URL lookup (URL -> Entity)
+  const avatarUrlMap = useMemo(() => {
+    const map = new Map<string, StoredAvatar>();
+    for (const avatar of storedAvatars) {
+      if (avatar.imageUrl) {
+        // Normalize URL by stripping query params for matching
+        const url = avatar.imageUrl.split('?')[0];
+        map.set(url, avatar);
+      }
+      // Also map all variation images
+      if (avatar.images) {
+        avatar.images.forEach(img => {
+          if (img.url) {
+            const url = img.url.split('?')[0];
+            map.set(url, avatar);
+          }
+        });
+      }
+    }
+    return map;
+  }, [storedAvatars]);
+
+  const productUrlMap = useMemo(() => {
+    const map = new Map<string, StoredProduct>();
+    for (const product of storedProducts) {
+      if (product.imageUrl) {
+        const url = product.imageUrl.split('?')[0];
+        map.set(url, product);
+      }
     }
     return map;
   }, [storedProducts]);
@@ -1381,104 +1435,124 @@ const FullImageModal = memo(() => {
                       })()}
                     </div>
                     <div className="mt-2 flex flex-col justify-center items-center gap-2">
-                      {/* Reference images thumbnails */}
+                      {/* References and Badges Unified Row */}
                       {(() => {
-                        const avatarForImage = fullSizeImage.avatarId ? avatarMap.get(fullSizeImage.avatarId) : undefined;
-                        const productForImage = fullSizeImage.productId ? productMap.get(fullSizeImage.productId) : undefined;
+                        // Helper to strip query params
+                        const stripQuery = (url: string) => url.split('?')[0];
+
+                        // Resolve Avatar/Product with fallback to URL matching
+                        let avatarForImage = fullSizeImage.avatarId ? avatarMap.get(fullSizeImage.avatarId) : undefined;
+                        if (!avatarForImage && fullSizeImage.references) {
+                          for (const ref of fullSizeImage.references) {
+                            const navatar = avatarUrlMap.get(stripQuery(ref));
+                            if (navatar) {
+                              avatarForImage = navatar;
+                              break;
+                            }
+                          }
+                        }
+
+                        let productForImage = fullSizeImage.productId ? productMap.get(fullSizeImage.productId) : undefined;
+                        if (!productForImage && fullSizeImage.references) {
+                          for (const ref of fullSizeImage.references) {
+                            const nproduct = productUrlMap.get(stripQuery(ref));
+                            if (nproduct) {
+                              productForImage = nproduct;
+                              break;
+                            }
+                          }
+                        }
 
                         // Filter out avatar and product images from references to avoid duplication
-                        const avatarUrl = avatarForImage?.imageUrl;
-                        const productUrl = productForImage?.imageUrl;
-
-                        // Create a set of URLs to exclude (avatar/product images)
                         const excludedUrls = new Set<string>();
-                        if (avatarUrl) excludedUrls.add(avatarUrl);
-                        if (productUrl) excludedUrls.add(productUrl);
+                        if (avatarForImage?.imageUrl) excludedUrls.add(stripQuery(avatarForImage.imageUrl));
+                        if (productForImage?.imageUrl) excludedUrls.add(stripQuery(productForImage.imageUrl));
 
                         // Also add all avatar variation images if available
                         if (avatarForImage?.images) {
                           avatarForImage.images.forEach(img => {
-                            if (img.url) excludedUrls.add(img.url);
+                            if (img.url) excludedUrls.add(stripQuery(img.url));
                           });
                         }
 
-                        const displayReferences = fullSizeImage.references?.filter(ref => !excludedUrls.has(ref)) || [];
+                        const displayReferences = fullSizeImage.references?.filter(ref => !excludedUrls.has(stripQuery(ref))) || [];
 
-                        if (displayReferences.length === 0) return null;
+                        // Render Unified Container
+                        if (displayReferences.length === 0 && !avatarForImage && !productForImage) return null;
 
                         return (
-                          <div
-                            className="flex items-center gap-1.5 cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setIsReferenceModalOpen(true);
-                            }}
-                          >
-                            <div className="flex gap-1">
-                              {displayReferences.map((ref, refIdx) => (
-                                <div key={refIdx} className="relative">
-                                  <img
-                                    src={ref}
-                                    alt={`Reference ${refIdx + 1}`}
-                                    loading="lazy"
-                                    className="w-6 h-6 rounded object-cover border border-theme-dark hover:border-theme-mid transition-colors duration-100"
-                                  />
-                                  <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
-                                    {refIdx + 1}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                            <span className="text-xs font-raleway text-theme-white hover:text-theme-text transition-colors duration-100">
-                              {displayReferences.length} Reference{displayReferences.length > 1 ? 's' : ''}
-                            </span>
-                          </div>
-                        );
-                      })()}
-
-                      {/* Avatar/Product badges - clickable to open modals */}
-                      {(() => {
-                        const avatarForImage = fullSizeImage.avatarId ? avatarMap.get(fullSizeImage.avatarId) : undefined;
-                        const productForImage = fullSizeImage.productId ? productMap.get(fullSizeImage.productId) : undefined;
-                        if (!avatarForImage && !productForImage) return null;
-                        return (
-                          <div className="flex items-center gap-1.5">
-                            {avatarForImage && (
+                          <div className="flex flex-wrap items-center justify-center gap-3">
+                            {/* Generic References */}
+                            {displayReferences.length > 0 && (
                               <div
-                                className="cursor-pointer"
+                                className="flex items-center gap-1.5 cursor-pointer"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setCreationsModalAvatar(avatarForImage);
+                                  setIsReferenceModalOpen(true);
                                 }}
                               >
-                                <Suspense fallback={null}>
-                                  <AvatarBadge
-                                    avatar={avatarForImage}
+                                <div className="flex gap-1">
+                                  {displayReferences.map((ref, refIdx) => (
+                                    <div key={refIdx} className="relative">
+                                      <img
+                                        src={ref}
+                                        alt={`Reference ${refIdx + 1}`}
+                                        loading="lazy"
+                                        className="w-6 h-6 rounded object-cover border border-theme-dark hover:border-theme-mid transition-colors duration-100"
+                                      />
+                                      <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
+                                        {refIdx + 1}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                                <span className="text-xs font-raleway text-theme-white hover:text-theme-text transition-colors duration-100">
+                                  {displayReferences.length} Ref{displayReferences.length > 1 ? 's' : ''}
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Avatar/Product Badges */}
+                            {(avatarForImage || productForImage) && (
+                              <div className="flex items-center gap-1.5">
+                                {avatarForImage && (
+                                  <div
+                                    className="cursor-pointer"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setCreationsModalAvatar(avatarForImage);
                                     }}
-                                  />
-                                </Suspense>
-                              </div>
-                            )}
-                            {productForImage && (
-                              <div
-                                className="cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setCreationsModalProduct(productForImage);
-                                }}
-                              >
-                                <Suspense fallback={null}>
-                                  <ProductBadge
-                                    product={productForImage}
+                                  >
+                                    <Suspense fallback={null}>
+                                      <AvatarBadge
+                                        avatar={avatarForImage}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setCreationsModalAvatar(avatarForImage);
+                                        }}
+                                      />
+                                    </Suspense>
+                                  </div>
+                                )}
+                                {productForImage && (
+                                  <div
+                                    className="cursor-pointer"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setCreationsModalProduct(productForImage);
                                     }}
-                                  />
-                                </Suspense>
+                                  >
+                                    <Suspense fallback={null}>
+                                      <ProductBadge
+                                        product={productForImage}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setCreationsModalProduct(productForImage);
+                                        }}
+                                      />
+                                    </Suspense>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
