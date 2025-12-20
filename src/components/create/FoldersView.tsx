@@ -50,7 +50,7 @@ export default function FoldersView({
         {folders.map((folder) => (
           <div
             key={`folder-card-${folder.id}`}
-            className="group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid transition-colors duration-100 parallax-small cursor-pointer"
+            className="group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid transition-colors duration-100 parallax-large cursor-pointer"
             onClick={() => onSelectFolder(folder.id)}
           >
             <div className="w-full aspect-square relative">

@@ -278,7 +278,7 @@ function UseCaseCard({
 
   const cardContent = (
     <div
-      className="relative parallax-small mouse-glow border border-theme-dark hover:border-theme-mid transition-colors duration-200 rounded-2xl overflow-hidden cursor-pointer"
+      className="relative parallax-large mouse-glow border border-theme-dark hover:border-theme-mid transition-colors duration-200 rounded-2xl overflow-hidden cursor-pointer"
       onPointerMove={onPointerMove}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
@@ -1479,7 +1479,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     return (
       <div
         key={`${keyPrefix}-${avatar.id}`}
-        className={`group flex flex-col overflow-hidden rounded-[28px] border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small${isMasterSection ? " max-w-[200px] w-full" : ""
+        className={`group flex flex-col overflow-hidden rounded-[28px] border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-large${isMasterSection ? " max-w-[200px] w-full" : ""
           }${isInteractive ? " cursor-pointer" : ""
           }`}
         role={isInteractive ? "button" : undefined}
@@ -1991,7 +1991,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const renderCreationImageCard = (image: GalleryImageLike) => (
     <div
       key={`creation-${image.url}`}
-      className="group flex flex-col overflow-hidden rounded-[28px] border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small cursor-pointer"
+      className="group flex flex-col overflow-hidden rounded-[28px] border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-large cursor-pointer"
       onClick={() => openFullSizeView(image)}
     >
       <div
