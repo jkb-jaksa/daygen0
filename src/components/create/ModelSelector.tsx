@@ -14,7 +14,7 @@ import { isVideoModelId, REFERENCE_SUPPORTED_MODELS } from './constants';
 // Exported as single source of truth for all model lists in the app
 // eslint-disable-next-line react-refresh/only-export-components
 export const AI_MODELS = [
-  { name: "Gemini 3 Pro (Nano Banana)", desc: "Best image generation.", Icon: Sparkles, id: "gemini-3.0-pro-image" },
+  { name: "Nano Banana", desc: "Best image generation.", Icon: Sparkles, id: "gemini-3.0-pro-image" },
   { name: "GPT Image 1.5", desc: "Best image generation.", Icon: Sparkles, id: "gpt-image-1.5" },
   { name: "FLUX.2", desc: "High-quality text-to-image generation and editing.", Icon: Wand2, id: "flux-2" },
   { name: "Reve", desc: "Great text-to-image and image editing.", Icon: Sparkles, id: "reve-image" },
