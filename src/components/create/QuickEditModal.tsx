@@ -1690,7 +1690,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         </>
                                                     )}
                                                 </div>
-                                                <div className="mt-2 flex flex-col justify-center items-center gap-2">
+                                                <div className="mt-0.5 flex flex-col justify-center items-center gap-1">
                                                     {/* Reference images thumbnails */}
                                                     {/* Unified References and Badges Display */}
                                                     {(() => {
@@ -1723,14 +1723,23 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         }
 
                                                         // 2. Compute displayReferences (exclude Avatar/Product URLs)
+                                                        // Exclude whenever badge is displayed (found via ID or URL matching)
                                                         const excludedUrls = new Set<string>();
-                                                        if (avatarForImage?.imageUrl) excludedUrls.add(stripQuery(avatarForImage.imageUrl));
-                                                        if (avatarForImage?.images) {
-                                                            avatarForImage.images.forEach(img => {
-                                                                if (img.url) excludedUrls.add(stripQuery(img.url));
-                                                            });
+
+                                                        // Exclude avatar URL if avatar badge will be shown
+                                                        if (avatarForImage?.imageUrl) {
+                                                            excludedUrls.add(stripQuery(avatarForImage.imageUrl));
+                                                            if (avatarForImage.images) {
+                                                                avatarForImage.images.forEach(img => {
+                                                                    if (img.url) excludedUrls.add(stripQuery(img.url));
+                                                                });
+                                                            }
                                                         }
-                                                        if (productForImage?.imageUrl) excludedUrls.add(stripQuery(productForImage.imageUrl));
+
+                                                        // Exclude product URL if product badge will be shown
+                                                        if (productForImage?.imageUrl) {
+                                                            excludedUrls.add(stripQuery(productForImage.imageUrl));
+                                                        }
 
                                                         const displayReferences = item.references?.filter(ref => !excludedUrls.has(stripQuery(ref))) || [];
 
@@ -1739,7 +1748,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
 
                                                         return (
                                                             <div
-                                                                className="flex flex-wrap items-center justify-center gap-3 mt-2 cursor-pointer"
+                                                                className="flex flex-wrap items-center justify-center gap-1.5 cursor-pointer"
                                                                 onClick={(e) => {
                                                                     // If we only have references, open reference modal.
                                                                     // If we have mixed content, we might want to be smarter, but existing behavior
@@ -1753,7 +1762,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                             >
                                                                 {/* References Count */}
                                                                 {displayReferences.length > 0 && (
-                                                                    <div className="flex items-center gap-1.5">
+                                                                    <div className="flex items-center gap-1">
                                                                         <div className="flex gap-1">
                                                                             {displayReferences.map((ref, refIdx) => (
                                                                                 <div key={refIdx} className="relative">
@@ -1777,7 +1786,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
 
                                                                 {/* Avatar/Product Badges */}
                                                                 {(avatarForImage || productForImage) && (
-                                                                    <div className="flex items-center gap-1.5">
+                                                                    <div className="flex items-center gap-1">
                                                                         {/* We use ImageBadgeRow logic but constructed manually for inline layout if needed,
                                                                             OR we can just mistakenly rely on the ImageBadgeRow below?
                                                                             The prompt says "make sure the same logic is used... identical logic".

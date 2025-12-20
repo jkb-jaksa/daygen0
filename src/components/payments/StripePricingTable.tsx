@@ -33,7 +33,7 @@ export function StripePricingTable({ className, defaultPeriod = 'monthly' }: Str
     if (loading) {
         return (
             <div className={`${glass.surface} p-12 flex flex-col items-center justify-center ${className || ''}`}>
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-cyan mb-4" />
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-theme-text mb-4" />
                 <p className="text-theme-white/60 font-raleway">Loading pricing options...</p>
             </div>
         );
@@ -61,7 +61,7 @@ export function StripePricingTable({ className, defaultPeriod = 'monthly' }: Str
                     href="https://dashboard.stripe.com/pricing-tables"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-brand-cyan text-sm underline hover:no-underline mt-2 inline-block"
+                    className="text-theme-text text-sm underline hover:no-underline mt-2 inline-block"
                 >
                     Create Pricing Tables in Stripe Dashboard →
                 </a>

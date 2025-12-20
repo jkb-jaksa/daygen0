@@ -118,7 +118,7 @@ function CreditPackageCard({ package: pkg, isSelected, isLoading, isDisabled = f
     if (credits >= 5000) {
       return { Icon: Gem, color: 'text-purple-400', bg: 'bg-purple-400/10' };
     } else if (credits >= 1000) {
-      return { Icon: Layers, color: 'text-brand-cyan', bg: 'bg-brand-cyan/10' };
+      return { Icon: Layers, color: 'text-theme-text', bg: 'bg-theme-text/10' };
     } else {
       return { Icon: Zap, color: 'text-yellow-400', bg: 'bg-yellow-400/10' };
     }
@@ -142,7 +142,7 @@ function CreditPackageCard({ package: pkg, isSelected, isLoading, isDisabled = f
       {pkg.badge && (
         <div className="absolute top-4 right-4 z-10">
           {pkg.badge === 'POPULAR' && (
-            <div className="flex items-center gap-1.5 bg-brand-cyan text-theme-black px-3 py-1 rounded-full text-xs font-raleway font-medium shadow-lg">
+            <div className="flex items-center gap-1.5 bg-theme-text text-theme-black px-3 py-1 rounded-full text-xs font-raleway font-medium shadow-lg">
               <Star className="w-3 h-3 fill-current" />
               Popular
             </div>

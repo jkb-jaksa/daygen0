@@ -1464,15 +1464,23 @@ const FullImageModal = memo(() => {
                         }
 
                         // Filter out avatar and product images from references to avoid duplication
+                        // Exclude whenever badge is displayed (found via ID or URL matching)
                         const excludedUrls = new Set<string>();
-                        if (avatarForImage?.imageUrl) excludedUrls.add(stripQuery(avatarForImage.imageUrl));
-                        if (productForImage?.imageUrl) excludedUrls.add(stripQuery(productForImage.imageUrl));
 
-                        // Also add all avatar variation images if available
-                        if (avatarForImage?.images) {
-                          avatarForImage.images.forEach(img => {
-                            if (img.url) excludedUrls.add(stripQuery(img.url));
-                          });
+                        // Exclude avatar URL if avatar badge will be shown
+                        if (avatarForImage?.imageUrl) {
+                          excludedUrls.add(stripQuery(avatarForImage.imageUrl));
+                          // Also add all avatar variation images if available
+                          if (avatarForImage.images) {
+                            avatarForImage.images.forEach(img => {
+                              if (img.url) excludedUrls.add(stripQuery(img.url));
+                            });
+                          }
+                        }
+
+                        // Exclude product URL if product badge will be shown
+                        if (productForImage?.imageUrl) {
+                          excludedUrls.add(stripQuery(productForImage.imageUrl));
                         }
 
                         const displayReferences = fullSizeImage.references?.filter(ref => !excludedUrls.has(stripQuery(ref))) || [];
@@ -1481,11 +1489,11 @@ const FullImageModal = memo(() => {
                         if (displayReferences.length === 0 && !avatarForImage && !productForImage) return null;
 
                         return (
-                          <div className="flex flex-wrap items-center justify-center gap-3">
+                          <div className="flex flex-wrap items-center justify-center gap-1.5">
                             {/* Generic References */}
                             {displayReferences.length > 0 && (
                               <div
-                                className="flex items-center gap-1.5 cursor-pointer"
+                                className="flex items-center gap-1 cursor-pointer"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setIsReferenceModalOpen(true);
@@ -1514,7 +1522,7 @@ const FullImageModal = memo(() => {
 
                             {/* Avatar/Product Badges */}
                             {(avatarForImage || productForImage) && (
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex items-center gap-1">
                                 {avatarForImage && (
                                   <div
                                     className="cursor-pointer"

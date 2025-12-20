@@ -126,11 +126,11 @@ export function SubscriptionManager() {
     return (
       <div className={`${glass.surface} p-6 relative overflow-hidden`}>
         <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-purple-500/20 via-purple-500/10 to-transparent rounded-bl-full pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-cyan-500/10 to-transparent rounded-tr-full pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-theme-text/10 to-transparent rounded-tr-full pointer-events-none" />
 
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500/30 to-cyan-500/30 flex items-center justify-center border border-purple-500/30">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500/30 to-theme-text/30 flex items-center justify-center border border-purple-500/30">
               <Crown className="w-6 h-6 text-purple-400" />
             </div>
             <div>
@@ -168,8 +168,8 @@ export function SubscriptionManager() {
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wider uppercase ${isSubscriptionActive(subscription.status)
-                    ? 'bg-green-400/10 text-green-400 border border-green-400/20'
-                    : 'bg-red-400/10 text-red-400 border border-red-400/20'
+                  ? 'bg-green-400/10 text-green-400 border border-green-400/20'
+                  : 'bg-red-400/10 text-red-400 border border-red-400/20'
                   }`}>
                   <div className={`w-1.5 h-1.5 rounded-full ${isSubscriptionActive(subscription.status) ? 'bg-green-400' : 'bg-red-400'
                     } animate-pulse`} />
@@ -200,7 +200,7 @@ export function SubscriptionManager() {
                   initial={{ width: 0 }}
                   animate={{ width: `${progress}%` }}
                   transition={{ duration: 1, ease: "easeOut" }}
-                  className="h-full bg-brand-cyan rounded-full shadow-[0_0_10px_rgba(34,211,238,0.5)]"
+                  className="h-full bg-theme-text rounded-full shadow-[0_0_10px_rgba(var(--theme-text-rgb),0.5)]"
                 />
               </div>
             </div>
@@ -211,7 +211,7 @@ export function SubscriptionManager() {
             <button
               onClick={handleManageBilling}
               disabled={portalLoading}
-              className="px-4 py-3 rounded-lg bg-brand-cyan text-theme-black hover:bg-brand-cyan/90 text-sm font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              className="px-4 py-3 rounded-lg bg-theme-text text-theme-black hover:bg-theme-text/90 text-sm font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {portalLoading ? (
                 <>
@@ -235,7 +235,7 @@ export function SubscriptionManager() {
       {/* Payment History */}
       <div id="payment-history" className="space-y-4">
         <div className="flex items-center gap-2 mb-2">
-          <History className="w-5 h-5 text-brand-cyan" />
+          <History className="w-5 h-5 text-theme-text" />
           <h3 className="text-xl font-raleway font-semibold text-white">Payment History</h3>
         </div>
 
@@ -276,10 +276,10 @@ export function SubscriptionManager() {
                       </td>
                       <td className="p-4">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${payment.status === 'COMPLETED'
-                            ? 'bg-green-500/10 text-green-400 border border-green-500/20'
-                            : payment.status === 'PENDING'
-                              ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20'
-                              : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                          ? 'bg-green-500/10 text-green-400 border border-green-500/20'
+                          : payment.status === 'PENDING'
+                            ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20'
+                            : 'bg-red-500/10 text-red-400 border border-red-500/20'
                           }`}>
                           {payment.status === 'COMPLETED' ? 'Paid' : payment.status}
                         </span>
