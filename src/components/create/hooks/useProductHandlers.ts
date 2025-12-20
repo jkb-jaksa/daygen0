@@ -259,7 +259,7 @@ export function useProductHandlers() {
     } catch (error) {
       debugError('[useProductHandlers] Error deleting product:', error);
     }
-  }, [storagePrefix, storedProducts, selectedProduct, token]);
+  }, [storagePrefix, storedProducts, token]);
 
   // Update product - sync with backend and local storage
   const updateProduct = useCallback(async (productId: string, updates: Partial<StoredProduct>) => {

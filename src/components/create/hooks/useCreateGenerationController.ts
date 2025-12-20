@@ -39,8 +39,7 @@ import type { AspectRatioOption, GeminiAspectRatio } from '../../../types/aspect
 import type { SettingsMenuProps } from '../SettingsMenu';
 import { isVideoModelId } from '../constants';
 import { MAX_PARALLEL_GENERATIONS } from '../../../utils/config';
-import { getAvatarPrimaryImage } from '../../../utils/avatars';
-import { getProductPrimaryImage } from '../../../utils/products';
+
 
 type AspectRatioControl = {
   options: ReadonlyArray<AspectRatioOption>;
@@ -251,20 +250,9 @@ export function useCreateGenerationController(): CreateGenerationController {
 
   const selectedAvatarId = avatarHandlers.selectedAvatar?.id;
   const activeAvatarImageId = avatarHandlers.activeAvatarImageId ?? undefined;
-  const selectedAvatarImageUrl =
-    avatarHandlers.selectedAvatarImage?.url ??
-    (avatarHandlers.selectedAvatar
-      ? getAvatarPrimaryImage(avatarHandlers.selectedAvatar)?.url
-      : undefined) ??
-    avatarHandlers.selectedAvatar?.imageUrl ??
-    null;
+
   const selectedProductId = productHandlers.selectedProduct?.id ?? undefined;
-  const selectedProductImageUrl =
-    (productHandlers.selectedProduct
-      ? getProductPrimaryImage(productHandlers.selectedProduct)?.url
-      : undefined) ??
-    productHandlers.selectedProduct?.imageUrl ??
-    null;
+
   const selectedStyleId = useMemo(
     () => styleHandlers.selectedStylesList[0]?.id ?? undefined,
     [styleHandlers.selectedStylesList],
@@ -1253,10 +1241,8 @@ export function useCreateGenerationController(): CreateGenerationController {
     wanWatermark,
     selectedAvatarId,
     activeAvatarImageId,
-    selectedAvatarImageUrl,
     selectedProductId,
     maxReferences,
-    selectedProductImageUrl,
     selectedStyleId,
     fluxModel,
     grokModel,
@@ -1294,6 +1280,10 @@ export function useCreateGenerationController(): CreateGenerationController {
     removeActiveJob,
     soraDuration,
     soraWithSound,
+    avatarHandlers.selectedAvatarImageUrls,
+    gptImageQuality,
+    gptImageSize,
+    productHandlers.selectedProductImageUrls,
   ]);
   const clearError = useCallback(() => {
     setLocalError(null);

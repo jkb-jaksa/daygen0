@@ -190,7 +190,7 @@ export const MusicSelector: React.FC<MusicSelectorProps> = ({
                 wavesurferRef.current = null;
             }
         };
-    }, [value]); // Re-init if music changes. detailed dep array omitted for simplicity but musicStartTime handled via ref/update?
+    }, [value, musicStartTime, onMusicStartTimeChange]); // Re-init if music changes. detailed dep array omitted for simplicity but musicStartTime handled via ref/update?
 
     // Sync external musicStartTime changes (if any) to marker? 
     // Usually only needed if parent resets it.

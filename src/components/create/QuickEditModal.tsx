@@ -115,8 +115,6 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     const [referenceModalReferences, setReferenceModalReferences] = useState<string[] | null>(null);
 
     const {
-        goToAvatarProfile,
-        goToProductProfile,
         goToPublicGallery,
         goToModelGallery,
     } = useBadgeNavigation();
@@ -692,6 +690,33 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     const avatarHandlers = useAvatarHandlers();
     const productHandlers = useProductHandlers();
     const styleHandlers = useStyleHandlers();
+
+    // Helper to strip query params
+    const stripQuery = (url: string) => url.split('?')[0];
+
+    // 1. Resolve Avatar & Product Smart Lookup (Moved to top level)
+    const { storedAvatars } = avatarHandlers;
+    const { storedProducts } = productHandlers;
+
+    const avatarUrlMap = useMemo(() => {
+        const map = new Map<string, typeof storedAvatars[0]>();
+        storedAvatars.forEach(avatar => {
+            if (avatar.imageUrl) map.set(stripQuery(avatar.imageUrl), avatar);
+            avatar.images?.forEach(img => {
+                if (img.url) map.set(stripQuery(img.url), avatar);
+            });
+        });
+        return map;
+    }, [storedAvatars]);
+
+    const productUrlMap = useMemo(() => {
+        const map = new Map<string, typeof storedProducts[0]>();
+        storedProducts.forEach(product => {
+            if (product.imageUrl) map.set(stripQuery(product.imageUrl), product);
+        });
+        return map;
+    }, [storedProducts]);
+
 
     const {
         selectedAvatar,
@@ -1669,28 +1694,9 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                     {/* Reference images thumbnails */}
                                                     {/* Unified References and Badges Display */}
                                                     {(() => {
+
                                                         // Helper to strip query params
                                                         const stripQuery = (url: string) => url.split('?')[0];
-
-                                                        // 1. Resolve Avatar & Product Smart Lookup
-                                                        const avatarUrlMap = useMemo(() => {
-                                                            const map = new Map<string, typeof avatarHandlers.storedAvatars[0]>();
-                                                            avatarHandlers.storedAvatars.forEach(avatar => {
-                                                                if (avatar.imageUrl) map.set(stripQuery(avatar.imageUrl), avatar);
-                                                                avatar.images?.forEach(img => {
-                                                                    if (img.url) map.set(stripQuery(img.url), avatar);
-                                                                });
-                                                            });
-                                                            return map;
-                                                        }, [avatarHandlers.storedAvatars]);
-
-                                                        const productUrlMap = useMemo(() => {
-                                                            const map = new Map<string, typeof productHandlers.storedProducts[0]>();
-                                                            productHandlers.storedProducts.forEach(product => {
-                                                                if (product.imageUrl) map.set(stripQuery(product.imageUrl), product);
-                                                            });
-                                                            return map;
-                                                        }, [productHandlers.storedProducts]);
 
                                                         // Determine Avatar/Product based on ID or URL matching
                                                         let avatarForImage = item.avatarId ? avatarHandlers.storedAvatars.find(a => a.id === item.avatarId) : undefined;
