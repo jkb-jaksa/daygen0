@@ -39,7 +39,7 @@ export function PaymentSuccess() {
   useEffect(() => {
     let isMounted = true; // Flag to prevent state updates after unmount
 
-    const checkSessionStatus = async (retryCount = 0, maxRetries = 5) => {
+    const checkSessionStatus = async (retryCount = 0, maxRetries = 10) => {
       if (!isMounted) return; // Don't run if component unmounted
 
       // Wait for auth to complete before attempting authenticated operations
@@ -117,8 +117,8 @@ export function PaymentSuccess() {
 
         // Retry if we haven't exceeded max retries and component is still mounted
         if (retryCount < maxRetries && isMounted) {
-          // Reduced delay: 500ms, 750ms, 1000ms, 1500ms, 2000ms
-          const delay = Math.min(500 * Math.pow(1.5, retryCount), 2000);
+          // Increased delay: starts at 1000ms, exponential backoff up to 5000ms
+          const delay = Math.min(1000 * Math.pow(1.5, retryCount), 5000);
           setTimeout(() => checkSessionStatus(retryCount + 1, maxRetries), delay);
           return;
         }
@@ -135,7 +135,7 @@ export function PaymentSuccess() {
     return () => {
       isMounted = false;
     };
-  }, [sessionId, getSessionStatus, getSessionStatusQuick, refreshUser, authLoading]); // Include all dependencies
+  }, [sessionId, getSessionStatus, getSessionStatusQuick, refreshUser, authLoading, getWalletBalance]); // Include all dependencies
 
   const handleContinue = () => {
     navigate('/app');
@@ -250,12 +250,24 @@ export function PaymentSuccess() {
                 </div>
               )}
 
-              <button
-                onClick={() => navigate('/upgrade')}
-                className="btn btn-white font-raleway text-base font-medium parallax-large"
-              >
-                Try Again
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                  onClick={() => navigate('/account')}
+                  className="btn btn-white font-raleway text-base font-medium parallax-large"
+                >
+                  Check My Account
+                </button>
+                <button
+                  onClick={() => navigate('/upgrade')}
+                  className="btn btn-ghost font-raleway text-base font-medium"
+                >
+                  Try Again
+                </button>
+              </div>
+
+              <p className="text-theme-white/60 text-sm mt-4">
+                Your payment may have succeeded. Check your account to verify your balance.
+              </p>
             </div>
           </div>
         </section>
