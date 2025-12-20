@@ -208,8 +208,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const navigate = useNavigate();
 
   const {
-    goToAvatarProfile,
-    goToProductProfile,
     goToPublicGallery,
     goToModelGallery,
   } = useBadgeNavigation();

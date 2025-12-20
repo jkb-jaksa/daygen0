@@ -185,8 +185,6 @@ const FullImageModal = memo(() => {
   const [savePromptModalState, setSavePromptModalState] = useState<{ prompt: string; originalPrompt: string } | null>(null);
   const savePromptModalRef = useRef<HTMLDivElement>(null);
   const {
-    goToAvatarProfile,
-    goToProductProfile,
     goToPublicGallery,
     goToModelGallery,
   } = useBadgeNavigation();
