@@ -2249,6 +2249,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               onProcessFile={processImageFile}
               onDragStateChange={setIsDragging}
               onUploadError={setUploadError}
+              onVoiceClick={() => setIsVoiceUploadModalOpen(true)}
             />
           ) : (
             <AvatarCreationOptions
@@ -2263,6 +2264,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               onProcessFile={processImageFile}
               onDragStateChange={setIsDragging}
               onUploadError={setUploadError}
+              onVoiceClick={() => setIsVoiceUploadModalOpen(true)}
             />
           )}
         </Suspense>
@@ -4354,7 +4356,16 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
 
       {/* Voice Upload Modal */}
       {isVoiceUploadModalOpen && (
-        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/90 px-4 py-10 overflow-y-auto">
+        <div
+          className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/90 px-4 py-10 overflow-y-auto"
+          onClick={(e) => {
+            // Close modal when clicking the backdrop
+            if (e.target === e.currentTarget) {
+              setIsVoiceUploadModalOpen(false);
+            }
+          }}
+        >
+          <style>{`body { overflow: hidden !important; }`}</style>
           <div className="w-full max-w-2xl relative">
             <button
               onClick={() => setIsVoiceUploadModalOpen(false)}

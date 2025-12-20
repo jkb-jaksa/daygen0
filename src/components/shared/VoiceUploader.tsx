@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { Upload, Mic, Check, AlertCircle, Loader2, X } from 'lucide-react';
+import { Upload, Mic, Check, AlertCircle, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { createProfessionalVoice, verifyProfessionalVoice } from '../../utils/audioApi';
+import { createProfessionalVoice } from '../../utils/audioApi';
 import { inputs, buttons } from '../../styles/designSystem';
 
 type VoiceUploaderProps = {
@@ -9,7 +9,7 @@ type VoiceUploaderProps = {
     className?: string;
 };
 
-type Step = 'upload' | 'verify' | 'success';
+type Step = 'upload' | 'success';
 
 export const VoiceUploader: React.FC<VoiceUploaderProps> = ({ onSuccess, className = '' }) => {
     const [step, setStep] = useState<Step>('upload');
@@ -18,8 +18,6 @@ export const VoiceUploader: React.FC<VoiceUploaderProps> = ({ onSuccess, classNa
     const [description, setDescription] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [voiceId, setVoiceId] = useState<string | null>(null);
-    const [verificationText, setVerificationText] = useState<string | null>(null);
     const [isRecording, setIsRecording] = useState(false);
     const [recordingBlob, setRecordingBlob] = useState<Blob | null>(null);
 
@@ -34,8 +32,9 @@ export const VoiceUploader: React.FC<VoiceUploaderProps> = ({ onSuccess, classNa
     };
 
     const handleUpload = async () => {
-        if (files.length === 0) {
-            setError('Please select at least one file.');
+        // Allow either files or recording blob
+        if (files.length === 0 && !recordingBlob) {
+            setError('Please select at least one file or record audio.');
             return;
         }
         if (!name.trim()) {
@@ -47,12 +46,15 @@ export const VoiceUploader: React.FC<VoiceUploaderProps> = ({ onSuccess, classNa
         setError(null);
 
         try {
-            const result = await createProfessionalVoice(files, { name, description });
-            setVoiceId(result.voiceId);
-            // Assuming verification text is returned or we use a default/placeholder if API doesn't provide it immediately
-            // The backend maps it from payload.verification_text
-            setVerificationText(result.verification_text || "I verify that I have the rights to clone this voice.");
-            setStep('verify');
+            // If we have a recording, convert it to a file
+            const filesToUpload = files.length > 0
+                ? files
+                : [new File([recordingBlob!], `recording-${Date.now()}.webm`, { type: 'audio/webm' })];
+
+            await createProfessionalVoice(filesToUpload, { name, description });
+            // For IVC, voice is ready immediately - no verification needed
+            setStep('success');
+            if (onSuccess) onSuccess();
         } catch (err) {
             console.error(err);
             setError(err instanceof Error ? err.message : 'Failed to upload voice samples.');
@@ -96,29 +98,14 @@ export const VoiceUploader: React.FC<VoiceUploaderProps> = ({ onSuccess, classNa
         }
     };
 
-    const handleVerificationSubmit = async () => {
-        if (!recordingBlob || !voiceId) return;
-
-        setIsLoading(true);
-        setError(null);
-
-        try {
-            await verifyProfessionalVoice(recordingBlob, voiceId);
-            setStep('success');
-            if (onSuccess) onSuccess();
-        } catch (err) {
-            console.error(err);
-            setError(err instanceof Error ? err.message : 'Verification failed.');
-        } finally {
-            setIsLoading(false);
-        }
+    const clearRecording = () => {
+        setRecordingBlob(null);
     };
 
     return (
         <div className={`bg-gray-900/50 border border-white/10 rounded-xl p-6 backdrop-blur-sm ${className}`}>
             <h2 className="text-xl font-semibold text-white mb-4">
-                {step === 'upload' && 'Create Professional Voice Clone'}
-                {step === 'verify' && 'Verify Voice Ownership'}
+                {step === 'upload' && 'Clone Voice'}
                 {step === 'success' && 'Voice Created Successfully'}
             </h2>
 
@@ -134,11 +121,11 @@ export const VoiceUploader: React.FC<VoiceUploaderProps> = ({ onSuccess, classNa
                         <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 text-sm text-blue-200">
                             <p className="font-medium mb-1 flex items-center gap-2">
                                 <AlertCircle className="w-4 h-4" />
-                                For Sufficient Audio Strength:
+                                Audio Requirements:
                             </p>
                             <p className="opacity-90">
-                                User should provide at least 30 minutes of high-quality audio... preferably closer to 3 hours.
-                                If you plan to upload multiple hours, split it into multiple ~30-minute samples.
+                                Provide 1-3 minutes of clear, high-quality audio for best results.
+                                Record directly or upload audio files.
                             </p>
                         </div>
 
@@ -150,7 +137,7 @@ export const VoiceUploader: React.FC<VoiceUploaderProps> = ({ onSuccess, classNa
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     className={inputs.base}
-                                    placeholder="e.g. My Professional Voice"
+                                    placeholder="e.g. My Voice Clone"
                                 />
                             </div>
 
@@ -165,8 +152,49 @@ export const VoiceUploader: React.FC<VoiceUploaderProps> = ({ onSuccess, classNa
                                 />
                             </div>
 
+                            {/* Recording Option */}
                             <div>
-                                <label className="block text-xs font-medium text-gray-400 mb-1">Audio Samples</label>
+                                <label className="block text-xs font-medium text-gray-400 mb-2">Record Audio</label>
+                                <div className="flex items-center gap-3">
+                                    {!isRecording && !recordingBlob && (
+                                        <button
+                                            onClick={startRecording}
+                                            className="w-12 h-12 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center transition-colors shadow-lg shadow-red-500/20"
+                                        >
+                                            <Mic className="w-6 h-6 text-white" />
+                                        </button>
+                                    )}
+                                    {isRecording && (
+                                        <button
+                                            onClick={stopRecording}
+                                            className="w-12 h-12 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center transition-colors animate-pulse"
+                                        >
+                                            <div className="w-4 h-4 bg-red-500 rounded-sm" />
+                                        </button>
+                                    )}
+                                    {recordingBlob && !isRecording && (
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2 bg-green-500/20 text-green-400 px-3 py-2 rounded-lg text-sm">
+                                                <Check className="w-4 h-4" />
+                                                Recording ready
+                                            </div>
+                                            <button
+                                                onClick={clearRecording}
+                                                className="text-gray-400 hover:text-white text-sm"
+                                            >
+                                                Clear
+                                            </button>
+                                        </div>
+                                    )}
+                                    <span className="text-xs text-gray-500">
+                                        {isRecording ? 'Recording... Click to stop' : recordingBlob ? '' : 'Click to record'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* File Upload Option */}
+                            <div>
+                                <label className="block text-xs font-medium text-gray-400 mb-1">Or Upload Audio Files</label>
                                 <div className="relative">
                                     <input
                                         type="file"
@@ -178,7 +206,7 @@ export const VoiceUploader: React.FC<VoiceUploaderProps> = ({ onSuccess, classNa
                                     />
                                     <label
                                         htmlFor="voice-files"
-                                        className={`${inputs.base} cursor-pointer flex items-center justify-center gap-2 py-8 border-dashed`}
+                                        className={`${inputs.base} cursor-pointer flex items-center justify-center gap-2 py-6 border-dashed`}
                                     >
                                         <Upload className="w-5 h-5 text-gray-400" />
                                         <span className="text-gray-400">
@@ -214,92 +242,18 @@ export const VoiceUploader: React.FC<VoiceUploaderProps> = ({ onSuccess, classNa
 
                         <button
                             onClick={handleUpload}
-                            disabled={isLoading || files.length === 0 || !name.trim()}
+                            disabled={isLoading || (files.length === 0 && !recordingBlob) || !name.trim()}
                             className={`${buttons.primary} w-full justify-center`}
                         >
                             {isLoading ? (
                                 <>
                                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                    Uploading & Processing...
+                                    Creating Voice...
                                 </>
                             ) : (
-                                'Create Voice'
+                                'Clone Voice'
                             )}
                         </button>
-                    </motion.div>
-                )}
-
-                {step === 'verify' && (
-                    <motion.div
-                        key="verify"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="space-y-6"
-                    >
-                        <div className="text-center space-y-4">
-                            <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-                                <p className="text-sm text-gray-400 mb-2">Please read the following text aloud:</p>
-                                <p className="text-lg text-white font-medium italic">
-                                    "{verificationText}"
-                                </p>
-                            </div>
-
-                            <div className="flex justify-center">
-                                {!isRecording && !recordingBlob && (
-                                    <button
-                                        onClick={startRecording}
-                                        className="w-16 h-16 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center transition-colors shadow-lg shadow-red-500/20"
-                                    >
-                                        <Mic className="w-8 h-8 text-white" />
-                                    </button>
-                                )}
-
-                                {isRecording && (
-                                    <button
-                                        onClick={stopRecording}
-                                        className="w-16 h-16 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center transition-colors animate-pulse"
-                                    >
-                                        <div className="w-6 h-6 bg-red-500 rounded-sm" />
-                                    </button>
-                                )}
-
-                                {!isRecording && recordingBlob && (
-                                    <div className="flex items-center gap-4">
-                                        <button
-                                            onClick={() => setRecordingBlob(null)}
-                                            className="p-3 rounded-full bg-gray-700 hover:bg-gray-600 text-gray-300"
-                                        >
-                                            <X className="w-5 h-5" />
-                                        </button>
-                                        <button
-                                            onClick={handleVerificationSubmit}
-                                            disabled={isLoading}
-                                            className={`${buttons.primary} px-8`}
-                                        >
-                                            {isLoading ? (
-                                                <Loader2 className="w-5 h-5 animate-spin" />
-                                            ) : (
-                                                <>
-                                                    <Check className="w-5 h-5 mr-2" />
-                                                    Submit Verification
-                                                </>
-                                            )}
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-
-                            <p className="text-xs text-gray-500">
-                                {isRecording ? 'Recording... Tap to stop' : recordingBlob ? 'Recording captured. Submit to verify.' : 'Tap the mic to start recording'}
-                            </p>
-                        </div>
-
-                        {error && (
-                            <div className="text-red-400 text-sm bg-red-500/10 p-3 rounded border border-red-500/20 text-center">
-                                {error}
-                            </div>
-                        )}
                     </motion.div>
                 )}
 
@@ -313,9 +267,9 @@ export const VoiceUploader: React.FC<VoiceUploaderProps> = ({ onSuccess, classNa
                         <div className="w-16 h-16 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
                             <Check className="w-8 h-8" />
                         </div>
-                        <h3 className="text-xl font-bold text-white">Voice Training Initiated</h3>
+                        <h3 className="text-xl font-bold text-white">Voice Clone Created</h3>
                         <p className="text-gray-400 max-w-xs mx-auto">
-                            Your files have been saved securely and the voice training process has started. This may take some time.
+                            Your voice clone is ready to use! You can now select it from the voice dropdown.
                         </p>
                         <button
                             onClick={() => {
@@ -324,11 +278,10 @@ export const VoiceUploader: React.FC<VoiceUploaderProps> = ({ onSuccess, classNa
                                 setName('');
                                 setDescription('');
                                 setRecordingBlob(null);
-                                setVoiceId(null);
                             }}
                             className={`${buttons.secondary} mt-4`}
                         >
-                            Create Another Voice
+                            Clone Another Voice
                         </button>
                     </motion.div>
                 )}

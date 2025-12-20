@@ -16,6 +16,7 @@ export interface AvatarCreationOptionsProps {
   onProcessFile: (file: File) => void;
   onDragStateChange: (dragging: boolean) => void;
   onUploadError: (message: string | null) => void;
+  onVoiceClick?: (voiceId: string) => void;
   className?: string;
 }
 
@@ -31,6 +32,7 @@ function AvatarCreationOptionsComponent({
   onProcessFile,
   onDragStateChange,
   onUploadError,
+  onVoiceClick,
   className,
 }: AvatarCreationOptionsProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -258,8 +260,17 @@ function AvatarCreationOptionsComponent({
             </div>
             <div className="flex-1">
               <div
-                className={`relative overflow-hidden border-2 border-dashed rounded-2xl p-12 text-center transition-colors duration-200 ${"border-theme-white/30 hover:border-theme-text/50"
+                className={`relative overflow-hidden border-2 border-dashed rounded-2xl p-12 text-center transition-colors duration-200 cursor-pointer ${"border-theme-white/30 hover:border-theme-text/50"
                   }`}
+                role="button"
+                tabIndex={0}
+                onClick={() => onVoiceClick?.('new')}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    onVoiceClick?.('new');
+                  }
+                }}
               >
                 <div className="pointer-events-none absolute -top-24 right-0 h-48 w-48 rounded-full opacity-60 blur-3xl bg-gradient-to-br from-cyan-300 via-cyan-400 to-cyan-500" />
                 <div className="relative z-10">
@@ -268,10 +279,17 @@ function AvatarCreationOptionsComponent({
                   <p className="mb-6 text-base font-raleway text-theme-white">
                     Click anywhere, drag and drop, or paste your audio to get started
                   </p>
-                  <div className={`${buttons.primary} inline-flex items-center gap-2`}>
+                  <button
+                    type="button"
+                    className={`${buttons.primary} inline-flex items-center gap-2`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onVoiceClick?.('new');
+                    }}
+                  >
                     <Upload className="h-4 w-4 text-cyan-400" />
                     Upload
-                  </div>
+                  </button>
                 </div>
               </div>
             </div>
