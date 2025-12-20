@@ -91,8 +91,13 @@ export function useParallaxHover<T extends HTMLElement = HTMLDivElement>(
       const tx = (x - 50) / effectiveIntensity;
       const ty = (y - 50) / effectiveIntensity;
 
+      const rotateY = ((x - 50) / 100) * 10; // Max 10deg tilt
+      const rotateX = -((y - 50) / 100) * 10; // Max 10deg tilt
+
       el.style.setProperty("--tx", `${toFixed(tx)}px`);
       el.style.setProperty("--ty", `${toFixed(ty)}px`);
+      el.style.setProperty("--rotate-x", `${toFixed(rotateX)}deg`);
+      el.style.setProperty("--rotate-y", `${toFixed(rotateY)}deg`);
     },
     [effectiveIntensity, isAllowedPointer],
   );
@@ -127,6 +132,8 @@ export function useParallaxHover<T extends HTMLElement = HTMLDivElement>(
         el.style.setProperty("--y", "50%");
         el.style.setProperty("--tx", "0px");
         el.style.setProperty("--ty", "0px");
+        el.style.setProperty("--rotate-x", "0deg");
+        el.style.setProperty("--rotate-y", "0deg");
       }
     },
     [isAllowedPointer, leaveFadeMs, leaveLight, resetOnLeave],

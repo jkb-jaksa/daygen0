@@ -6,6 +6,7 @@ import { AuthProvider } from './auth/AuthProvider'
 import { FooterProvider } from './contexts/FooterContext.tsx'
 import { ToastProvider } from './contexts/ToastProvider.tsx'
 import { ThemeProvider } from './contexts/ThemeContext.tsx'
+import { PaymentsProvider } from './contexts/PaymentsContext.tsx'
 import { handleExtensionErrors } from './utils/debug'
 
 
@@ -34,9 +35,11 @@ createRoot(document.getElementById('root')!).render(
         <PasswordGate>
           <AuthProvider>
             <ToastProvider>
-              <FooterProvider>
-                <App />
-              </FooterProvider>
+              <PaymentsProvider>
+                <FooterProvider>
+                  <App />
+                </FooterProvider>
+              </PaymentsProvider>
             </ToastProvider>
           </AuthProvider>
         </PasswordGate>

@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { CheckCircle, ArrowRight } from 'lucide-react';
+import { CheckCircle, ArrowRight, Sparkles, Calendar, ShoppingBag } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useAuth } from '../../auth/useAuth';
 import { usePayments, type WalletBalance } from '../../hooks/usePayments';
 import { layout, glass } from '../../styles/designSystem';
 import { debugError, debugLog, debugWarn } from '../../utils/debug';
 import { getApiUrl } from '../../utils/api';
+import { Confetti } from '../ui/Confetti';
 
 // Session status type from API
 interface SessionStatus {
@@ -21,7 +23,7 @@ interface SessionStatus {
 export function PaymentSuccess() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, isLoading: authLoading } = useAuth();
   const { getSessionStatus, getSessionStatusQuick, getWalletBalance } = usePayments();
   const [walletBalance, setWalletBalance] = useState<WalletBalance | null>(null);
   const [sessionStatus, setSessionStatus] = useState<{ status: string; paymentStatus?: string } | null>(null);
@@ -30,7 +32,7 @@ export function PaymentSuccess() {
   const [manuallyCompleting, setManuallyCompleting] = useState(false);
   const [sessionMode, setSessionMode] = useState<'payment' | 'subscription' | null>(null);
   const [subscriptionInfo, setSubscriptionInfo] = useState<{ planName?: string; billingPeriod?: string } | null>(null);
-  const [manualCompleteSuccess, setManualCompleteSuccess] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const sessionId = searchParams.get('session_id');
 
@@ -39,6 +41,13 @@ export function PaymentSuccess() {
 
     const checkSessionStatus = async (retryCount = 0, maxRetries = 5) => {
       if (!isMounted) return; // Don't run if component unmounted
+
+      // Wait for auth to complete before attempting authenticated operations
+      if (authLoading) {
+        debugLog('PaymentSuccess: Waiting for auth to complete...');
+        return; // useEffect will re-run when authLoading changes
+      }
+
       if (!sessionId) {
         debugError('PaymentSuccess: No session ID provided');
         setError('No session ID provided');
@@ -76,16 +85,26 @@ export function PaymentSuccess() {
         // Refresh user data to get updated credits after successful payment
         if (status.paymentStatus === 'COMPLETED' || status.status === 'complete' || status.status === 'paid') {
           try {
-            // Parallelize user refresh, wallet balance, and final status check
-            const [, balance] = await Promise.all([
-              refreshUser(),
-              getWalletBalance(),
-              useQuickStatus ? getSessionStatus(sessionId) : Promise.resolve(status)
-            ]);
+            // IMPORTANT: Sequential execution to fix race condition
+            // 1. First refresh user to restore auth state after Stripe redirect
+            await refreshUser();
+
+            // 2. Now that auth is restored, we can safely fetch wallet balance
+            const balance = await getWalletBalance();
             setWalletBalance(balance);
+
+            // 3. Final status check (non-blocking)
+            if (useQuickStatus) {
+              getSessionStatus(sessionId).catch(err => debugWarn('Final status check failed:', err));
+            }
+
             // Dispatch event to refresh navbar wallet display
             window.dispatchEvent(new CustomEvent('wallet:refresh'));
             debugLog('User credits refreshed after payment');
+
+            // Trigger confetti
+            setShowConfetti(true);
+
           } catch (refreshError) {
             debugWarn('Failed to refresh user after payment:', refreshError);
             // If refresh fails, show a message but don't crash the success page
@@ -116,7 +135,7 @@ export function PaymentSuccess() {
     return () => {
       isMounted = false;
     };
-  }, [sessionId, getSessionStatus, getSessionStatusQuick, refreshUser]); // Include all dependencies
+  }, [sessionId, getSessionStatus, getSessionStatusQuick, refreshUser, authLoading]); // Include all dependencies
 
   const handleContinue = () => {
     navigate('/app');
@@ -133,7 +152,6 @@ export function PaymentSuccess() {
     setManuallyCompleting(true);
 
     // Show optimistic UI immediately
-    setManualCompleteSuccess(true);
     setLoading(false);
 
     try {
@@ -160,30 +178,32 @@ export function PaymentSuccess() {
       if (response.ok) {
         debugLog('✅ Manual completion successful, refreshing user data...');
 
-        // Parallelize user refresh, wallet balance, and session status check
-        const [, balance] = await Promise.all([
-          refreshUser(),
-          getWalletBalance(),
-          getSessionStatus(sessionId).then(status => {
-            setSessionStatus(status as SessionStatus);
-            return status;
-          })
-        ]);
+        // IMPORTANT: Sequential execution to fix race condition
+        // 1. First refresh user to restore auth state
+        await refreshUser();
+
+        // 2. Now that auth is restored, fetch wallet balance
+        const balance = await getWalletBalance();
         setWalletBalance(balance);
+
+        // 3. Update session status (non-blocking errors)
+        getSessionStatus(sessionId)
+          .then(status => setSessionStatus(status as SessionStatus))
+          .catch(err => debugWarn('Session status check failed:', err));
         // Dispatch event to refresh navbar wallet display
         window.dispatchEvent(new CustomEvent('wallet:refresh'));
 
+        setShowConfetti(true);
+
         // Hide success message after 5 seconds
-        setTimeout(() => setManualCompleteSuccess(false), 5000);
+        // setTimeout(() => setManualCompleteSuccess(false), 5000);
       } else {
         const errorText = await response.text();
         debugError('❌ Failed to complete payment manually:', response.status, errorText);
-        setManualCompleteSuccess(false);
         setError(`Failed to complete payment: ${response.status} ${errorText}`);
       }
     } catch (err) {
       debugError('💥 Error completing payment manually:', err);
-      setManualCompleteSuccess(false);
       setError('Error completing payment manually');
     } finally {
       setManuallyCompleting(false);
@@ -232,7 +252,7 @@ export function PaymentSuccess() {
 
               <button
                 onClick={() => navigate('/upgrade')}
-                className="btn btn-cyan"
+                className="btn btn-white font-raleway text-base font-medium parallax-large"
               >
                 Try Again
               </button>
@@ -244,152 +264,139 @@ export function PaymentSuccess() {
   }
 
   return (
-    <main className={`${layout.page}`}>
-      <section className={`${layout.container} pt-[calc(var(--nav-h,4rem)+16px)] pb-24`}>
-        <div className="max-w-2xl mx-auto text-center">
-          <div className={`${glass.surface} p-8`}>
-            {/* Success Icon */}
-            <div className="flex justify-center mb-6">
-              <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center">
-                <CheckCircle className="w-8 h-8 text-green-400" />
+    <main className={`${layout.page} relative overflow-hidden`}>
+      {/* Confetti Explosion */}
+      {showConfetti && <Confetti count={100} />}
+
+      {/* Ambient Background Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-green-500/10 rounded-full blur-[100px] pointer-events-none" />
+
+      <section className={`${layout.container} pt-[calc(var(--nav-h,4rem)+16px)] pb-24 relative z-10`}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="max-w-2xl mx-auto"
+        >
+          <div className={`${glass.surface} relative overflow-hidden rounded-3xl border border-white/5`}>
+            {/* Ticket Perforations (Visual only) */}
+            <div className="absolute top-0 bottom-0 left-[30%] w-px border-l border-dashed border-white/10 hidden md:block"></div>
+            <div className="absolute -top-3 left-[30%] w-6 h-6 bg-[#060806] rounded-full hidden md:block -ml-3"></div>
+            <div className="absolute -bottom-3 left-[30%] w-6 h-6 bg-[#060806] rounded-full hidden md:block -ml-3"></div>
+
+            <div className="flex flex-col md:flex-row">
+              {/* Left Side: Success Visual */}
+              <div className="md:w-[30%] p-8 flex flex-col items-center justify-center bg-gradient-to-br from-green-500/20 to-emerald-500/5 relative overflow-hidden border-b md:border-b-0 md:border-r border-white/5">
+                <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 mix-blend-overlay"></div>
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
+                  className="w-20 h-20 rounded-full bg-green-500 flex items-center justify-center shadow-[0_0_30px_rgba(34,197,94,0.4)] mb-4"
+                >
+                  <CheckCircle className="w-10 h-10 text-black stroke-[3]" />
+                </motion.div>
+                <h2 className="text-xl font-raleway font-bold text-green-400 text-center leading-tight">
+                  All Set!
+                </h2>
               </div>
-            </div>
 
-            {/* Success Message */}
-            <h1 className="text-3xl font-raleway font-normal text-theme-text mb-4">
-              {sessionMode === 'subscription' ? 'Subscription Successful!' : 'Payment Successful!'}
-            </h1>
-            <p className="text-theme-white mb-6">
-              {sessionMode === 'subscription'
-                ? 'Your subscription has been activated and credits have been added to your account. You can now start generating amazing content.'
-                : 'Your credits have been added to your account. You can now start generating amazing content.'
-              }
-            </p>
-
-            {/* User Info - Dual Wallet Display */}
-            {user && (
-              <div className="bg-theme-dark/50 rounded-lg p-4 mb-6">
-                <div className="text-sm text-theme-text mb-3">Credit Balance</div>
-                {walletBalance ? (
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-theme-text">Subscription</span>
-                      <span className="text-lg font-raleway font-medium text-purple-400">
-                        {walletBalance.subscriptionCredits.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-theme-text">Top-Up</span>
-                      <span className="text-lg font-raleway font-medium text-emerald-400">
-                        {walletBalance.topUpCredits.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="border-t border-theme-dark/50 pt-2 flex justify-between items-center">
-                      <span className="text-sm text-theme-text font-medium">Total</span>
-                      <span className="text-xl font-raleway font-bold text-theme-white">
-                        {walletBalance.totalCredits.toLocaleString()}
-                      </span>
-                    </div>
+              {/* Right Side: Details */}
+              <div className="flex-1 p-8 md:pl-12">
+                <div className="flex items-start justify-between mb-6">
+                  <div>
+                    <h1 className="text-2xl font-raleway font-bold text-white mb-2 flex items-center gap-2">
+                      {sessionMode === 'subscription' ? 'Welcome Aboard!' : 'Payment Complete'}
+                      <Sparkles className="w-5 h-5 text-yellow-400 animate-pulse" />
+                    </h1>
+                    <p className="text-theme-white/60">
+                      {sessionMode === 'subscription'
+                        ? 'Your subscription is now active.'
+                        : 'Credits have been added to your wallet.'
+                      }
+                    </p>
                   </div>
-                ) : (
-                  <div className="text-2xl font-raleway font-medium text-theme-white">
-                    {user.credits.toLocaleString()}
+                </div>
+
+                {/* Receipt Card */}
+                <div className="bg-white/5 rounded-xl p-4 mb-6 border border-white/5">
+                  {sessionMode === 'subscription' && subscriptionInfo ? (
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-lg bg-blue-500/20">
+                        <Calendar className="w-6 h-6 text-blue-400" />
+                      </div>
+                      <div>
+                        <div className="text-sm text-theme-white/40 font-raleway font-medium uppercase tracking-wider">Plan Activated</div>
+                        <div className="text-lg text-white font-medium">{subscriptionInfo.planName}</div>
+                        <div className="text-xs text-theme-white/60 capitalize">{subscriptionInfo.billingPeriod} Billing</div>
+                      </div>
+                    </div>
+                  ) : walletBalance ? (
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-lg bg-emerald-500/20">
+                        <ShoppingBag className="w-6 h-6 text-emerald-400" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm text-theme-white/40 font-raleway font-medium uppercase tracking-wider">New Balance</div>
+                        <div className="flex items-baseline gap-2">
+                          <div className="text-2xl text-white font-bold">{walletBalance.totalCredits.toLocaleString()}</div>
+                          <div className="text-xs text-emerald-400 font-medium">credits available</div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-lg bg-emerald-500/20">
+                        <ShoppingBag className="w-6 h-6 text-emerald-400" />
+                      </div>
+                      <div>
+                        <div className="text-sm text-theme-white/40 font-raleway font-medium uppercase tracking-wider">Credits Added</div>
+                        <div className="text-lg text-white font-medium">Ready to use</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={handleContinue}
+                    className="flex-1 btn btn-white font-raleway text-base font-bold gap-2 group"
+                  >
+                    Start Creating
+                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  </button>
+                  <button
+                    onClick={handleViewAccount}
+                    className="btn btn-ghost font-raleway text-sm font-medium"
+                  >
+                    View Receipt
+                  </button>
+                </div>
+
+                {/* Developer Tools */}
+                {sessionStatus && sessionStatus.paymentStatus === 'PENDING' && import.meta.env.MODE !== 'production' && (
+                  <div className="mt-8 pt-6 border-t border-white/5">
+                    <details className="text-left">
+                      <summary className="text-xs text-yellow-400/50 cursor-pointer hover:text-yellow-400 transition-colors list-none">
+                        🔧  Trouble verifying? (Dev Only)
+                      </summary>
+                      <div className="mt-3">
+                        <button
+                          onClick={handleManualComplete}
+                          disabled={manuallyCompleting}
+                          className="w-full py-2 px-3 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 rounded text-xs border border-yellow-500/20 transition-colors"
+                        >
+                          {manuallyCompleting ? 'Forcing Completion...' : 'Force Complete Payment (Simulate Webhook)'}
+                        </button>
+                      </div>
+                    </details>
                   </div>
                 )}
               </div>
-            )}
-
-            {/* Subscription Info */}
-            {sessionMode === 'subscription' && subscriptionInfo && (
-              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mb-6">
-                <div className="text-sm text-blue-400 mb-2">Subscription Details</div>
-                <div className="text-lg font-raleway font-medium text-theme-white">
-                  {subscriptionInfo.planName}
-                </div>
-                <div className="text-sm text-theme-text">
-                  Billing: {subscriptionInfo.billingPeriod}
-                </div>
-              </div>
-            )}
-
-            {/* Session Info */}
-            {sessionStatus && (
-              <div className="text-sm text-theme-text mb-6">
-                Payment Status: <span className="text-green-400 capitalize">
-                  {sessionStatus.status}
-                </span>
-              </div>
-            )}
-
-            {/* Manual Complete Success Message */}
-            {manualCompleteSuccess && (
-              <div className="mb-6 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-400" />
-                  <div>
-                    <div className="text-green-400 font-medium">
-                      {sessionMode === 'subscription' ? 'Subscription Activated!' : 'Payment Completed!'}
-                    </div>
-                    {sessionMode === 'subscription' && subscriptionInfo && (
-                      <div className="text-theme-text text-sm">
-                        {subscriptionInfo.planName} subscription is now active
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button
-                onClick={handleContinue}
-                className="btn btn-cyan flex items-center justify-center gap-2"
-              >
-                Start Creating
-                <ArrowRight className="w-4 h-4" />
-              </button>
-              <button
-                onClick={handleViewAccount}
-                className="btn btn-ghost"
-              >
-                View Account
-              </button>
             </div>
-
-            {/* Development: Manual Complete Button (collapsed by default) */}
-            {sessionStatus && sessionStatus.paymentStatus === 'PENDING' && import.meta.env.MODE !== 'production' && (
-              <details className="mt-6 text-left">
-                <summary className="text-sm text-yellow-400/70 cursor-pointer hover:text-yellow-400 transition-colors">
-                  🔧 Developer Options
-                </summary>
-                <div className="mt-3 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                  <p className="text-yellow-400 text-xs mb-3">
-                    <strong>Local Development:</strong> The Stripe webhook may not have fired in your local environment.
-                    Use this button to manually simulate the webhook callback.
-                  </p>
-                  {sessionMode === 'subscription' && subscriptionInfo && (
-                    <div className="text-theme-text text-xs mb-3">
-                      <strong>Subscription:</strong> {subscriptionInfo.planName} ({subscriptionInfo.billingPeriod})
-                    </div>
-                  )}
-                  <button
-                    onClick={handleManualComplete}
-                    disabled={manuallyCompleting}
-                    className="w-full py-2 px-4 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs border border-yellow-500/30"
-                  >
-                    {manuallyCompleting
-                      ? 'Simulating webhook...'
-                      : sessionMode === 'subscription'
-                        ? 'Simulate Webhook (Activate Subscription)'
-                        : 'Simulate Webhook (Complete Payment)'
-                    }
-                  </button>
-                </div>
-              </details>
-            )}
           </div>
-        </div>
+        </motion.div>
       </section>
     </main>
   );

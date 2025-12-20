@@ -80,7 +80,7 @@ export function PaymentStatusBanner({
           <div className="flex flex-wrap gap-2">
             <button
               onClick={onRetry}
-              className="btn btn-red font-raleway text-sm font-medium px-3 py-1.5 h-auto flex items-center gap-1"
+              className="btn btn-white font-raleway text-sm font-medium px-4 py-2 h-auto flex items-center gap-1.5 parallax-large"
             >
               <RefreshCw className="w-3 h-3" />
               Retry Payment
@@ -88,7 +88,7 @@ export function PaymentStatusBanner({
 
             <button
               onClick={onViewHistory}
-              className="btn btn-ghost font-raleway text-sm font-medium px-3 py-1.5 h-auto flex items-center gap-1"
+              className="btn btn-ghost font-raleway text-sm font-medium px-4 py-2 h-auto flex items-center gap-1.5 parallax-large"
             >
               <CreditCard className="w-3 h-3" />
               View History

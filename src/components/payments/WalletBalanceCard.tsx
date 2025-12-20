@@ -1,134 +1,148 @@
-import { useState, useEffect, useCallback } from 'react';
-import { usePayments } from '../../hooks/usePayments';
-import type { WalletBalance } from '../../hooks/usePayments';
-import { RefreshCw } from 'lucide-react';
-import './WalletBalanceCard.css';
+import { usePaymentsContext } from '../../contexts/PaymentsContext';
+import { RefreshCw, Calendar, Diamond } from 'lucide-react';
+import { cards, glass, text } from '../../styles/designSystem';
 
 interface WalletBalanceCardProps {
     className?: string;
     compact?: boolean;
+    embedded?: boolean;
 }
 
-export function WalletBalanceCard({ className = '', compact = false }: WalletBalanceCardProps) {
-    const { getWalletBalance } = usePayments();
-    const [balance, setBalance] = useState<WalletBalance | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(false);
-
-    const fetchBalance = useCallback(async () => {
-        try {
-            setLoading(true);
-            setError(false);
-            const data = await getWalletBalance();
-            setBalance(data);
-        } catch (err) {
-            console.error('Failed to fetch wallet balance:', err);
-            setError(true);
-        } finally {
-            setLoading(false);
-        }
-    }, [getWalletBalance]);
-
-    useEffect(() => {
-        fetchBalance();
-    }, [fetchBalance]);
-
-    if (loading) {
-        return (
-            <div className={`wallet-card wallet-card--skeleton ${className}`}>
-                <div className="wallet-card__skeleton-row">
-                    <div className="wallet-card__skeleton-label" />
-                    <div className="wallet-card__skeleton-value" />
-                </div>
-                <div className="wallet-card__skeleton-row">
-                    <div className="wallet-card__skeleton-label" />
-                    <div className="wallet-card__skeleton-value" />
-                </div>
-                {!compact && (
-                    <div className="wallet-card__skeleton-row wallet-card__skeleton-row--total">
-                        <div className="wallet-card__skeleton-label" />
-                        <div className="wallet-card__skeleton-value wallet-card__skeleton-value--large" />
-                    </div>
-                )}
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className={`wallet-card wallet-card--error ${className}`}>
-                <p className="wallet-card__error-text">Failed to load balance</p>
-                <button
-                    onClick={fetchBalance}
-                    className="wallet-card__retry-btn"
-                >
-                    <RefreshCw className="w-4 h-4" />
-                    Retry
-                </button>
-            </div>
-        );
-    }
-
-    if (!balance) {
-        return null;
-    }
+export function WalletBalanceCard({ className = '', compact = false, embedded = false }: WalletBalanceCardProps) {
+    const { walletBalance, isLoading, error, refreshWalletBalance } = usePaymentsContext();
 
     const formatDate = (dateString: string | null) => {
         if (!dateString) return null;
         return new Date(dateString).toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
+            year: 'numeric'
         });
     };
 
-    if (compact) {
+    if (isLoading) {
         return (
-            <div className={`wallet-card wallet-card--compact ${className}`}>
-                <div className="wallet-card__total">
-                    <span className="wallet-card__total-value">{balance.totalCredits.toLocaleString()}</span>
-                    <span className="wallet-card__total-label">credits</span>
+            <div className={`${cards.shell} p-6 ${glass.surface} ${className}`}>
+                <div className="space-y-4 animate-pulse">
+                    <div className="h-6 w-32 bg-white/10 rounded" />
+                    <div className="space-y-3">
+                        <div className="h-16 bg-white/5 rounded-xl border border-white/5" />
+                        <div className="h-16 bg-white/5 rounded-xl border border-white/5" />
+                    </div>
+                    {!compact && (
+                        <div className="pt-4 border-t border-white/10">
+                            <div className="flex justify-between items-center">
+                                <div className="h-4 w-24 bg-white/10 rounded" />
+                                <div className="h-6 w-16 bg-white/10 rounded" />
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         );
     }
 
-    return (
-        <div className={`wallet-card ${className}`}>
-            <h3 className="wallet-card__title">Credit Balance</h3>
+    if (error) {
+        return (
+            <div className={`${cards.shell} p-6 ${glass.surface} bg-red-500/5 border-red-500/20 ${className}`}>
+                <div className="flex flex-col items-center gap-4 text-center">
+                    <p className={`${text.body} text-red-200`}>Failed to load wallet balance</p>
+                    <button
+                        onClick={refreshWalletBalance}
+                        className="flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm font-medium transition-colors"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                        Retry
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
-            <div className="wallet-card__wallets">
+    if (!walletBalance) {
+        return null;
+    }
+
+    if (compact) {
+        return (
+            <div className={`${cards.shell} p-4 ${glass.surface} ${className}`}>
+                <div className="flex flex-col items-center gap-1">
+                    <span className="text-3xl font-raleway font-normal text-theme-text">
+                        {walletBalance.totalCredits.toLocaleString()}
+                    </span>
+                    <span className={`${text.finePrint} uppercase tracking-widest opacity-60`}>credits</span>
+                </div>
+            </div>
+        );
+    }
+
+    const containerClass = embedded ? className : `${cards.shell} p-6 ${glass.surface} ${className}`;
+
+    return (
+        <div className={containerClass}>
+            {!embedded && <h3 className={`${text.subHeading} text-xl mb-6`}>Credit Balance</h3>}
+
+            <div className="space-y-3">
                 {/* Subscription Wallet */}
-                <div className="wallet-card__wallet wallet-card__wallet--subscription">
-                    <div className="wallet-card__wallet-icon">📅</div>
-                    <div className="wallet-card__wallet-info">
-                        <span className="wallet-card__wallet-label">Subscription</span>
-                        <span className="wallet-card__wallet-value">{balance.subscriptionCredits.toLocaleString()}</span>
-                        {balance.subscriptionExpiresAt && (
-                            <span className="wallet-card__wallet-expires">
-                                Expires {formatDate(balance.subscriptionExpiresAt)}
-                            </span>
-                        )}
+                <div className="relative group p-4 rounded-xl bg-purple-500/5 border border-purple-500/10 hover:border-purple-500/30 transition-colors duration-200">
+                    <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400">
+                            <Calendar className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-0.5">
+                                <span className="font-raleway font-medium text-purple-100">Subscription</span>
+                                <span className="text-lg font-raleway font-medium text-purple-400">
+                                    {walletBalance.subscriptionCredits.toLocaleString()}
+                                </span>
+                            </div>
+                            <div className="text-xs font-raleway text-purple-200/50 flex items-center gap-2">
+                                {walletBalance.subscriptionExpiresAt ? (
+                                    <>
+                                        <span>Expires {formatDate(walletBalance.subscriptionExpiresAt)}</span>
+                                        <span className="w-1 h-1 rounded-full bg-purple-500/30" />
+                                    </>
+                                ) : (
+                                    <span>No active subscription</span>
+                                )}
+                                <span>Monthly limits</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 {/* Top-Up Wallet */}
-                <div className="wallet-card__wallet wallet-card__wallet--topup">
-                    <div className="wallet-card__wallet-icon">💎</div>
-                    <div className="wallet-card__wallet-info">
-                        <span className="wallet-card__wallet-label">Top-Up</span>
-                        <span className="wallet-card__wallet-value">{balance.topUpCredits.toLocaleString()}</span>
-                        <span className="wallet-card__wallet-expires">Never expires</span>
+                <div className="relative group p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10 hover:border-emerald-500/30 transition-colors duration-200">
+                    <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+                            <Diamond className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-0.5">
+                                <span className="font-raleway font-medium text-emerald-100">Top-Up</span>
+                                <span className="text-lg font-raleway font-medium text-emerald-400">
+                                    {walletBalance.topUpCredits.toLocaleString()}
+                                </span>
+                            </div>
+                            <div className="text-xs font-raleway text-emerald-200/50">
+                                Never expires • Purchase anytime
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div className="wallet-card__total-section">
-                <span className="wallet-card__total-label">Total Available</span>
-                <span className="wallet-card__total-value">{balance.totalCredits.toLocaleString()} credits</span>
+            <div className={`mt-6 pt-4 ${embedded ? 'border-t border-theme-dark/50' : 'border-t border-white/5'}`}>
+                <div className="flex items-center justify-between">
+                    <span className={`${text.eyebrow} normal-case tracking-normal text-sm`}>Total Available</span>
+                    <span className="font-raleway font-normal text-xl text-theme-white">
+                        {walletBalance.totalCredits.toLocaleString()} <span className="text-sm opacity-50 ml-1">credits</span>
+                    </span>
+                </div>
             </div>
 
-            <p className="wallet-card__hint">
-                Subscription credits are used first, then top-up credits.
+            <p className="mt-4 text-xs font-raleway text-theme-white/30 text-center">
+                Subscription credits are consumed before Top-Up credits
             </p>
         </div>
     );

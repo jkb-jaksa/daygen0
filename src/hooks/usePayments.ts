@@ -322,8 +322,16 @@ export function usePayments() {
 
   // Dual-Wallet: Get user's wallet balance
   const getWalletBalance = async (): Promise<WalletBalance> => {
+    // Return default balance if not authenticated (fallback for redirect edge cases)
     if (!user || !token) {
-      throw new Error('User not authenticated');
+      debugError('getWalletBalance called without auth, returning fallback');
+      return {
+        subscriptionCredits: 0,
+        topUpCredits: 0,
+        totalCredits: 0,
+        subscriptionExpiresAt: null,
+        graceLimit: 50,
+      };
     }
 
     try {

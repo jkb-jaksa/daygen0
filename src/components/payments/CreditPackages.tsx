@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Check, Star, Crown } from 'lucide-react';
+import { Check, Star, Crown, Zap, Layers, Gem } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { usePayments } from '../../hooks/usePayments';
 import { useStripeConfig } from '../../hooks/useStripeConfig';
 import { cards } from '../../styles/designSystem';
@@ -66,16 +67,18 @@ export function CreditPackages({ onPurchase }: CreditPackagesProps) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {config.creditPackages.map((pkg) => (
-          <CreditPackageCard
-            key={pkg.id}
-            package={pkg}
-            isSelected={selectedPackage === pkg.id}
-            isLoading={loading && selectedPackage === pkg.id}
-            isDisabled={isCheckoutLocked && selectedPackage !== pkg.id}
-            onPurchase={() => handlePurchase(pkg.id)}
-          />
+      <div className="flex flex-wrap justify-center gap-4">
+        {config.creditPackages.map((pkg, index) => (
+          <div key={pkg.id} className="w-full md:w-[calc(50%-1rem)] lg:w-[calc(25%-1rem)] min-w-[260px] max-w-[320px] flex-grow-0">
+            <CreditPackageCard
+              package={pkg}
+              isSelected={selectedPackage === pkg.id}
+              isLoading={loading && selectedPackage === pkg.id}
+              isDisabled={isCheckoutLocked && selectedPackage !== pkg.id}
+              onPurchase={() => handlePurchase(pkg.id)}
+              index={index}
+            />
+          </div>
         ))}
       </div>
     </div>
@@ -94,17 +97,40 @@ interface CreditPackageCardProps {
   isLoading: boolean;
   isDisabled?: boolean;
   onPurchase: () => void;
+  index: number;
 }
 
-function CreditPackageCard({ package: pkg, isSelected, isLoading, isDisabled = false, onPurchase }: CreditPackageCardProps) {
+function CreditPackageCard({ package: pkg, isSelected, isLoading, isDisabled = false, onPurchase, index }: CreditPackageCardProps) {
   const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLDivElement>();
 
   const formatPrice = (priceInCents: number) => {
     return `$${(priceInCents / 100).toFixed(2)}`;
   };
 
+  const formatPricePerCredit = (priceInCents: number) => {
+    const value = priceInCents / 100;
+    // Show up to 4 decimal places, strip trailing zeros
+    return `$${value.toFixed(4).replace(/\.?0+$/, '')}`;
+  };
+
+  // Determine Icon and Style based on credits
+  const getPackageVisuals = (credits: number) => {
+    if (credits >= 5000) {
+      return { Icon: Gem, color: 'text-purple-400', bg: 'bg-purple-400/10' };
+    } else if (credits >= 1000) {
+      return { Icon: Layers, color: 'text-brand-cyan', bg: 'bg-brand-cyan/10' };
+    } else {
+      return { Icon: Zap, color: 'text-yellow-400', bg: 'bg-yellow-400/10' };
+    }
+  };
+
+  const { Icon, color, bg } = getPackageVisuals(pkg.credits);
+
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5, delay: index * 0.1, ease: 'easeOut' }}
       onClick={isLoading || isDisabled ? undefined : onPurchase}
       onPointerMove={isLoading || isDisabled ? undefined : onPointerMove}
       onPointerEnter={isLoading || isDisabled ? undefined : onPointerEnter}
@@ -131,25 +157,30 @@ function CreditPackageCard({ package: pkg, isSelected, isLoading, isDisabled = f
       )}
 
       <div className="relative z-10 flex flex-col h-full">
-        {/* Header */}
+        {/* Icon Header */}
         <div className="mb-4">
-          <h3 className="text-xl font-raleway font-normal mb-2 text-theme-text">
+          <div className={`w-12 h-12 rounded-xl ${bg} flex items-center justify-center mb-4 transition-transform group-hover:scale-110 duration-300`}>
+            <Icon className={`w-6 h-6 ${color}`} />
+          </div>
+          <h3 className="text-xl font-raleway font-normal mb-1 text-theme-text">
             {pkg.name}
           </h3>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-raleway font-normal text-theme-text">
+            <span className="text-3xl font-raleway font-normal text-theme-white">
               {formatPrice(pkg.price)}
             </span>
           </div>
         </div>
 
         {/* Credits */}
-        <div className="mb-4">
-          <div className="text-2xl font-raleway font-normal text-theme-white">
-            {pkg.credits.toLocaleString()} Credits
+        <div className="mb-6">
+          <div className="text-2xl font-raleway font-normal text-theme-text mb-1 flex items-center gap-2">
+            {pkg.credits.toLocaleString()} <span className="text-base text-theme-white/60">Credits</span>
           </div>
-          <div className="text-sm font-raleway text-theme-white">
-            {formatPrice(pkg.price / pkg.credits)} per credit
+          <div className="inline-block px-2 py-1 rounded bg-emerald-500/10 border border-emerald-500/20">
+            <span className="text-xs font-raleway font-medium text-emerald-400">
+              {formatPricePerCredit(pkg.price / pkg.credits)} / credit
+            </span>
           </div>
         </div>
 
@@ -177,14 +208,19 @@ function CreditPackageCard({ package: pkg, isSelected, isLoading, isDisabled = f
         <div className="mt-auto">
           <button
             disabled={isLoading}
-            className={`w-full btn font-raleway text-base font-medium transition-colors duration-200 parallax-large ${isLoading ? 'opacity-50 cursor-not-allowed btn-white' : 'btn-white'
-              }`}
+            className={`w-full btn font-raleway text-base font-medium transition-all duration-200 parallax-large ${isLoading ? 'opacity-50 cursor-not-allowed btn-white' : 'btn-white hover:bg-theme-white hover:text-theme-black'
+              } flex items-center justify-center gap-2`}
           >
-            {isLoading ? 'Processing...' : 'Buy Now'}
+            {isLoading ? 'Processing...' : (
+              <>
+                <Zap className="w-4 h-4" />
+                Buy Now
+              </>
+            )}
           </button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 

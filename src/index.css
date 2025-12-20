@@ -1488,14 +1488,17 @@ html[data-theme="day"] .card-overlay-gradient {
 }
 
 /* Slightly subtler parallax for small/FAQ cards */
+/* Slightly subtler parallax for small/FAQ cards */
 .parallax-small {
   perspective: 1000px;
+  transform-style: preserve-3d;
 }
 
 .parallax-small:hover,
 .parallax-small.parallax-active {
-  transform: translateZ(25px) scale(1.001);
-  transition: transform 0.1s;
+  transform:
+    perspective(1000px) translateZ(20px) rotateX(var(--rotate-x, 0deg)) rotateY(var(--rotate-y, 0deg)) translateX(var(--tx, 0px)) translateY(var(--ty, 0px));
+  transition: transform 0.1s ease-out;
 }
 
 /* Shared backdrop for media cards (avatars, products, gallery tiles) */

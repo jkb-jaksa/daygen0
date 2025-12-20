@@ -4,8 +4,9 @@ import { useLocation, useNavigate, NavLink, Link } from "react-router-dom";
 import { useLayoutEffect, useRef, useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "../auth/useAuth";
-import { usePayments, type WalletBalance } from "../hooks/usePayments";
+import { usePaymentsContext } from "../contexts/PaymentsContext";
 import DiscordIcon from "./DiscordIcon";
+import { Tooltip } from "./ui/Tooltip";
 import XIcon from "./XIcon";
 import InstagramIcon from "./InstagramIcon";
 import { buttons, glass, iconButtons, layout } from "../styles/designSystem";
@@ -71,36 +72,8 @@ export default function Navbar() {
   const isDay = theme === "day";
   const [isDevLoginLoading, setIsDevLoginLoading] = useState(false);
 
-  // Dual-wallet balance
-  const { getWalletBalance } = usePayments();
-  const [walletBalance, setWalletBalance] = useState<WalletBalance | null>(null);
-
-  // Refresh wallet balance function
-  const refreshWalletBalance = useCallback(async () => {
-    if (!user) return;
-    try {
-      const balance = await getWalletBalance();
-      setWalletBalance(balance);
-    } catch (e) {
-      console.error('Failed to fetch wallet balance:', e);
-    }
-  }, [user, getWalletBalance]);
-
-  // Fetch wallet balance when user is logged in
-  useEffect(() => {
-    if (!user) {
-      setWalletBalance(null);
-      return;
-    }
-    refreshWalletBalance();
-  }, [user, refreshWalletBalance]);
-
-  // Listen for wallet refresh events from other components (e.g., after payment)
-  useEffect(() => {
-    const handleRefresh = () => refreshWalletBalance();
-    window.addEventListener('wallet:refresh', handleRefresh);
-    return () => window.removeEventListener('wallet:refresh', handleRefresh);
-  }, [refreshWalletBalance]);
+  // Dual-wallet balance from context
+  const { walletBalance } = usePaymentsContext();
 
   const handleDevLogin = useCallback(async () => {
     setIsDevLoginLoading(true);
@@ -498,34 +471,54 @@ export default function Navbar() {
                 <div className="hidden lg:block h-6 w-px bg-theme-white/20"></div>
 
                 {/* Credit Usage Button - Dual Wallet Display */}
-                <button
-                  onClick={() => {
-                    setActiveMenu(null);
-                    setMenuOpen(false);
-                    navigate('/upgrade');
-                  }}
-                  className={`${buttons.ghostSlim} hidden lg:flex items-center gap-2 rounded-full py-2 text-sm min-w-0 group relative`}
-                  aria-label="Credit balance"
-                  title={walletBalance
-                    ? `Subscription: ${walletBalance.subscriptionCredits.toLocaleString()} (resets monthly)\nTop-Up: ${walletBalance.topUpCredits.toLocaleString()} (never expires)`
-                    : `Credits: ${currentUser.credits.toLocaleString()}`}
-                >
-                  <CreditCard className="w-4 h-4" />
-                  <span className="hidden xl:flex items-center gap-1.5 font-normal">
-                    {walletBalance ? (
-                      <>
-                        <span className="text-purple-400">{walletBalance.subscriptionCredits.toLocaleString()}</span>
-                        <span className="text-theme-white/40">+</span>
-                        <span className="text-emerald-400">{walletBalance.topUpCredits.toLocaleString()}</span>
-                      </>
+                <Tooltip
+                  content={
+                    walletBalance ? (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between gap-4">
+                          <span className="text-theme-white/60">Subscription</span>
+                          <span className="text-purple-400 font-medium">{walletBalance.subscriptionCredits.toLocaleString()}</span>
+                        </div>
+                        <div className="text-[10px] text-theme-white/40">Resets monthly</div>
+                        <div className="h-px bg-theme-white/10 my-1" />
+                        <div className="flex items-center justify-between gap-4">
+                          <span className="text-theme-white/60">Top-Up</span>
+                          <span className="text-emerald-400 font-medium">{walletBalance.topUpCredits.toLocaleString()}</span>
+                        </div>
+                        <div className="text-[10px] text-theme-white/40">Never expires</div>
+                      </div>
                     ) : (
-                      <span>{currentUser.credits.toLocaleString()}</span>
-                    )}
-                  </span>
-                  <span className="lg:inline xl:hidden font-normal">
-                    {walletBalance ? walletBalance.totalCredits.toLocaleString() : currentUser.credits.toLocaleString()}
-                  </span>
-                </button>
+                      <div>Credits: {currentUser.credits.toLocaleString()}</div>
+                    )
+                  }
+                  position="bottom"
+                >
+                  <button
+                    onClick={() => {
+                      setActiveMenu(null);
+                      setMenuOpen(false);
+                      navigate('/upgrade');
+                    }}
+                    className={`${buttons.ghostSlim} hidden lg:flex items-center gap-2 rounded-full py-2 text-sm min-w-0 group relative`}
+                    aria-label="Credit balance"
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    <span className="hidden xl:flex items-center gap-1.5 font-normal">
+                      {walletBalance ? (
+                        <>
+                          <span className="text-purple-400">{walletBalance.subscriptionCredits.toLocaleString()}</span>
+                          <span className="text-theme-white/40">+</span>
+                          <span className="text-emerald-400">{walletBalance.topUpCredits.toLocaleString()}</span>
+                        </>
+                      ) : (
+                        <span>{currentUser.credits.toLocaleString()}</span>
+                      )}
+                    </span>
+                    <span className="lg:inline xl:hidden font-normal">
+                      {walletBalance ? walletBalance.totalCredits.toLocaleString() : currentUser.credits.toLocaleString()}
+                    </span>
+                  </button>
+                </Tooltip>
 
                 {/* Upgrade Button */}
                 <button
