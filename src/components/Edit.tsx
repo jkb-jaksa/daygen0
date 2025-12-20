@@ -30,7 +30,6 @@ import { AI_MODELS } from './create/ModelSelector';
 import ImageBadgeRow from "./shared/ImageBadgeRow";
 import { useToast } from "../hooks/useToast";
 import { useBadgeNavigation } from "./create/hooks/useBadgeNavigation";
-import ResultsGrid from "./create/ResultsGrid";
 import { useGallery } from "./create/contexts/GalleryContext";
 import { CreateBridgeProvider, type GalleryBridgeActions } from "./create/contexts/CreateBridgeContext";
 
@@ -105,7 +104,7 @@ export default function Edit() {
   const modelSelectorButtonRef = useRef<HTMLButtonElement>(null);
   const modelSelectorMenuRef = useRef<HTMLDivElement>(null);
   const [modelSelectorPos, setModelSelectorPos] = useState({ top: 0, left: 0, width: 0, transform: 'translateY(0)' });
-  const [editedImageIds, setEditedImageIds] = useState<string[]>([]);
+
 
   const {
     setScrollableRef,
@@ -578,13 +577,7 @@ export default function Edit() {
         // Add to gallery if successful
         if (generated) {
           await addImage(generated);
-          if (generated.jobId) {
-            setEditedImageIds(prev => [...prev, generated.jobId!]);
-          } else if (generated.r2FileId) {
-            setEditedImageIds(prev => [...prev, generated.r2FileId!]);
-          } else if (generated.url) {
-            setEditedImageIds(prev => [...prev, generated.url]);
-          }
+
         }
       } else if (isFluxModelId(selectedModel)) {
         const fluxModel = FLUX_MODEL_LOOKUP[selectedModel];
@@ -1716,10 +1709,7 @@ export default function Edit() {
           </div>
         </header>
 
-        {/* Results Grid */}
-        <div className={`${layout.container} pb-32`}>
-          <ResultsGrid activeCategory="image" filterIds={editedImageIds} />
-        </div>
+
 
 
 
