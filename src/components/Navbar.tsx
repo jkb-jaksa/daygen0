@@ -313,7 +313,7 @@ export default function Navbar() {
       {/* Top navbar */}
       <nav
         ref={navRef}
-        className={`relative ${glass.promptDark} border-t-0`}
+        className="relative liquid-glass-navbar"
       >
         <div
           className={`${layout.container} flex items-center justify-between text-base min-h-[var(--nav-h)]`}

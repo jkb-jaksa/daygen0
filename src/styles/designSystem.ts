@@ -115,7 +115,7 @@ export const glass = {
   tight: `${glassBase} rounded-lg`, // Small glass boxes
   prompt: `prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)]`, // Prompt surfaces
   promptBorderless: `prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)]`,
-  promptDark: `glass-liquid willchange-backdrop isolate backdrop-blur-[40px] border border-[color:var(--glass-border)] bg-[color:var(--glass-dark-bg)]`, // Navbar, dropdowns
+  promptDark: `liquid-glass glass-liquid willchange-backdrop isolate border border-[color:var(--glass-border)]`, // Apple-style liquid glass effect with original structure
   sidebarIcon: `glass-liquid willchange-backdrop isolate backdrop-blur-[20px] border border-[color:var(--glass-border)] bg-[color:var(--glass-base-bg)] text-[color:var(--theme-text)]`,
 };
 
