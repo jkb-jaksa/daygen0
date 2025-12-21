@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { layout, glass } from "../styles/designSystem";
 import { debugLog } from "../utils/debug";
-import StripePricingTable from "./payments/StripePricingTable";
+import SubscriptionPlans from "./payments/SubscriptionPlans";
 import CreditPackages from "./payments/CreditPackages";
 import { usePayments } from "../hooks/usePayments";
 import { useAuth } from "../auth/useAuth";
@@ -97,8 +97,8 @@ export default function Upgrade() {
         {/* Content */}
         {activeTab === 'subscriptions' ? (
           <div className="space-y-8">
-            {/* Stripe Pricing Table */}
-            <StripePricingTable className="max-w-5xl mx-auto" />
+            {/* Custom Subscription Plans */}
+            <SubscriptionPlans className="max-w-5xl mx-auto" />
 
             {/* Manage Billing Link (for existing subscribers) */}
             {user && (
