@@ -1,6 +1,7 @@
 import { glass } from "../../styles/designSystem";
 
 import { WalletBalanceCard } from "../payments/WalletBalanceCard";
+import { SubscriptionStatusCard } from "./SubscriptionStatusCard";
 
 export type AtAGlanceProps = {
   generatedCount: number;
@@ -18,6 +19,9 @@ export function AtAGlance({
         </div>
 
         <WalletBalanceCard embedded className="mt-2" />
+
+        {/* Subscription Status Card */}
+        <SubscriptionStatusCard className="mt-4" />
       </div>
     </div>
   );

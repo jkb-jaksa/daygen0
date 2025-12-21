@@ -9,8 +9,9 @@ import { debugError, debugLog } from "../utils/debug";
 import { getDestinationLabel, safeResolveNext, consumePendingAuthRedirect } from "../utils/navigation";
 import { ProfileCard } from "./account/ProfileCard";
 import { AtAGlance } from "./account/AtAGlance";
+import { PaymentHistory } from "./account/PaymentHistory";
 import { useToast } from "../hooks/useToast";
-import SubscriptionManager from "./payments/SubscriptionManager";
+
 import AuthModal from "./AuthModal";
 
 type GalleryItem = { url: string; prompt: string; model: string; timestamp: string; ownerId?: string };
@@ -442,9 +443,9 @@ export default function Account() {
         />
       </section>
 
-      {/* Subscription Management */}
+      {/* Payment History */}
       <section className="max-w-5xl mx-auto mt-8">
-        <SubscriptionManager />
+        <PaymentHistory />
       </section>
 
       <ProfileCropModal

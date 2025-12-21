@@ -5,10 +5,11 @@
  * Uses Stripe Checkout for actual payments and Customer Portal for management.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Check, Star, Crown, Zap, Gem, Calendar, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { usePayments } from '../../hooks/usePayments';
+import type { SubscriptionInfo } from '../../hooks/usePayments';
 import { useStripeConfig } from '../../hooks/useStripeConfig';
 import { cards } from '../../styles/designSystem';
 import useParallaxHover from '../../hooks/useParallaxHover';
@@ -33,10 +34,18 @@ interface SubscriptionPlan {
 
 export function SubscriptionPlans({ className, defaultPeriod = 'monthly', onPurchase }: SubscriptionPlansProps) {
   const { config, loading: configLoading } = useStripeConfig();
-  const { createCheckoutSession, loading, error } = usePayments();
+  const { createCheckoutSession, getSubscription, loading, error } = usePayments();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [isCheckoutLocked, setIsCheckoutLocked] = useState(false);
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>(defaultPeriod);
+  const [currentSubscription, setCurrentSubscription] = useState<SubscriptionInfo | null>(null);
+
+  // Fetch current subscription to filter out the user's current tier
+  useEffect(() => {
+    getSubscription()
+      .then(setCurrentSubscription)
+      .catch(() => setCurrentSubscription(null));
+  }, []);
 
   const handleSubscribe = async (planId: string) => {
     // Prevent multiple simultaneous checkout attempts
@@ -67,18 +76,22 @@ export function SubscriptionPlans({ className, defaultPeriod = 'monthly', onPurc
     );
   }
 
-  // Filter plans by billing period
+  // Filter plans by billing period and exclude user's current plan
   const monthlyPlans = config.subscriptionPlans.filter(p => p.interval === 'month');
   const yearlyPlans = config.subscriptionPlans.filter(p => p.interval === 'year');
-  const currentPlans = billingPeriod === 'yearly' ? yearlyPlans : monthlyPlans;
+  const periodPlans = billingPeriod === 'yearly' ? yearlyPlans : monthlyPlans;
+
+  // Filter out the user's current subscription tier
+  const currentPlans = currentSubscription
+    ? periodPlans.filter(plan => plan.id !== currentSubscription.planId)
+    : periodPlans;
 
   return (
     <div className={className}>
       {/* Billing Period Toggle */}
       <div className="flex items-center justify-center gap-4 mb-8">
-        <span className={`text-base font-raleway font-normal transition-colors ${
-          billingPeriod === 'monthly' ? 'text-theme-text' : 'text-theme-white/60'
-        }`}>
+        <span className={`text-base font-raleway font-normal transition-colors ${billingPeriod === 'monthly' ? 'text-theme-text' : 'text-theme-white/60'
+          }`}>
           Monthly
         </span>
         <button
@@ -92,9 +105,8 @@ export function SubscriptionPlans({ className, defaultPeriod = 'monthly', onPurc
             transition={{ type: "spring", stiffness: 500, damping: 30 }}
           />
         </button>
-        <span className={`text-base font-raleway font-normal transition-colors ${
-          billingPeriod === 'yearly' ? 'text-theme-text' : 'text-theme-white/60'
-        }`}>
+        <span className={`text-base font-raleway font-normal transition-colors ${billingPeriod === 'yearly' ? 'text-theme-text' : 'text-theme-white/60'
+          }`}>
           Yearly
           <span className="ml-1.5 text-xs font-raleway text-green-400 font-medium">Save 20%</span>
         </span>
@@ -136,14 +148,14 @@ interface SubscriptionPlanCardProps {
   billingPeriod: 'monthly' | 'yearly';
 }
 
-function SubscriptionPlanCard({ 
-  plan, 
-  isSelected, 
-  isLoading, 
-  isDisabled = false, 
-  onSubscribe, 
+function SubscriptionPlanCard({
+  plan,
+  isSelected,
+  isLoading,
+  isDisabled = false,
+  onSubscribe,
   index,
-  billingPeriod 
+  billingPeriod
 }: SubscriptionPlanCardProps) {
   const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLDivElement>();
 
@@ -175,9 +187,8 @@ function SubscriptionPlanCard({
       onPointerMove={isLoading || isDisabled ? undefined : onPointerMove}
       onPointerEnter={isLoading || isDisabled ? undefined : onPointerEnter}
       onPointerLeave={isLoading || isDisabled ? undefined : onPointerLeave}
-      className={`${cards.shell} ${isSelected ? 'border-theme-light' : ''} group relative overflow-hidden p-6 cursor-pointer transition-all duration-200 parallax-small mouse-glow h-full flex flex-col ${
-        isLoading || isDisabled ? 'opacity-50 cursor-not-allowed' : ''
-      }`}
+      className={`${cards.shell} ${isSelected ? 'border-theme-light' : ''} group relative overflow-hidden p-6 cursor-pointer transition-all duration-200 parallax-small mouse-glow h-full flex flex-col ${isLoading || isDisabled ? 'opacity-50 cursor-not-allowed' : ''
+        }`}
     >
       {/* Badge */}
       {plan.badge && (
@@ -262,9 +273,8 @@ function SubscriptionPlanCard({
         <div className="mt-auto">
           <button
             disabled={isLoading}
-            className={`w-full btn font-raleway text-base font-medium transition-all duration-200 parallax-large ${
-              isLoading ? 'opacity-50 cursor-not-allowed btn-white' : 'btn-white hover:bg-theme-white hover:text-theme-black'
-            } flex items-center justify-center gap-2`}
+            className={`w-full btn font-raleway text-base font-medium transition-all duration-200 parallax-large ${isLoading ? 'opacity-50 cursor-not-allowed btn-white' : 'btn-white hover:bg-theme-white hover:text-theme-black'
+              } flex items-center justify-center gap-2`}
           >
             {isLoading ? 'Processing...' : (
               <>
