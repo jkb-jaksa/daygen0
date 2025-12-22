@@ -1690,7 +1690,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         </>
                                                     )}
                                                 </div>
-                                                <div className="mt-0.5 flex flex-col justify-center items-center gap-1">
+                                                <div className="mt-1 flex flex-col justify-center items-center gap-2">
                                                     {/* Reference images thumbnails */}
                                                     {/* Unified References and Badges Display */}
                                                     {(() => {
@@ -1748,7 +1748,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
 
                                                         return (
                                                             <div
-                                                                className="flex flex-wrap items-center justify-center gap-1.5 cursor-pointer"
+                                                                className="flex flex-wrap items-center justify-center gap-3 cursor-pointer"
                                                                 onClick={(e) => {
                                                                     // If we only have references, open reference modal.
                                                                     // If we have mixed content, we might want to be smarter, but existing behavior
@@ -1762,7 +1762,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                             >
                                                                 {/* References Count */}
                                                                 {displayReferences.length > 0 && (
-                                                                    <div className="flex items-center gap-1">
+                                                                    <div className="flex items-center gap-1.5">
                                                                         <div className="flex gap-1">
                                                                             {displayReferences.map((ref, refIdx) => (
                                                                                 <div key={refIdx} className="relative">
@@ -1786,7 +1786,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
 
                                                                 {/* Avatar/Product Badges */}
                                                                 {(avatarForImage || productForImage) && (
-                                                                    <div className="flex items-center gap-1">
+                                                                    <div className="flex items-center gap-1.5">
                                                                         {/* We use ImageBadgeRow logic but constructed manually for inline layout if needed,
                                                                             OR we can just mistakenly rely on the ImageBadgeRow below?
                                                                             The prompt says "make sure the same logic is used... identical logic".

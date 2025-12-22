@@ -1157,26 +1157,7 @@ html[data-theme="day"] .prompt-surface {
   -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.3) 100%);
 }
 
-/* Top edge specular highlight - simulates light reflecting off curved glass edge */
-.liquid-glass-navbar::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 10%;
-  right: 10%;
-  height: 1px;
-  pointer-events: none;
 
-  /* Smooth gradient highlight along top */
-  background: linear-gradient(90deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.15) 20%,
-      rgba(255, 255, 255, 0.25) 50%,
-      rgba(255, 255, 255, 0.15) 80%,
-      transparent 100%);
-
-  opacity: 0.6;
-}
 
 /* Day mode adjustments for liquid glass navbar */
 html[data-theme="day"] .liquid-glass-navbar {
@@ -1211,16 +1192,7 @@ html[data-theme="day"] .liquid-glass-navbar::before {
       rgba(255, 255, 255, 0.3) 100%);
 }
 
-/* Day mode top highlight - more subtle */
-html[data-theme="day"] .liquid-glass-navbar::after {
-  background: linear-gradient(90deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.6) 20%,
-      rgba(255, 255, 255, 0.8) 50%,
-      rgba(255, 255, 255, 0.6) 80%,
-      transparent 100%);
-  opacity: 0.8;
-}
+
 
 /* ============================================
    LIQUID GLASS - Generic Apple-inspired effect

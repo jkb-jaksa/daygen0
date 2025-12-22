@@ -1489,11 +1489,11 @@ const FullImageModal = memo(() => {
                         if (displayReferences.length === 0 && !avatarForImage && !productForImage) return null;
 
                         return (
-                          <div className="flex flex-wrap items-center justify-center gap-1.5">
+                          <div className="flex flex-wrap items-center justify-center gap-3">
                             {/* Generic References */}
                             {displayReferences.length > 0 && (
                               <div
-                                className="flex items-center gap-1 cursor-pointer"
+                                className="flex items-center gap-1.5 cursor-pointer"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setIsReferenceModalOpen(true);
@@ -1522,7 +1522,7 @@ const FullImageModal = memo(() => {
 
                             {/* Avatar/Product Badges */}
                             {(avatarForImage || productForImage) && (
-                              <div className="flex items-center gap-1">
+                              <div className="flex items-center gap-1.5">
                                 {avatarForImage && (
                                   <div
                                     className="cursor-pointer"

@@ -1,9 +1,20 @@
-import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
+import React, { useRef, useState, useEffect, useMemo, useCallback, Suspense, lazy } from "react";
 import { createPortal } from "react-dom";
-import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Eraser, Undo2, Redo2, BookmarkIcon, Bookmark, Scan, Copy, ChevronDown } from "lucide-react";
+import { Upload, X, Wand2, Loader2, Plus, Settings, Sparkles, Move, Minus, RotateCcw, Eraser, Undo2, Redo2, BookmarkIcon, Bookmark, BookmarkPlus, Scan, Copy, ChevronDown, User, Package, Palette, LayoutGrid, Scaling, ZoomIn, ZoomOut } from "lucide-react";
 import { layout, glass, buttons, tooltips } from "../styles/designSystem";
 import { InsufficientCreditsModal } from "./modals/InsufficientCreditsModal";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useAvatarHandlers } from "./create/hooks/useAvatarHandlers";
+import { useProductHandlers } from "./create/hooks/useProductHandlers";
+import { useStyleHandlers } from "./create/hooks/useStyleHandlers";
+import AvatarPickerPortal from "./create/AvatarPickerPortal";
+
+// Lazy load components
+const SettingsMenu = lazy(() => import("./create/SettingsMenu"));
+const ModelSelector = lazy(() => import("./create/ModelSelector"));
+const StyleSelectionModal = lazy(() => import("./create/StyleSelectionModal"));
+const AvatarCreationModal = lazy(() => import("./avatars/AvatarCreationModal"));
+const ProductCreationModal = lazy(() => import("./products/ProductCreationModal"));
 import { useGeminiImageGeneration } from "../hooks/useGeminiImageGeneration";
 import { useFluxImageGeneration } from "../hooks/useFluxImageGeneration";
 import { useChatGPTImageGeneration } from "../hooks/useChatGPTImageGeneration";
@@ -25,6 +36,11 @@ import { useSavedPrompts } from "../hooks/useSavedPrompts";
 import { PromptsDropdown } from "./PromptsDropdown";
 import { AspectRatioDropdown } from "./AspectRatioDropdown";
 import type { AspectRatioOption, GeminiAspectRatio } from "../types/aspectRatio";
+// Helper to parse aspect ratio string to numeric value
+const parseAspectRatio = (ratio: string): number => {
+  const [w, h] = ratio.split(':').map(Number);
+  return w / h;
+};
 import { GEMINI_ASPECT_RATIO_OPTIONS, QWEN_ASPECT_RATIO_OPTIONS } from "../data/aspectRatios";
 import { AI_MODELS } from './create/ModelSelector';
 import ImageBadgeRow from "./shared/ImageBadgeRow";
@@ -32,6 +48,10 @@ import { useToast } from "../hooks/useToast";
 import { useBadgeNavigation } from "./create/hooks/useBadgeNavigation";
 import { useGallery } from "./create/contexts/GalleryContext";
 import { CreateBridgeProvider, type GalleryBridgeActions } from "./create/contexts/CreateBridgeContext";
+import { ReferencePreviewModal } from "./shared/ReferencePreviewModal";
+import { getDraggingImageUrl, setFloatingDragImageVisible } from "./create/utils/dragState";
+import { getStyleThumbnailUrl } from "./create/hooks/useStyleHandlers";
+import type { StoredStyle } from "./styles/types";
 
 type EditModel = (typeof AI_MODELS)[number];
 type EditModelId = EditModel["id"] | "runway-gen4-turbo";
@@ -47,11 +67,22 @@ interface EditNavigationState {
 
 const isFluxModelId = (modelId: EditModelId): modelId is FluxEditModelId => modelId.startsWith("flux-");
 
-const MAX_REFERENCE_IMAGES = 3;
+const MAX_REFERENCE_IMAGES = 14;
 const ADDITIONAL_REFERENCE_LIMIT = MAX_REFERENCE_IMAGES - 1;
 
-
-
+// TooltipPortal component for proper z-index handling (matching QuickEditModal)
+const TooltipPortal = ({ id, children }: { id: string, children: React.ReactNode }) => {
+  return createPortal(
+    <div
+      data-tooltip-for={id}
+      className={`${tooltips.base} fixed z-[9999] opacity-0 transition-opacity duration-150`}
+      style={{ pointerEvents: 'none' }}
+    >
+      {children}
+    </div>,
+    document.body
+  );
+};
 
 // Main Component
 export default function Edit() {
@@ -123,17 +154,66 @@ export default function Edit() {
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isMoveMode, setIsMoveMode] = useState<boolean>(false);
   const [isPreciseEditMode, setIsPreciseEditMode] = useState<boolean>(false);
+  const [isResizeMode, setIsResizeMode] = useState<boolean>(false);
   const [isDrawing, setIsDrawing] = useState<boolean>(false);
   const [maskData, setMaskData] = useState<string | null>(null);
   const [brushSize, setBrushSize] = useState(20);
   const [isEraseMode, setIsEraseMode] = useState(false);
   const [imageToEditData, setImageToEditData] = useState<GalleryImageLike | undefined>(undefined);
+
+  // Resize mode state
+  const [resizeAspectRatio, setResizeAspectRatio] = useState<GeminiAspectRatio | null>(null);
+  const [resizeImageDimensions, setResizeImageDimensions] = useState<{ width: number; height: number } | null>(null);
+  const [resizeImagePosition, setResizeImagePosition] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
+  const [resizeImageScale, setResizeImageScale] = useState<number>(100);
+  const [isResizeDragging, setIsResizeDragging] = useState(false);
+  const [resizeUserPrompt, setResizeUserPrompt] = useState('');
+  const resizeCanvasRef = useRef<HTMLDivElement>(null);
+  const resizeDragStartRef = useRef<{ x: number; y: number; startPos: { x: number; y: number } } | null>(null);
   const { showToast } = useToast();
   const {
     goToPublicGallery,
     goToModelGallery,
   } = useBadgeNavigation();
   const { addImage } = useGallery();
+  const navigate = useNavigate();
+
+  // Avatar, Product, Style handlers (matching QuickEditModal)
+  const avatarHandlers = useAvatarHandlers();
+  const productHandlers = useProductHandlers();
+  const styleHandlers = useStyleHandlers();
+
+  // Selected avatar/product from handlers
+  const { selectedAvatar, avatarButtonRef, isAvatarPickerOpen, setIsAvatarPickerOpen, avatarSelection, creationsModalAvatar, setCreationsModalAvatar } = avatarHandlers;
+  const { selectedProduct, productButtonRef, isProductPickerOpen, setIsProductPickerOpen, productSelection, creationsModalProduct, setCreationsModalProduct } = productHandlers;
+
+  // Batch size state
+  const [batchSize, setBatchSize] = useState(1);
+
+  // Hover states for buttons
+  const [isAvatarButtonHovered, setIsAvatarButtonHovered] = useState(false);
+  const [isProductButtonHovered, setIsProductButtonHovered] = useState(false);
+  const [isStyleButtonHovered, setIsStyleButtonHovered] = useState(false);
+
+  // Drag states for Avatar/Product buttons (matching QuickEditModal)
+  const [isDraggingOverAvatarButton, setIsDraggingOverAvatarButton] = useState(false);
+  const [isDraggingOverProductButton, setIsDraggingOverProductButton] = useState(false);
+  const [avatarDragPreviewUrl, setAvatarDragPreviewUrl] = useState<string | null>(null);
+  const [productDragPreviewUrl, setProductDragPreviewUrl] = useState<string | null>(null);
+  const avatarDragDepthRef = useRef(0);
+  const productDragDepthRef = useRef(0);
+
+  // Reference preview modal state
+  const [referencePreviewUrl, setReferencePreviewUrl] = useState<string | null>(null);
+  const [referenceModalReferences, setReferenceModalReferences] = useState<string[] | null>(null);
+
+  // Copy/save prompt state
+  const [copiedState, setCopiedState] = useState<Record<string, boolean>>({});
+  const [activeTooltip, setActiveTooltip] = useState<{ id: string; text: string; x: number; y: number } | null>(null);
+
+  // Style button ref
+  const styleButtonRef = useRef<HTMLButtonElement>(null);
+
   const [mousePosition, setMousePosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [showBrushPreview, setShowBrushPreview] = useState<boolean>(false);
   const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
@@ -495,6 +575,252 @@ export default function Edit() {
     });
   };
 
+  // Helper to generate Gemini-compatible mask (White = Edit, Black = Keep)
+  const generateGeminiMask = async (): Promise<string | undefined> => {
+    if (!maskData || !previewUrl) {
+      console.log('[Edit] generateGeminiMask: maskData or previewUrl missing, returning undefined.');
+      return undefined;
+    }
+
+    return new Promise((resolve, reject) => {
+      (async () => {
+        const originalImg = new Image();
+        let srcUrl = previewUrl;
+        let objectUrlToRevoke: string | undefined;
+        let isBlob = false;
+
+        // Robustly handle image loading by fetching as blob first if needed
+        try {
+          if (previewUrl.startsWith('http') || previewUrl.startsWith('https')) {
+            const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+            const proxyEndpoint = `${apiBase}/api/r2files/proxy`;
+            const proxyUrl = previewUrl.includes('r2.dev')
+              ? `${proxyEndpoint}?url=${encodeURIComponent(previewUrl)}`
+              : previewUrl;
+
+            console.log('[Edit] Fetching image for Gemini mask via proxy:', proxyUrl);
+            const response = await fetch(proxyUrl);
+            if (!response.ok) throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+            const blob = await response.blob();
+
+            if (blob.type.includes('text/html')) {
+              throw new Error('Fetched blob is text/html, likely an error page or index.html fallback');
+            }
+
+            srcUrl = URL.createObjectURL(blob);
+            objectUrlToRevoke = srcUrl;
+            isBlob = true;
+          }
+        } catch (e) {
+          console.error('[Edit] Error fetching image for Gemini mask generation:', e);
+        }
+
+        if (!isBlob) {
+          originalImg.crossOrigin = "anonymous";
+        }
+
+        originalImg.onload = () => {
+          const width = originalImg.naturalWidth;
+          const height = originalImg.naturalHeight;
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
+            reject(new Error('Could not get canvas context'));
+            return;
+          }
+
+          // Gemini: White = Edit, Black = Keep (opposite of Ideogram)
+          // 1. Fill Black (Keep area)
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(0, 0, width, height);
+
+          // 2. Load Mask Image
+          const maskImg = new Image();
+          maskImg.onload = () => {
+            // 3. Erase where mask is (turn to transparent)
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.drawImage(maskImg, 0, 0, width, height);
+
+            // 4. Fill White behind (turning transparent to White -> Edit area)
+            ctx.globalCompositeOperation = 'destination-over';
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, width, height);
+
+            if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
+            const dataUrl = canvas.toDataURL('image/png');
+            resolve(dataUrl);
+          };
+          maskImg.onerror = (e) => {
+            console.error('[Edit] Error loading Gemini mask image:', e);
+            if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
+            reject(e);
+          };
+          maskImg.src = maskData!;
+        };
+        originalImg.onerror = (e) => {
+          if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
+          reject(e);
+        };
+        originalImg.src = srcUrl;
+      })();
+    });
+  };
+
+  // Load image dimensions when resize mode opens or image changes
+  useEffect(() => {
+    if (isResizeMode && previewUrl) {
+      const img = new Image();
+      img.onload = () => {
+        setResizeImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+      };
+      img.src = previewUrl;
+    }
+  }, [isResizeMode, previewUrl]);
+
+  // Calculate base layout based on aspect ratios (before scale)
+  const resizeBaseLayoutInfo = useMemo(() => {
+    if (!resizeImageDimensions || !resizeAspectRatio) {
+      return null;
+    }
+    const originalRatio = resizeImageDimensions.width / resizeImageDimensions.height;
+    const targetRatio = parseAspectRatio(resizeAspectRatio);
+
+    // For same aspect ratio, image fills 100% of canvas
+    if (Math.abs(originalRatio - targetRatio) < 0.01) {
+      return {
+        type: 'same' as const,
+        originalRatio,
+        targetRatio,
+        baseWidthPercent: 100,
+        baseHeightPercent: 100,
+      };
+    }
+
+    if (targetRatio > originalRatio) {
+      const baseWidthPercent = (originalRatio / targetRatio) * 100;
+      return {
+        type: 'horizontal' as const,
+        originalRatio,
+        targetRatio,
+        baseWidthPercent,
+        baseHeightPercent: 100,
+      };
+    } else {
+      const baseHeightPercent = (targetRatio / originalRatio) * 100;
+      return {
+        type: 'vertical' as const,
+        originalRatio,
+        targetRatio,
+        baseWidthPercent: 100,
+        baseHeightPercent,
+      };
+    }
+  }, [resizeImageDimensions, resizeAspectRatio]);
+
+  // Calculate actual layout with scale applied
+  const resizeLayoutInfo = useMemo(() => {
+    if (!resizeBaseLayoutInfo) {
+      return null;
+    }
+    const scaleFactor = resizeImageScale / 100;
+    const imageWidthPercent = resizeBaseLayoutInfo.baseWidthPercent * scaleFactor;
+    const imageHeightPercent = resizeBaseLayoutInfo.baseHeightPercent * scaleFactor;
+
+    return {
+      ...resizeBaseLayoutInfo,
+      imageWidthPercent,
+      imageHeightPercent,
+      canMoveX: true,
+      canMoveY: true,
+    };
+  }, [resizeBaseLayoutInfo, resizeImageScale]);
+
+  const resizeMinScale = 20;
+
+  // Resize drag handlers
+  const handleResizeDragStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    if (!resizeLayoutInfo) return;
+    e.preventDefault();
+    setIsResizeDragging(true);
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    resizeDragStartRef.current = {
+      x: clientX,
+      y: clientY,
+      startPos: { ...resizeImagePosition },
+    };
+  }, [resizeLayoutInfo, resizeImagePosition]);
+
+  const handleResizeDragMove = useCallback((e: MouseEvent | TouchEvent) => {
+    if (!isResizeDragging || !resizeDragStartRef.current || !resizeCanvasRef.current || !resizeLayoutInfo) return;
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    const rect = resizeCanvasRef.current.getBoundingClientRect();
+    const startData = resizeDragStartRef.current;
+    const deltaX = ((clientX - startData.x) / rect.width) * 100;
+    const deltaY = ((clientY - startData.y) / rect.height) * 100;
+
+    let newX = startData.startPos.x;
+    let newY = startData.startPos.y;
+
+    if (resizeLayoutInfo.canMoveX) {
+      newX = Math.max(0, Math.min(100, startData.startPos.x + deltaX));
+    }
+    if (resizeLayoutInfo.canMoveY) {
+      newY = Math.max(0, Math.min(100, startData.startPos.y + deltaY));
+    }
+    setResizeImagePosition({ x: newX, y: newY });
+  }, [isResizeDragging, resizeLayoutInfo]);
+
+  const handleResizeDragEnd = useCallback(() => {
+    setIsResizeDragging(false);
+    resizeDragStartRef.current = null;
+  }, []);
+
+  // Handle scroll wheel / pinch zoom
+  const handleResizeWheel = useCallback((e: React.WheelEvent) => {
+    if (!resizeLayoutInfo) return;
+    e.preventDefault();
+    const delta = -e.deltaY * 0.1;
+    setResizeImageScale(prev => {
+      const newScale = Math.max(resizeMinScale, Math.min(200, prev + delta));
+      return Math.round(newScale);
+    });
+  }, [resizeLayoutInfo]);
+
+  // Global mouse/touch listeners for resize dragging
+  useEffect(() => {
+    if (isResizeDragging) {
+      window.addEventListener('mousemove', handleResizeDragMove);
+      window.addEventListener('mouseup', handleResizeDragEnd);
+      window.addEventListener('touchmove', handleResizeDragMove);
+      window.addEventListener('touchend', handleResizeDragEnd);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleResizeDragMove);
+      window.removeEventListener('mouseup', handleResizeDragEnd);
+      window.removeEventListener('touchmove', handleResizeDragMove);
+      window.removeEventListener('touchend', handleResizeDragEnd);
+    };
+  }, [isResizeDragging, handleResizeDragMove, handleResizeDragEnd]);
+
+  // Checkerboard pattern style for resize canvas
+  const checkerboardStyle = useMemo(() => ({
+    backgroundImage: `
+          linear-gradient(45deg, #3a3a3a 25%, transparent 25%),
+          linear-gradient(-45deg, #3a3a3a 25%, transparent 25%),
+          linear-gradient(45deg, transparent 75%, #3a3a3a 75%),
+          linear-gradient(-45deg, transparent 75%, #3a3a3a 75%)
+      `,
+    backgroundSize: '16px 16px',
+    backgroundPosition: '0 0, 0 8px, 8px -8px, -8px 0px',
+    backgroundColor: '#2a2a2a',
+  }), []);
+
   // Prompt bar handlers
   const handleGenerateImage = async () => {
     const trimmedPrompt = prompt.trim();
@@ -547,6 +873,52 @@ export default function Edit() {
         }
       }
 
+      // Handle resize mode submission
+      if (isResizeMode && resizeAspectRatio) {
+        // Resize generates 1 image
+        // For resize, we use Gemini (or user selected model if supported, but typically resize is a specific feature)
+        // QuickEditModal suggests resize is Gemini 3.0 Pro Image feature primarily or similar
+        // We'll pass resizeParams to the hook
+
+        // Note: The hooks currently used (useGeminiImageGeneration) need to support resizeParams
+        // Let's check how QuickEditModal submits. It calls onSubmit prop.
+        // Here we call generateGeminiImage directly.
+
+        await generateGeminiImage({
+          prompt: resizeUserPrompt.trim() || `Resize to ${resizeAspectRatio}`,
+          // No imageData needed for resize setup usually if it's handled via params, 
+          // BUT wait - generateGeminiImage signature might need update or we pass specific params.
+          // Getting payload structure from QuickEditModal:
+          /*
+             onSubmit({
+                prompt: resizeUserPrompt.trim() || `Resize to ${resizeAspectRatio}`,
+                batchSize: 1,
+                resizeParams: {
+                    aspectRatio: resizeAspectRatio,
+                    position: resizeImagePosition,
+                    scale: resizeImageScale,
+                    userPrompt: resizeUserPrompt.trim(),
+                },
+            });
+           */
+
+          // We need to pass the original image as reference or main image?
+          // For resize/outpainting, usually the original image is passed as input.
+          imageData: imageData, // The original image
+          imageUrl: !imageData && previewUrl ? previewUrl : undefined,
+          model: selectedModel, // Should be gemini-3.0-pro-image for resize usually
+          resizeParams: {
+            aspectRatio: resizeAspectRatio,
+            position: resizeImagePosition,
+            scale: resizeImageScale,
+            userPrompt: resizeUserPrompt.trim(),
+          },
+          jobType: 'IMAGE_RESIZE', // Add job type for clarity if backend supports it
+        });
+        setIsButtonSpinning(false);
+        return;
+      }
+
       // Convert reference files to base64
       const additionalReferences = await Promise.all(referenceFiles.map(f =>
         new Promise<string>((resolve) => {
@@ -561,6 +933,12 @@ export default function Edit() {
 
       // Generate image based on selected model
       if (isGemini) {
+        let finalGeminiMask: string | undefined;
+        // If we have mask data (from inpainting), generate the specific Gemini mask
+        if (maskData) {
+          finalGeminiMask = await generateGeminiMask();
+        }
+
         const generated = await generateGeminiImage({
           prompt: trimmedPrompt,
           imageData: imageData,
@@ -572,6 +950,7 @@ export default function Edit() {
           outputLength: topK,
           aspectRatio: geminiAspectRatio,
           jobType: 'IMAGE_EDIT',
+          maskImage: finalGeminiMask, // Pass the generated mask
         });
 
         // Add to gallery if successful
@@ -641,6 +1020,158 @@ export default function Edit() {
       setIsButtonSpinning(false);
     }
   };
+
+  // Drag handlers for Avatar button (matching QuickEditModal)
+  const handleAvatarButtonDragEnter = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    avatarDragDepthRef.current += 1;
+    if (avatarDragDepthRef.current === 1) {
+      // Explicitly clear Product button drag state to prevent stuck state
+      if (productDragDepthRef.current > 0 || isDraggingOverProductButton) {
+        productDragDepthRef.current = 0;
+        setIsDraggingOverProductButton(false);
+        setProductDragPreviewUrl(null);
+      }
+
+      setIsDraggingOverAvatarButton(true);
+      setFloatingDragImageVisible(false);
+      const dragUrl = getDraggingImageUrl();
+      if (dragUrl) {
+        setAvatarDragPreviewUrl(dragUrl);
+      }
+    }
+  }, [isDraggingOverProductButton]);
+
+  const handleAvatarButtonDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    avatarHandlers.handleAvatarDragOver(event);
+  }, [avatarHandlers]);
+
+  const handleAvatarButtonDragLeave = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    avatarDragDepthRef.current = Math.max(0, avatarDragDepthRef.current - 1);
+    if (avatarDragDepthRef.current === 0) {
+      setIsDraggingOverAvatarButton(false);
+      setAvatarDragPreviewUrl(null);
+      setFloatingDragImageVisible(true);
+      avatarHandlers.handleAvatarDragLeave(event);
+    }
+  }, [avatarHandlers]);
+
+  const handleAvatarButtonDrop = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    avatarDragDepthRef.current = 0;
+    setIsDraggingOverAvatarButton(false);
+    setAvatarDragPreviewUrl(null);
+    setFloatingDragImageVisible(true);
+    setIsAvatarPickerOpen(false);
+    setIsProductPickerOpen(false);
+    avatarHandlers.handleAvatarDrop(event);
+  }, [avatarHandlers, setIsAvatarPickerOpen, setIsProductPickerOpen]);
+
+  // Drag handlers for Product button (matching QuickEditModal)
+  const handleProductButtonDragEnter = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    productDragDepthRef.current += 1;
+    if (productDragDepthRef.current === 1) {
+      // Explicitly clear Avatar button drag state to prevent stuck state
+      if (avatarDragDepthRef.current > 0 || isDraggingOverAvatarButton) {
+        avatarDragDepthRef.current = 0;
+        setIsDraggingOverAvatarButton(false);
+        setAvatarDragPreviewUrl(null);
+      }
+
+      setIsDraggingOverProductButton(true);
+      setFloatingDragImageVisible(false);
+      const dragUrl = getDraggingImageUrl();
+      if (dragUrl) {
+        setProductDragPreviewUrl(dragUrl);
+      }
+    }
+  }, [isDraggingOverAvatarButton]);
+
+  const handleProductButtonDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    productHandlers.handleProductDragOver(event);
+  }, [productHandlers]);
+
+  const handleProductButtonDragLeave = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    productDragDepthRef.current = Math.max(0, productDragDepthRef.current - 1);
+    if (productDragDepthRef.current === 0) {
+      setIsDraggingOverProductButton(false);
+      setProductDragPreviewUrl(null);
+      setFloatingDragImageVisible(true);
+      productHandlers.handleProductDragLeave(event);
+    }
+  }, [productHandlers]);
+
+  const handleProductButtonDrop = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    productDragDepthRef.current = 0;
+    setIsDraggingOverProductButton(false);
+    setProductDragPreviewUrl(null);
+    setFloatingDragImageVisible(true);
+    setIsProductPickerOpen(false);
+    setIsAvatarPickerOpen(false);
+    productHandlers.handleProductDrop(event);
+  }, [productHandlers, setIsProductPickerOpen, setIsAvatarPickerOpen]);
+
+  // Tooltip helper functions (matching QuickEditModal)
+  const showHoverTooltip = useCallback((
+    target: HTMLElement,
+    tooltipId: string,
+    options?: { placement?: 'above' | 'below'; offset?: number },
+  ) => {
+    const rect = target.getBoundingClientRect();
+    const placement = options?.placement || 'below';
+    const offset = options?.offset || 8;
+    const x = rect.left + rect.width / 2;
+    const y = placement === 'above' ? rect.top - offset : rect.bottom + offset;
+    setActiveTooltip({ id: tooltipId, text: '', x, y });
+
+    // Find the tooltip element and position it
+    requestAnimationFrame(() => {
+      const tooltipEl = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement;
+      if (tooltipEl) {
+        tooltipEl.style.left = `${x}px`;
+        tooltipEl.style.top = `${y}px`;
+        tooltipEl.style.transform = 'translateX(-50%)';
+        tooltipEl.style.opacity = '1';
+      }
+    });
+  }, []);
+
+  const hideHoverTooltip = useCallback((tooltipId: string) => {
+    const tooltipEl = document.querySelector(`[data-tooltip-for="${tooltipId}"]`) as HTMLElement;
+    if (tooltipEl) {
+      tooltipEl.style.opacity = '0';
+    }
+    setActiveTooltip(null);
+  }, []);
+
+  // Copy prompt handler (matching QuickEditModal)
+  const handleCopyPromptWithFeedback = useCallback(async (text: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedState(prev => ({ ...prev, [text]: true }));
+      setTimeout(() => {
+        setCopiedState(prev => ({ ...prev, [text]: false }));
+      }, 2000);
+      showToast('Prompt copied!');
+    } catch {
+      showToast('Failed to copy prompt');
+    }
+  }, [showToast]);
 
   const handleRefsClick = () => {
     if (referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT) return; // Don't allow more than 2 extra references
@@ -755,9 +1286,6 @@ export default function Edit() {
   };
 
 
-  const togglePreciseEditMode = () => {
-    setIsPreciseEditMode(!isPreciseEditMode);
-  };
 
   // Mask drawing functions
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
@@ -1276,6 +1804,7 @@ export default function Edit() {
     </div>
   );
 
+
   const handleCopyPrompt = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (imageToEditData?.prompt) {
@@ -1288,6 +1817,173 @@ export default function Edit() {
       }
     }
   };
+
+  // Helper to render the toolbar (Inpaint, Resize, etc.) - Matched with QuickEditModal
+  const renderToolbar = () => (
+    <div className="w-full flex justify-start gap-1 transition-all duration-200 animate-in fade-in slide-in-from-top-2">
+      <div className="relative flex items-center group/tooltip">
+        <button
+          onClick={() => {
+            if (isPreciseEditMode) setIsEraseMode(false);
+            const newMode = !isPreciseEditMode;
+            setIsPreciseEditMode(newMode);
+            // Mutual exclusivity - disable resize mode when enabling inpaint
+            if (newMode) setIsResizeMode(false);
+          }}
+          className={`flex items-center gap-1.5 px-3 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)] font-raleway font-normal text-sm ${isPreciseEditMode ? 'text-theme-text border-theme-text' : 'text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text hover:bg-theme-text/10'}`}
+        >
+          <Wand2 className="w-4 h-4" />
+          Inpaint
+        </button>
+        <Tooltip text="Draw a mask">
+          <span className="sr-only">Inpaint</span>
+        </Tooltip>
+      </div>
+
+      {/* Resize Button */}
+      <div className="relative flex items-center group/tooltip">
+        <button
+          onClick={() => {
+            const newMode = !isResizeMode;
+            setIsResizeMode(newMode);
+            // Mutual exclusivity - disable inpaint mode when enabling resize
+            if (newMode) {
+              setIsPreciseEditMode(false);
+              setIsEraseMode(false);
+
+              // Auto-detect and set aspect ratio
+              if (previewUrl) {
+                const img = new Image();
+                img.onload = () => {
+                  const ratio = img.naturalWidth / img.naturalHeight;
+                  // Find closest aspect ratio option
+                  let closest = GEMINI_ASPECT_RATIO_OPTIONS[0];
+                  let minDiff = Infinity;
+
+                  GEMINI_ASPECT_RATIO_OPTIONS.forEach((option) => {
+                    const optRatio = parseAspectRatio(option.value);
+                    const diff = Math.abs(ratio - optRatio);
+                    if (diff < minDiff) {
+                      minDiff = diff;
+                      closest = option;
+                    }
+                  });
+
+                  // If close enough, use it
+                  if (minDiff < 0.1) {
+                    setResizeAspectRatio(closest.value);
+                  } else {
+                    setResizeAspectRatio(closest.value);
+                  }
+
+                  // Reset other params
+                  setResizeImagePosition({ x: 50, y: 50 });
+                  setResizeImageScale(100);
+                  setResizeUserPrompt('');
+                };
+                img.src = previewUrl;
+              }
+            } else {
+              // Reset resize state when toggling off
+              setResizeAspectRatio(null);
+              setResizeImagePosition({ x: 50, y: 50 });
+              setResizeImageScale(100);
+              setResizeUserPrompt('');
+            }
+          }}
+          className={`flex items-center gap-1.5 px-3 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)] font-raleway font-normal text-sm ${isResizeMode ? 'text-theme-text border-theme-text' : 'text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text hover:bg-theme-text/10'}`}
+        >
+          <Scaling className="w-4 h-4" />
+          Resize
+        </button>
+        <Tooltip text="Change aspect ratio">
+          <span className="sr-only">Resize</span>
+        </Tooltip>
+      </div>
+
+      {isPreciseEditMode && (
+        <>
+          {/* Brush size control */}
+          <div className={`flex items-center gap-1.5 px-2 h-8 rounded-lg border border-theme-dark prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-[color:var(--glass-prompt-text)]`}>
+            <span className="text-theme-white text-sm font-raleway font-normal">Size:</span>
+            <input
+              type="range"
+              min="2"
+              max="200"
+              value={brushSize}
+              onChange={(e) => setBrushSize(Number(e.target.value))}
+              className="w-12 h-1 bg-theme-white rounded-lg appearance-none cursor-pointer"
+              style={{
+                background: `linear-gradient(to right, rgba(184, 192, 192, 1) 0%, rgba(184, 192, 192, 1) ${(brushSize - 2) / 198 * 100}%, rgba(184, 192, 192, 0.3) ${(brushSize - 2) / 198 * 100}%, rgba(184, 192, 192, 0.3) 100%)`,
+                WebkitAppearance: 'none',
+                appearance: 'none',
+                height: '4px',
+                outline: 'none',
+                borderRadius: '5px'
+              }}
+              title="Adjust brush size"
+            />
+            <div className="flex items-center gap-0.5">
+              <input
+                type="number"
+                min="2"
+                max="200"
+                value={brushSize || ''}
+                onChange={(e) => {
+                  const val = e.target.value === '' ? 0 : parseInt(e.target.value);
+                  if (!isNaN(val)) setBrushSize(Math.min(val, 200));
+                }}
+                onBlur={() => {
+                  setBrushSize(Math.max(2, brushSize));
+                }}
+                className="w-6 bg-transparent text-theme-white text-sm font-raleway font-normal text-center focus:outline-none appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+              <span className="text-theme-white text-sm font-raleway font-normal">px</span>
+            </div>
+          </div>
+
+          <button
+            onClick={undoStroke}
+            className="flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-theme-white border-theme-dark hover:text-theme-text disabled:opacity-50 disabled:cursor-not-allowed group/tooltip relative"
+            disabled={allPaths.length === 0}
+          >
+            <Undo2 className="w-4 h-4" />
+            <Tooltip text="Undo last stroke"><span className="sr-only">Undo</span></Tooltip>
+          </button>
+          <button
+            onClick={redoStroke}
+            disabled={redoStack.length === 0}
+            className="flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-theme-white border-theme-dark hover:text-theme-text disabled:opacity-50 disabled:cursor-not-allowed group/tooltip relative"
+          >
+            <Redo2 className="w-4 h-4" />
+            <Tooltip text="Redo last stroke"><span className="sr-only">Redo</span></Tooltip>
+          </button>
+          <div className="relative group/tooltip">
+            <button
+              onClick={() => setIsEraseMode(!isEraseMode)}
+              className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] ${isEraseMode ? 'text-theme-text border-theme-text bg-theme-text/10' : 'text-theme-white border-theme-dark hover:text-theme-text'}`}
+            >
+              <Eraser className="w-3.5 h-3.5" />
+            </button>
+            <Tooltip text={isEraseMode ? "Switch to draw mode" : "Switch to erase mode"}><span className="sr-only">Erase</span></Tooltip>
+          </div>
+          {/* Reset mask button - only show when mask exists */}
+          {maskData && (
+            <div className="relative group/tooltip">
+              <button
+                onClick={clearMask}
+                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 prompt-surface glass-liquid willchange-backdrop isolate backdrop-blur-[16px] border border-[color:var(--glass-prompt-border)] bg-[color:var(--glass-prompt-bg)] text-theme-white border-theme-dark hover:text-theme-text`}
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+              <Tooltip text="Reset mask"><span className="sr-only">Reset</span></Tooltip>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+
 
   return (
     <CreateBridgeProvider value={bridgeRef}>
@@ -1349,363 +2045,358 @@ export default function Edit() {
               </div>
             )}
 
-            {/* Uploaded Image Preview */}
+            {/* Uploaded Image Preview & Editor */}
             {previewUrl && (
-              <div className="w-full max-w-4xl mx-auto -mt-32 relative">
-                <div className="relative transition-colors duration-200">
-                  <div
-                    className="w-full h-[calc(100vh-240px)] relative group"
-                    style={{
-                      transform: `scale(${imageSize / 100}) translate(${imagePosition.x}px, ${imagePosition.y}px)`,
-                      transformOrigin: 'center center'
-                    }}
-                    onMouseMove={handleBrushMouseMove}
-                    onMouseLeave={handleBrushMouseLeave}
-                  >
-                    <img
-                      src={previewUrl}
-                      alt="Uploaded file preview"
-                      className="w-full h-full object-contain select-none pointer-events-none rounded-lg"
-                      draggable={false}
-                    />
+              <div className={`w-full ${isResizeMode ? 'max-w-6xl h-[80vh] flex flex-col' : 'max-w-2xl text-center'} mx-auto relative transition-all duration-300`}>
 
-                    {/* Metadata Overlay - similar to FullImageModal */}
-                    {imageToEditData && !isMoveMode && !isPreciseEditMode && (
-                      <div
-                        className={`absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 opacity-0 group-hover:opacity-100 pointer-events-none`}
-                      >
-                        <div className="flex items-center justify-center pointer-events-auto">
-                          <div className="text-center bg-theme-black/60 backdrop-blur-md rounded-2xl p-4 border border-theme-white/10">
-                            <div className="text-sm font-raleway leading-relaxed relative text-theme-white">
-                              {imageToEditData.prompt || 'Generated Image'}
-                              {imageToEditData.prompt && (
-                                <button
-                                  onClick={handleCopyPrompt}
-                                  className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle"
-                                  title="Copy prompt"
-                                >
-                                  <Copy className="w-3 h-3" />
-                                </button>
-                              )}
-                            </div>
-                            <div className="mt-2 flex justify-center items-center">
-                              <ImageBadgeRow
-                                align="center"
-                                model={{
-                                  name: imageToEditData.model || 'unknown',
-                                  size: 'md',
-                                  onClick: () => imageToEditData.model && goToModelGallery(imageToEditData.model, 'image')
+                {/* RESIZE MODE: Split Layout */}
+                {isResizeMode ? (
+                  <div className="flex flex-col h-full overflow-hidden">
+                    {/* Top Section: Canvas + Aspect Ratios */}
+                    <div className="flex flex-row flex-1 overflow-hidden min-h-0 gap-4">
+                      {/* Left: Canvas */}
+                      <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden bg-theme-black/20 rounded-xl border border-theme-dark/50">
+                        {resizeAspectRatio && resizeLayoutInfo ? (
+                          <div className="flex flex-col items-center justify-center gap-2 w-full h-full p-2 overflow-y-auto">
+                            <div
+                              ref={resizeCanvasRef}
+                              className="relative shadow-2xl border-2 border-theme-text overflow-hidden rounded-xl flex-shrink-0 bg-theme-black/50"
+                              style={(() => {
+                                const targetRatio = parseAspectRatio(resizeAspectRatio);
+                                const isWide = targetRatio > 1;
+                                let maxWidth: number, maxHeight: number;
+                                // Constrain size to fit view nicely
+                                if (isWide) {
+                                  const maxBoxWidth = 500;
+                                  const maxBoxHeight = 320;
+                                  if (targetRatio > maxBoxWidth / maxBoxHeight) {
+                                    maxWidth = maxBoxWidth;
+                                    maxHeight = maxBoxWidth / targetRatio;
+                                  } else {
+                                    maxHeight = maxBoxHeight;
+                                    maxWidth = maxBoxHeight * targetRatio;
+                                  }
+                                } else {
+                                  maxWidth = 280 * targetRatio;
+                                  maxHeight = 280;
+                                }
+                                return {
+                                  aspectRatio: resizeAspectRatio.replace(':', '/'),
+                                  width: `${maxWidth}px`,
+                                  maxWidth: '100%',
+                                  maxHeight: `${maxHeight}px`,
+                                  ...checkerboardStyle
+                                };
+                              })()}
+                              onWheel={handleResizeWheel}
+                            >
+                              <div
+                                style={{
+                                  position: 'absolute',
+                                  width: `${resizeLayoutInfo.imageWidthPercent}%`,
+                                  height: `${resizeLayoutInfo.imageHeightPercent}%`,
+                                  left: `${resizeImagePosition.x - resizeLayoutInfo.imageWidthPercent / 2}%`,
+                                  top: `${resizeImagePosition.y - resizeLayoutInfo.imageHeightPercent / 2}%`,
+                                  cursor: isResizeDragging ? 'grabbing' : 'grab',
+                                  userSelect: 'none',
+                                  transition: isResizeDragging ? 'none' : 'all 0.2s ease',
                                 }}
-                                isPublic={!!imageToEditData.isPublic}
-                                onPublicClick={goToPublicGallery}
-                                aspectRatio={imageToEditData.aspectRatio}
-                                compact={false}
+                                onMouseDown={handleResizeDragStart}
+                                onTouchStart={handleResizeDragStart}
+                                className="rounded-lg overflow-hidden shadow-lg ring-2 ring-theme-text/50"
+                              >
+                                <img
+                                  src={previewUrl}
+                                  alt="Resize preview"
+                                  className="w-full h-full object-cover pointer-events-none"
+                                  draggable={false}
+                                />
+                                <div className="absolute top-2 left-2 bg-theme-black/80 backdrop-blur-sm px-2 py-1 rounded-md border border-theme-dark text-xs font-raleway text-theme-white flex items-center gap-1">
+                                  <Move className="w-3 h-3" />
+                                  Drag to position
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Scale Slider */}
+                            <div className="w-full max-w-[500px] flex items-center gap-3 px-2 flex-shrink-0 mt-2">
+                              <ZoomOut className="w-4 h-4 text-theme-white flex-shrink-0" />
+                              <input
+                                type="range"
+                                min={resizeMinScale}
+                                max={200}
+                                value={resizeImageScale}
+                                onChange={(e) => setResizeImageScale(Number(e.target.value))}
+                                className="flex-1 h-2 bg-theme-dark rounded-lg appearance-none cursor-pointer accent-theme-text"
                               />
+                              <ZoomIn className="w-4 h-4 text-theme-white flex-shrink-0" />
+                              <span className="text-xs font-raleway text-theme-white w-12 text-right">{resizeImageScale}%</span>
+                              <div className="relative group/tooltip">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setResizeImageScale(100);
+                                    setResizeImagePosition({ x: 50, y: 50 });
+                                  }}
+                                  className="flex items-center justify-center text-theme-white/70 hover:text-theme-white transition-colors"
+                                >
+                                  <RotateCcw className="w-3 h-3" />
+                                </button>
+                                <Tooltip text="Reset zoom"><span className="sr-only">Reset</span></Tooltip>
+                              </div>
                             </div>
                           </div>
+                        ) : (
+                          <div className="flex items-center justify-center w-full h-full p-8 text-theme-white/50">
+                            Select an aspect ratio to start resizing
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Right: Aspect Ratios */}
+                      <div className="w-[180px] lg:w-[220px] flex-shrink-0 flex flex-col gap-2 overflow-y-auto pr-1 custom-scrollbar">
+                        <div className="flex items-center justify-between sticky top-0 bg-theme-bg z-10 pb-2">
+                          <label className="text-xs font-raleway font-medium text-theme-text uppercase tracking-wider">Aspect Ratio</label>
+                        </div>
+                        <div className="grid grid-cols-1 gap-2">
+                          {GEMINI_ASPECT_RATIO_OPTIONS.map(option => {
+                            const isSelected = resizeAspectRatio === option.value;
+                            return (
+                              <button
+                                key={option.value}
+                                type="button"
+                                onClick={() => {
+                                  setResizeAspectRatio(option.value);
+                                  setResizeImagePosition({ x: 50, y: 50 });
+                                  setResizeImageScale(100);
+                                }}
+                                className={`relative flex items-center gap-3 px-3 py-1.5 rounded-lg border transition-all duration-200 text-left group ${isSelected
+                                  ? 'border-theme-text bg-theme-mid/10'
+                                  : 'border-theme-dark hover:border-theme-mid bg-theme-black/30 hover:bg-theme-black/50'
+                                  }`}
+                              >
+                                <div className={`w-7 h-7 rounded flex items-center justify-center border ${isSelected ? 'border-theme-text bg-theme-text/10' : 'border-theme-mid/30 bg-theme-dark/50'} overflow-hidden transition-colors flex-shrink-0`}>
+                                  <div
+                                    className={`${isSelected ? 'bg-theme-text' : 'bg-theme-white/60 group-hover:bg-theme-white/80'} flex-shrink-0 transition-colors`}
+                                    style={{
+                                      aspectRatio: option.value.replace(':', '/'),
+                                      ...(parseFloat(option.value.split(':')[0]) >= parseFloat(option.value.split(':')[1])
+                                        ? { height: '14px', width: 'auto' }
+                                        : { width: '14px', height: 'auto' }
+                                      )
+                                    }}
+                                  />
+                                </div>
+                                <span className={`text-xs font-raleway ${isSelected ? 'text-theme-text font-medium' : 'text-theme-white'}`}>
+                                  {option.label}
+                                </span>
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
-                    )}
+                    </div>
 
-                    {/* Draggable overlay - only visible in move mode */}
-                    {isMoveMode && (
-                      <div
-                        className="absolute inset-0 w-full h-full z-10"
-                        style={{
-                          cursor: isImageDragging ? 'grabbing' : 'grab'
-                        }}
-                        onWheel={(e) => {
-                          // Only resize with Ctrl+scroll (two-finger pinch gesture)
-                          if (e.ctrlKey) {
-                            e.preventDefault();
-                            if (e.deltaY < 0) {
-                              increaseImageSize();
-                            } else {
-                              decreaseImageSize();
-                            }
-                          }
-                        }}
-                        onMouseDown={handleMouseDown}
-                        onTouchStart={handleTouchStart}
-                        onTouchMove={handleTouchMove}
-                        onTouchEnd={handleTouchEnd}
-                      />
-                    )}
+                    {/* Bottom Section: Prompt Bar for Resize */}
+                    <div className="flex-shrink-0 mt-4">
+                      {/* Toolbar */}
+                      <div className="w-full flex justify-start mb-2">
+                        {renderToolbar()}
+                      </div>
 
-                    {/* Mask drawing canvas - visible when precise edit mode is active */}
-                    {isPreciseEditMode && (
-                      <canvas
-                        ref={canvasRef}
-                        className={`absolute inset-0 w-full h-full z-20 ${isMoveMode ? 'pointer-events-none' : 'cursor-crosshair'
-                          }`}
-                        onMouseDown={isMoveMode ? undefined : startDrawing}
-                        onMouseMove={isMoveMode ? undefined : (e) => {
-                          if (!isDrawing) {
-                            // Update brush preview position even when not drawing
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            const x = e.clientX - rect.left;
-                            const y = e.clientY - rect.top;
-                            setMousePosition({ x, y });
-                            setShowBrushPreview(true);
-                          } else {
-                            draw(e);
-                          }
-                        }}
-                        onMouseUp={isMoveMode ? undefined : stopDrawing}
-                        onMouseLeave={isMoveMode ? undefined : () => {
-                          setShowBrushPreview(false);
-                          stopDrawing();
-                        }}
-                        onTouchStart={isMoveMode ? undefined : startDrawing}
-                        onTouchMove={isMoveMode ? undefined : draw}
-                        onTouchEnd={isMoveMode ? undefined : stopDrawing}
-                      />
-                    )}
-
-                    {/* Brush preview circle - only visible in precise edit mode and not in move mode */}
-                    {isPreciseEditMode && !isMoveMode && showBrushPreview && (
-                      <div
-                        className="absolute pointer-events-none z-30 border-2 border-theme-text rounded-full"
-                        style={{
-                          left: mousePosition.x - brushSize / 2,
-                          top: mousePosition.y - brushSize / 2,
-                          width: brushSize,
-                          height: brushSize,
-                          borderColor: 'rgba(var(--theme-text-rgb), 1)',
-                          opacity: 0.8
-                        }}
-                      />
-                    )}
-
-                    {/* Double-click handler for full-size view */}
-                    <div
-                      className="absolute inset-0 w-full h-full"
-                      onDoubleClick={() => {
-                        setSelectedFullImage(previewUrl);
-                        setIsFullSizeOpen(true);
-                      }}
-                      style={{ pointerEvents: isMoveMode ? 'none' : 'auto' }}
-                    />
-                    <button
-                      onClick={handleDeleteImage}
-                      className="absolute top-2 right-2 bg-[color:var(--glass-dark-bg)] text-theme-white hover:text-theme-text transition-colors duration-200 rounded-full p-1.5 pointer-events-auto z-20"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+                      {/* Resize Prompt Input */}
+                      <div className={`flex gap-3 items-stretch pb-2 pr-3 rounded-xl transition-all duration-200 ${glass.prompt} border border-transparent focus-within:border-theme-text/50`}>
+                        <div className="flex-1 flex flex-col relative">
+                          <textarea
+                            value={resizeUserPrompt}
+                            onChange={(e) => setResizeUserPrompt(e.target.value)}
+                            className="flex-1 bg-transparent border-none focus:ring-0 text-theme-text placeholder:text-n-light font-raleway text-base resize-none focus:outline-none leading-tight px-3 pt-3 pb-2 min-h-[50px]"
+                            placeholder="Describe how to modify the image (optional)"
+                          />
+                          {/* Model Selector Locked for Resize */}
+                          <div className="flex items-center gap-1 px-3">
+                            <Suspense fallback={null}>
+                              <ModelSelector
+                                selectedModel="gemini-3.0-pro-image"
+                                onModelChange={() => { }}
+                                readOnly={true}
+                                activeCategory="image"
+                                allowedModels={['gemini-3.0-pro-image']}
+                                customDescriptions={{
+                                  'gemini-3.0-pro-image': 'Resize always uses Gemini 3 Pro for AI outpainting.',
+                                }}
+                              />
+                            </Suspense>
+                          </div>
+                        </div>
+                        {/* Generate Button */}
+                        <div className="flex flex-col justify-end pb-2">
+                          <button
+                            onClick={handleGenerateImage}
+                            disabled={isButtonSpinning}
+                            className={`${buttons.primary} flex items-center gap-2`}
+                          >
+                            {isButtonSpinning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                            Generate
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
+                ) : (
+                  /* NORMAL MODE: Center Image, Prompt below */
+                  <div className="flex flex-col items-center">
+                    {/* Toolbar fixed in top left corner of page */}
+                    <div className="fixed top-20 left-4 z-30">
+                      {renderToolbar()}
+                    </div>
+                    <div
+                      className="relative group max-w-[500px] max-h-[calc(100vh-350px)] rounded-xl overflow-visible shadow-2xl"
+                      onMouseEnter={() => setShowBrushPreview(true)}
+                      onMouseLeave={() => setShowBrushPreview(false)}
+                      style={{
+                        cursor: isPreciseEditMode ? 'none' : isMoveMode ? (isImageDragging ? 'grabbing' : 'grab') : 'default',
+                        transform: `translate(${imagePosition.x}px, ${imagePosition.y}px) scale(${imageSize / 100})`,
+                        transition: isImageDragging ? 'none' : 'transform 0.1s ease-out',
+                        touchAction: 'none'
+                      }}
+                      onMouseDown={handleMouseDown}
+                      onMouseMove={handleBrushMouseMove}
+                      onTouchStart={handleTouchStart}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={handleTouchEnd}
+                    >
+                      {!previewUrl ? (
+                        <div className="w-[512px] h-[512px] bg-theme-dark/50 flex items-center justify-center text-theme-white/50">
+                          <Loader2 className="w-8 h-8 animate-spin" />
+                        </div>
+                      ) : (
+                        <>
+                          <img
+                            src={previewUrl}
+                            alt="Edit preview"
+                            className="w-auto h-auto max-w-full max-h-[calc(100vh-400px)] object-contain pointer-events-none select-none"
+                            style={{ display: 'block' }}
+                            draggable={false}
+                          />
 
-                </div>
-              </div>
-            )}
+                          {/* Drawing Canvas Overlay */}
+                          {isPreciseEditMode && (
+                            <>
+                              <canvas
+                                ref={canvasRef}
+                                className="absolute inset-0 w-full h-full cursor-crosshair touch-none"
+                                style={{ zIndex: 10, opacity: 1 }}
+                                onMouseDown={startDrawing}
+                                onMouseMove={draw}
+                                onMouseUp={stopDrawing}
+                                onMouseLeave={stopDrawing}
+                                onTouchStart={startDrawing}
+                                onTouchMove={draw}
+                                onTouchEnd={stopDrawing}
+                              />
+                              {/* Custom Brush Cursor */}
+                              {showBrushPreview && (
+                                <div
+                                  className="fixed pointer-events-none border border-white rounded-full z-50 transform -translate-x-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-[1px]"
+                                  style={{
+                                    left: mousePosition.x,
+                                    top: mousePosition.y,
+                                    width: brushSize,
+                                    height: brushSize,
+                                    borderWidth: '1.5px',
+                                    boxShadow: '0 0 4px rgba(0,0,0,0.5), inset 0 0 4px rgba(0,0,0,0.5)'
+                                  }}
+                                />
+                              )}
+                            </>
+                          )}
+                        </>
+                      )}
 
-            {/* Image Size Controls - absolutely positioned to overlay over image */}
-            {previewUrl && isMoveMode && (
-              <div className="absolute z-50 flex justify-center gap-2" style={{
-                left: '50%',
-                transform: 'translateX(-50%)',
-                width: 'auto',
-                bottom: '12rem'
-              }}>
-                <div className={`flex justify-between items-center rounded-lg px-8 py-2 ${glass.promptDark}`} style={{ minWidth: '320px' }}>
-                  <button
-                    onClick={decreaseImageSize}
-                    disabled={imageSize <= 1}
-                    className={`p-1.5 rounded-md border transition-colors duration-200 ${glass.prompt} text-theme-white hover:text-theme-text disabled:opacity-50 disabled:cursor-not-allowed border-theme-dark hover:border-theme-text`}
-                    title="Decrease size"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </button>
+                      {/* Brush preview circle */}
+                      {isPreciseEditMode && !isMoveMode && showBrushPreview && (
+                        <div
+                          className="absolute pointer-events-none z-30 border-2 border-theme-text rounded-full"
+                          style={{
+                            left: mousePosition.x - brushSize / 2,
+                            top: mousePosition.y - brushSize / 2,
+                            width: brushSize,
+                            height: brushSize,
+                            borderColor: 'rgba(var(--theme-text-rgb), 1)',
+                            opacity: 0.8
+                          }}
+                        />
+                      )}
 
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-theme-white text-sm font-raleway min-w-[3rem] text-center">
-                        {imageSize}%
-                      </span>
+                      {/* Double-click handler */}
+                      <div
+                        className="absolute inset-0 w-full h-full"
+                        onDoubleClick={() => {
+                          setSelectedFullImage(previewUrl);
+                          setIsFullSizeOpen(true);
+                        }}
+                        style={{ pointerEvents: isMoveMode ? 'none' : 'auto' }}
+                      />
                       <button
-                        onClick={resetImageToDefault}
-                        className="p-1 text-theme-white hover:text-theme-text transition-colors duration-200"
-                        title="Reset to default position and size"
+                        onClick={handleDeleteImage}
+                        className="absolute top-2 right-2 bg-[color:var(--glass-dark-bg)] text-theme-white hover:text-theme-text transition-colors duration-200 rounded-full p-1.5 pointer-events-auto z-20"
                       >
-                        <RotateCcw className="w-3 h-3" />
+                        <X className="w-4 h-4" />
                       </button>
                     </div>
-                    <input
-                      type="range"
-                      min="10"
-                      max="500"
-                      step="10"
-                      value={imageSize}
-                      onChange={(e) => setImageSize(Number(e.target.value))}
-                      className="w-40 h-1 bg-theme-white rounded-lg appearance-none cursor-pointer"
-                      style={{
-                        background: `linear-gradient(to right, rgba(184, 192, 192, 1) 0%, rgba(184, 192, 192, 1) ${(imageSize - 10) / 19.9 * 100}%, rgba(184, 192, 192, 0.3) ${(imageSize - 10) / 19.9 * 100}%, rgba(184, 192, 192, 0.3) 100%)`,
-                        WebkitAppearance: 'none',
-                        appearance: 'none',
-                        height: '4px',
-                        outline: 'none',
-                        borderRadius: '5px'
-                      }}
-                      title="Adjust image size"
-                    />
+
+                    {/* Toolbar moved to fixed top-left corner of page - rendered above */}
                   </div>
+                )}
 
-                  <button
-                    onClick={increaseImageSize}
-                    disabled={imageSize >= 500}
-                    className={`p-1.5 rounded-md border transition-colors duration-200 ${glass.prompt} text-theme-white hover:text-theme-text disabled:opacity-50 disabled:cursor-not-allowed border-theme-dark hover:border-theme-text`}
-                    title="Increase size"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Mode Toggle Buttons - fixed positioned above prompt bar */}
-            {previewUrl && (
-              <div className="layout-inline-width fixed bottom-36 left-1/2 -translate-x-1/2 z-50 flex justify-center gap-2 px-4">
-                <button
-                  onClick={toggleMoveMode}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} font-raleway text-sm ${isMoveMode
-                    ? 'text-theme-text border-theme-text'
-                    : 'text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text'
-                    }`}
-                  title="Toggle move mode"
-                >
-                  <Move className="w-4 h-4" />
-                </button>
-
-                <button
-                  onClick={togglePreciseEditMode}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} font-raleway text-sm ${isPreciseEditMode
-                    ? 'text-theme-text border-theme-text'
-                    : 'text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text'
-                    }`}
-                  title="Draw a mask"
-                >
-                  <Wand2 className="w-4 h-4" />
-                  Draw a mask
-                </button>
-
-                {/* Brush controls - only show when precise edit mode is active */}
-                {isPreciseEditMode && (
-                  <>
-                    {/* Brush size control */}
-                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border border-theme-dark ${glass.prompt}`}>
-                      <span className="text-theme-white text-xs font-raleway">Size:</span>
-                      <input
-                        type="range"
-                        min="2"
-                        max="200"
-                        value={brushSize}
-                        onChange={(e) => setBrushSize(Number(e.target.value))}
-                        className="w-16 h-1 bg-theme-white rounded-lg appearance-none cursor-pointer"
-                        style={{
-                          background: `linear-gradient(to right, rgba(184, 192, 192, 1) 0%, rgba(184, 192, 192, 1) ${(brushSize - 2) / 198 * 100}%, rgba(184, 192, 192, 0.3) ${(brushSize - 2) / 198 * 100}%, rgba(184, 192, 192, 0.3) 100%)`,
-                          WebkitAppearance: 'none',
-                          appearance: 'none',
-                          height: '4px',
-                          outline: 'none',
-                          borderRadius: '5px'
-                        }}
-                        title="Adjust brush size"
+                {/* Generated Image Display */}
+                {currentGeneratedImage && (
+                  <div className="w-full max-w-lg mx-auto mt-4">
+                    <div className="relative rounded-2xl overflow-hidden bg-theme-black border border-theme-mid">
+                      <img
+                        src={currentGeneratedImage.url}
+                        alt="Generated image"
+                        className="w-full h-64 object-cover"
                       />
-                      <span className="text-theme-white text-xs font-mono font-normal min-w-[2rem] text-center">
-                        {brushSize}px
-                      </span>
+                      <button
+                        onClick={() => clearCurrentGeneratedImage()}
+                        className="absolute top-2 right-2 bg-theme-black/80 hover:bg-theme-black text-theme-white hover:text-theme-text transition-colors duration-200 rounded-full p-1.5"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      <div className="px-4 py-3 bg-theme-black/80 text-theme-white text-base text-center">
+                        Generated with {getCurrentModel().name}
+                      </div>
                     </div>
-                  </>
+                  </div>
                 )}
 
-                {/* Undo button */}
-                <button
-                  onClick={undoStroke}
-                  disabled={allPaths.length === 0}
-                  className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} text-theme-white border-theme-dark hover:text-theme-text disabled:opacity-50 disabled:cursor-not-allowed`}
-                  title="Undo last stroke"
-                >
-                  <Undo2 className="w-4 h-4" />
-                </button>
-
-                {/* Redo button */}
-                <button
-                  onClick={redoStroke}
-                  disabled={redoStack.length === 0}
-                  className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} text-theme-white border-theme-dark hover:text-theme-text disabled:opacity-50 disabled:cursor-not-allowed`}
-                  title="Redo last stroke"
-                >
-                  <Redo2 className="w-4 h-4" />
-                </button>
-
-                {/* Erase toggle */}
-                <button
-                  onClick={toggleEraseMode}
-                  className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200 ${glass.prompt} ${isEraseMode
-                    ? 'text-theme-text border-theme-text bg-theme-text/20'
-                    : 'text-theme-white border-theme-dark hover:text-theme-text'
-                    }`}
-                  title={isEraseMode ? "Switch to draw mode" : "Switch to erase mode"}
-                >
-                  <Eraser className="w-3.5 h-3.5" />
-                </button>
-
-                {/* Reset mask button - only show when precise edit mode is active and mask exists */}
-                {isPreciseEditMode && maskData && (
-                  <button
-                    onClick={clearMask}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.prompt} text-theme-white border-theme-dark hover:border-theme-text hover:text-theme-text font-raleway text-sm`}
-                    title="Reset mask"
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                    Reset mask
-                  </button>
+                {/* Error Display */}
+                {currentError && (
+                  <div className="w-full max-w-lg mx-auto mt-4">
+                    <div
+                      className="relative rounded-2xl overflow-hidden bg-theme-black border border-red-500/50"
+                      role="status"
+                      aria-live="assertive"
+                      aria-atomic="true"
+                    >
+                      <button
+                        onClick={() => clearCurrentError()}
+                        className="absolute top-2 right-2 bg-theme-black/80 hover:bg-theme-black text-theme-white hover:text-theme-text transition-colors duration-200 rounded-full p-1.5"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      <div className="px-4 py-3 bg-red-500/20 text-red-400 text-sm text-center">
+                        {currentError}
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
             )}
 
-            {/* Generated Image Display */}
-            {currentGeneratedImage && (
-              <div className="w-full max-w-lg mx-auto mt-4">
-                <div className="relative rounded-2xl overflow-hidden bg-theme-black border border-theme-mid">
-                  <img
-                    src={currentGeneratedImage.url}
-                    alt="Generated image"
-                    className="w-full h-64 object-cover"
-                  />
-                  <button
-                    onClick={() => clearCurrentGeneratedImage()}
-                    className="absolute top-2 right-2 bg-theme-black/80 hover:bg-theme-black text-theme-white hover:text-theme-text transition-colors duration-200 rounded-full p-1.5"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                  <div className="px-4 py-3 bg-theme-black/80 text-theme-white text-base text-center">
-                    Generated with {getCurrentModel().name}
-                  </div>
-                </div>
-              </div>
-            )}
 
-            {/* Error Display */}
-            {currentError && (
-              <div className="w-full max-w-lg mx-auto mt-4">
-                <div
-                  className="relative rounded-2xl overflow-hidden bg-theme-black border border-red-500/50"
-                  role="status"
-                  aria-live="assertive"
-                  aria-atomic="true"
-                >
-                  <button
-                    onClick={() => clearCurrentError()}
-                    className="absolute top-2 right-2 bg-theme-black/80 hover:bg-theme-black text-theme-white hover:text-theme-text transition-colors duration-200 rounded-full p-1.5"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                  <div className="px-4 py-3 bg-red-500/20 text-red-400 text-sm text-center">
-                    {currentError}
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </header>
 
@@ -1713,206 +2404,397 @@ export default function Edit() {
 
 
 
-        {/* Prompt input with + for references and drag & drop (fixed at bottom) - only show when image is uploaded */}
+        {/* Prompt input with + for references and drag & drop - only show when image is uploaded AND not in resize mode */}
         {
-          selectedFile && (
+          previewUrl && !isResizeMode && (
             <div
-              className={`promptbar fixed z-40 rounded-[16px] transition-colors duration-200 ${glass.prompt} ${isDragging ? 'border-brand drag-active' : 'border-n-mid'} px-4 py-3`}
-              style={{
-                bottom: '0.75rem',
-                transform: 'translateX(-50%) translateZ(0)'
-              }}
-              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setIsDragging(false);
-                const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/'));
-                if (files.length) {
-                  const combined = [...referenceFiles, ...files].slice(0, ADDITIONAL_REFERENCE_LIMIT);
-                  setReferenceFiles(combined);
-                  const readers = combined.map(f => URL.createObjectURL(f));
-                  setReferencePreviews(readers);
-                }
-              }}
+              className="fixed z-40 left-1/2 bottom-4 w-[calc(100%-2rem)] max-w-4xl"
+              style={{ transform: 'translateX(-50%)' }}
             >
-              {/* Textarea - first row */}
-              <div className="mb-1">
-                <textarea
-                  ref={promptTextareaRef}
-                  placeholder="Describe what you want to create..."
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  onKeyDown={onKeyDown}
-                  onPaste={handlePaste}
-                  rows={1}
-                  className={`w-full h-[36px] bg-transparent ${prompt.trim() ? 'text-n-text' : 'text-n-white'} placeholder-n-white border-0 focus:outline-none ring-0 focus:ring-0 focus:text-n-text font-raleway text-base px-3 py-2 leading-normal resize-none overflow-x-auto overflow-y-hidden text-left whitespace-nowrap rounded-lg`}
-                />
-              </div>
+              <div className="flex flex-col gap-2">
 
-              {/* Buttons - second row */}
-              <div className="flex items-center justify-between gap-2 px-3">
-                {/* Left icons and controls */}
-                <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
-                  <button
-                    type="button"
-                    onClick={handleRefsClick}
-                    title="Reference Image"
-                    aria-label="Reference Image"
-                    disabled={referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT}
-                    className={`${referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT ? 'bg-n-black/20 text-n-white/40 cursor-not-allowed' : `${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text`} flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
-                  >
-                    <Plus className="w-4 h-4 flex-shrink-0 text-n-text" />
-                    <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">Add Reference</span>
-                  </button>
+                <div
+                  className={`relative flex flex-col rounded-xl transition-all duration-200 ${glass.prompt} border border-transparent focus-within:border-theme-text/50 focus-within:shadow-[0_0_15px_rgba(var(--theme-text-rgb),0.1)] ${isDragging ? 'border-theme-text shadow-[0_0_32px_rgba(255,255,255,0.25)]' : ''}`}
+                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragging(false);
+                    const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/'));
+                    if (files.length) {
+                      const combined = [...referenceFiles, ...files].slice(0, ADDITIONAL_REFERENCE_LIMIT);
+                      setReferenceFiles(combined);
+                      const readers = combined.map(f => URL.createObjectURL(f));
+                      setReferencePreviews(readers);
+                    }
+                  }}
+                >
+                  {/* First row: Textarea + Avatar/Product/Style buttons */}
+                  <div className="flex flex-row items-stretch">
+                    <textarea
+                      id="edit-prompt"
+                      ref={promptTextareaRef}
+                      placeholder="e.g. Make it a sunny day, Add a red hat..."
+                      value={prompt}
+                      onChange={(e) => setPrompt(e.target.value)}
+                      onKeyDown={onKeyDown}
+                      onPaste={handlePaste}
+                      className="flex-1 min-h-[72px] bg-transparent border-none focus:ring-0 text-theme-text placeholder:text-n-light font-raleway text-base px-3 py-2 resize-none focus:outline-none"
+                      disabled={isButtonSpinning}
+                    />
 
-                  {/* Reference images display - right next to Add reference button */}
-                  {referenceDisplayItems.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      <div className="hidden lg:block text-sm text-n-text font-raleway">Reference ({referenceDisplayItems.length}/{MAX_REFERENCE_IMAGES}):</div>
-                      <div className="flex items-center gap-1.5">
-                        {referenceDisplayItems.map((item, idx) => (
-                          <div key={item.isPrimary ? 'primary-reference' : `reference-${item.index ?? idx}`} className="relative group">
-                            <img
-                              src={item.url}
-                              alt={item.isPrimary ? 'Primary reference' : `Reference ${idx}`}
-                              className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-lg object-cover border border-n-mid cursor-pointer hover:bg-n-light transition-colors duration-200"
-                              onClick={() => {
-                                setSelectedFullImage(item.url);
-                                setIsFullSizeOpen(true);
-                              }}
-                            />
-                            {item.isPrimary ? (
-                              <>
-                                <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 text-[10px] font-raleway font-medium uppercase tracking-wider text-n-text">Base</span>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteImage();
-                                  }}
-                                  className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-white hover:text-n-text rounded-full p-0.5 transition-all duration-200"
-                                  title="Remove base reference"
-                                >
-                                  <X className="w-2.5 h-2.5" />
-                                </button>
-                              </>
+                    {/* Avatar, Product, Style Buttons (matching QuickEditModal) */}
+                    <div className="flex items-end gap-2 px-3 py-2 flex-shrink-0">
+                      {/* Avatar Button */}
+                      <div className="relative">
+                        <button
+                          type="button"
+                          ref={avatarButtonRef}
+                          onClick={() => {
+                            setIsProductPickerOpen(false);
+                            if (avatarHandlers.storedAvatars.length === 0) {
+                              avatarHandlers.setAvatarUploadError(null);
+                              avatarHandlers.avatarQuickUploadInputRef.current?.click();
+                            } else {
+                              setIsAvatarPickerOpen(!isAvatarPickerOpen);
+                            }
+                          }}
+                          onMouseEnter={() => setIsAvatarButtonHovered(true)}
+                          onMouseLeave={() => setIsAvatarButtonHovered(false)}
+                          onDragEnter={handleAvatarButtonDragEnter}
+                          onDragOver={handleAvatarButtonDragOver}
+                          onDragLeave={handleAvatarButtonDragLeave}
+                          onDrop={handleAvatarButtonDrop}
+                          className={`${glass.promptBorderless} ${avatarSelection || isDraggingOverAvatarButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-theme-dark/10 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${selectedAvatar || avatarSelection ? 'hover:border-theme-mid' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                          onPointerMove={onPointerMove}
+                          onPointerEnter={onPointerEnter}
+                          onPointerLeave={onPointerLeave}
+                        >
+                          {!selectedAvatar && !avatarSelection && (
+                            <>
+                              <div className="flex-1 flex items-center justify-center lg:mt-3">
+                                {isAvatarButtonHovered ? (
+                                  <Plus className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
+                                ) : (
+                                  <User className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
+                                )}
+                              </div>
+                              <div className="hidden lg:flex items-center gap-1">
+                                <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
+                                  Avatar
+                                </span>
+                              </div>
+                            </>
+                          )}
+                          {(selectedAvatar || avatarSelection) && (
+                            <>
+                              <img
+                                src={avatarSelection?.imageUrl ?? selectedAvatar?.imageUrl}
+                                alt={avatarSelection ? 'Avatar' : (selectedAvatar?.name ?? 'Avatar')}
+                                loading="lazy"
+                                className={`absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover ${avatarSelection ? 'opacity-80' : ''}`}
+                                title={avatarSelection ? 'Avatar' : (selectedAvatar?.name ?? 'Avatar')}
+                              />
+                              <div className={`hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 ${avatarSelection ? 'z-20' : ''}`}>
+                                <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
+                                  {avatarSelection ? 'Avatar' : (selectedAvatar?.name ?? 'Avatar')}
+                                </span>
+                              </div>
+                            </>
+                          )}
+                        </button>
+                        {selectedAvatar && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              avatarHandlers.handleAvatarSelect(null);
+                            }}
+                            className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
+                            title="Remove avatar"
+                            aria-label="Remove avatar"
+                          >
+                            <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Product Button */}
+                      <div className="relative">
+                        <button
+                          type="button"
+                          ref={productButtonRef}
+                          onClick={() => {
+                            setIsAvatarPickerOpen(false);
+                            if (productHandlers.storedProducts.length === 0) {
+                              productHandlers.setProductUploadError(null);
+                              productHandlers.productQuickUploadInputRef.current?.click();
+                            } else {
+                              setIsProductPickerOpen(!isProductPickerOpen);
+                            }
+                          }}
+                          onMouseEnter={() => setIsProductButtonHovered(true)}
+                          onMouseLeave={() => setIsProductButtonHovered(false)}
+                          onDragEnter={handleProductButtonDragEnter}
+                          onDragOver={handleProductButtonDragOver}
+                          onDragLeave={handleProductButtonDragLeave}
+                          onDrop={handleProductButtonDrop}
+                          className={`${glass.promptBorderless} ${productSelection || isDraggingOverProductButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-theme-dark/10 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${selectedProduct || productSelection ? 'hover:border-theme-mid' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                          onPointerMove={onPointerMove}
+                          onPointerEnter={onPointerEnter}
+                          onPointerLeave={onPointerLeave}
+                        >
+                          {!selectedProduct && !productSelection && (
+                            <>
+                              <div className="flex-1 flex items-center justify-center lg:mt-3">
+                                {isProductButtonHovered ? (
+                                  <Plus className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
+                                ) : (
+                                  <Package className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
+                                )}
+                              </div>
+                              <div className="hidden lg:flex items-center gap-1">
+                                <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
+                                  Product
+                                </span>
+                              </div>
+                            </>
+                          )}
+                          {(selectedProduct || productSelection) && (
+                            <>
+                              <img
+                                src={productSelection?.imageUrl ?? selectedProduct?.imageUrl}
+                                alt={productSelection ? 'Product' : (selectedProduct?.name ?? 'Product')}
+                                loading="lazy"
+                                className={`absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover ${productSelection ? 'opacity-80' : ''}`}
+                                title={productSelection ? 'Product' : (selectedProduct?.name ?? 'Product')}
+                              />
+                              <div className={`hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 ${productSelection ? 'z-20' : ''}`}>
+                                <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
+                                  {productSelection ? 'Product' : (selectedProduct?.name ?? 'Product')}
+                                </span>
+                              </div>
+                            </>
+                          )}
+                        </button>
+                        {selectedProduct && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              productHandlers.handleProductSelect(null);
+                            }}
+                            className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
+                            title="Remove product"
+                            aria-label="Remove product"
+                          >
+                            <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Style Button */}
+                      <div className="relative">
+                        <button
+                          type="button"
+                          ref={styleButtonRef}
+                          onMouseEnter={() => setIsStyleButtonHovered(true)}
+                          onMouseLeave={() => setIsStyleButtonHovered(false)}
+                          onClick={styleHandlers.handleStyleModalOpen}
+                          className={`${glass.promptBorderless} hover:bg-n-text/20 border border-theme-dark/10 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                          onPointerMove={onPointerMove}
+                          onPointerEnter={onPointerEnter}
+                          onPointerLeave={onPointerLeave}
+                        >
+                          <div className="flex-1 flex items-center justify-center lg:mt-3">
+                            {isStyleButtonHovered ? (
+                              <LayoutGrid className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
                             ) : (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (typeof item.index === 'number') {
-                                    clearReference(item.index);
-                                  }
-                                }}
-                                className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-white hover:text-n-text rounded-full p-0.5 transition-all duration-200"
-                                title="Remove reference"
-                              >
-                                <X className="w-2.5 h-2.5" />
-                              </button>
+                              <Palette className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
                             )}
                           </div>
-                        ))}
+                          <div className="hidden lg:flex items-center gap-1">
+                            <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
+                              Style
+                            </span>
+                          </div>
+                        </button>
                       </div>
                     </div>
-                  )}
-
-                  <button
-                    type="button"
-                    ref={promptsButtonRef}
-                    onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
-                    className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2`}
-                  >
-                    <BookmarkIcon className="w-4 h-4 flex-shrink-0 text-n-text group-hover:text-n-text transition-colors duration-100" />
-                  </button>
-                  {/* Model Selector */}
-                  <div className="relative">
-                    <button
-                      ref={modelSelectorButtonRef}
-                      onClick={toggleModelSelector}
-                      disabled={isButtonSpinning}
-                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-100 group gap-2 parallax-small ${isButtonSpinning ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      onPointerMove={onPointerMove}
-                      onPointerEnter={onPointerEnter}
-                      onPointerLeave={onPointerLeave}
-                    >
-                      {hasToolLogo(selectedModel) ? (
-                        <img
-                          src={getToolLogo(getCurrentModel().name)!}
-                          alt={getCurrentModel().name}
-                          className="w-4 h-4 object-contain rounded flex-shrink-0"
-                        />
-                      ) : (
-                        <Sparkles className="w-4 h-4 flex-shrink-0" />
-                      )}
-                      <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">{getCurrentModel().name}</span>
-                      <ChevronDown className="w-3 h-3 text-n-text/50" />
-                    </button>
-
-                    {isModelSelectorOpen && createPortal(
-                      <div
-                        ref={(node) => {
-                          modelSelectorMenuRef.current = node;
-                          setScrollableRef(node);
-                        }}
-                        style={{
-                          position: "fixed",
-                          top: modelSelectorPos.top,
-                          left: modelSelectorPos.left,
-                          width: modelSelectorPos.width,
-                          zIndex: 9999,
-                          transform: modelSelectorPos.transform,
-                          maxHeight: '384px',
-                          overflowY: 'auto',
-                          overflowX: 'hidden'
-                        }}
-                        className={`${glass.prompt} rounded-lg focus:outline-none shadow-lg max-h-96 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-n-mid/30 scrollbar-track-transparent hover:scrollbar-thumb-n-mid/50 p-2`}
-                        onWheel={handleWheel}
-                        onTouchStart={handleDropdownTouchStart}
-                        onTouchMove={handleDropdownTouchMove}
-                        onTouchEnd={handleDropdownTouchEnd}
-                        onTouchCancel={handleDropdownTouchEnd}
-                      >
-                        {AI_MODELS.filter(m => {
-                          // If mask mode is active, only allow Ideogram
-                          if (isPreciseEditMode) {
-                            return m.id === 'ideogram';
-                          }
-                          // Otherwise allow both Gemini and Ideogram (as per previous logic)
-                          return m.id === 'gemini-3.0-pro-image' || m.id === 'ideogram';
-                        }).map(model => (
-                          <button
-                            key={model.id}
-                            onClick={() => {
-                              setSelectedModel(model.id as EditModelId);
-                              setIsModelSelectorOpen(false);
-                            }}
-                            className={`w-full px-3 py-2 rounded-lg text-left flex items-center gap-3 transition-colors ${selectedModel === model.id
-                              ? 'bg-theme-text/10 text-theme-text'
-                              : 'hover:bg-theme-text/5 text-theme-text'
-                              }`}
-                          >
-                            {hasToolLogo(model.name) ? (
-                              <img
-                                src={getToolLogo(model.name)!}
-                                alt={model.name}
-                                className="w-5 h-5 object-contain rounded flex-shrink-0"
-                              />
-                            ) : (
-                              <model.Icon className="w-5 h-5 flex-shrink-0" />
-                            )}
-                            <div className="flex flex-col min-w-0">
-                              <span className="text-sm font-medium truncate">{model.name}</span>
-                              <span className="text-xs opacity-70 truncate">{model.desc}</span>
-                            </div>
-                            {selectedModel === model.id && (
-                              <div className="ml-auto w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0" />
-                            )}
-                          </button>
-                        ))}
-                      </div>,
-                      document.body
-                    )}
                   </div>
+
+
+                  {/* Bottom Controls Bar */}
+                  <div className="flex items-center justify-between border-t border-n-dark px-3 py-2">
+                    {/* Left controls */}
+                    <div className="flex items-center gap-1">
+                      {/* Reference Image Button (+ icon only like QuickEditModal) */}
+                      <div className="relative">
+                        <input
+                          type="file"
+                          ref={refFileInputRef}
+                          className="hidden"
+                          accept="image/*"
+                          multiple
+                          onChange={handleRefsSelected}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleRefsClick}
+                          aria-label="Add reference image"
+                          disabled={referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT}
+                          className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small ${referenceFiles.length >= ADDITIONAL_REFERENCE_LIMIT ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          onPointerMove={onPointerMove}
+                          onPointerEnter={onPointerEnter}
+                          onPointerLeave={onPointerLeave}
+                        >
+                          <Plus className="w-4 h-4 flex-shrink-0 text-n-text" />
+                        </button>
+                      </div>
+
+                      {/* Reference Previews */}
+                      {referencePreviews.length > 0 && (
+                        <div className="flex items-center gap-1.5">
+                          {referencePreviews.map((preview, index) => (
+                            <div
+                              key={`${preview}-${index}`}
+                              className="relative group"
+                            >
+                              <img
+                                src={preview}
+                                alt={`Reference ${index + 1}`}
+                                loading="lazy"
+                                className="w-9 h-9 rounded-lg object-cover border border-theme-mid cursor-pointer hover:bg-theme-light transition-colors duration-200"
+                                onClick={() => {
+                                  setSelectedFullImage(preview);
+                                  setIsFullSizeOpen(true);
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  clearReference(index);
+                                }}
+                                className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark text-n-text hover:text-n-text rounded-full p-0.5 transition-all duration-200"
+                                title="Remove reference"
+                              >
+                                <X className="w-2.5 h-2.5 text-n-text" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Model Selector (using lazy-loaded component like QuickEditModal) */}
+                      <div className="relative">
+                        <Suspense fallback={null}>
+                          <ModelSelector
+                            selectedModel={selectedModel}
+                            onModelChange={(model) => setSelectedModel(model as EditModelId)}
+                            isGenerating={isButtonSpinning}
+                            activeCategory="image"
+                            hasReferences={referenceFiles.length > 0}
+                            allowedModels={['ideogram', 'gemini-3.0-pro-image', 'gpt-image-1.5']}
+                            disabledModels={isPreciseEditMode ? ['gemini-3.0-pro-image', 'gpt-image-1.5'] : undefined}
+                            readOnly={isPreciseEditMode}
+                            customDescriptions={{
+                              'gemini-3.0-pro-image': 'Best image editing (text and reference).',
+                              'ideogram': 'Best inpainting.',
+                              'gpt-image-1.5': 'Best image generation.',
+                            }}
+                          />
+                        </Suspense>
+                      </div>
+
+                      {/* Settings Button */}
+                      <div className="relative">
+                        <button
+                          ref={settingsRef}
+                          type="button"
+                          onClick={toggleSettings}
+                          className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-200 parallax-small`}
+                          onPointerMove={onPointerMove}
+                          onPointerEnter={onPointerEnter}
+                          onPointerLeave={onPointerLeave}
+                        >
+                          <Settings className="w-4 h-4 text-n-text" />
+                        </button>
+                      </div>
+
+                      {/* Aspect Ratio Button */}
+                      {aspectRatioConfig && (
+                        <div className="relative">
+                          <button
+                            ref={aspectRatioButtonRef}
+                            type="button"
+                            onClick={() => setIsAspectRatioMenuOpen(prev => !prev)}
+                            className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2 parallax-small`}
+                            onPointerMove={onPointerMove}
+                            onPointerEnter={onPointerEnter}
+                            onPointerLeave={onPointerLeave}
+                          >
+                            <Scan className="w-4 h-4 flex-shrink-0 text-n-text" />
+                            <span className="font-raleway text-sm whitespace-nowrap text-n-text">{aspectRatioConfig.selectedValue}</span>
+                          </button>
+                          <AspectRatioDropdown
+                            anchorRef={aspectRatioButtonRef}
+                            open={isAspectRatioMenuOpen}
+                            onClose={() => setIsAspectRatioMenuOpen(false)}
+                            options={aspectRatioConfig.options}
+                            selectedValue={aspectRatioConfig.selectedValue}
+                            onSelect={aspectRatioConfig.onSelect}
+                          />
+                        </div>
+                      )}
+
+                      {/* Batch Size Controls (matching QuickEditModal) */}
+                      <div className="relative hidden lg:flex items-center">
+                        <div className={`${glass.promptBorderless} flex items-center gap-0 h-8 px-2 rounded-full text-n-text`}>
+                          <div className="relative">
+                            <button
+                              type="button"
+                              onClick={() => setBatchSize(Math.max(1, batchSize - 1))}
+                              disabled={batchSize === 1}
+                              className="grid size-6 place-items-center rounded-full text-n-text transition-colors duration-200 hover:bg-n-text/20 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              <Minus className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                          <span className="min-w-[1.25rem] text-center text-sm font-raleway text-n-text whitespace-nowrap">
+                            {batchSize}
+                          </span>
+                          <div className="relative">
+                            <button
+                              type="button"
+                              onClick={() => setBatchSize(Math.min(4, batchSize + 1))}
+                              disabled={batchSize === 4}
+                              className="grid size-6 place-items-center rounded-full text-n-text transition-colors duration-200 hover:bg-n-text/20 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Generate Button (matching QuickEditModal style) */}
+                    <button
+                      type="button"
+                      onClick={handleGenerateImage}
+                      className={`${buttons.primary} px-6 rounded-xl flex items-center gap-2 font-raleway`}
+                      disabled={isButtonSpinning || !prompt.trim() || (user?.credits ?? 0) <= 0}
+                    >
+                      {isButtonSpinning ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-5 h-5" />
+                      )}
+                      Generate
+                    </button>
+                  </div>
+
+                  {/* PromptsDropdown */}
                   <PromptsDropdown
                     isOpen={isPromptsDropdownOpen}
                     onClose={() => setIsPromptsDropdownOpen(false)}
@@ -1929,138 +2811,78 @@ export default function Edit() {
                     onSaveRecentPrompt={savePromptToLibrary}
                   />
 
+                  {/* Insufficient Credits Modal */}
+                  {(user?.credits ?? 0) === 0 && !dismissedZeroCredits && (
+                    <InsufficientCreditsModal
+                      isOpen={true}
+                      onClose={() => setDismissedZeroCredits(true)}
+                      onBuyCredits={() => window.location.assign('/upgrade')}
+                      currentCredits={user?.credits ?? 0}
+                      requiredCredits={1}
+                    />
+                  )}
 
+                  {/* Settings Dropdown */}
+                  {isSettingsOpen && (
+                    <div className="absolute right-4 top-full mt-2 w-80 rounded-lg border border-theme-mid bg-theme-dark shadow-lg z-50 p-4">
+                      <div className="space-y-4">
+                        <div className="text-base font-raleway text-theme-text mb-3">Settings</div>
 
-                  {/* Settings button */}
-                  <div className="relative settings-dropdown">
-                    <button
-                      ref={settingsRef}
-                      type="button"
-                      onClick={toggleSettings}
-                      title="Settings"
-                      aria-label="Settings"
-                      className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text grid place-items-center h-8 w-8 rounded-full p-0 transition-colors duration-200`}
-                    >
-                      <Settings className="w-4 h-4 text-n-text" />
-                    </button>
-                  </div>
+                        {/* Temperature */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-sm text-theme-white font-raleway">Temperature</label>
+                            <span className="text-xs text-theme-text font-mono">{temperature}</span>
+                          </div>
+                          <input
+                            type="range"
+                            min={0.1}
+                            max={1.0}
+                            step={0.1}
+                            value={temperature}
+                            onChange={(e) => setTemperature(Number(e.target.value))}
+                            className="w-full h-2 bg-theme-black rounded-lg appearance-none cursor-pointer"
+                          />
+                        </div>
 
-                  {aspectRatioConfig && (
-                    <div className="relative">
-                      <button
-                        ref={aspectRatioButtonRef}
-                        type="button"
-                        onClick={() => setIsAspectRatioMenuOpen(prev => !prev)}
-                        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-white hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2`}
-                        aria-label="Aspect ratio"
-                        title="Aspect ratio"
-                      >
-                        <Scan className="w-4 h-4 flex-shrink-0" />
-                        <span className="hidden lg:inline font-raleway text-sm whitespace-nowrap text-n-text">{aspectRatioConfig.selectedValue}</span>
-                      </button>
-                      <AspectRatioDropdown
-                        anchorRef={aspectRatioButtonRef}
-                        open={isAspectRatioMenuOpen}
-                        onClose={() => setIsAspectRatioMenuOpen(false)}
-                        options={aspectRatioConfig.options}
-                        selectedValue={aspectRatioConfig.selectedValue}
-                        onSelect={aspectRatioConfig.onSelect}
-                      />
+                        {/* Top P */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-sm text-theme-white font-raleway">Top P</label>
+                            <span className="text-xs text-theme-text font-mono">{topP}</span>
+                          </div>
+                          <input
+                            type="range"
+                            min={0.1}
+                            max={1.0}
+                            step={0.05}
+                            value={topP}
+                            onChange={(e) => setTopP(Number(e.target.value))}
+                            className="w-full h-2 bg-theme-black rounded-lg appearance-none cursor-pointer"
+                          />
+                        </div>
+
+                        {/* Top K */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-sm text-theme-white font-raleway">Top K</label>
+                            <span className="text-xs text-theme-text font-mono">{topK}</span>
+                          </div>
+                          <input
+                            type="range"
+                            min={1}
+                            max={100}
+                            step={1}
+                            value={topK}
+                            onChange={(e) => setTopK(Number(e.target.value))}
+                            className="w-full h-2 bg-theme-black rounded-lg appearance-none cursor-pointer"
+                          />
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
-
-                {/* Generate button on right */}
-                <Tooltip text={!prompt.trim() ? "Enter your prompt to generate" : (user?.credits ?? 0) <= 0 ? "You have 0 credits. Buy more credits to generate" : ""}>
-                  <button
-                    onClick={handleGenerateImage}
-                    disabled={!prompt.trim() || (user?.credits ?? 0) <= 0}
-                    className={`btn btn-white font-raleway text-base font-medium gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60 items-center`}
-                    aria-label={`${isButtonSpinning ? "Generating..." : "Generate"} (uses 1 credit)`}
-                  >
-                    <span className="text-sm sm:text-base font-raleway font-medium">
-                      {isButtonSpinning ? "Generating..." : "Generate"}
-                    </span>
-                    <div className="flex items-center gap-1">
-                      {isButtonSpinning ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Sparkles className="w-4 h-4" />
-                      )}
-                      <span className="text-sm font-raleway font-medium text-n-black">1</span>
-                    </div>
-                  </button>
-                </Tooltip>
-                {(user?.credits ?? 0) === 0 && !dismissedZeroCredits && (
-                  <InsufficientCreditsModal
-                    isOpen={true}
-                    onClose={() => setDismissedZeroCredits(true)}
-                    onBuyCredits={() => window.location.assign('/upgrade')}
-                    currentCredits={user?.credits ?? 0}
-                    requiredCredits={1}
-                  />
-                )}
               </div>
-
-              {/* Settings Dropdown */}
-              {isSettingsOpen && (
-                <div className="absolute right-4 top-full mt-2 w-80 rounded-lg border border-theme-mid bg-theme-dark shadow-lg z-50 p-4">
-                  <div className="space-y-4">
-                    <div className="text-base font-raleway text-theme-text mb-3">Settings</div>
-
-                    {/* Temperature */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <label className="text-sm text-theme-white font-raleway">Temperature</label>
-                        <span className="text-xs text-theme-text font-mono">{temperature}</span>
-                      </div>
-                      <input
-                        type="range"
-                        min={0.1}
-                        max={1.0}
-                        step={0.1}
-                        value={temperature}
-                        onChange={(e) => setTemperature(Number(e.target.value))}
-                        className="w-full h-2 bg-theme-black rounded-lg appearance-none cursor-pointer"
-                      />
-                    </div>
-
-                    {/* Top P */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <label className="text-sm text-theme-white font-raleway">Top P</label>
-                        <span className="text-xs text-theme-text font-mono">{topP}</span>
-                      </div>
-                      <input
-                        type="range"
-                        min={0.1}
-                        max={1.0}
-                        step={0.05}
-                        value={topP}
-                        onChange={(e) => setTopP(Number(e.target.value))}
-                        className="w-full h-2 bg-theme-black rounded-lg appearance-none cursor-pointer"
-                      />
-                    </div>
-
-                    {/* Top K */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <label className="text-sm text-theme-white font-raleway">Top K</label>
-                        <span className="text-xs text-theme-text font-mono">{topK}</span>
-                      </div>
-                      <input
-                        type="range"
-                        min={1}
-                        max={100}
-                        step={1}
-                        value={topK}
-                        onChange={(e) => setTopK(Number(e.target.value))}
-                        className="w-full h-2 bg-theme-black rounded-lg appearance-none cursor-pointer"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           )
         }
@@ -2144,7 +2966,229 @@ export default function Edit() {
             document.body
           )
         }
-      </div>
-    </CreateBridgeProvider>
+
+        {/* Avatar Picker Portal */}
+        <AvatarPickerPortal
+          anchorRef={avatarButtonRef}
+          open={isAvatarPickerOpen}
+          onClose={() => setIsAvatarPickerOpen(false)}
+        >
+          <div className="min-w-[260px] space-y-2">
+            <div className="flex items-center justify-between px-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAvatarPickerOpen(false);
+                  navigate('/app/avatars');
+                }}
+                className="text-base font-raleway text-theme-text"
+              >
+                Your Avatars
+              </button>
+            </div>
+            {avatarHandlers.storedAvatars.length > 0 ? (
+              <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+                {avatarHandlers.storedAvatars.map(avatar => {
+                  const isActive = selectedAvatar?.id === avatar.id;
+                  return (
+                    <div
+                      key={avatar.id}
+                      className="rounded-2xl border border-theme-mid px-3 py-2 transition-colors duration-200 group hover:border-theme-mid hover:bg-theme-text/10"
+                    >
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            avatarHandlers.handleAvatarSelect(avatar);
+                            setIsAvatarPickerOpen(false);
+                          }}
+                          className={`flex flex-1 items-center gap-3 ${isActive ? 'text-theme-text' : 'text-white'}`}
+                        >
+                          <img
+                            src={avatar.imageUrl}
+                            alt={avatar.name}
+                            loading="lazy"
+                            className="h-10 w-10 rounded-lg object-cover"
+                          />
+                          <div className="min-w-0 flex-1 text-left">
+                            <p className="truncate text-sm font-raleway text-theme-white group-hover:text-n-text">
+                              {avatar.name}
+                            </p>
+                          </div>
+                        </button>
+                        <div className="flex items-center gap-1">
+                          {isActive && <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="py-4 text-center">
+                <p className="text-sm text-theme-light">No avatars found</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAvatarPickerOpen(false);
+                    navigate('/app/avatars');
+                  }}
+                  className="mt-2 text-sm text-theme-text hover:underline"
+                >
+                  Create one
+                </button>
+              </div>
+            )}
+          </div>
+        </AvatarPickerPortal>
+
+        {/* Product Picker Portal */}
+        <AvatarPickerPortal
+          anchorRef={productButtonRef}
+          open={isProductPickerOpen}
+          onClose={() => setIsProductPickerOpen(false)}
+        >
+          <div className="min-w-[260px] space-y-2">
+            <div className="flex items-center justify-between px-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsProductPickerOpen(false);
+                  navigate('/app/products');
+                }}
+                className="text-base font-raleway text-theme-text"
+              >
+                Your Products
+              </button>
+            </div>
+            {productHandlers.storedProducts.length > 0 ? (
+              <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
+                {productHandlers.storedProducts.map(product => {
+                  const isActive = selectedProduct?.id === product.id;
+                  return (
+                    <div
+                      key={product.id}
+                      className="rounded-2xl border border-theme-mid px-3 py-2 transition-colors duration-200 group hover:border-theme-mid hover:bg-theme-text/10"
+                    >
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            productHandlers.handleProductSelect(product);
+                            setIsProductPickerOpen(false);
+                          }}
+                          className={`flex flex-1 items-center gap-3 ${isActive ? 'text-theme-text' : 'text-white'}`}
+                        >
+                          <img
+                            src={product.imageUrl}
+                            alt={product.name}
+                            loading="lazy"
+                            className="h-10 w-10 rounded-lg object-cover"
+                          />
+                          <div className="min-w-0 flex-1 text-left">
+                            <p className="truncate text-sm font-raleway text-theme-white group-hover:text-n-text">
+                              {product.name}
+                            </p>
+                          </div>
+                        </button>
+                        <div className="flex items-center gap-1">
+                          {isActive && <div className="w-1.5 h-1.5 rounded-full bg-theme-text flex-shrink-0 shadow-sm"></div>}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="py-4 text-center">
+                <p className="text-sm text-theme-light">No products found</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsProductPickerOpen(false);
+                    navigate('/app/products');
+                  }}
+                  className="mt-2 text-sm text-theme-text hover:underline"
+                >
+                  Create one
+                </button>
+              </div>
+            )}
+          </div>
+        </AvatarPickerPortal>
+
+        {/* Style Selection Modal */}
+        {
+          styleHandlers.isStyleModalOpen && (
+            <Suspense fallback={null}>
+              <StyleSelectionModal
+                open={styleHandlers.isStyleModalOpen}
+                onClose={styleHandlers.handleStyleModalClose}
+                styleHandlers={styleHandlers}
+                onApplySelectedStyles={() => { }}
+              />
+            </Suspense>
+          )
+        }
+
+        {/* Avatar Creation Modal */}
+        {
+          creationsModalAvatar && (
+            <Suspense fallback={null}>
+              <AvatarCreationModal
+                isOpen={!!creationsModalAvatar}
+                onClose={() => setCreationsModalAvatar(null)}
+                avatar={creationsModalAvatar}
+              />
+            </Suspense>
+          )
+        }
+
+        {/* Product Creation Modal */}
+        {
+          creationsModalProduct && (
+            <Suspense fallback={null}>
+              <ProductCreationModal
+                isOpen={!!creationsModalProduct}
+                onClose={() => setCreationsModalProduct(null)}
+                product={creationsModalProduct}
+              />
+            </Suspense>
+          )
+        }
+
+        {/* Hidden Avatar Quick Upload Input */}
+        <input
+          ref={avatarHandlers.avatarQuickUploadInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) avatarHandlers.handleAvatarQuickUpload(file);
+            e.target.value = '';
+          }}
+        />
+
+        {/* Hidden Product Quick Upload Input */}
+        <input
+          ref={productHandlers.productQuickUploadInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) productHandlers.handleProductQuickUpload(file);
+            e.target.value = '';
+          }}
+        />
+
+        {/* Reference Preview Modal */}
+        <ReferencePreviewModal
+          references={referenceModalReferences}
+          onClose={() => setReferenceModalReferences(null)}
+        />
+      </div >
+    </CreateBridgeProvider >
   );
 }

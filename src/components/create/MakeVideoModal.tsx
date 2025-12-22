@@ -648,7 +648,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                     </>
                                                 )}
                                             </div>
-                                            <div className="mt-0.5 flex flex-col justify-center items-center gap-1">
+                                            <div className="mt-1 flex flex-col justify-center items-center gap-2">
                                                 {/* Unified References and Badges Display */}
                                                 {(() => {
                                                     // Determine Avatar/Product based on ID or URL matching
@@ -679,7 +679,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
 
                                                     return (
                                                         <div
-                                                            className="flex flex-wrap items-center justify-center gap-1.5 cursor-pointer"
+                                                            className="flex flex-wrap items-center justify-center gap-3 cursor-pointer"
                                                             onClick={(e) => {
                                                                 if (displayReferences.length > 0) {
                                                                     e.stopPropagation();
@@ -689,7 +689,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                         >
                                                             {/* References Count */}
                                                             {displayReferences.length > 0 && (
-                                                                <div className="flex items-center gap-1">
+                                                                <div className="flex items-center gap-1.5">
                                                                     <div className="flex gap-1">
                                                                         {displayReferences.map((ref, refIdx) => (
                                                                             <div key={refIdx} className="relative">
@@ -713,7 +713,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
 
                                                             {/* Avatar/Product Badges */}
                                                             {(avatarForImage || productForImage) && (
-                                                                <div className="flex items-center gap-1">
+                                                                <div className="flex items-center gap-1.5">
                                                                     <ImageBadgeRow
                                                                         align="center"
                                                                         avatars={avatarForImage ? [{ data: avatarForImage, onClick: () => setCreationsModalAvatar(avatarForImage!) }] : []}

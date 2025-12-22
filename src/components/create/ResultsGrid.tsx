@@ -1420,11 +1420,11 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                             if (displayReferences.length === 0 && !avatarForImage && !productForImage) return null;
 
                             return (
-                              <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                              <div className="flex flex-wrap items-center gap-3 mb-2">
                                 {/* References */}
                                 {displayReferences.length > 0 && (
                                   <div
-                                    className="flex items-center gap-1 cursor-pointer"
+                                    className="flex items-center gap-1.5 cursor-pointer"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setReferenceModalState({ isOpen: true, references: displayReferences });
@@ -1453,7 +1453,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
 
                                 {/* Avatar/Product Badges */}
                                 {(avatarForImage || productForImage) && (
-                                  <div className="flex items-center gap-1">
+                                  <div className="flex items-center gap-1.5">
                                     {avatarForImage && (
                                       <div
                                         className="cursor-pointer"
