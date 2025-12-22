@@ -1,5 +1,5 @@
 import { memo, useState } from "react";
-import { Link } from "react-router-dom";
+
 import { glass } from "../../styles/designSystem";
 import { SIDEBAR_TOP_PADDING, SIDEBAR_WIDTH, SIDEBAR_PROMPT_GAP } from "../create/layoutConstants";
 import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from "../create/sidebarData";
@@ -50,12 +50,11 @@ function MasterSidebarComponent({
           className="flex flex-1 flex-col gap-0 overflow-y-auto pr-1"
           {...(isFullSizeOpen ? { [scrollLockExemptAttr]: "true" } : {})}
         >
-          <Link
-            to="/app"
-            className="flex items-center px-2 text-[12px] text-theme-text font-raleway uppercase tracking-wider mb-1 sidebar-section-header hover:opacity-80 transition-opacity cursor-pointer"
+          <div
+            className="flex items-center px-2 text-[12px] text-theme-text font-raleway uppercase tracking-wider mb-1 sidebar-section-header cursor-default select-none"
           >
             create
-          </Link>
+          </div>
 
           {CREATE_CATEGORIES.map(({ key, label, Icon, gradient, iconColor }) => {
             const isActive = activeCategory === key;

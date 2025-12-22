@@ -830,7 +830,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
 
   if (showLoadingState) {
     return (
-      <div className={`flex flex-col items-center justify-center gap-3 py-12 ${className}`}>
+      <div className="fixed inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-theme-bg">
         <div className="flex h-12 w-12 items-center justify-center rounded-full border border-theme-accent/30 bg-theme-accent/10">
           <span className="h-6 w-6 rounded-full border-2 border-theme-accent/30 border-t-theme-accent animate-spin" />
         </div>
