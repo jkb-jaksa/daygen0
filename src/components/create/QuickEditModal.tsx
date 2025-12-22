@@ -115,8 +115,6 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     const [referenceModalReferences, setReferenceModalReferences] = useState<string[] | null>(null);
 
     const {
-        goToAvatarProfile,
-        goToProductProfile,
         goToPublicGallery,
         goToModelGallery,
     } = useBadgeNavigation();
@@ -693,12 +691,41 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     const productHandlers = useProductHandlers();
     const styleHandlers = useStyleHandlers();
 
+    // Helper to strip query params
+    const stripQuery = (url: string) => url.split('?')[0];
+
+    // 1. Resolve Avatar & Product Smart Lookup (Moved to top level)
+    const { storedAvatars } = avatarHandlers;
+    const { storedProducts } = productHandlers;
+
+    const avatarUrlMap = useMemo(() => {
+        const map = new Map<string, typeof storedAvatars[0]>();
+        storedAvatars.forEach(avatar => {
+            if (avatar.imageUrl) map.set(stripQuery(avatar.imageUrl), avatar);
+            avatar.images?.forEach(img => {
+                if (img.url) map.set(stripQuery(img.url), avatar);
+            });
+        });
+        return map;
+    }, [storedAvatars]);
+
+    const productUrlMap = useMemo(() => {
+        const map = new Map<string, typeof storedProducts[0]>();
+        storedProducts.forEach(product => {
+            if (product.imageUrl) map.set(stripQuery(product.imageUrl), product);
+        });
+        return map;
+    }, [storedProducts]);
+
+
     const {
         selectedAvatar,
         avatarButtonRef,
         isAvatarPickerOpen,
         setIsAvatarPickerOpen,
         avatarSelection,
+        creationsModalAvatar,
+        setCreationsModalAvatar,
     } = avatarHandlers;
 
     const {
@@ -707,6 +734,8 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         isProductPickerOpen,
         setIsProductPickerOpen,
         productSelection,
+        creationsModalProduct,
+        setCreationsModalProduct,
     } = productHandlers;
 
     // Drag handlers for Avatar button
@@ -1661,36 +1690,148 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         </>
                                                     )}
                                                 </div>
-                                                <div className="mt-2 flex flex-col justify-center items-center gap-2">
+                                                <div className="mt-1 flex flex-col justify-center items-center gap-2">
                                                     {/* Reference images thumbnails */}
-                                                    {item.references && item.references.length > 0 && (
-                                                        <div
-                                                            className="flex items-center gap-1.5 cursor-pointer"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setReferenceModalReferences(item.references || []);
-                                                            }}
-                                                        >
-                                                            <div className="flex gap-1">
-                                                                {item.references.map((ref, refIdx) => (
-                                                                    <div key={refIdx} className="relative">
-                                                                        <img
-                                                                            src={ref}
-                                                                            alt={`Reference ${refIdx + 1}`}
-                                                                            loading="lazy"
-                                                                            className="w-6 h-6 rounded object-cover border border-theme-dark hover:border-theme-mid transition-colors duration-100"
-                                                                        />
-                                                                        <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
-                                                                            {refIdx + 1}
+                                                    {/* Unified References and Badges Display */}
+                                                    {(() => {
+
+                                                        // Helper to strip query params
+                                                        const stripQuery = (url: string) => url.split('?')[0];
+
+                                                        // Determine Avatar/Product based on ID or URL matching
+                                                        let avatarForImage = item.avatarId ? avatarHandlers.storedAvatars.find(a => a.id === item.avatarId) : undefined;
+                                                        let productForImage = item.productId ? productHandlers.storedProducts.find(p => p.id === item.productId) : undefined;
+
+                                                        if (!avatarForImage && item.references) {
+                                                            for (const ref of item.references) {
+                                                                const match = avatarUrlMap.get(stripQuery(ref));
+                                                                if (match) {
+                                                                    avatarForImage = match;
+                                                                    break;
+                                                                }
+                                                            }
+                                                        }
+
+                                                        if (!productForImage && item.references) {
+                                                            for (const ref of item.references) {
+                                                                const match = productUrlMap.get(stripQuery(ref));
+                                                                if (match) {
+                                                                    productForImage = match;
+                                                                    break;
+                                                                }
+                                                            }
+                                                        }
+
+                                                        // 2. Compute displayReferences (exclude Avatar/Product URLs)
+                                                        // Exclude whenever badge is displayed (found via ID or URL matching)
+                                                        const excludedUrls = new Set<string>();
+
+                                                        // Exclude avatar URL if avatar badge will be shown
+                                                        if (avatarForImage?.imageUrl) {
+                                                            excludedUrls.add(stripQuery(avatarForImage.imageUrl));
+                                                            if (avatarForImage.images) {
+                                                                avatarForImage.images.forEach(img => {
+                                                                    if (img.url) excludedUrls.add(stripQuery(img.url));
+                                                                });
+                                                            }
+                                                        }
+
+                                                        // Exclude product URL if product badge will be shown
+                                                        if (productForImage?.imageUrl) {
+                                                            excludedUrls.add(stripQuery(productForImage.imageUrl));
+                                                        }
+
+                                                        const displayReferences = item.references?.filter(ref => !excludedUrls.has(stripQuery(ref))) || [];
+
+                                                        // 3. Render Unified Container
+                                                        if (displayReferences.length === 0 && !avatarForImage && !productForImage) return null;
+
+                                                        return (
+                                                            <div
+                                                                className="flex flex-wrap items-center justify-center gap-3 cursor-pointer"
+                                                                onClick={(e) => {
+                                                                    // If we only have references, open reference modal.
+                                                                    // If we have mixed content, we might want to be smarter, but existing behavior
+                                                                    // for the wrapper `onClick` was `setReferenceModalReferences`.
+                                                                    // Let's preserve the ability to open references if they exist.
+                                                                    if (displayReferences.length > 0) {
+                                                                        e.stopPropagation();
+                                                                        setReferenceModalReferences(displayReferences);
+                                                                    }
+                                                                }}
+                                                            >
+                                                                {/* References Count */}
+                                                                {displayReferences.length > 0 && (
+                                                                    <div className="flex items-center gap-1.5">
+                                                                        <div className="flex gap-1">
+                                                                            {displayReferences.map((ref, refIdx) => (
+                                                                                <div key={refIdx} className="relative">
+                                                                                    <img
+                                                                                        src={ref}
+                                                                                        alt={`Reference ${refIdx + 1}`}
+                                                                                        loading="lazy"
+                                                                                        className="w-6 h-6 rounded object-cover border border-theme-dark hover:border-theme-mid transition-colors duration-100"
+                                                                                    />
+                                                                                    <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
+                                                                                        {refIdx + 1}
+                                                                                    </div>
+                                                                                </div>
+                                                                            ))}
                                                                         </div>
+                                                                        <span className="text-xs font-raleway text-theme-white hover:text-theme-text transition-colors duration-100">
+                                                                            {displayReferences.length} Ref{displayReferences.length > 1 ? 's' : ''}
+                                                                        </span>
                                                                     </div>
-                                                                ))}
+                                                                )}
+
+                                                                {/* Avatar/Product Badges */}
+                                                                {(avatarForImage || productForImage) && (
+                                                                    <div className="flex items-center gap-1.5">
+                                                                        {/* We use ImageBadgeRow logic but constructed manually for inline layout if needed,
+                                                                            OR we can just mistakenly rely on the ImageBadgeRow below?
+                                                                            The prompt says "make sure the same logic is used... identical logic".
+                                                                            In ResultsGrid, we manually render `AvatarBadge` and `ProductBadge` components.
+                                                                            QuickEditModal doesn't seem to import `AvatarBadge` or `ProductBadge` directly,
+                                                                            it imports `ImageBadgeRow`.
+                                                                            However, relying on `ImageBadgeRow` below (lines 1695) keeps it separate.
+                                                                            To be "identical" and on the same line, I should incorporate the badging here.
+                                                                            BUT, `ImageBadgeRow` is currently rendered *outside* this block in QuickEditModal.
+                                                                            If I move it inside, I duplicate logic or need to refactor `ImageBadgeRow` usage.
+                                                                            
+                                                                            Let's look at `ResultsGrid` again. It renders `AvatarBadge` explicitly.
+                                                                            I need to check if `AvatarBadge` is available to import in `QuickEditModal`.
+                                                                            It is NOT in the imports list I saw earlier (lines 1-38).
+                                                                            `ImageBadgeRow` is imported. `ImageBadgeRow` likely renders `AvatarBadge`.
+                                                                            
+                                                                            Actually, look at `ResultsGrid` line 1695 in `QuickEditModal` (original):
+                                                                            It uses `ImageBadgeRow`.
+                                                                            The user wants it "identical logic... in app/image gallery".
+                                                                            In app/image gallery (ResultsGrid), we specifically moved these INTO the same line.
+                                                                            So I should disable the `ImageBadgeRow` below for Avatar/Product and render them here?
+                                                                            OR, simpler:
+                                                                            `ImageBadgeRow` supports `avatars` and `products` props.
+                                                                            If I pass them to `ImageBadgeRow`, it renders them.
+                                                                            If I render `ImageBadgeRow` *inline* with the references, that works?
+                                                                            
+                                                                            Wait, `ResultsGrid` *removed* `ImageBadgeRow` usage for Avatars/Products in favor of manual rendering to get the layout right?
+                                                                            Let's re-read the `ResultsGrid` code I viewed in step 191.
+                                                                            Lines 1448+: It renders `AvatarBadge` and `ProductBadge` MANUALLY.
+                                                                            It does NOT use `ImageBadgeRow` for these in the "same line" block.
+                                                                            
+                                                                            So I need to import `AvatarBadge` and `ProductBadge`.
+                                                                            Let's check imports. I'll need to add them.
+                                                                        */}
+                                                                        <ImageBadgeRow
+                                                                            align="center"
+                                                                            avatars={avatarForImage ? [{ data: avatarForImage, onClick: () => setCreationsModalAvatar(avatarForImage!) }] : []}
+                                                                            products={productForImage ? [{ data: productForImage, onClick: () => setCreationsModalProduct(productForImage!) }] : []}
+                                                                            styles={[]}
+                                                                        />
+                                                                    </div>
+                                                                )}
                                                             </div>
-                                                            <span className="text-xs font-raleway text-theme-white hover:text-theme-text transition-colors duration-100">
-                                                                {item.references.length} Reference{item.references.length > 1 ? 's' : ''}
-                                                            </span>
-                                                        </div>
-                                                    )}
+                                                        );
+                                                    })()}
 
                                                     <ImageBadgeRow
                                                         align="center"
@@ -1699,22 +1840,8 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                             size: 'md',
                                                             onClick: () => goToModelGallery(item.model, 'image')
                                                         }}
-                                                        avatars={
-                                                            item.avatarId
-                                                                ? (() => {
-                                                                    const avatarForImage = avatarHandlers.storedAvatars.find(a => a.id === item.avatarId);
-                                                                    return avatarForImage ? [{ data: avatarForImage, onClick: () => goToAvatarProfile(avatarForImage) }] : [];
-                                                                })()
-                                                                : []
-                                                        }
-                                                        products={
-                                                            item.productId
-                                                                ? (() => {
-                                                                    const productForImage = productHandlers.storedProducts.find(p => p.id === item.productId);
-                                                                    return productForImage ? [{ data: productForImage, onClick: () => goToProductProfile(productForImage) }] : [];
-                                                                })()
-                                                                : []
-                                                        }
+                                                        avatars={[]}
+                                                        products={[]}
                                                         styles={
                                                             item.styleId
                                                                 ? (() => {
@@ -3184,6 +3311,127 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                     imageUrls={referenceModalReferences}
                     onClose={() => setReferenceModalReferences(null)}
                 />
+            )}
+            {/* Avatar Information Modal */}
+            {creationsModalAvatar && (
+                <div
+                    className="fixed inset-0 z-[10500] flex items-center justify-center bg-theme-black/80 px-4 py-10"
+                    onClick={() => setCreationsModalAvatar(null)}
+                >
+                    <div
+                        className={`relative w-full max-w-lg overflow-hidden rounded-[32px] shadow-2xl ${glass.promptDark}`}
+                        onClick={(event) => event.stopPropagation()}
+                    >
+                        <button
+                            type="button"
+                            className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text z-10"
+                            onClick={() => setCreationsModalAvatar(null)}
+                            aria-label="Close Avatar details"
+                        >
+                            <X className="h-5 w-5" />
+                        </button>
+
+                        <div className="flex flex-col gap-6 p-6 lg:p-8 max-h-[80vh] overflow-y-auto">
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                <div className="space-y-1">
+                                    <h2 className="text-2xl font-raleway text-theme-text">
+                                        Avatar: {creationsModalAvatar.name}
+                                    </h2>
+                                    <p className="text-sm font-raleway text-theme-white">
+                                        Avatar details and images.
+                                    </p>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <button
+                                        type="button"
+                                        className={buttons.ghost}
+                                        onClick={() => {
+                                            navigate(`/app/avatars/${creationsModalAvatar.slug}`);
+                                            setCreationsModalAvatar(null);
+                                        }}
+                                    >
+                                        Manage avatar
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <h3 className="text-lg font-raleway text-theme-text">Avatar images</h3>
+                                <div className="flex flex-wrap gap-2">
+                                    {creationsModalAvatar.images.map((image, index) => {
+                                        const isPrimary = creationsModalAvatar.primaryImageId === image.id;
+                                        return (
+                                            <div key={image.id} className="flex flex-col items-center gap-2">
+                                                <div
+                                                    className={`relative aspect-square w-24 overflow-hidden rounded-2xl border border-theme-dark bg-theme-black/60`}
+                                                >
+                                                    <img
+                                                        src={image.url}
+                                                        alt={`${creationsModalAvatar.name} variation ${index + 1}`}
+                                                        className="h-full w-full object-cover"
+                                                    />
+                                                    <div className="absolute left-2 top-2 flex flex-col gap-1">
+                                                        {isPrimary && (
+                                                            <span className={`${glass.promptDark} rounded-full px-2 py-0.5 text-[10px] font-raleway text-theme-text`}>
+                                                                Primary
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Product Information Modal */}
+            {creationsModalProduct && (
+                <div
+                    className="fixed inset-0 z-[10500] flex items-center justify-center bg-theme-black/80 px-4 py-10"
+                    onClick={() => setCreationsModalProduct(null)}
+                >
+                    <div
+                        className={`relative w-full max-w-lg overflow-hidden rounded-[32px] shadow-2xl ${glass.promptDark}`}
+                        onClick={(event) => event.stopPropagation()}
+                    >
+                        <button
+                            type="button"
+                            className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text z-10"
+                            onClick={() => setCreationsModalProduct(null)}
+                            aria-label="Close Product details"
+                        >
+                            <X className="h-5 w-5" />
+                        </button>
+
+                        <div className="flex flex-col gap-6 p-6 lg:p-8 max-h-[80vh] overflow-y-auto">
+                            <div className="flex flex-col gap-2">
+                                <h2 className="text-2xl font-raleway text-theme-text">
+                                    Product: {creationsModalProduct.name}
+                                </h2>
+                                <p className="text-sm font-raleway text-theme-white">
+                                    Product details.
+                                </p>
+                            </div>
+
+                            <div className="flex justify-start">
+                                <div className="w-1/3 min-w-[120px]">
+                                    <div className="relative aspect-square rounded-2xl overflow-hidden border border-theme-dark">
+                                        <img
+                                            src={creationsModalProduct.imageUrl}
+                                            alt={creationsModalProduct.name}
+                                            loading="lazy"
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             )}
         </>,
         document.body

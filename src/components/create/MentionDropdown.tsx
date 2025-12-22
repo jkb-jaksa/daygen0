@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { User } from 'lucide-react';
+import { User, Package } from 'lucide-react';
 import { glass } from '../../styles/designSystem';
-import type { MentionItem } from './hooks/useMentionSuggestions';
+import type { MentionItem, MentionType } from './hooks/useMentionSuggestions';
 
 interface MentionDropdownProps {
     isOpen: boolean;
@@ -12,6 +12,7 @@ interface MentionDropdownProps {
     onSelect: (item: MentionItem) => void;
     onClose: () => void;
     setSelectedIndex: (index: number) => void;
+    mentionType: MentionType | null;
 }
 
 export const MentionDropdown: React.FC<MentionDropdownProps> = ({
@@ -22,6 +23,7 @@ export const MentionDropdown: React.FC<MentionDropdownProps> = ({
     onSelect,
     onClose,
     setSelectedIndex,
+    mentionType,
 }) => {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const [position, setPosition] = React.useState({ top: 0, left: 0 });
@@ -95,7 +97,7 @@ export const MentionDropdown: React.FC<MentionDropdownProps> = ({
         >
             <div className="py-2 px-2">
                 <div className="px-2 py-1.5 text-sm font-raleway font-medium text-theme-text">
-                    Avatars
+                    {mentionType === 'product' ? 'Products' : 'Avatars'}
                 </div>
                 <div className="space-y-1">
                     {suggestions.map((item, index) => (
@@ -121,12 +123,16 @@ export const MentionDropdown: React.FC<MentionDropdownProps> = ({
                                     />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center">
-                                        <User className="w-4 h-4 text-theme-white/40" />
+                                        {item.type === 'product' ? (
+                                            <Package className="w-4 h-4 text-theme-white/40" />
+                                        ) : (
+                                            <User className="w-4 h-4 text-theme-white/40" />
+                                        )}
                                     </div>
                                 )}
                             </div>
 
-                            {/* Name only (no type since it's always avatar) */}
+                            {/* Name only (no type since it's always implied by section) */}
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-raleway truncate">{item.name}</p>
                             </div>

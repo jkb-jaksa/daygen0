@@ -636,69 +636,123 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                             )}
                                         </div>
                                         <div className="mt-2 flex flex-col justify-center items-center gap-2">
-                                            {/* Reference images thumbnails */}
-                                            {item.references && item.references.length > 0 && (
-                                                <div className="flex items-center gap-1.5">
-                                                    <div className="flex gap-1">
-                                                        {item.references.map((ref, refIdx) => (
-                                                            <div key={refIdx} className="relative">
-                                                                <img
-                                                                    src={ref}
-                                                                    alt={`Reference ${refIdx + 1}`}
-                                                                    loading="lazy"
-                                                                    className="w-6 h-6 rounded object-cover border border-theme-mid cursor-pointer hover:border-theme-text transition-colors duration-200"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                    }}
-                                                                />
-                                                                <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
-                                                                    {refIdx + 1}
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                    <span className="text-xs font-raleway text-theme-white/70">
-                                                        {item.references.length} ref{item.references.length > 1 ? 's' : ''}
-                                                    </span>
-                                                </div>
-                                            )}
+                                            {/* Reference images thumbnails with avatar/product filtering */}
+                                            {(() => {
+                                                // Helper to strip query params
+                                                const stripQuery = (url: string) => url.split('?')[0];
 
-                                            <ImageBadgeRow
-                                                align="center"
-                                                model={{
-                                                    name: item.model || 'unknown',
-                                                    size: 'md',
-                                                    onClick: () => { }
-                                                }}
-                                                avatars={
-                                                    item.avatarId
-                                                        ? (() => {
-                                                            const avatarForImage = avatarHandlers.storedAvatars.find(a => a.id === item.avatarId);
-                                                            return avatarForImage ? [{ data: avatarForImage, onClick: () => { } }] : [];
-                                                        })()
-                                                        : []
+                                                // Build URL maps for avatar/product lookup
+                                                const avatarUrlMap = new Map<string, typeof avatarHandlers.storedAvatars[0]>();
+                                                for (const avatar of avatarHandlers.storedAvatars) {
+                                                    if (avatar.imageUrl) {
+                                                        avatarUrlMap.set(stripQuery(avatar.imageUrl), avatar);
+                                                    }
+                                                    if (avatar.images) {
+                                                        avatar.images.forEach(img => {
+                                                            if (img.url) avatarUrlMap.set(stripQuery(img.url), avatar);
+                                                        });
+                                                    }
                                                 }
-                                                products={
-                                                    item.productId
-                                                        ? (() => {
-                                                            const productForImage = productHandlers.storedProducts.find(p => p.id === item.productId);
-                                                            return productForImage ? [{ data: productForImage, onClick: () => { } }] : [];
-                                                        })()
-                                                        : []
+
+                                                const productUrlMap = new Map<string, typeof productHandlers.storedProducts[0]>();
+                                                for (const product of productHandlers.storedProducts) {
+                                                    if (product.imageUrl) {
+                                                        productUrlMap.set(stripQuery(product.imageUrl), product);
+                                                    }
                                                 }
-                                                styles={
-                                                    item.styleId
-                                                        ? (() => {
-                                                            const styleForImage = styleIdToStoredStyle(item.styleId!);
-                                                            return styleForImage ? [{ data: styleForImage }] : [];
-                                                        })()
-                                                        : []
+
+                                                // Resolve Avatar/Product with fallback to URL matching
+                                                let avatarForImage = item.avatarId ? avatarHandlers.storedAvatars.find(a => a.id === item.avatarId) : undefined;
+                                                if (!avatarForImage && item.references) {
+                                                    for (const ref of item.references) {
+                                                        const match = avatarUrlMap.get(stripQuery(ref));
+                                                        if (match) {
+                                                            avatarForImage = match;
+                                                            break;
+                                                        }
+                                                    }
                                                 }
-                                                aspectRatio={item.aspectRatio}
-                                                isPublic={item.isPublic}
-                                                onPublicClick={undefined}
-                                                compact={false}
-                                            />
+
+                                                let productForImage = item.productId ? productHandlers.storedProducts.find(p => p.id === item.productId) : undefined;
+                                                if (!productForImage && item.references) {
+                                                    for (const ref of item.references) {
+                                                        const match = productUrlMap.get(stripQuery(ref));
+                                                        if (match) {
+                                                            productForImage = match;
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+
+                                                // Compute displayReferences - exclude avatar/product URLs
+                                                const excludedUrls = new Set<string>();
+                                                if (avatarForImage?.imageUrl) {
+                                                    excludedUrls.add(stripQuery(avatarForImage.imageUrl));
+                                                    if (avatarForImage.images) {
+                                                        avatarForImage.images.forEach(img => {
+                                                            if (img.url) excludedUrls.add(stripQuery(img.url));
+                                                        });
+                                                    }
+                                                }
+                                                if (productForImage?.imageUrl) {
+                                                    excludedUrls.add(stripQuery(productForImage.imageUrl));
+                                                }
+
+                                                const displayReferences = item.references?.filter(ref => !excludedUrls.has(stripQuery(ref))) || [];
+
+                                                return (
+                                                    <>
+                                                        {displayReferences.length > 0 && (
+                                                            <div className="flex items-center gap-1.5">
+                                                                <div className="flex gap-1">
+                                                                    {displayReferences.map((ref, refIdx) => (
+                                                                        <div key={refIdx} className="relative">
+                                                                            <img
+                                                                                src={ref}
+                                                                                alt={`Reference ${refIdx + 1}`}
+                                                                                loading="lazy"
+                                                                                className="w-6 h-6 rounded object-cover border border-theme-mid cursor-pointer hover:border-theme-text transition-colors duration-200"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                }}
+                                                                            />
+                                                                            <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
+                                                                                {refIdx + 1}
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                                <span className="text-xs font-raleway text-theme-white/70">
+                                                                    {displayReferences.length} ref{displayReferences.length > 1 ? 's' : ''}
+                                                                </span>
+                                                            </div>
+                                                        )}
+
+                                                        <ImageBadgeRow
+                                                            align="center"
+                                                            model={{
+                                                                name: item.model || 'unknown',
+                                                                size: 'md',
+                                                                onClick: () => { }
+                                                            }}
+                                                            avatars={avatarForImage ? [{ data: avatarForImage, onClick: () => { } }] : []}
+                                                            products={productForImage ? [{ data: productForImage, onClick: () => { } }] : []}
+                                                            styles={
+                                                                item.styleId
+                                                                    ? (() => {
+                                                                        const styleForImage = styleIdToStoredStyle(item.styleId!);
+                                                                        return styleForImage ? [{ data: styleForImage }] : [];
+                                                                    })()
+                                                                    : []
+                                                            }
+                                                            aspectRatio={item.aspectRatio}
+                                                            isPublic={item.isPublic}
+                                                            onPublicClick={undefined}
+                                                            compact={false}
+                                                        />
+                                                    </>
+                                                );
+                                            })()}
                                         </div>
                                     </div>
                                 </div>

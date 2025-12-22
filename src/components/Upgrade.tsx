@@ -105,7 +105,7 @@ export default function Upgrade() {
               <div className="text-center">
                 <button
                   onClick={handleManageBilling}
-                  className="text-brand-cyan hover:text-brand-cyan/80 underline text-sm font-raleway transition-colors"
+                  className="text-theme-text hover:text-theme-text/80 underline text-sm font-raleway transition-colors"
                 >
                   Already subscribed? Manage your billing →
                 </button>
@@ -125,20 +125,20 @@ export default function Upgrade() {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-brand-cyan/10 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-brand-cyan" />
+              <div className="w-10 h-10 rounded-full bg-theme-text/10 flex items-center justify-center">
+                <Zap className="w-5 h-5 text-theme-text" />
               </div>
               <span className="text-sm font-raleway text-theme-white">Instant credit allocation</span>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-brand-cyan/10 flex items-center justify-center">
-                <Crown className="w-5 h-5 text-brand-cyan" />
+              <div className="w-10 h-10 rounded-full bg-theme-text/10 flex items-center justify-center">
+                <Crown className="w-5 h-5 text-theme-text" />
               </div>
               <span className="text-sm font-raleway text-theme-white">Priority generation queue</span>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-brand-cyan/10 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-brand-cyan" />
+              <div className="w-10 h-10 rounded-full bg-theme-text/10 flex items-center justify-center">
+                <Zap className="w-5 h-5 text-theme-text" />
               </div>
               <span className="text-sm font-raleway text-theme-white">Access to all models</span>
             </div>

@@ -103,7 +103,7 @@ function UseCaseCard({
 
   const cardContent = (
     <div
-      className="relative parallax-small mouse-glow border border-theme-dark hover:border-theme-mid transition-colors duration-200 rounded-2xl overflow-hidden cursor-pointer"
+      className="relative parallax-large mouse-glow border border-theme-dark hover:border-theme-mid transition-colors duration-200 rounded-2xl overflow-hidden cursor-pointer"
       onPointerMove={onPointerMove}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
@@ -707,8 +707,8 @@ function AppContent() {
 
   // Hide footer in app section
   useEffect(() => {
-    const isInAppSection = location.pathname.startsWith("/app");
-    setFooterVisible(!isInAppSection);
+    const shouldHideFooter = location.pathname.startsWith("/app") || location.pathname.startsWith("/edit");
+    setFooterVisible(!shouldHideFooter);
 
     // Cleanup: restore footer visibility on unmount
     return () => {

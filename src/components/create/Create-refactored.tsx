@@ -8,6 +8,7 @@ const ImageActionMenu = lazy(() => import('./ImageActionMenu'));
 const BulkActionsMenu = lazy(() => import('./BulkActionsMenu'));
 const GallerySelectionBar = lazy(() => import('./GallerySelectionBar'));
 const GalleryFilters = lazy(() => import('./GalleryFilters'));
+const CollapsibleGalleryFilters = lazy(() => import('./CollapsibleGalleryFilters'));
 const GalleryConfirmationModals = lazy(() => import('./modals/GalleryConfirmationModals'));
 const FoldersView = lazy(() => import('./FoldersView'));
 const FolderContentsView = lazy(() => import('./FolderContentsView'));
@@ -1047,6 +1048,9 @@ function CreateRefactoredView() {
                       )}
                     </div>
                   )}
+                  <Suspense fallback={null}>
+                    <CollapsibleGalleryFilters activeCategory={activeCategory as 'image' | 'video'} />
+                  </Suspense>
                   <ResultsGrid
                     activeCategory={activeCategory as 'image' | 'video'}
                     onFocusPrompt={focusPromptBar}

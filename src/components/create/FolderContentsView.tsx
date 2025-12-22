@@ -76,7 +76,7 @@ export default function FolderContentsView({
 }: FolderContentsViewProps) {
   const renderEditButton = (actionMenuId: string, img: GalleryImageLike | GalleryVideoLike) => {
     if (!onEditMenuSelect) return null;
-    
+
     return (
       <Suspense fallback={null}>
         <EditButtonMenu
@@ -91,7 +91,7 @@ export default function FolderContentsView({
 
   const renderMoreButton = (actionMenuId: string, img: GalleryImageLike | GalleryVideoLike, context: string) => {
     if (!onMoreButtonClick) return null;
-    
+
     return (
       <button
         type="button"
@@ -99,11 +99,10 @@ export default function FolderContentsView({
           event.stopPropagation();
           onMoreButtonClick(actionMenuId, img, context);
         }}
-        className={`image-action-btn parallax-large transition-opacity duration-100 ${
-          imageActionMenu?.id === actionMenuId || moreActionMenu?.id === actionMenuId
+        className={`image-action-btn parallax-large transition-opacity duration-100 ${imageActionMenu?.id === actionMenuId || moreActionMenu?.id === actionMenuId
             ? 'opacity-100 pointer-events-auto'
             : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-        }`}
+          }`}
         title="More actions"
         aria-label="More actions"
       >
@@ -160,7 +159,7 @@ export default function FolderContentsView({
             return (
               <div
                 key={img.jobId || img.timestamp || `${img.url}-${idx}`}
-                className={`group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid transition-colors duration-100 parallax-small ${isSelectMode ? 'cursor-pointer' : ''}`}
+                className={`group relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid transition-colors duration-100 parallax-large ${isSelectMode ? 'cursor-pointer' : ''}`}
                 onClick={(event) => {
                   const target = event.target;
                   if (target instanceof Element && (target.hasAttribute('data-copy-button') || target.closest('[data-copy-button="true"]'))) {
@@ -182,9 +181,8 @@ export default function FolderContentsView({
 
                 {/* Image info overlay */}
                 <div
-                  className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto hidden sm:flex items-end z-10 ${
-                    isMenuActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                  }`}
+                  className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto hidden sm:flex items-end z-10 ${isMenuActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                    }`}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="w-full p-4">
@@ -337,15 +335,14 @@ export default function FolderContentsView({
                       event.stopPropagation();
                       onToggleImageSelection?.(img.url, event);
                     }}
-                    className={`image-action-btn parallax-large image-select-toggle ${
-                      isSelected
+                    className={`image-action-btn parallax-large image-select-toggle ${isSelected
                         ? 'image-select-toggle--active opacity-100 pointer-events-auto'
                         : isSelectMode
                           ? 'opacity-100 pointer-events-auto'
                           : isMenuActive
                             ? 'opacity-100 pointer-events-auto'
                             : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                    }`}
+                      }`}
                     aria-pressed={isSelected}
                     aria-label={isSelected ? 'Unselect image' : 'Select image'}
                   >
@@ -362,11 +359,10 @@ export default function FolderContentsView({
                             event.stopPropagation();
                             onDeleteImage(img.url);
                           }}
-                          className={`image-action-btn parallax-large ${
-                            isMenuActive
+                          className={`image-action-btn parallax-large ${isMenuActive
                               ? 'opacity-100 pointer-events-auto'
                               : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                          }`}
+                            }`}
                           title="Delete image"
                           aria-label="Delete image"
                         >
@@ -378,18 +374,16 @@ export default function FolderContentsView({
                             event.stopPropagation();
                             onToggleLike(img.url);
                           }}
-                          className={`image-action-btn parallax-large favorite-toggle ${
-                            isMenuActive
+                          className={`image-action-btn parallax-large favorite-toggle ${isMenuActive
                               ? 'opacity-100 pointer-events-auto'
                               : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                          }`}
+                            }`}
                           title={isLiked(img.url) ? 'Remove from liked' : 'Add to liked'}
                           aria-label={isLiked(img.url) ? 'Remove from liked' : 'Add to liked'}
                         >
                           <Heart
-                            className={`heart-icon w-3 h-3 transition-colors duration-100 ${
-                              isLiked(img.url) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
-                            }`}
+                            className={`heart-icon w-3 h-3 transition-colors duration-100 ${isLiked(img.url) ? 'fill-red-500 text-red-500' : 'text-current fill-none'
+                              }`}
                           />
                         </button>
                         {renderMoreButton(actionMenuId, img, 'gallery')}

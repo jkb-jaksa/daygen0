@@ -313,7 +313,7 @@ export default function Navbar() {
       {/* Top navbar */}
       <nav
         ref={navRef}
-        className={`relative ${glass.promptDark} border-t-0`}
+        className="relative liquid-glass-navbar"
       >
         <div
           className={`${layout.container} flex items-center justify-between text-base min-h-[var(--nav-h)]`}
@@ -476,16 +476,16 @@ export default function Navbar() {
                     walletBalance ? (
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between gap-4">
-                          <span className="text-theme-white/60">Subscription</span>
-                          <span className="text-purple-400 font-medium">{walletBalance.subscriptionCredits.toLocaleString()}</span>
+                          <span className="text-theme-white">Subscription</span>
+                          <span className="text-theme-text font-medium">{walletBalance.subscriptionCredits.toLocaleString()}</span>
                         </div>
-                        <div className="text-[10px] text-theme-white/40">Resets monthly</div>
+                        <div className="text-[10px] text-theme-light">Resets monthly</div>
                         <div className="h-px bg-theme-white/10 my-1" />
                         <div className="flex items-center justify-between gap-4">
-                          <span className="text-theme-white/60">Top-Up</span>
-                          <span className="text-emerald-400 font-medium">{walletBalance.topUpCredits.toLocaleString()}</span>
+                          <span className="text-theme-white">Top-Up</span>
+                          <span className="text-theme-text font-medium">{walletBalance.topUpCredits.toLocaleString()}</span>
                         </div>
-                        <div className="text-[10px] text-theme-white/40">Never expires</div>
+                        <div className="text-[10px] text-theme-light">Never expires</div>
                       </div>
                     ) : (
                       <div>Credits: {currentUser.credits.toLocaleString()}</div>
@@ -506,9 +506,9 @@ export default function Navbar() {
                     <span className="hidden xl:flex items-center gap-1.5 font-normal">
                       {walletBalance ? (
                         <>
-                          <span className="text-purple-400">{walletBalance.subscriptionCredits.toLocaleString()}</span>
+                          <span className="text-theme-text">{walletBalance.subscriptionCredits.toLocaleString()}</span>
                           <span className="text-theme-white/40">+</span>
-                          <span className="text-emerald-400">{walletBalance.topUpCredits.toLocaleString()}</span>
+                          <span className="text-theme-text">{walletBalance.topUpCredits.toLocaleString()}</span>
                         </>
                       ) : (
                         <span>{currentUser.credits.toLocaleString()}</span>
@@ -707,14 +707,14 @@ export default function Navbar() {
                       {walletBalance ? (
                         <>
                           <div className="flex items-center justify-between">
-                            <span className="font-raleway text-xs text-theme-white/60">Subscription</span>
-                            <span className="font-raleway text-base font-medium text-purple-400">
+                            <span className="font-raleway text-xs text-theme-white">Subscription</span>
+                            <span className="font-raleway text-base font-medium text-theme-text">
                               {walletBalance.subscriptionCredits.toLocaleString()}
                             </span>
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="font-raleway text-xs text-theme-white/60">Top-Up</span>
-                            <span className="font-raleway text-base font-medium text-emerald-400">
+                            <span className="font-raleway text-xs text-theme-white">Top-Up</span>
+                            <span className="font-raleway text-base font-medium text-theme-text">
                               {walletBalance.topUpCredits.toLocaleString()}
                             </span>
                           </div>

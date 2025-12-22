@@ -235,11 +235,39 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
     const productHandlers = useProductHandlers();
     const styleHandlers = useStyleHandlers();
 
+    // Helper to strip query params
+    const stripQuery = (url: string) => url.split('?')[0];
+
+    // URL maps for smart lookup
+    const { storedAvatars } = avatarHandlers;
+    const { storedProducts } = productHandlers;
+
+    const avatarUrlMap = useMemo(() => {
+        const map = new Map<string, typeof storedAvatars[0]>();
+        storedAvatars.forEach(avatar => {
+            if (avatar.imageUrl) map.set(stripQuery(avatar.imageUrl), avatar);
+            avatar.images?.forEach(img => {
+                if (img.url) map.set(stripQuery(img.url), avatar);
+            });
+        });
+        return map;
+    }, [storedAvatars]);
+
+    const productUrlMap = useMemo(() => {
+        const map = new Map<string, typeof storedProducts[0]>();
+        storedProducts.forEach(product => {
+            if (product.imageUrl) map.set(stripQuery(product.imageUrl), product);
+        });
+        return map;
+    }, [storedProducts]);
+
     const {
         selectedAvatar,
         avatarButtonRef,
         isAvatarPickerOpen,
         setIsAvatarPickerOpen,
+        creationsModalAvatar,
+        setCreationsModalAvatar,
     } = avatarHandlers;
 
     const {
@@ -247,6 +275,8 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
         productButtonRef,
         isProductPickerOpen,
         setIsProductPickerOpen,
+        creationsModalProduct,
+        setCreationsModalProduct,
     } = productHandlers;
 
     // Drag handlers for Avatar button
@@ -618,36 +648,83 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                     </>
                                                 )}
                                             </div>
-                                            <div className="mt-2 flex flex-col justify-center items-center gap-2">
-                                                {/* Reference images thumbnails */}
-                                                {item.references && item.references.length > 0 && (
-                                                    <div
-                                                        className="flex items-center gap-1.5 cursor-pointer"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setReferenceModalReferences(item.references || []);
-                                                        }}
-                                                    >
-                                                        <div className="flex gap-1">
-                                                            {item.references.map((ref, refIdx) => (
-                                                                <div key={refIdx} className="relative">
-                                                                    <img
-                                                                        src={ref}
-                                                                        alt={`Reference ${refIdx + 1}`}
-                                                                        loading="lazy"
-                                                                        className="w-6 h-6 rounded object-cover border border-theme-mid hover:border-theme-text transition-colors duration-200"
-                                                                    />
-                                                                    <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
-                                                                        {refIdx + 1}
+                                            <div className="mt-1 flex flex-col justify-center items-center gap-2">
+                                                {/* Unified References and Badges Display */}
+                                                {(() => {
+                                                    // Determine Avatar/Product based on ID or URL matching
+                                                    let avatarForImage = item.avatarId ? avatarHandlers.storedAvatars.find(a => a.id === item.avatarId) : undefined;
+                                                    let productForImage = item.productId ? productHandlers.storedProducts.find(p => p.id === item.productId) : undefined;
+
+                                                    // 2. Filter References to exclude avatar/product images
+                                                    const displayReferences = (item.references || []).filter(ref => {
+                                                        const strippedRef = stripQuery(ref);
+                                                        const matchedAvatar = avatarUrlMap.get(strippedRef);
+                                                        const matchedProduct = productUrlMap.get(strippedRef);
+
+                                                        // If this reference matches an avatar, capture it and exclude from generic refs
+                                                        if (matchedAvatar && !avatarForImage) {
+                                                            avatarForImage = matchedAvatar;
+                                                            return false;
+                                                        }
+                                                        if (matchedProduct && !productForImage) {
+                                                            productForImage = matchedProduct;
+                                                            return false;
+                                                        }
+                                                        // If already identified as avatar/product, exclude
+                                                        if (matchedAvatar || matchedProduct) return false;
+                                                        return true;
+                                                    });
+
+                                                    if (displayReferences.length === 0 && !avatarForImage && !productForImage) return null;
+
+                                                    return (
+                                                        <div
+                                                            className="flex flex-wrap items-center justify-center gap-3 cursor-pointer"
+                                                            onClick={(e) => {
+                                                                if (displayReferences.length > 0) {
+                                                                    e.stopPropagation();
+                                                                    setReferenceModalReferences(displayReferences);
+                                                                }
+                                                            }}
+                                                        >
+                                                            {/* References Count */}
+                                                            {displayReferences.length > 0 && (
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <div className="flex gap-1">
+                                                                        {displayReferences.map((ref, refIdx) => (
+                                                                            <div key={refIdx} className="relative">
+                                                                                <img
+                                                                                    src={ref}
+                                                                                    alt={`Reference ${refIdx + 1}`}
+                                                                                    loading="lazy"
+                                                                                    className="w-6 h-6 rounded object-cover border border-theme-dark hover:border-theme-mid transition-colors duration-100"
+                                                                                />
+                                                                                <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
+                                                                                    {refIdx + 1}
+                                                                                </div>
+                                                                            </div>
+                                                                        ))}
                                                                     </div>
+                                                                    <span className="text-xs font-raleway text-theme-white hover:text-theme-text transition-colors duration-100">
+                                                                        {displayReferences.length} Ref{displayReferences.length > 1 ? 's' : ''}
+                                                                    </span>
                                                                 </div>
-                                                            ))}
+                                                            )}
+
+                                                            {/* Avatar/Product Badges */}
+                                                            {(avatarForImage || productForImage) && (
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <ImageBadgeRow
+                                                                        align="center"
+                                                                        avatars={avatarForImage ? [{ data: avatarForImage, onClick: () => setCreationsModalAvatar(avatarForImage!) }] : []}
+                                                                        products={productForImage ? [{ data: productForImage, onClick: () => setCreationsModalProduct(productForImage!) }] : []}
+                                                                        styles={[]}
+                                                                    />
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                        <span className="text-xs font-raleway text-theme-white hover:text-theme-text transition-colors duration-100">
-                                                            {item.references.length} Reference{item.references.length > 1 ? 's' : ''}
-                                                        </span>
-                                                    </div>
-                                                )}
+                                                    );
+                                                })()}
 
                                                 <ImageBadgeRow
                                                     align="center"
@@ -656,22 +733,8 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                         size: 'md',
                                                         onClick: () => { }
                                                     }}
-                                                    avatars={
-                                                        item.avatarId
-                                                            ? (() => {
-                                                                const avatarForImage = avatarHandlers.storedAvatars.find(a => a.id === item.avatarId);
-                                                                return avatarForImage ? [{ data: avatarForImage, onClick: () => { } }] : [];
-                                                            })()
-                                                            : []
-                                                    }
-                                                    products={
-                                                        item.productId
-                                                            ? (() => {
-                                                                const productForImage = productHandlers.storedProducts.find(p => p.id === item.productId);
-                                                                return productForImage ? [{ data: productForImage, onClick: () => { } }] : [];
-                                                            })()
-                                                            : []
-                                                    }
+                                                    avatars={[]}
+                                                    products={[]}
                                                     styles={
                                                         item.styleId
                                                             ? (() => {
@@ -1377,6 +1440,112 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                     imageUrls={referenceModalReferences}
                     onClose={() => setReferenceModalReferences(null)}
                 />
+            )}
+
+            {/* Avatar Information Modal */}
+            {creationsModalAvatar && (
+                <div
+                    className="fixed inset-0 z-[10500] flex items-center justify-center bg-theme-black/80 px-4 py-10"
+                    onClick={() => setCreationsModalAvatar(null)}
+                >
+                    <div
+                        className={`relative w-full max-w-lg overflow-hidden rounded-[32px] shadow-2xl ${glass.promptDark}`}
+                        onClick={(event) => event.stopPropagation()}
+                    >
+                        <button
+                            type="button"
+                            className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text z-10"
+                            onClick={() => setCreationsModalAvatar(null)}
+                            aria-label="Close Avatar details"
+                        >
+                            <X className="h-5 w-5" />
+                        </button>
+
+                        <div className="flex flex-col gap-6 p-6 lg:p-8 max-h-[80vh] overflow-y-auto">
+                            <div className="space-y-1">
+                                <h2 className="text-2xl font-raleway text-theme-text">
+                                    Avatar: {creationsModalAvatar.name}
+                                </h2>
+                                <p className="text-sm font-raleway text-theme-white">
+                                    Avatar details and images.
+                                </p>
+                            </div>
+
+                            <div className="space-y-3">
+                                <h3 className="text-lg font-raleway text-theme-text">Avatar images</h3>
+                                <div className="flex flex-wrap gap-2">
+                                    {creationsModalAvatar.images.map((image, index) => {
+                                        const isPrimary = creationsModalAvatar.primaryImageId === image.id;
+                                        return (
+                                            <div key={image.id} className="flex flex-col items-center gap-2">
+                                                <div
+                                                    className={`relative aspect-square w-24 overflow-hidden rounded-2xl border border-theme-dark bg-theme-black/60`}
+                                                >
+                                                    <img
+                                                        src={image.url}
+                                                        alt={`${creationsModalAvatar.name} variation ${index + 1}`}
+                                                        className="h-full w-full object-cover"
+                                                    />
+                                                    {isPrimary && (
+                                                        <span className={`absolute left-2 top-2 ${glass.promptDark} rounded-full px-2 py-0.5 text-[10px] font-raleway text-theme-text`}>
+                                                            Primary
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Product Information Modal */}
+            {creationsModalProduct && (
+                <div
+                    className="fixed inset-0 z-[10500] flex items-center justify-center bg-theme-black/80 px-4 py-10"
+                    onClick={() => setCreationsModalProduct(null)}
+                >
+                    <div
+                        className={`relative w-full max-w-lg overflow-hidden rounded-[32px] shadow-2xl ${glass.promptDark}`}
+                        onClick={(event) => event.stopPropagation()}
+                    >
+                        <button
+                            type="button"
+                            className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-theme-dark/70 bg-theme-black/60 text-theme-white transition-colors duration-200 hover:text-theme-text z-10"
+                            onClick={() => setCreationsModalProduct(null)}
+                            aria-label="Close Product details"
+                        >
+                            <X className="h-5 w-5" />
+                        </button>
+
+                        <div className="flex flex-col gap-6 p-6 lg:p-8 max-h-[80vh] overflow-y-auto">
+                            <div className="flex flex-col gap-2">
+                                <h2 className="text-2xl font-raleway text-theme-text">
+                                    Product: {creationsModalProduct.name}
+                                </h2>
+                                <p className="text-sm font-raleway text-theme-white">
+                                    Product details.
+                                </p>
+                            </div>
+
+                            <div className="flex justify-start">
+                                <div className="w-1/3 min-w-[120px]">
+                                    <div className="relative aspect-square rounded-2xl overflow-hidden border border-theme-dark">
+                                        <img
+                                            src={creationsModalProduct.imageUrl}
+                                            alt={creationsModalProduct.name}
+                                            loading="lazy"
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             )}
         </>,
         document.body

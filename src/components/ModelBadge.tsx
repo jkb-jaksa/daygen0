@@ -14,7 +14,7 @@ interface ModelBadgeProps {
 // Model configuration with display names and icons
 const MODEL_CONFIG = {
   'gemini-3.0-pro-image': {
-    name: 'Gemini 3 Pro (Nano Banana)',
+    name: 'Nano Banana Pro',
     shortName: 'G3',
     icon: '🤖',
     description: 'Google Gemini 3 Pro - Best for image generation and editing'
