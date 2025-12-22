@@ -7,8 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Crown, ExternalLink, Zap } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Crown, ExternalLink, Zap, ArrowRight } from 'lucide-react';
 import { usePayments, type SubscriptionInfo } from '../../hooks/usePayments';
 import { debugError } from '../../utils/debug';
 
@@ -60,22 +59,6 @@ export function SubscriptionStatusCard({ className = '' }: SubscriptionStatusCar
         });
     };
 
-    const getDaysRemaining = (end: string) => {
-        const now = new Date();
-        const endDate = new Date(end);
-        const diffTime = Math.abs(endDate.getTime() - now.getTime());
-        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    };
-
-    const getProgressPercentage = (start: string, end: string) => {
-        const now = new Date().getTime();
-        const startTime = new Date(start).getTime();
-        const endTime = new Date(end).getTime();
-        const total = endTime - startTime;
-        const current = now - startTime;
-        return Math.min(Math.max((current / total) * 100, 0), 100);
-    };
-
     const isSubscriptionActive = (status: string | undefined) => {
         if (!status) return false;
         const normalizedStatus = status.toUpperCase();
@@ -118,10 +101,6 @@ export function SubscriptionStatusCard({ className = '' }: SubscriptionStatusCar
         );
     }
 
-    // Active subscription view
-    const progress = getProgressPercentage(subscription.currentPeriodStart, subscription.currentPeriodEnd);
-    const daysRemaining = getDaysRemaining(subscription.currentPeriodEnd);
-
     return (
         <div className={`relative overflow-hidden rounded-xl bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-white/5 p-4 ${className}`}>
             {/* Background Crown */}
@@ -142,6 +121,13 @@ export function SubscriptionStatusCard({ className = '' }: SubscriptionStatusCar
                                 <div className={`w-1 h-1 rounded-full ${isSubscriptionActive(subscription.status) ? 'bg-green-400' : 'bg-red-400'} animate-pulse`} />
                                 {subscription.status}
                             </span>
+                            {/* Pending change badge - compact inline display */}
+                            {subscription.pendingPlanName && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                                    <ArrowRight className="w-2.5 h-2.5" />
+                                    {subscription.pendingPlanName} ({subscription.pendingBillingPeriod || 'monthly'})
+                                </span>
+                            )}
                         </div>
                         <h3 className="text-lg font-raleway font-bold text-white">
                             {subscription.planName || 'Pro'}
@@ -149,27 +135,17 @@ export function SubscriptionStatusCard({ className = '' }: SubscriptionStatusCar
                         <p className="text-xs text-theme-white/60 font-raleway">
                             Billed {subscription.billingPeriod} • Next charge {formatDate(subscription.currentPeriodEnd)}
                         </p>
-                    </div>
-
-                    {/* Billing Cycle Progress */}
-                    <div>
-                        <div className="flex justify-between text-[10px] text-theme-text font-raleway mb-1">
-                            <span>Current Cycle</span>
-                            <span className="text-white">{daysRemaining} days remaining</span>
-                        </div>
-                        <div className="h-1.5 bg-theme-white/10 rounded-full overflow-hidden">
-                            <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${progress}%` }}
-                                transition={{ duration: 1, ease: "easeOut" }}
-                                className="h-full bg-brand-cyan rounded-full"
-                            />
-                        </div>
+                        {/* Show pending change date as subtle text */}
+                        {subscription.pendingPlanName && subscription.pendingChangeDate && (
+                            <p className="text-[10px] text-amber-400/80 font-raleway mt-0.5">
+                                → Switching to {subscription.pendingPlanName} ({subscription.pendingBillingPeriod || 'monthly'}) on {formatDate(subscription.pendingChangeDate)}
+                            </p>
+                        )}
                     </div>
                 </div>
 
                 {/* Right side: Manage Billing button */}
-                <div className="flex flex-col items-center justify-center gap-2 min-w-[140px]">
+                <div className="flex flex-col items-center justify-end gap-2 min-w-[140px]">
                     <button
                         onClick={handleManageBilling}
                         disabled={portalLoading}

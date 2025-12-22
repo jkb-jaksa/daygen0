@@ -34,11 +34,12 @@ interface SubscriptionPlan {
 
 export function SubscriptionPlans({ className, defaultPeriod = 'monthly', onPurchase }: SubscriptionPlansProps) {
   const { config, loading: configLoading } = useStripeConfig();
-  const { createCheckoutSession, getSubscription, loading, error } = usePayments();
+  const { createCheckoutSession, getSubscription, openCustomerPortal, loading, error } = usePayments();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [isCheckoutLocked, setIsCheckoutLocked] = useState(false);
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>(defaultPeriod);
   const [currentSubscription, setCurrentSubscription] = useState<SubscriptionInfo | null>(null);
+  const [portalLoading, setPortalLoading] = useState(false);
 
   // Fetch current subscription to filter out the user's current tier
   useEffect(() => {
@@ -47,9 +48,32 @@ export function SubscriptionPlans({ className, defaultPeriod = 'monthly', onPurc
       .catch(() => setCurrentSubscription(null));
   }, []);
 
+  const isSubscriptionActive = (status: string | undefined) => {
+    if (!status) return false;
+    const normalizedStatus = status.toUpperCase();
+    return normalizedStatus === 'ACTIVE' || normalizedStatus === 'TRIALING';
+  };
+
+  const hasActiveSubscription = currentSubscription && isSubscriptionActive(currentSubscription.status);
+
   const handleSubscribe = async (planId: string) => {
     // Prevent multiple simultaneous checkout attempts
-    if (isCheckoutLocked) return;
+    if (isCheckoutLocked || portalLoading) return;
+
+    // If user already has a subscription, redirect to Customer Portal for upgrade/downgrade
+    if (hasActiveSubscription) {
+      try {
+        setPortalLoading(true);
+        setSelectedPlan(planId);
+        await openCustomerPortal();
+      } catch (err) {
+        debugError('Failed to open customer portal:', err);
+      } finally {
+        setSelectedPlan(null);
+        setPortalLoading(false);
+      }
+      return;
+    }
 
     try {
       setIsCheckoutLocked(true);
@@ -81,9 +105,12 @@ export function SubscriptionPlans({ className, defaultPeriod = 'monthly', onPurc
   const yearlyPlans = config.subscriptionPlans.filter(p => p.interval === 'year');
   const periodPlans = billingPeriod === 'yearly' ? yearlyPlans : monthlyPlans;
 
-  // Filter out the user's current subscription tier
+  // Filter out the user's current subscription tier and pending plan (if scheduled)
   const currentPlans = currentSubscription
-    ? periodPlans.filter(plan => plan.id !== currentSubscription.planId)
+    ? periodPlans.filter(plan =>
+      plan.id !== currentSubscription.planId &&
+      plan.id !== currentSubscription.pendingPlanId
+    )
     : periodPlans;
 
   return (
@@ -125,11 +152,12 @@ export function SubscriptionPlans({ className, defaultPeriod = 'monthly', onPurc
             <SubscriptionPlanCard
               plan={plan}
               isSelected={selectedPlan === plan.id}
-              isLoading={loading && selectedPlan === plan.id}
-              isDisabled={isCheckoutLocked && selectedPlan !== plan.id}
+              isLoading={(loading || portalLoading) && selectedPlan === plan.id}
+              isDisabled={(isCheckoutLocked || portalLoading) && selectedPlan !== plan.id}
               onSubscribe={() => handleSubscribe(plan.id)}
               index={index}
               billingPeriod={billingPeriod}
+              isUpgrade={hasActiveSubscription}
             />
           </div>
         ))}
@@ -146,6 +174,7 @@ interface SubscriptionPlanCardProps {
   onSubscribe: () => void;
   index: number;
   billingPeriod: 'monthly' | 'yearly';
+  isUpgrade?: boolean | null;
 }
 
 function SubscriptionPlanCard({
@@ -155,7 +184,8 @@ function SubscriptionPlanCard({
   isDisabled = false,
   onSubscribe,
   index,
-  billingPeriod
+  billingPeriod,
+  isUpgrade = false
 }: SubscriptionPlanCardProps) {
   const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLDivElement>();
 
@@ -273,13 +303,13 @@ function SubscriptionPlanCard({
         <div className="mt-auto">
           <button
             disabled={isLoading}
-            className={`w-full btn font-raleway text-base font-medium transition-all duration-200 parallax-large ${isLoading ? 'opacity-50 cursor-not-allowed btn-white' : 'btn-white hover:bg-theme-white hover:text-theme-black'
+            className={`w-full btn font-raleway text-base font-medium transition-all duration-200 ${isLoading ? 'opacity-50 cursor-not-allowed btn-white' : 'btn-white hover:bg-theme-white hover:text-theme-black'
               } flex items-center justify-center gap-2`}
           >
             {isLoading ? 'Processing...' : (
               <>
                 <Crown className="w-4 h-4" />
-                Subscribe
+                {isUpgrade ? 'Change Plan' : 'Subscribe'}
               </>
             )}
           </button>

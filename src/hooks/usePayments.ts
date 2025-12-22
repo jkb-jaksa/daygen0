@@ -25,6 +25,12 @@ export interface SubscriptionInfo {
   planId: string | null;
   planName: string | null;
   billingPeriod: 'monthly' | 'yearly';
+  // Pending plan change info (when user scheduled a tier change via Customer Portal)
+  pendingPlanId?: string | null;
+  pendingPlanName?: string | null;
+  pendingPlanCredits?: number | null;
+  pendingChangeDate?: string | null;
+  pendingBillingPeriod?: 'monthly' | 'yearly' | null;
 }
 
 // Dual-Wallet Balance
