@@ -124,9 +124,34 @@ const CollapsibleGalleryFilters = memo<CollapsibleGalleryFiltersProps>(({ active
   }, [filters]);
 
   return (
-    <div className="mb-3">
-      {/* Collapse toggle button */}
-      <div className="flex justify-end">
+    <div className="py-3">
+      {/* Top bar with always-visible filters and toggle */}
+      <div className="flex items-center justify-between">
+        {/* Status filters - Liked / Public */}
+        <div className="flex gap-2">
+          <button
+            onClick={handleToggleLiked}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${filters.liked
+              ? "text-theme-text border-theme-mid bg-theme-white/10"
+              : "text-theme-white border-theme-dark hover:border-theme-mid hover:text-theme-text"
+              }`}
+          >
+            <Heart className={`w-3.5 h-3.5 ${filters.liked ? "fill-red-500 text-red-500" : "text-current fill-none"}`} />
+            <span>Liked</span>
+          </button>
+          <button
+            onClick={handleTogglePublic}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${filters.public
+              ? "text-theme-text border-theme-mid bg-theme-white/10"
+              : "text-theme-white border-theme-dark hover:border-theme-mid hover:text-theme-text"
+              }`}
+          >
+            <Globe className={`w-3.5 h-3.5 ${filters.public ? "text-theme-text" : "text-current"}`} />
+            <span>Public</span>
+          </button>
+        </div>
+
+        {/* Collapse toggle button */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${hasActiveFilters || isExpanded
@@ -148,40 +173,13 @@ const CollapsibleGalleryFilters = memo<CollapsibleGalleryFiltersProps>(({ active
       {/* Expandable filters panel */}
       {isExpanded && (
         <div className={`mt-2 p-3 ${glass.promptDark} rounded-2xl`}>
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-raleway text-theme-white">Filters</h3>
+          <div className="flex items-center justify-end mb-2">
             <button
               onClick={handleClearFilters}
               className="px-2.5 py-1 text-xs transition-colors duration-200 font-raleway text-theme-white hover:text-theme-text"
             >
               Clear
             </button>
-          </div>
-
-          {/* Status filters - Liked / Public only (no Image/Video toggles) */}
-          <div className="mb-3">
-            <div className="flex gap-1 flex-wrap">
-              <button
-                onClick={handleToggleLiked}
-                className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${filters.liked
-                  ? "text-theme-text border-theme-mid bg-theme-white/10"
-                  : "text-theme-white border-theme-dark hover:border-theme-mid hover:text-theme-text"
-                  }`}
-              >
-                <Heart className={`w-3.5 h-3.5 ${filters.liked ? "fill-red-500 text-red-500" : "text-current fill-none"}`} />
-                <span>Liked</span>
-              </button>
-              <button
-                onClick={handleTogglePublic}
-                className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${filters.public
-                  ? "text-theme-text border-theme-mid bg-theme-white/10"
-                  : "text-theme-white border-theme-dark hover:border-theme-mid hover:text-theme-text"
-                  }`}
-              >
-                <Globe className={`w-3.5 h-3.5 ${filters.public ? "text-theme-text" : "text-current"}`} />
-                <span>Public</span>
-              </button>
-            </div>
           </div>
 
           {/* Advanced filters grid */}
@@ -315,35 +313,6 @@ const CollapsibleGalleryFilters = memo<CollapsibleGalleryFiltersProps>(({ active
               )}
             </div>
           </div>
-
-          {/* Active Filter Tags for Liked/Public */}
-          {(filters.liked || filters.public) && (
-            <div className="mt-3 pt-3 border-t border-theme-dark/50">
-              <div className="flex flex-wrap items-center gap-2">
-                {filters.liked && (
-                  <button
-                    onClick={() => setFilters({ liked: false })}
-                    className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-theme-mid/30 text-theme-white text-xs font-raleway transition-colors duration-200 bg-theme-white/10 hover:bg-theme-white/20"
-                  >
-                    <Heart className="w-3 h-3 fill-red-500 text-red-500" />
-                    <span>Liked</span>
-                    <X className="w-3 h-3" />
-                  </button>
-                )}
-
-                {filters.public && (
-                  <button
-                    onClick={() => setFilters({ public: false })}
-                    className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-theme-mid/30 text-theme-white text-xs font-raleway transition-colors duration-200 bg-theme-white/10 hover:bg-theme-white/20"
-                  >
-                    <Globe className="w-3 h-3" />
-                    <span>Public</span>
-                    <X className="w-3 h-3" />
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>
