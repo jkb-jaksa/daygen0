@@ -1038,11 +1038,13 @@ export default function Edit() {
   // Prompt bar handlers
   const handleGenerateImage = async () => {
     const trimmedPrompt = prompt.trim();
-    if (!trimmedPrompt || (!selectedFile && !previewUrl)) return;
+    // For resize mode, prompt is optional
+    if (!isResizeMode && !trimmedPrompt) return;
+    if (!selectedFile && !previewUrl) return;
     setIsButtonSpinning(true);
 
     try {
-      // Convert the selected file to base64 if it exists
+      // Convert the selected file or external URL to base64
       let imageData: string | undefined;
       if (selectedFile) {
         imageData = await new Promise<string>((resolve) => {
@@ -1050,85 +1052,69 @@ export default function Edit() {
           reader.onload = () => resolve(reader.result as string);
           reader.readAsDataURL(selectedFile);
         });
-      } else if (previewUrl && isIdeogram) {
-        // For Ideogram, we fetch the image on frontend and send as base64 to avoid backend download issues
-        try {
-          const apiBase = import.meta.env.VITE_API_BASE_URL || '';
-          const proxyEndpoint = `${apiBase}/api/r2files/proxy`;
-          // Use proxy for r2.dev or if it's a relative path (though previewUrl should be absolute usually)
-          const proxyUrl = previewUrl.includes('r2.dev')
-            ? `${proxyEndpoint}?url=${encodeURIComponent(previewUrl)}`
-            : previewUrl;
+      } else if (previewUrl) {
+        // For external images (URLs), fetch via proxy and convert to base64
+        // This is needed for Ideogram (always), and for resize/inpaint modes with external images
+        const needsBase64 = isIdeogram || isResizeMode || isPreciseEditMode;
+        if (needsBase64) {
+          try {
+            const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+            const proxyEndpoint = `${apiBase}/api/r2files/proxy`;
+            // Use proxy for r2.dev URLs or external URLs
+            const proxyUrl = previewUrl.includes('r2.dev') || previewUrl.startsWith('http')
+              ? `${proxyEndpoint}?url=${encodeURIComponent(previewUrl)}`
+              : previewUrl;
 
-          console.log('[Edit] Fetching image for Ideogram payload:', proxyUrl);
-          const response = await fetch(proxyUrl);
-          if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
+            console.log('[Edit] Fetching external image for editing:', proxyUrl);
+            const response = await fetch(proxyUrl);
+            if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
 
-          const contentType = response.headers.get('content-type');
-          if (contentType && contentType.includes('text/html')) {
-            throw new Error('Fetched image is HTML, not an image file.');
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('text/html')) {
+              throw new Error('Fetched image is HTML, not an image file.');
+            }
+
+            const blob = await response.blob();
+            if (blob.type.includes('text/html')) {
+              throw new Error('Fetched blob is text/html, likely an error page.');
+            }
+
+            imageData = await new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.readAsDataURL(blob);
+            });
+          } catch (e) {
+            console.error('[Edit] Failed to fetch/convert previewUrl for editing:', e);
+            showToast("Could not process the image for editing. It may be invalid or inaccessible.");
+            setIsButtonSpinning(false);
+            return;
           }
-
-          const blob = await response.blob();
-          if (blob.type.includes('text/html')) {
-            throw new Error('Fetched blob is text/html, likely an error page.');
-          }
-
-          imageData = await new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.readAsDataURL(blob);
-          });
-        } catch (e) {
-          console.error('[Edit] Failed to fetch/convert previewUrl for Ideogram:', e);
-          showToast("Could not process the image for editing. It may be invalid or inaccessible.");
-          setIsButtonSpinning(false);
-          return;
         }
       }
 
       // Handle resize mode submission
       if (isResizeMode && resizeAspectRatio) {
-        // Resize generates 1 image
-        // For resize, we use Gemini (or user selected model if supported, but typically resize is a specific feature)
-        // QuickEditModal suggests resize is Gemini 3.0 Pro Image feature primarily or similar
-        // We'll pass resizeParams to the hook
-
-        // Note: The hooks currently used (useGeminiImageGeneration) need to support resizeParams
-        // Let's check how QuickEditModal submits. It calls onSubmit prop.
-        // Here we call generateGeminiImage directly.
-
-        await generateGeminiImage({
+        // Resize generates 1 image using Gemini
+        const generated = await generateGeminiImage({
           prompt: resizeUserPrompt.trim() || `Resize to ${resizeAspectRatio}`,
-          // No imageData needed for resize setup usually if it's handled via params, 
-          // BUT wait - generateGeminiImage signature might need update or we pass specific params.
-          // Getting payload structure from QuickEditModal:
-          /*
-             onSubmit({
-                prompt: resizeUserPrompt.trim() || `Resize to ${resizeAspectRatio}`,
-                batchSize: 1,
-                resizeParams: {
-                    aspectRatio: resizeAspectRatio,
-                    position: resizeImagePosition,
-                    scale: resizeImageScale,
-                    userPrompt: resizeUserPrompt.trim(),
-                },
-            });
-           */
-
-          // We need to pass the original image as reference or main image?
-          // For resize/outpainting, usually the original image is passed as input.
-          imageData: imageData, // The original image
+          imageData: imageData,
           imageUrl: !imageData && previewUrl ? previewUrl : undefined,
-          model: selectedModel, // Should be gemini-3.0-pro-image for resize usually
+          model: selectedModel,
           resizeParams: {
             aspectRatio: resizeAspectRatio,
             position: resizeImagePosition,
             scale: resizeImageScale,
             userPrompt: resizeUserPrompt.trim(),
           },
-          jobType: 'IMAGE_RESIZE', // Add job type for clarity if backend supports it
+          jobType: 'IMAGE_RESIZE',
         });
+
+        // Add to gallery if successful
+        if (generated) {
+          await addImage(generated);
+        }
+
         setIsButtonSpinning(false);
         return;
       }
@@ -1143,7 +1129,24 @@ export default function Edit() {
       ));
 
       const primaryImage = imageData || (previewUrl ? previewUrl : undefined);
-      const allReferences = [primaryImage, ...additionalReferences].filter((ref): ref is string => !!ref);
+
+      // Build references array with primary image, avatar, product, and additional references
+      // This matches QuickEditModal behavior
+      const allReferences: string[] = [];
+      if (primaryImage) allReferences.push(primaryImage);
+
+      // Add avatar image URL as reference if selected
+      if (selectedAvatar?.imageUrl) {
+        allReferences.push(selectedAvatar.imageUrl);
+      }
+
+      // Add product image URL as reference if selected
+      if (selectedProduct?.imageUrl) {
+        allReferences.push(selectedProduct.imageUrl);
+      }
+
+      // Add additional reference files
+      allReferences.push(...additionalReferences);
 
       // Generate image based on selected model
       if (isGemini) {
@@ -1165,16 +1168,19 @@ export default function Edit() {
           aspectRatio: geminiAspectRatio,
           jobType: 'IMAGE_EDIT',
           maskImage: finalGeminiMask, // Pass the generated mask
+          // Pass avatar, product, and style IDs for metadata tracking
+          avatarId: selectedAvatar?.id,
+          productId: selectedProduct?.id,
+          styleId: styleHandlers.selectedStylesList[0]?.id,
         });
 
         // Add to gallery if successful
         if (generated) {
           await addImage(generated);
-
         }
       } else if (isFluxModelId(selectedModel)) {
         const fluxModel = FLUX_MODEL_LOOKUP[selectedModel];
-        await generateFluxImage({
+        const generated = await generateFluxImage({
           prompt: trimmedPrompt,
           model: fluxModel,
           input_image: imageData,
@@ -1182,52 +1188,92 @@ export default function Edit() {
           input_image_3: additionalReferences[1],
           input_image_4: additionalReferences[2],
         });
+
+        // Add to gallery if successful
+        if (generated) {
+          await addImage(generated);
+        }
       } else if (isChatGPT) {
-        await generateChatGPTImage({
+        const generated = await generateChatGPTImage({
           prompt: trimmedPrompt,
           size: '1024x1024',
           quality: 'high',
         });
+
+        // Add to gallery if successful
+        if (generated) {
+          await addImage(generated);
+        }
       } else if (isIdeogram) {
         let finalMask: string | undefined;
         if (maskData) {
           finalMask = await generateIdeogramMask();
         }
 
-        await generateIdeogramImage({
+        const generatedImages = await generateIdeogramImage({
           prompt: trimmedPrompt,
           aspect_ratio: '1:1',
           rendering_speed: 'DEFAULT',
           num_images: 1,
           mask: finalMask,
           references: allReferences,
+          // Pass avatar and product IDs for metadata tracking
+          avatarId: selectedAvatar?.id,
+          productId: selectedProduct?.id,
+          styleId: styleHandlers.selectedStylesList[0]?.id,
         });
+
+        // Add generated images to gallery
+        if (generatedImages && generatedImages.length > 0) {
+          for (const img of generatedImages) {
+            await addImage(img);
+          }
+        }
       } else if (isQwen) {
-        await generateQwenImage({
+        const generatedImages = await generateQwenImage({
           prompt: trimmedPrompt,
           size: qwenSize,
           prompt_extend: true,
           watermark: false,
         });
+
+        // Add generated images to gallery
+        if (generatedImages && generatedImages.length > 0) {
+          for (const img of generatedImages) {
+            await addImage(img);
+          }
+        }
       } else if (isRunway) {
-        await generateRunwayImage({
+        const generated = await generateRunwayImage({
           prompt: trimmedPrompt,
           model: selectedModel === "runway-gen4-turbo" ? "gen4_image_turbo" : "gen4_image",
           uiModel: selectedModel,
           references: allReferences,
           ratio: "1920:1080",
         });
+
+        // Add to gallery if successful
+        if (generated) {
+          await addImage(generated);
+        }
       } else if (isReve) {
-        await generateReveImage({
+        const generated = await generateReveImage({
           prompt: trimmedPrompt,
           model: "reve-image-1.0",
           width: 1024,
           height: 1024,
           references: allReferences,
         });
+
+        // Add to gallery if successful
+        if (generated) {
+          await addImage(generated);
+        }
       }
 
-      addPrompt(trimmedPrompt);
+      if (trimmedPrompt) {
+        addPrompt(trimmedPrompt);
+      }
     } catch (error) {
       debugError('Error generating image:', error);
     } finally {
