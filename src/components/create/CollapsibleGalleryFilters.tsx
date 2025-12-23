@@ -139,7 +139,7 @@ const CollapsibleGalleryFilters = memo<CollapsibleGalleryFiltersProps>(({ active
   }, [filters]);
 
   return (
-    <div className="py-3">
+    <div className="pb-3">
       {/* Top bar with always-visible filters and toggle */}
       <div className="flex items-center justify-between">
         {/* Status filters - Generations / Edits / Liked / Public */}

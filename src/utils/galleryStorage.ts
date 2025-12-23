@@ -1,6 +1,7 @@
-import type { GalleryImageLike, StoredGalleryImage } from "../components/create/types";
+import type { GalleryImageLike, GalleryVideoLike, StoredGalleryImage } from "../components/create/types";
 import { normalizeModelId } from './modelUtils';
 import { debugWarn } from './debug';
+import { isVideoModelId } from '../components/create/constants';
 
 /**
  * Simple hash function for generating URL-based IDs
@@ -37,10 +38,10 @@ export const filterOnlyBase64Images = (images: GalleryImageLike[]): GalleryImage
 };
 
 export const serializeGallery = (
-  items: GalleryImageLike[],
+  items: (GalleryImageLike | GalleryVideoLike)[],
 ): StoredGalleryImage[] => {
   // Warn if we're persisting base64 images
-  const base64Images = filterOnlyBase64Images(items);
+  const base64Images = items.filter(item => isBase64Url(item.url));
   if (base64Images.length > 0) {
     debugWarn(`Serializing ${base64Images.length} base64 images to storage. Consider migrating to R2.`);
   }
@@ -59,14 +60,28 @@ export const serializeGallery = (
     styleId: item.styleId,
     jobId: item.jobId, // Save jobId for all images that have one
     aspectRatio: item.aspectRatio, // Persist aspect ratio
+    type: 'type' in item && item.type === 'video' ? 'video' : undefined, // Preserve video type
   }));
+};
+
+/**
+ * Check if URL looks like a video file
+ */
+const looksLikeVideoUrl = (url: string): boolean => {
+  const lowerUrl = url.toLowerCase();
+  return /\.(mp4|mov|webm|m4v|mkv|avi|wmv)(\?|$)/i.test(lowerUrl);
 };
 
 export const hydrateStoredGallery = (
   items: StoredGalleryImage[],
-): GalleryImageLike[] =>
+): (GalleryImageLike | GalleryVideoLike)[] =>
   items.map((item, index) => {
-    const base: GalleryImageLike = {
+    // Determine if this is a video based on stored type, model, or URL
+    const isVideo = item.type === 'video' ||
+      isVideoModelId(item.model) ||
+      looksLikeVideoUrl(item.url);
+
+    const base = {
       url: item.url,
       prompt: item.prompt,
       model: normalizeModelId(item.model ?? "unknown"),
@@ -82,22 +97,26 @@ export const hydrateStoredGallery = (
       aspectRatio: item.aspectRatio, // Restore aspect ratio
     };
 
-    // Special handling for Flux/Reve: generate fallback jobId if missing
-    if (item.model?.startsWith("flux") || item.model?.startsWith("reve")) {
-      const fallbackJobId = item.jobId ?? `restored-${index}-${Date.now()}`;
-      return {
-        ...base,
-        jobId: fallbackJobId,
-      } as GalleryImageLike;
+    // Generate fallback jobId if needed
+    let jobId = base.jobId;
+    if (!jobId) {
+      if (item.model?.startsWith("flux") || item.model?.startsWith("reve")) {
+        jobId = `restored-${index}-${Date.now()}`;
+      } else if (base.url) {
+        jobId = `url-${simpleHash(base.url)}`;
+      }
     }
 
-    // For images without jobId, use URL hash as fallback
-    if (!base.jobId && base.url) {
+    if (isVideo) {
       return {
         ...base,
-        jobId: `url-${simpleHash(base.url)}`,
-      } as GalleryImageLike;
+        jobId,
+        type: 'video',
+      } as GalleryVideoLike;
     }
 
-    return base;
+    return {
+      ...base,
+      jobId,
+    } as GalleryImageLike;
   });

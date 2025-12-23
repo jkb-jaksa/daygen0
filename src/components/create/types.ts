@@ -82,6 +82,7 @@ export type StoredGalleryImage = {
   avatarImageId?: string;
   styleId?: string;
   aspectRatio?: string;
+  type?: 'video'; // Preserve video type for local storage
 };
 
 export type PendingGalleryItem = {
