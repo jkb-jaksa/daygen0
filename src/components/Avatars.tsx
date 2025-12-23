@@ -2521,35 +2521,35 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                     <>
                       <UseCaseCard
                         title="lifestyle images"
-                        imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/lifestyle images.png"
+                        imageUrl="https://assets.daygen.ai/website-assets/lifestyle images.png"
                         imageAlt="Lifestyle images example"
                         onClick={openStyleModal}
                         imageHeight="h-32 sm:h-36 md:h-40"
                       />
                       <UseCaseCard
                         title="business headshot"
-                        imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/3b632ef0-3d13-4359-a2ba-5dec11fc3eab.png"
+                        imageUrl="https://assets.daygen.ai/website-assets/3b632ef0-3d13-4359-a2ba-5dec11fc3eab.png"
                         imageAlt="Business headshot example"
                         onClick={openStyleModal}
                         imageHeight="h-32 sm:h-36 md:h-40"
                       />
                       <UseCaseCard
                         title="artistic images"
-                        imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/artistic images.png"
+                        imageUrl="https://assets.daygen.ai/website-assets/artistic images.png"
                         imageAlt="Artistic images example"
                         onClick={openStyleModal}
                         imageHeight="h-32 sm:h-36 md:h-40"
                       />
                       <UseCaseCard
                         title="add object/product"
-                        imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/product visualizations.png"
+                        imageUrl="https://assets.daygen.ai/website-assets/product visualizations.png"
                         imageAlt="Add object/product example"
                         onClick={openStyleModal}
                         imageHeight="h-32 sm:h-36 md:h-40"
                       />
                       <UseCaseCard
                         title="create brand assets"
-                        imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/brand identity.png"
+                        imageUrl="https://assets.daygen.ai/website-assets/brand identity.png"
                         imageAlt="Create brand assets example"
                         onClick={openStyleModal}
                         imageHeight="h-32 sm:h-36 md:h-40"
@@ -2563,7 +2563,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                       />
                       <UseCaseCard
                         title="short-form video"
-                        imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/virtual try-on.png"
+                        imageUrl="https://assets.daygen.ai/website-assets/virtual try-on.png"
                         imageAlt="Short-form video example"
                         onClick={openStyleModal}
                         imageHeight="h-32 sm:h-36 md:h-40"
@@ -2573,28 +2573,28 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                     <>
                       <UseCaseCard
                         title="edit image details"
-                        imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/3b632ef0-3d13-4359-a2ba-5dec11fc3eab.png"
+                        imageUrl="https://assets.daygen.ai/website-assets/3b632ef0-3d13-4359-a2ba-5dec11fc3eab.png"
                         imageAlt="Edit image details example"
                         onClick={openStyleModal}
                         imageHeight="h-32 sm:h-36 md:h-40"
                       />
                       <UseCaseCard
                         title="upscale image"
-                        imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/upscaling.png"
+                        imageUrl="https://assets.daygen.ai/website-assets/upscaling.png"
                         imageAlt="Upscale image example"
                         onClick={openStyleModal}
                         imageHeight="h-32 sm:h-36 md:h-40"
                       />
                       <UseCaseCard
                         title="change image style"
-                        imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/artistic images.png"
+                        imageUrl="https://assets.daygen.ai/website-assets/artistic images.png"
                         imageAlt="Change image style example"
                         onClick={openStyleModal}
                         imageHeight="h-32 sm:h-36 md:h-40"
                       />
                       <UseCaseCard
                         title="change outfit"
-                        imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/virtual try-on.png"
+                        imageUrl="https://assets.daygen.ai/website-assets/virtual try-on.png"
                         imageAlt="Change outfit example"
                         onClick={openStyleModal}
                         imageHeight="h-32 sm:h-36 md:h-40"
@@ -2608,7 +2608,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                       />
                       <UseCaseCard
                         title="remove background"
-                        imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/3b632ef0-3d13-4359-a2ba-5dec11fc3eab.png"
+                        imageUrl="https://assets.daygen.ai/website-assets/3b632ef0-3d13-4359-a2ba-5dec11fc3eab.png"
                         imageAlt="Remove background example"
                         onClick={openStyleModal}
                         imageHeight="h-32 sm:h-36 md:h-40"

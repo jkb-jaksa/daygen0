@@ -41,42 +41,42 @@ const LIFESTYLE_STYLES_FEMALE: StyleOption[] = [
     name: "Black Suit Studio",
     prompt:
       "professional studio photography setup, black suit attire, clean minimalist background, professional lighting, high-end fashion photography style",
-    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/black_suit_studio setup.png",
+    image: "https://assets.daygen.ai/website-assets/presets/black_suit_studio setup.png",
   },
   {
     id: "female-lifestyle-french-balcony",
     name: "French Balcony",
     prompt:
       "elegant French balcony setting, charming Parisian architecture, wrought iron railings, romantic European atmosphere, natural daylight",
-    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/french_balcony.png",
+    image: "https://assets.daygen.ai/website-assets/presets/french_balcony.png",
   },
   {
     id: "female-lifestyle-boat-coastal-town",
     name: "Boat in Coastal Town",
     prompt:
       "charming coastal town setting, traditional fishing boat, waterfront architecture, maritime atmosphere, golden hour lighting, seaside lifestyle photography",
-    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/boat_in_coastal_town.png",
+    image: "https://assets.daygen.ai/website-assets/presets/boat_in_coastal_town.png",
   },
   {
     id: "female-lifestyle-brick-wall",
     name: "Brick in the Wall",
     prompt:
       "urban street photography, exposed brick wall background, industrial aesthetic, gritty urban atmosphere, natural lighting, contemporary lifestyle photography",
-    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/brick_in_the_wall.png",
+    image: "https://assets.daygen.ai/website-assets/presets/brick_in_the_wall.png",
   },
   {
     id: "female-lifestyle-smoking-hot",
     name: "Smoking Hot",
     prompt:
       "dramatic lifestyle photography, warm lighting, sultry atmosphere, high contrast, fashion-forward styling, bold and confident mood",
-    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/smoking_hot.png",
+    image: "https://assets.daygen.ai/website-assets/presets/smoking_hot.png",
   },
   {
     id: "female-lifestyle-sun-and-sea",
     name: "Sun and Sea",
     prompt:
       "beach lifestyle photography, sunny coastal setting, ocean waves, bright natural lighting, summer vibes, relaxed seaside atmosphere",
-    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/sun_and_sea.png",
+    image: "https://assets.daygen.ai/website-assets/presets/sun_and_sea.png",
   },
 ];
 
@@ -86,7 +86,7 @@ const LIFESTYLE_STYLES_MALE: StyleOption[] = [
     id: "male-lifestyle-example",
     name: "Example-1",
     prompt: "Example 1",
-    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/slavek-psycholog.png",
+    image: "https://assets.daygen.ai/website-assets/presets/slavek-psycholog.png",
   },
 ];
 
@@ -97,19 +97,19 @@ const FORMAL_STYLES_FEMALE: StyleOption[] = [
     id: "female-formal-sitting-in-the-solone-chair",
     name: "Sitting in the solone chair",
     prompt: "replace woman with a person on the referenced image",
-    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/image.png",
+    image: "https://assets.daygen.ai/website-assets/presets/image.png",
   },
   {
     id: "female-formal-test2",
     name: "Test 2",
     prompt: "replace woman with a person on the referenced image",
-    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/f7687b88-f125-43b2-98fd-6440687476d1.png",
+    image: "https://assets.daygen.ai/website-assets/presets/f7687b88-f125-43b2-98fd-6440687476d1.png",
   },
   {
     id: "female-formal-test3",
     name: "Test 3",
     prompt: "replace woman with a person on the referenced image",
-    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/efe68d30-26c7-4803-a5f7-0c29b4d758ae.png",
+    image: "https://assets.daygen.ai/website-assets/presets/efe68d30-26c7-4803-a5f7-0c29b4d758ae.png",
   },
 ];
 
@@ -119,13 +119,13 @@ const FORMAL_STYLES_MALE: StyleOption[] = [
     id: "male-formal-example-1",
     name: "Example 1",
     prompt: "Example 1",
-    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/slavek.png",
+    image: "https://assets.daygen.ai/website-assets/presets/slavek.png",
   },
   {
     id: "male-formal-example-2",
     name: "Example 2",
     prompt: "Cat with hat",
-    image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/slavek2.png",
+    image: "https://assets.daygen.ai/website-assets/presets/slavek2.png",
   },
 ];
 
@@ -137,7 +137,7 @@ const ARTISTIC_STYLES_FEMALE: StyleOption[] = [
   //   id: "female-artistic-example",
   //   name: "Example Artistic",
   //   prompt: "artistic style description",
-  //   image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/example.png",
+  //   image: "https://assets.daygen.ai/website-assets/presets/example.png",
   // },
 ];
 
@@ -149,7 +149,7 @@ const ARTISTIC_STYLES_MALE: StyleOption[] = [
   //   id: "male-artistic-example",
   //   name: "Example Artistic",
   //   prompt: "artistic style description",
-  //   image: "https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/presets/example.png",
+  //   image: "https://assets.daygen.ai/website-assets/presets/example.png",
   // },
 ];
 
@@ -212,7 +212,7 @@ const createStyleSectionsForGender = (gender: StyleGender): StyleSection[] =>
     } else {
       options = createPlaceholderStyles(gender, id, name);
     }
-    
+
     return {
       id,
       name,
@@ -309,10 +309,10 @@ export function useStyleHandlers() {
   const [activeStyleGender, setActiveStyleGender] = useState<StyleGender>("all");
   const [activeStyleSection, setActiveStyleSection] = useState<StyleSectionId>("lifestyle");
   const [isStyleButtonHovered, setIsStyleButtonHovered] = useState(false);
-  
+
   // Refs
   const stylesButtonRef = useRef<HTMLButtonElement | null>(null);
-  
+
   // Initialize temp selection when modal opens
   useEffect(() => {
     if (!isStyleModalOpen || typeof document === 'undefined') {
@@ -346,7 +346,7 @@ export function useStyleHandlers() {
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isStyleModalOpen, selectedStyles]);
-  
+
   // Apply style to prompt (DEPRECATED: Style is now handled via reference images only)
   const applyStyleToPrompt = useCallback(
     (basePrompt: string) => {
@@ -354,20 +354,20 @@ export function useStyleHandlers() {
     },
     [],
   );
-  
+
   // Focus style button
   const focusStyleButton = useCallback(() => {
     if (stylesButtonRef.current) {
       stylesButtonRef.current.focus();
     }
   }, []);
-  
+
   // Get selected styles list
   const selectedStylesList = useMemo(() => getOrderedSelectedStyles(selectedStyles), [selectedStyles]);
-  
+
   // Get total selected styles count
   const totalSelectedStyles = selectedStylesList.length;
-  
+
   // Get total temp selected styles count
   const totalTempSelectedStyles = useMemo(
     () =>
@@ -378,7 +378,7 @@ export function useStyleHandlers() {
       ),
     [tempSelectedStyles],
   );
-  
+
   // Get active style section data
   const activeStyleSectionData = useMemo(() => {
     const sectionDefinition = STYLE_SECTION_DEFINITIONS.find(section => section.id === activeStyleSection);
@@ -390,7 +390,7 @@ export function useStyleHandlers() {
       options,
     };
   }, [activeStyleGender, activeStyleSection]);
-  
+
   // Get selected styles label
   const selectedStylesLabel = useMemo(() => {
     if (totalSelectedStyles === 0) {
@@ -409,13 +409,13 @@ export function useStyleHandlers() {
     const [first, second] = selectedStylesList;
     return `${first?.name ?? ""}, ${second?.name ?? ""} + ${totalSelectedStyles - 2} more`.trim();
   }, [selectedStylesList, totalSelectedStyles]);
-  
+
   // Get first selected style
   const firstSelectedStyle = useMemo(() => {
     if (totalSelectedStyles === 0) return null;
     return selectedStylesList[0] ?? null;
   }, [selectedStylesList, totalSelectedStyles]);
-  
+
   // Handle toggle temp style
   const handleToggleTempStyle = useCallback((gender: StyleGender, sectionId: StyleSectionId, style: StyleOption) => {
     setTempSelectedStyles(prev => {
@@ -434,51 +434,51 @@ export function useStyleHandlers() {
       };
     });
   }, []);
-  
+
   // Handle apply styles
   const handleApplyStyles = useCallback(() => {
     const nextSelectedStyles = cloneSelectedStyles(tempSelectedStyles);
     // Note: We no longer persist selectedStyles for the main prompt interface
     // as styles are now either used as reference (one-off) or for preset flow (separate modal).
     // setSelectedStyles(nextSelectedStyles); 
-    
+
     setIsStyleModalOpen(false);
     focusStyleButton();
     return getOrderedSelectedStyles(nextSelectedStyles);
   }, [tempSelectedStyles, focusStyleButton]);
-  
+
   // Handle clear styles
   const handleClearStyles = useCallback(() => {
     // Reset selected styles to empty
     const emptyStyles = createEmptySelectedStyles();
     setSelectedStyles(emptyStyles);
-    
+
     // Also reset temp styles to match
     setTempSelectedStyles(emptyStyles);
-    
+
     // Reset navigation state
     setActiveStyleGender("all");
     setActiveStyleSection("lifestyle");
-    
+
     // Close modal if open (though usually called before/after closing)
     // We don't force close here to allow caller to manage modal state if needed,
     // but for "Clear" action usually we want to reset everything.
     // setIsStyleModalOpen(false); // Let caller handle closing if this is used in a flow
-    
+
     focusStyleButton();
   }, [focusStyleButton]);
-  
+
   // Handle style modal open
   const handleStyleModalOpen = useCallback(() => {
     setIsStyleModalOpen(true);
   }, []);
-  
+
   // Handle style modal close
   const handleStyleModalClose = useCallback(() => {
     setIsStyleModalOpen(false);
     focusStyleButton();
   }, [focusStyleButton]);
-  
+
   // Handle active style gender change
   const handleActiveStyleGenderChange = useCallback((gender: StyleGender) => {
     setActiveStyleGender(gender);
@@ -496,12 +496,12 @@ export function useStyleHandlers() {
       return STYLE_SECTION_DEFINITIONS[0]?.id ?? "lifestyle";
     });
   }, [tempSelectedStyles]);
-  
+
   // Handle active style section change
   const handleActiveStyleSectionChange = useCallback((sectionId: StyleSectionId) => {
     setActiveStyleSection(sectionId);
   }, []);
-  
+
   return {
     // State
     selectedStyles,
@@ -516,10 +516,10 @@ export function useStyleHandlers() {
     activeStyleSectionData,
     selectedStylesLabel,
     firstSelectedStyle,
-    
+
     // Refs
     stylesButtonRef,
-    
+
     // Handlers
     applyStyleToPrompt,
     focusStyleButton,
@@ -530,7 +530,7 @@ export function useStyleHandlers() {
     handleStyleModalClose,
     handleActiveStyleGenderChange,
     handleActiveStyleSectionChange,
-    
+
     // Setters
     setSelectedStyles,
     setIsStyleModalOpen,
@@ -538,7 +538,7 @@ export function useStyleHandlers() {
     setActiveStyleGender,
     setActiveStyleSection,
     setIsStyleButtonHovered,
-    
+
     // Constants
     STYLE_SECTION_DEFINITIONS,
     STYLE_GENDER_OPTIONS,

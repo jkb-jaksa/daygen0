@@ -25,10 +25,10 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
   const [showMagicLinkSent, setShowMagicLinkSent] = useState(false);
   const [showEmailForm, setShowEmailForm] = useState(false);
 
-  const { 
-    signUp, 
+  const {
+    signUp,
     signIn,
-    requestPasswordReset 
+    requestPasswordReset
   } = useAuth();
 
   const handleModeChange = useCallback(
@@ -80,13 +80,13 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
   const handleGoogleSignInError = useCallback((error: string) => {
     // Provide more helpful error messages for OAuth failures
     let displayError = error;
-    
+
     if (error.includes('configuration') || error.includes('environment')) {
       displayError = `${error}\n\nPlease check that:\n- Supabase environment variables are set\n- Google OAuth is configured in Supabase dashboard\n- Redirect URLs are properly configured`;
     } else if (error.includes('redirect') || error.includes('callback')) {
       displayError = `${error}\n\nPlease verify:\n- Redirect URL matches Supabase configuration\n- Browser allows redirects\n- Check browser console for detailed errors`;
     }
-    
+
     setError(displayError);
     console.error('Google OAuth error:', error);
   }, []);
@@ -231,18 +231,18 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
           <div className="w-full max-w-md mx-auto pb-4">
             <p className="text-xs text-theme-light text-center font-raleway">
               By continuing, you agree to DayGen{' '}
-              <a 
-                href="/terms-of-service" 
-                target="_blank" 
+              <a
+                href="/terms-of-service"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-theme-white hover:text-theme-text transition-colors underline"
               >
                 Terms of Service
               </a>
               {' '}and{' '}
-              <a 
-                href="/privacy-policy" 
-                target="_blank" 
+              <a
+                href="/privacy-policy"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-theme-white hover:text-theme-text transition-colors underline"
               >
@@ -262,7 +262,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
         </button>
         <div className="pointer-events-none absolute left-6 top-6 hidden sm:flex items-center gap-2">
           <img
-            src="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/daygen-color-nobg.png"
+            src="https://assets.daygen.ai/website-assets/daygen-color-nobg.png"
             alt="DayGen logo"
             className="h-7 w-7 object-contain"
           />
@@ -363,9 +363,9 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
             </svg>
             {mode === "login" ? "Log in with Email" : "Sign up with Email"}
           </button>
-          <GoogleSignIn 
-            onSuccess={handleGoogleSignInSuccess} 
-            onError={handleGoogleSignInError} 
+          <GoogleSignIn
+            onSuccess={handleGoogleSignInSuccess}
+            onError={handleGoogleSignInError}
             disabled={isSubmitting}
             buttonText={mode === "login" ? "Log in with Google" : "Sign up with Google"}
           />
@@ -374,7 +374,7 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
             className="btn btn-white w-full justify-center gap-3 font-raleway text-base font-medium parallax-large"
           >
             <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+              <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
             </svg>
             {mode === "login" ? "Log in with Apple" : "Sign up with Apple"}
           </button>
@@ -426,56 +426,56 @@ export default function AuthModal({ open, onClose, defaultMode = "login", onMode
       ) : (
         <div className="space-y-4">
           <form onSubmit={handleSubmit} className="space-y-3">
-        <div className="space-y-2">
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className={inputs.compact}
-            placeholder="Enter Your Email"
-            disabled={isSubmitting}
-          />
-        </div>
-        <div className="space-y-2">
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className={inputs.compact}
-            placeholder="Enter Your Password"
-            disabled={isSubmitting}
-            minLength={8}
-          />
-        </div>
-        {mode === "login" && (
-          <div className="text-center -mt-1">
-            <button
-              type="button"
-              onClick={() => setShowForgotPassword(true)}
-              className="text-sm font-raleway text-theme-white transition-colors hover:text-theme-text"
-            >
-              Reset Password
-            </button>
-          </div>
-        )}
-        <div aria-live="polite" role="status">
-          {error && !socialError && (
-            <div className="mt-2 mb-3 rounded-xl border border-red-400/30 bg-red-400/10 p-4 text-xs font-raleway text-red-200">
-              <p className="mb-1 font-medium text-red-100">Authentication Error</p>
-              <p className="whitespace-pre-line">{error}</p>
-              <p className="mt-2 text-[0.65rem] text-red-200/80">Review the details and try again.</p>
+            <div className="space-y-2">
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={inputs.compact}
+                placeholder="Enter Your Email"
+                disabled={isSubmitting}
+              />
             </div>
-          )}
-        </div>
-        <button
-          type="submit"
-          className={`${buttons.blockPrimary} font-raleway font-medium -mt-2 ${isSubmitting ? "cursor-wait opacity-80" : ""}`}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? "Please wait…" : mode === "login" ? "Sign In" : "Create Account"}
-        </button>
+            <div className="space-y-2">
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={inputs.compact}
+                placeholder="Enter Your Password"
+                disabled={isSubmitting}
+                minLength={8}
+              />
+            </div>
+            {mode === "login" && (
+              <div className="text-center -mt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(true)}
+                  className="text-sm font-raleway text-theme-white transition-colors hover:text-theme-text"
+                >
+                  Reset Password
+                </button>
+              </div>
+            )}
+            <div aria-live="polite" role="status">
+              {error && !socialError && (
+                <div className="mt-2 mb-3 rounded-xl border border-red-400/30 bg-red-400/10 p-4 text-xs font-raleway text-red-200">
+                  <p className="mb-1 font-medium text-red-100">Authentication Error</p>
+                  <p className="whitespace-pre-line">{error}</p>
+                  <p className="mt-2 text-[0.65rem] text-red-200/80">Review the details and try again.</p>
+                </div>
+              )}
+            </div>
+            <button
+              type="submit"
+              className={`${buttons.blockPrimary} font-raleway font-medium -mt-2 ${isSubmitting ? "cursor-wait opacity-80" : ""}`}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Please wait…" : mode === "login" ? "Sign In" : "Create Account"}
+            </button>
           </form>
           {mode === "login" && (
             <p className="text-base text-theme-light text-center font-raleway !mt-8">
