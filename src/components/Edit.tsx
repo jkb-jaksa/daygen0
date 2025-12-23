@@ -124,7 +124,7 @@ export default function Edit() {
         setPreviewUrl(lastImageUrl);
       }
     }
-  }, [location.state]);
+  }, [location.state, previewUrl]);
 
   // Prompt bar state
   const [prompt, setPrompt] = useState<string>("");

@@ -427,17 +427,6 @@ const FullImageModal = memo(() => {
     touchEndX.current = null;
   }, [handleNext, handlePrevious, minSwipeDistance]);
 
-  // Get current index for mobile image counter
-  const currentImageIndex = useMemo(() => {
-    if (!fullSizeImage) return 0;
-    const currentId = fullSizeImage.jobId || fullSizeImage.r2FileId || fullSizeImage.url;
-    if (!currentId) return 0;
-    const index = categoryFilteredItems.findIndex(
-      item => (item.jobId || item.r2FileId || item.url) === currentId
-    );
-    return index >= 0 ? index : 0;
-  }, [categoryFilteredItems, fullSizeImage]);
-
   // Handle escape key
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
