@@ -2602,3 +2602,77 @@ input[type="range"]::-moz-range-thumb {
     padding-right: clamp(1rem, 4vw, 1.5rem);
   }
 }
+
+/* =============================================
+   MOBILE GALLERY IMPROVEMENTS
+   ============================================= */
+
+/* Gallery-specific mobile improvements */
+@media (max-width: 480px) {
+
+  /* Larger touch targets for gallery action buttons */
+  .image-action-btn {
+    min-width: 40px;
+    min-height: 40px;
+    padding: 10px;
+  }
+
+  /* Reduce gallery card border radius on small screens for more visible content */
+  .group[class*="rounded-[24px]"] {
+    border-radius: 16px;
+  }
+
+  /* Slightly larger gap for 2-column grid for better visual separation */
+  .grid.gap-2 {
+    gap: 10px;
+  }
+
+  /* Ensure prompts are readable on small screens */
+  .PromptDescriptionBar {
+    padding: 0.75rem;
+    border-radius: 1rem;
+  }
+
+  .PromptDescriptionBar .text-sm {
+    font-size: 0.8125rem;
+    line-height: 1.4;
+  }
+}
+
+/* Safe area support for mobile modals and action bars */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .mobile-modal-actions {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  /* Full-size image modal safe area */
+  @media (max-width: 768px) {
+    .PromptDescriptionBar {
+      margin-bottom: env(safe-area-inset-bottom);
+    }
+  }
+}
+
+/* Improve gallery grid on small mobile screens */
+@media (max-width: 375px) {
+
+  /* Even tighter spacing on very small phones */
+  .grid.gap-2 {
+    gap: 8px;
+  }
+
+  /* Smaller card border radius */
+  .group[class*="rounded-[24px]"] {
+    border-radius: 12px;
+  }
+}
+
+/* Ensure mobile image counter is visible above action bar */
+@media (max-width: 768px) {
+
+  /* Mobile gallery navigation improvements */
+  .image-gallery-actions .image-action-btn {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+}

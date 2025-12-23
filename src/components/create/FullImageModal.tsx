@@ -144,6 +144,11 @@ const FullImageModal = memo(() => {
     typeof window !== 'undefined' ? window.matchMedia('(max-width: 768px)').matches : false
   );
 
+  // Mobile swipe gesture state
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const minSwipeDistance = 50;
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const mediaQuery = window.matchMedia('(max-width: 768px)');
@@ -395,6 +400,43 @@ const FullImageModal = memo(() => {
       openFullSize(nextItem, fullIndex >= 0 ? fullIndex : nextCategoryIndex);
     }
   }, [categoryFilteredItems, fullSizeImage, filteredItems, openFullSize]);
+
+  // Mobile swipe gesture handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchEndX.current = null;
+    touchStartX.current = e.targetTouches[0].clientX;
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    const distance = touchStartX.current - touchEndX.current;
+    if (Math.abs(distance) > minSwipeDistance) {
+      if (distance > 0) {
+        // Swiped left - go to next image
+        handleNext();
+      } else {
+        // Swiped right - go to previous image
+        handlePrevious();
+      }
+    }
+    touchStartX.current = null;
+    touchEndX.current = null;
+  }, [handleNext, handlePrevious, minSwipeDistance]);
+
+  // Get current index for mobile image counter
+  const currentImageIndex = useMemo(() => {
+    if (!fullSizeImage) return 0;
+    const currentId = fullSizeImage.jobId || fullSizeImage.r2FileId || fullSizeImage.url;
+    if (!currentId) return 0;
+    const index = categoryFilteredItems.findIndex(
+      item => (item.jobId || item.r2FileId || item.url) === currentId
+    );
+    return index >= 0 ? index : 0;
+  }, [categoryFilteredItems, fullSizeImage]);
 
   // Handle escape key
   useEffect(() => {
@@ -1151,6 +1193,9 @@ const FullImageModal = memo(() => {
             className={`relative group flex items-center justify-center ${isMobile ? 'w-full h-full' : 'mt-14'}`}
             style={isMobile ? {} : { transform: 'translateX(-50px)' }}
             onClick={(e) => e.stopPropagation()}
+            onTouchStart={isMobile ? handleTouchStart : undefined}
+            onTouchMove={isMobile ? handleTouchMove : undefined}
+            onTouchEnd={isMobile ? handleTouchEnd : undefined}
           >
             {/* Navigation arrows */}
             {!isVideo && hasMultipleItems && (
@@ -1173,6 +1218,8 @@ const FullImageModal = memo(() => {
                 </button>
               </>
             )}
+
+
 
             {/* Left side - Edit button for non-gallery and Variate button for all images */}
             <div className={`image-gallery-actions absolute ${isMobile ? 'top-2 left-2' : 'top-4 left-4'} flex items-start gap-1 z-[40]`}>
@@ -1393,40 +1440,42 @@ const FullImageModal = memo(() => {
               <X className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'}`} />
             </button>
 
-            {/* Mobile-only bottom action bar */}
+            {/* Mobile-only top action bar - positioned above image to uncover prompt description */}
             {isMobile && (
-              <div className={`${glass.promptDark} absolute bottom-4 left-4 right-4 rounded-full py-2 px-4 flex items-center justify-center gap-4 z-50`}>
+              <div
+                className={`${glass.promptDark} absolute top-14 left-1/2 -translate-x-1/2 rounded-full py-1.5 px-3 flex items-center justify-center gap-2 z-50`}
+              >
                 <button
                   type="button"
                   onClick={handleDownloadClick}
-                  className="p-2 rounded-full text-theme-white hover:text-theme-text transition-colors"
+                  className="p-2.5 rounded-full text-theme-white hover:text-theme-text transition-colors flex items-center justify-center"
                   aria-label="Download"
                 >
-                  <Download className="w-5 h-5" />
+                  <Download className="w-4 h-4" />
                 </button>
                 <button
                   type="button"
                   onClick={handleToggleLikeClick}
-                  className="p-2 rounded-full text-theme-white hover:text-theme-text transition-colors"
+                  className="p-2.5 rounded-full text-theme-white hover:text-theme-text transition-colors flex items-center justify-center"
                   aria-label={fullSizeImage.isLiked ? "Unlike" : "Like"}
                 >
-                  <Heart className={`w-5 h-5 ${fullSizeImage.isLiked ? 'fill-red-500 text-red-500' : ''}`} />
+                  <Heart className={`w-4 h-4 ${fullSizeImage.isLiked ? 'fill-red-500 text-red-500' : ''}`} />
                 </button>
                 <button
                   type="button"
                   onClick={handleTogglePublicClick}
-                  className="p-2 rounded-full text-theme-white hover:text-theme-text transition-colors"
+                  className="p-2.5 rounded-full text-theme-white hover:text-theme-text transition-colors flex items-center justify-center"
                   aria-label={fullSizeImage.isPublic ? "Make private" : "Make public"}
                 >
-                  {fullSizeImage.isPublic ? <Globe className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
+                  {fullSizeImage.isPublic ? <Globe className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
                 </button>
                 <button
                   type="button"
                   onClick={handleDeleteClick}
-                  className="p-2 rounded-full text-theme-white hover:text-red-500 transition-colors"
+                  className="p-2.5 rounded-full text-theme-white hover:text-red-500 transition-colors flex items-center justify-center"
                   aria-label="Delete"
                 >
-                  <Trash2 className="w-5 h-5" />
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             )}
@@ -1436,8 +1485,11 @@ const FullImageModal = memo(() => {
               <div
                 className={`PromptDescriptionBar absolute left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-150 ${isVideo
                   ? `bottom-4 z-30 ${isVideoPromptExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`
-                  : 'bottom-4 opacity-0 group-hover:opacity-100'
+                  : isMobile
+                    ? 'opacity-100 pointer-events-auto'
+                    : 'bottom-4 opacity-0 group-hover:opacity-100'
                   }`}
+                style={isMobile && !isVideo ? { bottom: 'max(1rem, env(safe-area-inset-bottom))' } : undefined}
                 onMouseEnter={() => {
                   if (isVideo) setIsVideoPromptExpanded(true);
                 }}

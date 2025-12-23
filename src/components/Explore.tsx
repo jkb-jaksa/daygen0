@@ -1543,6 +1543,20 @@ const Explore: React.FC = () => {
   const touchEndX = useRef<number | null>(null);
   const minSwipeDistance = 50;
 
+
+  // Navigation functions for full-size view
+  const navigateFullSizeImage = useCallback((direction: 'prev' | 'next') => {
+    const totalImages = filteredGallery.length;
+    if (totalImages === 0) return;
+
+    const newIndex = direction === 'prev'
+      ? (currentImageIndex > 0 ? currentImageIndex - 1 : totalImages - 1)
+      : (currentImageIndex < totalImages - 1 ? currentImageIndex + 1 : 0);
+
+    setCurrentImageIndex(newIndex);
+    setSelectedFullImage(filteredGallery[newIndex]);
+  }, [filteredGallery, currentImageIndex, setCurrentImageIndex, setSelectedFullImage]);
+
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchEndX.current = null;
     touchStartX.current = e.targetTouches[0].clientX;
@@ -1780,18 +1794,7 @@ const Explore: React.FC = () => {
     });
   };
 
-  // Navigation functions for full-size view
-  const navigateFullSizeImage = useCallback((direction: 'prev' | 'next') => {
-    const totalImages = filteredGallery.length;
-    if (totalImages === 0) return;
 
-    const newIndex = direction === 'prev'
-      ? (currentImageIndex > 0 ? currentImageIndex - 1 : totalImages - 1)
-      : (currentImageIndex < totalImages - 1 ? currentImageIndex + 1 : 0);
-
-    setCurrentImageIndex(newIndex);
-    setSelectedFullImage(filteredGallery[newIndex]);
-  }, [filteredGallery, currentImageIndex, setCurrentImageIndex, setSelectedFullImage]);
 
   // Open full-size view
   const openFullSizeView = (item: GalleryItem) => {
@@ -2930,14 +2933,7 @@ const Explore: React.FC = () => {
                   </>
                 )}
 
-                {/* Mobile image counter indicator */}
-                {isMobile && filteredGallery.length > 1 && (
-                  <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 px-3 py-1.5 rounded-full bg-theme-black/60 backdrop-blur-sm">
-                    <span className="text-xs font-raleway text-theme-white/90">
-                      {currentImageIndex + 1} / {filteredGallery.length}
-                    </span>
-                  </div>
-                )}
+
 
                 <div
                   className={`absolute inset-0 z-0 bg-cover bg-center bg-no-repeat blur-[100px] opacity-50 scale-110 pointer-events-none ${isMobile ? 'hidden' : ''}`}
