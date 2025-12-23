@@ -2033,7 +2033,7 @@ export default function Edit() {
 
   // Helper to render the toolbar (brush controls for Inpaint mode) - Mode switching moved to sidebar
   const renderToolbar = () => (
-    <div className="w-full flex justify-start gap-1 transition-all duration-200 animate-in fade-in slide-in-from-top-2">
+    <div className="w-full flex flex-wrap justify-start gap-1 transition-all duration-200 animate-in fade-in slide-in-from-top-2">
 
       {isPreciseEditMode && (
         <>
@@ -2202,7 +2202,7 @@ export default function Edit() {
                   {!previewUrl && (
                     <div className="w-full max-w-md mx-auto">
                       <div
-                        className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-colors duration-200 ${isDragging ? 'border-theme-text drag-active' : 'border-theme-white/30 hover:border-theme-text/50'}`}
+                        className={`border-2 border-dashed rounded-2xl p-6 lg:p-12 text-center cursor-pointer transition-colors duration-200 ${isDragging ? 'border-theme-text drag-active' : 'border-theme-white/30 hover:border-theme-text/50'}`}
                         onClick={() => fileInputRef.current?.click()}
                         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                         onDragLeave={() => setIsDragging(false)}
@@ -2249,14 +2249,14 @@ export default function Edit() {
 
                   {/* Uploaded Image Preview & Editor */}
                   {previewUrl && (
-                    <div className={`${isResizeMode ? 'w-full h-[75vh] flex flex-col' : 'w-full max-w-2xl text-center'} mx-auto relative transition-all duration-300`}>
+                    <div className={`${isResizeMode ? 'w-full h-[85vh] lg:h-[75vh] flex flex-col' : 'w-full max-w-2xl text-center'} mx-auto relative transition-all duration-300`}>
 
-                      {/* RESIZE MODE: Split Layout */}
+                      {/* RESIZE MODE: Split Layout (Column on mobile, Row on desktop) */}
                       {isResizeMode ? (
-                        <div className="flex flex-col h-full overflow-hidden">
-                          {/* Top Section: Canvas + Aspect Ratios */}
-                          <div className="flex flex-row flex-1 overflow-hidden min-h-0 gap-4">
-                            {/* Left: Canvas */}
+                        <div className="flex flex-col lg:flex-row h-full overflow-hidden gap-4">
+                          {/* Top/Left Section: Canvas + Controls */}
+                          <div className="flex flex-col flex-1 overflow-hidden min-h-0 w-full h-full lg:h-auto">
+                            {/* Canvas Container */}
                             <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden bg-theme-black/20 rounded-xl border border-theme-dark/50">
                               {resizeAspectRatio && resizeLayoutInfo ? (
                                 <div className="flex flex-col items-center justify-center gap-2 w-full h-full p-2 overflow-y-auto">
@@ -2354,51 +2354,50 @@ export default function Edit() {
                                 </div>
                               )}
                             </div>
+                          </div>
 
-                            {/* Right: Aspect Ratios */}
-                            <div className="w-[400px] flex-shrink-0 flex flex-col gap-2 overflow-y-auto pr-1 custom-scrollbar">
-                              <div className="flex items-center justify-between sticky top-0 bg-theme-bg z-10 pb-2">
-                                <label className="text-xs font-raleway font-medium text-theme-text uppercase tracking-wider">Aspect Ratio</label>
-                              </div>
-                              <div className="grid grid-cols-2 gap-2">
-                                {GEMINI_ASPECT_RATIO_OPTIONS.map(option => {
-                                  const isSelected = resizeAspectRatio === option.value;
-                                  return (
-                                    <button
-                                      key={option.value}
-                                      type="button"
-                                      onClick={() => {
-                                        setResizeAspectRatio(option.value);
-                                        setResizeImagePosition({ x: 50, y: 50 });
-                                        setResizeImageScale(100);
-                                      }}
-                                      className={`relative flex items-center gap-3 px-3 py-1.5 rounded-lg border transition-all duration-200 text-left group ${isSelected
-                                        ? 'border-theme-text bg-theme-mid/10'
-                                        : 'border-theme-dark hover:border-theme-mid bg-theme-black/30 hover:bg-theme-black/50'
-                                        }`}
-                                    >
-                                      <div className={`w-7 h-7 rounded flex items-center justify-center border ${isSelected ? 'border-theme-text bg-theme-text/10' : 'border-theme-mid/30 bg-theme-dark/50'} overflow-hidden transition-colors flex-shrink-0`}>
-                                        <div
-                                          className={`${isSelected ? 'bg-theme-text' : 'bg-theme-white/60 group-hover:bg-theme-white/80'} flex-shrink-0 transition-colors`}
-                                          style={{
-                                            aspectRatio: option.value.replace(':', '/'),
-                                            ...(parseFloat(option.value.split(':')[0]) >= parseFloat(option.value.split(':')[1])
-                                              ? { height: '14px', width: 'auto' }
-                                              : { width: '14px', height: 'auto' }
-                                            )
-                                          }}
-                                        />
-                                      </div>
-                                      <span className={`text-xs font-raleway ${isSelected ? 'text-theme-text font-medium' : 'text-theme-white'}`}>
-                                        {option.label}
-                                      </span>
-                                    </button>
-                                  );
-                                })}
-                              </div>
+                          {/* Bottom/Right: Aspect Ratios */}
+                          <div className="w-full lg:w-[400px] flex-shrink-0 flex flex-col gap-2 overflow-y-auto lg:pr-1 custom-scrollbar max-h-[30vh] lg:max-h-none border-t lg:border-t-0 lg:border-l border-theme-dark pt-4 lg:pt-0 lg:pl-4">
+                            <div className="flex items-center justify-between sticky top-0 bg-theme-bg z-10 pb-2">
+                              <label className="text-xs font-raleway font-medium text-theme-text uppercase tracking-wider">Aspect Ratio</label>
+                            </div>
+                            <div className="grid grid-cols-2 lg:grid-cols-2 gap-2 pb-16 lg:pb-0">
+                              {GEMINI_ASPECT_RATIO_OPTIONS.map(option => {
+                                const isSelected = resizeAspectRatio === option.value;
+                                return (
+                                  <button
+                                    key={option.value}
+                                    type="button"
+                                    onClick={() => {
+                                      setResizeAspectRatio(option.value);
+                                      setResizeImagePosition({ x: 50, y: 50 });
+                                      setResizeImageScale(100);
+                                    }}
+                                    className={`relative flex items-center gap-3 px-3 py-1.5 rounded-lg border transition-all duration-200 text-left group ${isSelected
+                                      ? 'border-theme-text bg-theme-mid/10'
+                                      : 'border-theme-dark hover:border-theme-mid bg-theme-black/30 hover:bg-theme-black/50'
+                                      }`}
+                                  >
+                                    <div className={`w-7 h-7 rounded flex items-center justify-center border ${isSelected ? 'border-theme-text bg-theme-text/10' : 'border-theme-mid/30 bg-theme-dark/50'} overflow-hidden transition-colors flex-shrink-0`}>
+                                      <div
+                                        className={`${isSelected ? 'bg-theme-text' : 'bg-theme-white/60 group-hover:bg-theme-white/80'} flex-shrink-0 transition-colors`}
+                                        style={{
+                                          aspectRatio: option.value.replace(':', '/'),
+                                          ...(parseFloat(option.value.split(':')[0]) >= parseFloat(option.value.split(':')[1])
+                                            ? { height: '14px', width: 'auto' }
+                                            : { width: '14px', height: 'auto' }
+                                          )
+                                        }}
+                                      />
+                                    </div>
+                                    <span className={`text-xs font-raleway ${isSelected ? 'text-theme-text font-medium' : 'text-theme-white'}`}>
+                                      {option.label}
+                                    </span>
+                                  </button>
+                                );
+                              })}
                             </div>
                           </div>
-                          {/* Prompt bar moved to bottom - unified for all modes */}
                         </div>
                       ) : (
                         /* NORMAL MODE: Center Image, Prompt below */

@@ -139,6 +139,19 @@ const FullImageModal = memo(() => {
   const [makeVideoModalState, setMakeVideoModalState] = useState<{ isOpen: boolean; initialPrompt: string } | null>(null);
   const [changeAngleModalState, setChangeAngleModalState] = useState<{ isOpen: boolean; selectedAngle: AngleOption | null } | null>(null);
 
+  // Mobile detection for responsive full-size view
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 768px)').matches : false
+  );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    const handleChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+
   // Reference modal state
   const [isReferenceModalOpen, setIsReferenceModalOpen] = useState(false);
 
@@ -1135,8 +1148,8 @@ const FullImageModal = memo(() => {
         >
           {/* Image container */}
           <div
-            className="relative group flex items-start justify-center mt-14"
-            style={{ transform: 'translateX(-50px)' }}
+            className={`relative group flex items-center justify-center ${isMobile ? 'w-full h-full' : 'mt-14'}`}
+            style={isMobile ? {} : { transform: 'translateX(-50px)' }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Navigation arrows */}
@@ -1144,27 +1157,27 @@ const FullImageModal = memo(() => {
               <>
                 <button
                   onClick={handlePrevious}
-                  className={`${glass.promptDark} hover:border-theme-mid absolute -left-14 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
+                  className={`${glass.promptDark} hover:border-theme-mid absolute ${isMobile ? 'left-2 p-3.5' : '-left-14 p-2.5'} top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-full focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} hover:text-theme-text`}
                   title="Previous image (←)"
                   aria-label="Previous image"
                 >
-                  <ChevronLeft className="w-5 h-5 text-current transition-colors duration-100" />
+                  <ChevronLeft className={`${isMobile ? 'w-6 h-6' : 'w-5 h-5'} text-current transition-colors duration-100`} />
                 </button>
                 <button
                   onClick={handleNext}
-                  className={`${glass.promptDark} hover:border-theme-mid absolute -right-14 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
+                  className={`${glass.promptDark} hover:border-theme-mid absolute ${isMobile ? 'right-2 p-3.5' : '-right-14 p-2.5'} top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-full focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} hover:text-theme-text`}
                   title="Next image (→)"
                   aria-label="Next image"
                 >
-                  <ChevronRight className="w-5 h-5 text-current transition-colors duration-100" />
+                  <ChevronRight className={`${isMobile ? 'w-6 h-6' : 'w-5 h-5'} text-current transition-colors duration-100`} />
                 </button>
               </>
             )}
 
             {/* Left side - Edit button for non-gallery and Variate button for all images */}
-            <div className="image-gallery-actions absolute top-4 left-4 flex items-start gap-1 z-[40]">
+            <div className={`image-gallery-actions absolute ${isMobile ? 'top-2 left-2' : 'top-4 left-4'} flex items-start gap-1 z-[40]`}>
               <div
-                className={`flex items-center gap-1 ${editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || isImageActionMenuOpen
+                className={`flex items-center gap-1 ${isMobile || editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || isImageActionMenuOpen
                   ? 'opacity-100'
                   : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
                   } transition-opacity duration-100`}
@@ -1194,9 +1207,9 @@ const FullImageModal = memo(() => {
             </div>
 
             {/* Action buttons overlay - right side (only show on hover or when edit menu is open) */}
-            <div className="image-gallery-actions absolute top-4 right-4 flex items-start gap-1 z-[40]">
+            <div className={`image-gallery-actions absolute ${isMobile ? 'top-2 right-2' : 'top-4 right-4'} flex items-start gap-1 z-[40]`}>
               <div
-                className={`flex items-center gap-1 ${editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || isImageActionMenuOpen
+                className={`flex items-center gap-1 ${isMobile || editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || isImageActionMenuOpen
                   ? 'opacity-100'
                   : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
                   } transition-opacity duration-100`}
@@ -1374,11 +1387,49 @@ const FullImageModal = memo(() => {
             {/* Close button - positioned on right side of image */}
             <button
               onClick={closeFullSize}
-              className="absolute -top-3 -right-3 p-1.5 rounded-full bg-[color:var(--glass-dark-bg)] text-theme-white hover:text-theme-text backdrop-blur-sm transition-colors duration-200"
+              className={`absolute ${isMobile ? 'top-2 right-2 p-2.5' : '-top-3 -right-3 p-1.5'} rounded-full bg-[color:var(--glass-dark-bg)] text-theme-white hover:text-theme-text backdrop-blur-sm transition-colors duration-200 z-50`}
               aria-label="Close"
             >
-              <X className="w-4 h-4" />
+              <X className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'}`} />
             </button>
+
+            {/* Mobile-only bottom action bar */}
+            {isMobile && (
+              <div className={`${glass.promptDark} absolute bottom-4 left-4 right-4 rounded-full py-2 px-4 flex items-center justify-center gap-4 z-50`}>
+                <button
+                  type="button"
+                  onClick={handleDownloadClick}
+                  className="p-2 rounded-full text-theme-white hover:text-theme-text transition-colors"
+                  aria-label="Download"
+                >
+                  <Download className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleToggleLikeClick}
+                  className="p-2 rounded-full text-theme-white hover:text-theme-text transition-colors"
+                  aria-label={fullSizeImage.isLiked ? "Unlike" : "Like"}
+                >
+                  <Heart className={`w-5 h-5 ${fullSizeImage.isLiked ? 'fill-red-500 text-red-500' : ''}`} />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleTogglePublicClick}
+                  className="p-2 rounded-full text-theme-white hover:text-theme-text transition-colors"
+                  aria-label={fullSizeImage.isPublic ? "Make private" : "Make public"}
+                >
+                  {fullSizeImage.isPublic ? <Globe className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteClick}
+                  className="p-2 rounded-full text-theme-white hover:text-red-500 transition-colors"
+                  aria-label="Delete"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </div>
+            )}
 
             {/* PromptDescriptionBar overlay */}
             {shouldRenderPromptBar && (
@@ -1721,8 +1772,8 @@ const FullImageModal = memo(() => {
           </div>
         </div>
 
-        {/* Right sidebar with actions */}
-        {fullSizeImage && (
+        {/* Right sidebar with actions - hidden on mobile */}
+        {fullSizeImage && !isMobile && (
           <aside
             ref={sidebarRef}
             className={`${glass.promptDark} w-[200px] rounded-2xl p-4 flex flex-col gap-0 overflow-y-auto fixed z-[120]`}
@@ -1902,6 +1953,7 @@ const FullImageModal = memo(() => {
                 }
               }}
               className="z-[130]"
+              hiddenOnMobile
             />
           </Suspense>
         )}

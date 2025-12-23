@@ -33,7 +33,8 @@ function MasterSidebarComponent({
     ? `calc(var(--nav-h) + 16px)`
     : `calc(var(--nav-h) + ${SIDEBAR_TOP_PADDING}px)`;
   const zIndex = isFullSizeOpen ? 'z-[120]' : 'lg:z-30';
-  const responsiveClass = isFullSizeOpen ? '' : 'hidden lg:block';
+  // Hide on mobile when full-size view is open (md:block) to prevent covering the image
+  const responsiveClass = isFullSizeOpen ? 'hidden md:block' : 'hidden lg:block';
   const navClasses = isFullSizeOpen
     ? `${glass.promptDark} border-theme-dark rounded-2xl flex flex-col fixed left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] w-[160px] ${zIndex} px-3 py-4`
     : `${glass.promptDark} border-theme-dark rounded-2xl lg:flex lg:flex-col lg:fixed lg:left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] lg:w-[160px] ${zIndex} px-3 py-4`;

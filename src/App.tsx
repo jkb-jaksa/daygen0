@@ -14,6 +14,8 @@ import { StyleModalProvider } from "./contexts/StyleModalProvider";
 import { useStyleModal } from "./contexts/useStyleModal";
 
 
+import { motion, AnimatePresence } from "framer-motion";
+
 const Understand = lazy(() => import("./components/Understand"));
 const AboutUs = lazy(() => import("./components/AboutUs"));
 const Prompts = lazy(() => import("./components/Prompts"));
@@ -82,6 +84,7 @@ function UseCaseCard({
   onClick,
   imageHeight = "h-40 sm:h-44 md:h-48",
   subtitle,
+  delay = 0,
 }: {
   title: string;
   imageUrl: string;
@@ -90,6 +93,7 @@ function UseCaseCard({
   onClick?: () => void;
   imageHeight?: string;
   subtitle?: string;
+  delay?: number;
 }) {
   const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLDivElement>();
 
@@ -102,7 +106,12 @@ function UseCaseCard({
   };
 
   const cardContent = (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.5, delay, ease: "easeOut" }}
+      whileHover={{ y: -5, transition: { duration: 0.2 } }}
       className="relative parallax-large mouse-glow border border-theme-dark hover:border-theme-mid transition-colors duration-200 rounded-2xl overflow-hidden cursor-pointer"
       onPointerMove={onPointerMove}
       onPointerEnter={onPointerEnter}
@@ -114,18 +123,18 @@ function UseCaseCard({
         alt={imageAlt}
         loading="lazy"
         decoding="async"
-        className={`${imageHeight} w-full object-cover parallax-isolate`}
+        className={`${imageHeight} w-full object-cover parallax-isolate transition-transform duration-500 hover:scale-105`}
       />
-      <div className="absolute bottom-0 left-0 right-0 h-[70px] bg-gradient-to-t from-black/90 to-transparent pointer-events-none" />
+      <div className="absolute bottom-0 left-0 right-0 h-[80px] bg-gradient-to-t from-black/95 via-black/50 to-transparent pointer-events-none" />
       <div className="absolute bottom-2 left-2 right-2 flex items-end">
-        <div className="UseCaseDescription relative z-10 px-4 pt-1.5 pb-0 rounded-2xl">
-          <h2 className="text-2xl font-normal tracking-tight text-n-text font-raleway whitespace-nowrap">{title}</h2>
+        <div className="UseCaseDescription relative z-10 px-4 pt-1.5 pb-2 rounded-2xl">
+          <h2 className="text-xl sm:text-2xl font-normal tracking-tight text-white font-raleway whitespace-nowrap drop-shadow-md">{title}</h2>
           {subtitle && (
-            <p className="text-sm font-normal text-n-text font-raleway mt-0.5">{subtitle}</p>
+            <p className="text-sm font-normal text-white/90 font-raleway mt-0.5 drop-shadow-sm">{subtitle}</p>
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 
   if (to && !onClick) {
@@ -149,14 +158,20 @@ const HOME_CATEGORIES = [
 function ModalityContainer({
   category,
   content,
+  delay = 0,
 }: {
   category: (typeof HOME_CATEGORIES)[number];
   content: string;
+  delay?: number;
 }) {
   const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLDivElement>();
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      whileInView={{ opacity: 1, scale: 1 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.4, delay, ease: "easeOut" }}
       className={`${glass.surface} parallax-small relative overflow-hidden group flex flex-col rounded-3xl border border-theme-dark hover:border-theme-mid transition-colors duration-200 aspect-[4/3]`}
       onPointerMove={onPointerMove}
       onPointerEnter={onPointerEnter}
@@ -170,32 +185,34 @@ function ModalityContainer({
       <div className="flex-1 w-full h-full flex items-center justify-center overflow-hidden bg-theme-black/20">
         {category.id === 'text' && (
           <div className="w-full h-full p-6 flex items-center justify-center bg-gradient-to-br from-theme-black/40 to-theme-black/10">
-            <p className="text-sm text-theme-text font-raleway text-center line-clamp-5 leading-relaxed">"{content}"</p>
+            <p className="text-sm text-theme-text font-raleway text-center line-clamp-5 leading-relaxed selection:bg-amber-500/30">"{content}"</p>
           </div>
         )}
+        {/* Images and Videos: Slight scale on hover for dynamic feel */}
         {category.id === 'image' && (
-          <img src={content} alt="Persona content" className="w-full h-full object-cover" />
+          <img src={content} alt="Persona content" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
         )}
         {category.id === 'video' && (
           <div className="relative w-full h-full">
-            <img src={content} alt="Video thumbnail" className="w-full h-full object-cover opacity-90" />
+            <img src={content} alt="Video thumbnail" className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105" />
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/20 group-hover:scale-110 transition-transform duration-200">
+              <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/20 group-hover:scale-110 transition-transform duration-200 shadow-lg">
                 <div className="w-0 h-0 border-t-[6px] border-t-transparent border-l-[10px] border-l-white border-b-[6px] border-b-transparent ml-1" />
               </div>
             </div>
           </div>
         )}
         {category.id === 'audio' && (
-          <div className="w-full h-full p-4 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-theme-black/40 to-theme-black/10">
+          <div className="w-full h-full p-4 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-theme-black/40 to-theme-black/10 group-hover:bg-theme-black/5 transition-colors">
             <div className="flex items-center gap-1 h-12">
               {[...Array(8)].map((_, i) => (
                 <div
                   key={i}
-                  className="w-1.5 bg-cyan-400 rounded-full animate-pulse"
+                  className="w-1.5 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,211,238,0.5)]"
                   style={{
                     height: `${Math.max(20, Math.random() * 100)}%`,
-                    animationDelay: `${i * 0.1}s`
+                    animationDelay: `${i * 0.1}s`,
+                    animationDuration: '0.8s'
                   }}
                 />
               ))}
@@ -204,7 +221,7 @@ function ModalityContainer({
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -215,6 +232,7 @@ const PERSONAS = [
     id: "dominik",
     name: "Dominik",
     age: 21,
+    //! ... (Personas data kept same)
     role: "CEO/Founder",
     image: "/dominik.jpg",
     bio: "Building the future of digital identity.",
@@ -272,10 +290,15 @@ const PERSONAS = [
 function ComingSoonPanel({ label, className }: { label: string; className?: string }) {
   const formattedLabel = label.charAt(0).toUpperCase() + label.slice(1);
   return (
-    <div className={`${glass.surface} rounded-3xl border-theme-dark px-6 py-16 text-center sm:px-8 ${className ?? ""}`}>
-      <h2 className="text-xl font-raleway font-normal text-theme-text">{formattedLabel}</h2>
-      <p className="mt-2 text-sm font-raleway text-theme-white">Coming soon.</p>
-    </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className={`${glass.surface} rounded-3xl border-theme-dark px-6 py-16 text-center sm:px-8 ${className ?? ""} flex flex-col items-center justify-center bg-gradient-to-b from-white/5 to-transparent`}
+    >
+      <h2 className="text-xl font-raleway font-normal text-theme-text/80">{formattedLabel}</h2>
+      <p className="mt-2 text-sm font-raleway text-theme-white/50 tracking-wider uppercase text-[0.7rem]">Coming soon</p>
+    </motion.div>
   );
 }
 
@@ -367,49 +390,76 @@ function Home() {
   const isImageCategory = activeCategory === "image";
 
   return (
-    <div className={`${layout.page} home-page`}>
+    <div className={`${layout.page} home-page overflow-x-hidden`}>
       <div className="relative z-10">
         <section className="relative min-h-[100dvh] pt-[calc(var(--nav-h,4rem)+16px)] pb-[calc(var(--nav-h)+0.5rem)]">
           <div className={`${layout.container}`}>
             <div className="flex flex-col gap-4">
-              <div className="home-hero relative z-10 w-full">
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="home-hero relative z-10 w-full"
+              >
                 <div className="flex items-start justify-between gap-4 w-full">
                   <div className="flex flex-col gap-2 lg:max-w-xl">
-                    <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-left`}>
+                    <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-left bg-gradient-to-r from-theme-text via-theme-text/80 to-theme-text/60 bg-clip-text text-transparent pb-1`}>
                       Create your Digital Copy.
                     </h1>
-                    <p className={`${headings.tripleHeading.description} text-theme-text text-left mt-0 mb-1`}>
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.4, duration: 0.8 }}
+                      className={`${headings.tripleHeading.description} text-theme-text text-left mt-0 mb-1`}
+                    >
                       Your Digital Soul. All in one place.
-                    </p>
+                    </motion.p>
                   </div>
-                  <div className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-right flex-shrink-0 hidden lg:block font-normal`}>
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.5, duration: 0.8 }}
+                    className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-right flex-shrink-0 hidden lg:block font-normal opacity-50`}
+                  >
                     daygen
-                  </div>
+                  </motion.div>
                 </div>
-              </div>
+              </motion.div>
               <div className="w-full flex flex-col gap-6">
-                {/* Bio Card with Integrated Switcher */}
-                <div className="w-80 relative group">
+                {/* Bio Card with integrated switcher */}
+                <div className="w-full max-w-sm lg:w-80 relative group mx-auto lg:mx-0">
                   <button
                     onClick={() => {
                       const currentIndex = PERSONAS.findIndex(p => p.id === activePersonaId);
                       const prevIndex = (currentIndex - 1 + PERSONAS.length) % PERSONAS.length;
                       setActivePersonaId(PERSONAS[prevIndex].id);
                     }}
-                    className={`${glass.promptDark} hover:border-theme-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
+                    className={`${glass.promptDark} hover:border-theme-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text shadow-lg backdrop-blur-md`}
                     aria-label="Previous persona"
                   >
                     <ChevronLeft className="w-5 h-5 text-current transition-colors duration-100" />
                   </button>
 
-                  <UseCaseCard
-                    title={`${activePersona.name}, ${activePersona.age}`}
-                    subtitle={activePersona.role}
-                    imageUrl={activePersona.image}
-                    imageAlt={activePersona.name}
-                    onClick={openStyleModal}
-                    imageHeight="h-52"
-                  />
+                  <div className="relative overflow-hidden rounded-[28px]">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={activePersona.id}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <UseCaseCard
+                          title={`${activePersona.name}, ${activePersona.age}`}
+                          subtitle={activePersona.role}
+                          imageUrl={activePersona.image}
+                          imageAlt={activePersona.name}
+                          onClick={openStyleModal}
+                          imageHeight="h-52"
+                        />
+                      </motion.div>
+                    </AnimatePresence>
+                  </div>
 
                   <button
                     onClick={() => {
@@ -417,7 +467,7 @@ function Home() {
                       const nextIndex = (currentIndex + 1) % PERSONAS.length;
                       setActivePersonaId(PERSONAS[nextIndex].id);
                     }}
-                    className={`${glass.promptDark} hover:border-theme-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
+                    className={`${glass.promptDark} hover:border-theme-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text shadow-lg backdrop-blur-md`}
                     aria-label="Next persona"
                   >
                     <ChevronRight className="w-5 h-5 text-current transition-colors duration-100" />
@@ -425,17 +475,21 @@ function Home() {
                 </div>
 
                 {/* Modality Grid */}
-                <div className="grid grid-cols-4 gap-2 w-full">
-                  {HOME_CATEGORIES.map((category) => {
-                    const content = activePersona.content[category.id as keyof typeof activePersona.content];
-                    return (
-                      <ModalityContainer
-                        key={category.id}
-                        category={category}
-                        content={content as string}
-                      />
-                    );
-                  })}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 w-full">
+                  <AnimatePresence mode="wait">
+                    {HOME_CATEGORIES.map((category, index) => {
+                      const content = activePersona.content[category.id as keyof typeof activePersona.content];
+                      return (
+                        <div key={`${category.id}-${activePersonaId}`}>
+                          <ModalityContainer
+                            category={category}
+                            content={content as string}
+                            delay={index * 0.1}
+                          />
+                        </div>
+                      );
+                    })}
+                  </AnimatePresence>
                 </div>
               </div>
             </div>
@@ -444,16 +498,27 @@ function Home() {
         <section className="relative min-h-[100dvh] pt-[calc(var(--nav-h,4rem)+16px)] pb-[calc(var(--nav-h)+0.5rem)]">
           <div className={`${layout.container}`}>
             <div className="flex flex-col gap-4">
-              <div className="home-hero relative z-10 w-full">
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
+                className="home-hero relative z-10 w-full"
+              >
                 <div className="flex items-start justify-between gap-4 w-full">
                   <div className="flex flex-col gap-2 lg:max-w-xl">
-                    <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-left`}>
+                    <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-left bg-gradient-to-r from-theme-text via-theme-text/80 to-theme-text/50 bg-clip-text text-transparent pb-1`}>
                       Create your Digital Copy.
                     </h1>
                     <p className={`${headings.tripleHeading.description} text-theme-text text-left mt-0 mb-1`}>
-                      All modalities. In one place.
+                      Your Digital Soul. All in one place.
                     </p>
-                    <div className="home-hero-actions flex flex-wrap gap-2">
+                    <motion.div
+                      className="home-hero-actions flex flex-wrap gap-2 pt-2"
+                      initial={{ opacity: 0 }}
+                      whileInView={{ opacity: 1 }}
+                      transition={{ delay: 0.2, duration: 0.5 }}
+                    >
                       <Link to="/learn/use-cases" className={buttons.ghost}>
                         Learn
                       </Link>
@@ -464,145 +529,164 @@ function Home() {
                       >
                         Create
                       </Link>
-                    </div>
+                    </motion.div>
                   </div>
-                  <div className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-right flex-shrink-0 hidden lg:block font-normal`}>
+                  <div className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-right flex-shrink-0 hidden lg:block font-normal opacity-50`}>
                     daygen
                   </div>
                 </div>
-              </div>
+              </motion.div>
               <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[8rem,1fr] lg:gap-4 lg:items-stretch">
                 <nav
                   className="rounded-3xl p-4 lg:px-0 lg:h-full"
                   ref={sidebarRef}
                   aria-label="Modality categories"
                 >
-                  <ul className="flex flex-row flex-wrap gap-2 lg:flex-col lg:gap-2">
-                    {HOME_CATEGORIES.map((category) => {
-                      const isActive = category.id === activeCategory;
-                      const Icon = category.Icon;
+                  <ul className="grid grid-cols-2 gap-2 lg:flex lg:flex-col lg:gap-2">
+                    <AnimatePresence>
+                      {HOME_CATEGORIES.map((category) => {
+                        const isActive = category.id === activeCategory;
+                        const Icon = category.Icon;
 
-                      // Color-specific shadow mappings for each category
-                      const shadowColorMap: Record<string, string> = {
-                        text: "rgba(251, 191, 36, 0.15)",
-                        image: "rgba(239, 68, 68, 0.15)",
-                        video: "rgba(59, 130, 246, 0.15)",
-                        audio: "rgba(34, 211, 238, 0.15)",
-                      };
+                        // Color-specific shadow mappings for each category
+                        const shadowColorMap: Record<string, string> = {
+                          text: "rgba(251, 191, 36, 0.15)",
+                          image: "rgba(239, 68, 68, 0.15)",
+                          video: "rgba(59, 130, 246, 0.15)",
+                          audio: "rgba(34, 211, 238, 0.15)",
+                        };
 
-                      // Pressed state shadow colors (slightly higher opacity for subtle effect)
-                      const pressedShadowColorMap: Record<string, string> = {
-                        text: "rgba(251, 191, 36, 0.22)",
-                        image: "rgba(239, 68, 68, 0.22)",
-                        video: "rgba(59, 130, 246, 0.22)",
-                        audio: "rgba(34, 211, 238, 0.22)",
-                      };
+                        // Pressed state shadow colors (slightly higher opacity for subtle effect)
+                        const pressedShadowColorMap: Record<string, string> = {
+                          text: "rgba(251, 191, 36, 0.22)",
+                          image: "rgba(239, 68, 68, 0.22)",
+                          video: "rgba(59, 130, 246, 0.22)",
+                          audio: "rgba(34, 211, 238, 0.22)",
+                        };
 
-                      // Color-specific border class mappings for each category (subtle, barely visible)
-                      const borderColorMap: Record<string, string> = {
-                        text: "border-amber-400/25",
-                        image: "border-red-500/25",
-                        video: "border-blue-500/25",
-                        audio: "border-cyan-400/25",
-                      };
+                        // Color-specific border class mappings for each category (subtle, barely visible)
+                        const borderColorMap: Record<string, string> = {
+                          text: "border-amber-400/25",
+                          image: "border-red-500/25",
+                          video: "border-blue-500/25",
+                          audio: "border-cyan-400/25",
+                        };
 
-                      const isPressed = pressedCategory === category.id;
+                        const isPressed = pressedCategory === category.id;
 
-                      // Enhanced shadow effect: slightly deeper when pressed (very subtle)
-                      // Active items get colored shadow, inactive items get neutral shadow
-                      const insetShadow = isPressed && isActive
-                        ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em ${pressedShadowColorMap[category.id]}` }
-                        : isPressed && !isActive
-                          ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em rgba(255, 255, 255, 0.08)` }
-                          : isActive
-                            ? { boxShadow: `inset 0 -0.5em 1.2em -0.125em ${shadowColorMap[category.id]}` }
-                            : {};
+                        // Enhanced shadow effect: slightly deeper when pressed (very subtle)
+                        // Active items get colored shadow, inactive items get neutral shadow
+                        const insetShadow = isPressed && isActive
+                          ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em ${pressedShadowColorMap[category.id]}` }
+                          : isPressed && !isActive
+                            ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em rgba(255, 255, 255, 0.08)` }
+                            : isActive
+                              ? { boxShadow: `inset 0 -0.5em 1.2em -0.125em ${shadowColorMap[category.id]}` }
+                              : {};
 
-                      return (
-                        <li key={category.id}>
-                          <button
-                            type="button"
-                            onClick={() => setActiveCategory(category.id)}
-                            onMouseDown={() => setPressedCategory(category.id)}
-                            onMouseUp={() => setPressedCategory(null)}
-                            onMouseLeave={() => setPressedCategory(null)}
-                            onTouchStart={() => setPressedCategory(category.id)}
-                            onTouchEnd={() => setPressedCategory(null)}
-                            className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-6 py-2 lg:pl-4 lg:w-full text-sm font-raleway transition-all duration-100 focus:outline-none group ${isActive
-                              ? `border ${borderColorMap[category.id]} text-theme-text`
-                              : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"
-                              }`}
-                            style={insetShadow}
-                          >
-                            <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full blur-3xl bg-gradient-to-br ${category.gradient} transition-opacity duration-100 ${isActive ? 'opacity-60' : 'opacity-0 group-hover:opacity-20'}`} />
-                            <Icon className={`h-4 w-4 flex-shrink-0 relative z-10 transition-colors ${isActive ? category.iconColor : "text-theme-text group-hover:text-theme-text"}`} aria-hidden="true" />
-                            <span className="relative z-10">{category.label}</span>
-                          </button>
-                        </li>
-                      );
-                    })}
+                        return (
+                          <li key={category.id}>
+                            <motion.button
+                              layout
+                              type="button"
+                              onClick={() => setActiveCategory(category.id)}
+                              onMouseDown={() => setPressedCategory(category.id)}
+                              onMouseUp={() => setPressedCategory(null)}
+                              onMouseLeave={() => setPressedCategory(null)}
+                              onTouchStart={() => setPressedCategory(category.id)}
+                              onTouchEnd={() => setPressedCategory(null)}
+                              whileTap={{ scale: 0.98 }}
+                              className={`parallax-small relative overflow-hidden flex items-center justify-center lg:justify-start gap-2 rounded-2xl pl-4 pr-6 py-3 lg:py-2 lg:pl-4 w-full text-sm font-raleway transition-all duration-200 focus:outline-none group ${isActive
+                                ? `border ${borderColorMap[category.id]} text-theme-text`
+                                : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/5"
+                                }`}
+                              style={insetShadow}
+                            >
+                              <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full blur-3xl bg-gradient-to-br ${category.gradient} transition-opacity duration-300 ${isActive ? 'opacity-60' : 'opacity-0 group-hover:opacity-10'}`} />
+                              <Icon className={`h-4 w-4 flex-shrink-0 relative z-10 transition-colors ${isActive ? category.iconColor : "text-theme-text/80 group-hover:text-theme-text"}`} aria-hidden="true" />
+                              <span className="relative z-10 font-medium tracking-wide">{category.label}</span>
+                            </motion.button>
+                          </li>
+                        );
+                      })}
+                    </AnimatePresence>
                   </ul>
                 </nav>
                 <div className="flex-1 lg:h-full" ref={contentRef}>
                   {isImageCategory ? (
-                    <div className="w-full">
-                      <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                    <motion.div
+                      key="image-grid"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.5 }}
+                      className="w-full"
+                    >
+                      <div className="grid gap-x-2 gap-y-3 sm:gap-x-3 sm:gap-y-4 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                         <UseCaseCard
                           title="lifestyle images"
                           imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/lifestyle images.png"
                           imageAlt="Lifestyle images example"
                           onClick={openStyleModal}
+                          delay={0.1}
                         />
                         <UseCaseCard
                           title="formal images"
                           imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/3b632ef0-3d13-4359-a2ba-5dec11fc3eab.png"
                           imageAlt="Business woman in a suit"
                           onClick={openStyleModal}
+                          delay={0.15}
                         />
                         <UseCaseCard
                           title="artistic images"
                           imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/artistic images.png"
                           imageAlt="Artistic images example"
                           onClick={openStyleModal}
+                          delay={0.2}
                         />
                         <UseCaseCard
                           title="add object/product"
                           imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/product visualizations.png"
                           imageAlt="Add object/product example"
                           onClick={openStyleModal}
+                          delay={0.25}
                         />
                         <UseCaseCard
                           title="change outfit"
                           imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/virtual try-on.png"
                           imageAlt="Change outfit example"
                           onClick={openStyleModal}
+                          delay={0.3}
                         />
                         <UseCaseCard
                           title="brand identity kits"
                           imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/brand identity.png"
                           imageAlt="Brand identity example"
                           onClick={openStyleModal}
+                          delay={0.35}
                         />
                         <UseCaseCard
                           title="create your brand assets"
                           imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/brand identity.png"
                           imageAlt="Create your brand assets example"
                           onClick={openStyleModal}
+                          delay={0.4}
                         />
                         <UseCaseCard
                           title="infographics"
                           imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/infographics.png"
                           imageAlt="Infographics example"
                           onClick={openStyleModal}
+                          delay={0.45}
                         />
                         <UseCaseCard
                           title="upscale image"
                           imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/upscaling.png"
                           imageAlt="Upscale image example"
                           onClick={openStyleModal}
+                          delay={0.5}
                         />
                       </div>
-                    </div>
+                    </motion.div>
                   ) : (
                     <ComingSoonPanel label={activeCategoryLabel} className="lg:h-full" />
                   )}

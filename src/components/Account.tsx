@@ -388,14 +388,14 @@ export default function Account() {
   const showReturnButton = user && sanitizedNextPath && sanitizedNextPath !== "/app";
 
   return (
-    <main className="min-h-screen text-theme-text px-6 lg:px-8 pt-[calc(var(--nav-h,4rem)+16px)] pb-8">
-      <header className="max-w-5xl mx-auto mb-8">
+    <main className="min-h-screen text-theme-text px-4 sm:px-6 lg:px-8 pt-[calc(var(--nav-h,4rem)+16px)] pb-8">
+      <header className="max-w-5xl mx-auto mb-6 sm:mb-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {showReturnButton && (
               <button
                 onClick={handleBack}
-                className="px-4 py-2 bg-theme-primary text-theme-black rounded-lg hover:bg-theme-primary/90 transition-colors font-raleway text-sm"
+                className="px-3 py-1.5 sm:px-4 sm:py-2 bg-theme-primary text-theme-black rounded-lg hover:bg-theme-primary/90 transition-colors font-raleway text-xs sm:text-sm"
               >
                 Return to {destinationLabel}
               </button>
@@ -411,7 +411,7 @@ export default function Account() {
         </div>
       </header>
 
-      <section className="max-w-5xl mx-auto grid gap-8 md:grid-cols-2">
+      <section className="max-w-5xl mx-auto grid gap-6 sm:gap-8 md:grid-cols-2">
         <ProfileCard
           user={user}
           username={username}
