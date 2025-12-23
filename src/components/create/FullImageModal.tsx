@@ -889,6 +889,7 @@ const FullImageModal = memo(() => {
               isLiked: false,
               isPublic: false,
               jobId: result.jobId,
+              jobType: result.jobType || 'IMAGE_EDIT',
             });
             finalizeQuickEditJob(syntheticJobId, 'completed');
           } else {
@@ -923,6 +924,7 @@ const FullImageModal = memo(() => {
               isLiked: false,
               isPublic: false,
               r2FileId: result.r2FileId,
+              jobType: result.jobType || 'IMAGE_EDIT',
             });
             finalizeQuickEditJob(syntheticJobId, 'completed');
           } else {

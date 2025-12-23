@@ -541,6 +541,11 @@ const PromptForm = memo<PromptFormProps>(
       }
 
       const updateWidth = () => {
+        if (window.innerWidth < 1024) {
+          setModeSwitcherWidth(null);
+          return;
+        }
+
         const rect = modeSwitcherNode.getBoundingClientRect();
         setModeSwitcherWidth(prev => {
           const nextWidth = Math.round(rect.width);
@@ -1601,7 +1606,7 @@ const PromptForm = memo<PromptFormProps>(
                         ref={aspectRatioButtonRef}
                         type="button"
                         onClick={handleAspectRatioToggle}
-                        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2 parallax-small`}
+                        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text hidden sm:flex items-center justify-center h-8 px-2 lg:px-3 rounded-full transition-colors duration-200 gap-2 parallax-small`}
                         aria-label="Aspect ratio"
                         onMouseEnter={(e) => {
                           showHoverTooltip(e.currentTarget, 'aspect-ratio-tooltip');
@@ -1684,7 +1689,7 @@ const PromptForm = memo<PromptFormProps>(
                     </div>
                   </div>
 
-                  <div className="relative">
+                  <div className="relative hidden sm:block">
                     <button
                       type="button"
                       ref={promptsButtonRef}
@@ -1733,7 +1738,7 @@ const PromptForm = memo<PromptFormProps>(
             </div>
 
             {/* Right section: Avatar + Product + Style + Generate */}
-            <div className="flex flex-row gap-2 flex-shrink-0 items-end">
+            <div className="flex flex-row gap-1 lg:gap-2 flex-shrink-0 items-end">
               {/* Avatar section - supports multiple selections */}
               <div className="relative">
                 <button
@@ -2142,7 +2147,7 @@ const PromptForm = memo<PromptFormProps>(
 
               <div className="flex flex-col gap-2 items-end mr-2">
                 {/* Mode switcher */}
-                <div className="flex items-center gap-1" ref={handleModeSwitcherRef}>
+                <div className="hidden lg:flex items-center gap-1" ref={handleModeSwitcherRef}>
                   {(['image', 'video'] as GenerationMode[]).map(mode => {
                     const isActive = activeCategory === mode;
                     const IconComponent = mode === 'image' ? ImageIcon : VideoIcon;
@@ -2188,7 +2193,7 @@ const PromptForm = memo<PromptFormProps>(
                   <button
                     onClick={triggerGenerate}
                     disabled={!canGenerate || !hasGenerationCapacity || (user?.credits ?? 0) <= 0}
-                    className={`btn btn-white font-raleway text-base font-medium gap-0 sm:gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60 items-center px-0 sm:px-6 min-w-0 sm:min-w-[120px]`}
+                    className={`btn btn-white font-raleway text-base font-medium gap-0 sm:gap-2 parallax-large disabled:cursor-not-allowed disabled:opacity-60 items-center sm:px-6 min-w-0 sm:min-w-[120px]`}
                     style={{
                       width: modeSwitcherWidth ? `${modeSwitcherWidth}px` : undefined,
                     }}
@@ -3075,6 +3080,7 @@ const PromptForm = memo<PromptFormProps>(
                 anchorRef={settingsButtonRef}
                 open={isSettingsOpen}
                 onClose={handleSettingsClose}
+                aspectRatioControl={aspectRatioControl}
                 {...settingsSections}
               />
             </Suspense>

@@ -24,6 +24,7 @@ export interface IdeogramGeneratedImage {
   avatarImageId?: string;
   styleId?: string;
   jobId?: string;
+  jobType?: string; // 'IMAGE_GENERATION', 'IMAGE_EDIT', 'IMAGE_RESIZE', etc.
 }
 
 export interface IdeogramImageGenerationState {
@@ -247,6 +248,7 @@ const parseIdeogramJobResult = (
     avatarImageId: options.avatarImageId,
     styleId: options.styleId,
     jobId,
+    jobType: options.jobType,
   }));
 };
 
@@ -285,6 +287,7 @@ const parseImmediateIdeogramResult = (
     avatarId: options.avatarId,
     avatarImageId: options.avatarImageId,
     styleId: options.styleId,
+    jobType: options.jobType,
   }));
 };
 

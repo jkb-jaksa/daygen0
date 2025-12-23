@@ -23,6 +23,7 @@ export interface GeneratedImage {
   styleId?: string;
   r2FileId?: string;
   jobId?: string;
+  jobType?: string; // 'IMAGE_GENERATION', 'IMAGE_EDIT', 'IMAGE_RESIZE', etc.
 }
 
 export type ImageGenerationStatus =
@@ -203,6 +204,7 @@ const parseGeminiJobResult = (
     productId: options.productId,
     styleId: options.styleId,
     r2FileId: extractR2FileId(snapshot, response),
+    jobType: options.jobType,
   };
 };
 
@@ -246,6 +248,7 @@ const parseImmediateGeminiResult = (
     productId: options.productId,
     styleId: options.styleId,
     jobId,
+    jobType: options.jobType,
   };
 };
 

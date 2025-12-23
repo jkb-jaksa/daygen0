@@ -1,5 +1,5 @@
 import { memo, useMemo, useState, useEffect } from 'react';
-import { Settings, Heart, Globe, X, Image as ImageIcon, Video as VideoIcon } from 'lucide-react';
+import { Settings, Heart, Globe, X, Image as ImageIcon, Video as VideoIcon, Sparkles, Pencil } from 'lucide-react';
 import { glass } from '../../styles/designSystem';
 import { useGallery } from './contexts/GalleryContext';
 import { CustomDropdown } from './shared/CustomDropdown';
@@ -103,6 +103,20 @@ const GalleryFilters = memo(() => {
     setFilters({ public: !filters.public });
   };
 
+  const handleToggleGenerations = () => {
+    const newJobTypes = filters.jobTypes.includes('generations')
+      ? filters.jobTypes.filter(t => t !== 'generations')
+      : [...filters.jobTypes, 'generations'];
+    setFilters({ jobTypes: newJobTypes });
+  };
+
+  const handleToggleEdits = () => {
+    const newJobTypes = filters.jobTypes.includes('edits')
+      ? filters.jobTypes.filter(t => t !== 'edits')
+      : [...filters.jobTypes, 'edits'];
+    setFilters({ jobTypes: newJobTypes });
+  };
+
   const handleClearFilters = () => {
     clearFilters();
   };
@@ -127,6 +141,30 @@ const GalleryFilters = memo(() => {
         {/* Status / Modality filters */}
         <div className="mb-3">
           <div className="flex gap-1 flex-wrap">
+            <button
+              onClick={handleToggleGenerations}
+              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${filters.jobTypes.includes('generations')
+                ? "text-theme-text border-theme-mid bg-theme-white/10"
+                : "text-theme-white border-theme-dark hover:border-theme-mid hover:text-theme-text"
+                }`}
+            >
+              <Sparkles className={`w-3.5 h-3.5 ${filters.jobTypes.includes('generations') ? "text-theme-text" : "text-current"}`} />
+              <span>Generations</span>
+            </button>
+            <button
+              onClick={handleToggleEdits}
+              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${filters.jobTypes.includes('edits')
+                ? "text-theme-text border-theme-mid bg-theme-white/10"
+                : "text-theme-white border-theme-dark hover:border-theme-mid hover:text-theme-text"
+                }`}
+            >
+              <Pencil className={`w-3.5 h-3.5 ${filters.jobTypes.includes('edits') ? "text-theme-text" : "text-current"}`} />
+              <span>Edits</span>
+            </button>
+
+            {/* Separator */}
+            <div className="w-px h-6 bg-theme-white/10 mx-1 self-center" />
+
             <button
               onClick={handleToggleLiked}
               className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${filters.liked

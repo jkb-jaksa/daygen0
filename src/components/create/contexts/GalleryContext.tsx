@@ -95,6 +95,7 @@ const initialFilters: GalleryFilters = {
   avatar: '',
   product: '',
   style: '',
+  jobTypes: [],
 };
 
 const initialState: GalleryState = {
@@ -1097,6 +1098,30 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
 
       // Filter by style
       if (state.filters.style && item.styleId !== state.filters.style) return false;
+
+      // Filter by jobTypes (generations vs edits)
+      if (state.filters.jobTypes.length > 0) {
+        const itemJobType = item.jobType;
+        let matchesJobTypeFilter = false;
+
+        for (const filterType of state.filters.jobTypes) {
+          if (filterType === 'generations') {
+            // Generations: items without jobType OR with IMAGE_GENERATION
+            if (!itemJobType || itemJobType === 'IMAGE_GENERATION') {
+              matchesJobTypeFilter = true;
+              break;
+            }
+          } else if (filterType === 'edits') {
+            // Edits: items with IMAGE_EDIT or IMAGE_RESIZE
+            if (itemJobType === 'IMAGE_EDIT' || itemJobType === 'IMAGE_RESIZE') {
+              matchesJobTypeFilter = true;
+              break;
+            }
+          }
+        }
+
+        if (!matchesJobTypeFilter) return false;
+      }
 
       return true;
     });

@@ -257,7 +257,7 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
                   className="w-4 h-4 object-contain rounded flex-shrink-0"
                 />
                 {!compact && (
-                  <span className={`font-raleway text-sm whitespace-nowrap ${isGenerating ? 'text-n-text/50' : 'text-n-text'}`}>
+                  <span className={`hidden sm:inline font-raleway text-sm whitespace-nowrap ${isGenerating ? 'text-n-text/50' : 'text-n-text'}`}>
                     {currentModel?.name || 'Select Model'}
                   </span>
                 )}
@@ -269,7 +269,7 @@ const ModelSelector = memo<ModelSelectorProps>(({ selectedModel, onModelChange, 
               <div className="flex items-center gap-2 min-w-0">
                 <Icon className={`w-4 h-4 flex-shrink-0 ${isGenerating ? 'text-n-text/50' : 'text-n-text'}`} />
                 {!compact && (
-                  <span className={`font-raleway text-sm whitespace-nowrap ${isGenerating ? 'text-n-text/50' : 'text-n-text'}`}>
+                  <span className={`hidden sm:inline font-raleway text-sm whitespace-nowrap ${isGenerating ? 'text-n-text/50' : 'text-n-text'}`}>
                     {currentModel?.name || 'Select Model'}
                   </span>
                 )}

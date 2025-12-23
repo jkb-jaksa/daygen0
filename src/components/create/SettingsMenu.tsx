@@ -4,7 +4,14 @@ import { createPortal } from "react-dom";
 import { glass } from "../../styles/designSystem";
 import { useDropdownScrollLock } from "../../hooks/useDropdownScrollLock";
 import { Minus, Plus } from "lucide-react";
-import type { GeminiAspectRatio } from "../../types/aspectRatio";
+import type { AspectRatioOption, GeminiAspectRatio } from "../../types/aspectRatio";
+
+export type AspectRatioControl = {
+  options: ReadonlyArray<AspectRatioOption>;
+  selectedValue: string;
+  selectedLabel: string;
+  onSelect: (value: string) => void;
+};
 
 type FluxModelOption = "flux-2-pro" | "flux-2-flex";
 
@@ -197,6 +204,7 @@ export interface SettingsMenuProps {
   kling: KlingSettingsProps;
   lumaPhoton: LumaPhotonSettingsProps;
   lumaRay: LumaRaySettingsProps;
+  aspectRatioControl?: AspectRatioControl | null;
 }
 
 const SettingsPortal: React.FC<{
@@ -334,6 +342,7 @@ export function SettingsMenu({
   kling,
   lumaPhoton,
   lumaRay,
+  aspectRatioControl,
 }: SettingsMenuProps) {
   if (!open) {
     return null;
@@ -375,6 +384,23 @@ export function SettingsMenu({
           Generates up to {max} images per run.
         </div>
       </div>
+
+      {aspectRatioControl && (
+        <div className="space-y-2 block sm:hidden pt-3 border-t border-theme-mid/50">
+          <label className="block text-xs font-raleway text-theme-white/80 mb-1">Aspect Ratio</label>
+          <select
+            value={aspectRatioControl.selectedValue}
+            onChange={e => aspectRatioControl.onSelect(e.target.value)}
+            className="w-full p-2 text-sm bg-theme-black border border-theme-mid rounded-lg text-theme-white focus:ring-2 focus:ring-theme-text focus:border-transparent outline-none"
+          >
+            {aspectRatioControl.options.map(opt => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
     </div>
   );
 

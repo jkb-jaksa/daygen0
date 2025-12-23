@@ -1,5 +1,5 @@
 import { memo, useMemo, useState, useEffect } from 'react';
-import { SlidersHorizontal, Heart, Globe, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { SlidersHorizontal, Heart, Globe, X, ChevronDown, ChevronUp, Sparkles, Pencil } from 'lucide-react';
 import { glass } from '../../styles/designSystem';
 import { useGallery } from './contexts/GalleryContext';
 import { CustomDropdown } from './shared/CustomDropdown';
@@ -107,6 +107,20 @@ const CollapsibleGalleryFilters = memo<CollapsibleGalleryFiltersProps>(({ active
     setFilters({ public: !filters.public });
   };
 
+  const handleToggleGenerations = () => {
+    const newJobTypes = filters.jobTypes.includes('generations')
+      ? filters.jobTypes.filter(t => t !== 'generations')
+      : [...filters.jobTypes, 'generations'];
+    setFilters({ jobTypes: newJobTypes });
+  };
+
+  const handleToggleEdits = () => {
+    const newJobTypes = filters.jobTypes.includes('edits')
+      ? filters.jobTypes.filter(t => t !== 'edits')
+      : [...filters.jobTypes, 'edits'];
+    setFilters({ jobTypes: newJobTypes });
+  };
+
   const handleClearFilters = () => {
     clearFilters();
   };
@@ -119,7 +133,8 @@ const CollapsibleGalleryFilters = memo<CollapsibleGalleryFiltersProps>(({ active
       filters.models.length > 0 ||
       (filters.avatar !== '' && filters.avatar !== 'all') ||
       (filters.product !== '' && filters.product !== 'all') ||
-      filters.aspectRatios.length > 0
+      filters.aspectRatios.length > 0 ||
+      filters.jobTypes.length > 0
     );
   }, [filters]);
 
@@ -127,8 +142,32 @@ const CollapsibleGalleryFilters = memo<CollapsibleGalleryFiltersProps>(({ active
     <div className="py-3">
       {/* Top bar with always-visible filters and toggle */}
       <div className="flex items-center justify-between">
-        {/* Status filters - Liked / Public */}
-        <div className="flex gap-2">
+        {/* Status filters - Generations / Edits / Liked / Public */}
+        <div className="flex gap-1">
+          <button
+            onClick={handleToggleGenerations}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${filters.jobTypes.includes('generations')
+              ? "text-theme-text border-theme-mid bg-theme-white/10"
+              : "text-theme-white border-theme-dark hover:border-theme-mid hover:text-theme-text"
+              }`}
+          >
+            <Sparkles className={`w-3.5 h-3.5 ${filters.jobTypes.includes('generations') ? "text-theme-text" : "text-current"}`} />
+            <span>Generations</span>
+          </button>
+          <button
+            onClick={handleToggleEdits}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${filters.jobTypes.includes('edits')
+              ? "text-theme-text border-theme-mid bg-theme-white/10"
+              : "text-theme-white border-theme-dark hover:border-theme-mid hover:text-theme-text"
+              }`}
+          >
+            <Pencil className={`w-3.5 h-3.5 ${filters.jobTypes.includes('edits') ? "text-theme-text" : "text-current"}`} />
+            <span>Edits</span>
+          </button>
+
+          {/* Separator */}
+          <div className="w-px h-6 bg-theme-white/10 self-center" />
+
           <button
             onClick={handleToggleLiked}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${filters.liked

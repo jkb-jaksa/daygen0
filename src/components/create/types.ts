@@ -42,6 +42,7 @@ export type GalleryImageLike = {
   avatarImageId?: string;
   styleId?: string;
   aspectRatio?: string;
+  jobType?: string; // 'IMAGE_GENERATION', 'IMAGE_EDIT', 'IMAGE_RESIZE', etc.
 };
 
 export type GalleryVideoLike = {
@@ -63,6 +64,7 @@ export type GalleryVideoLike = {
   avatarImageId?: string;
   styleId?: string;
   aspectRatio?: string;
+  jobType?: string; // 'VIDEO_GENERATION', etc.
 };
 
 export type StoredGalleryImage = {
@@ -124,6 +126,7 @@ export type GalleryFilters = {
   avatar: string;
   product: string;
   style: string;
+  jobTypes: string[]; // Filter by job type: 'generations', 'edits'
 };
 
 export type ImageActionMenuState = { id: string; anchor: HTMLElement | null } | null;
