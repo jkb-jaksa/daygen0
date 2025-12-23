@@ -8,6 +8,8 @@ interface VerticalGalleryNavProps {
   onNavigate: (index: number) => void;
   className?: string;
   onWidthChange?: (width: number) => void;
+  /** Hide on mobile screens (< md breakpoint) */
+  hiddenOnMobile?: boolean;
 }
 
 // Video thumbnail component that captures and displays first frame
@@ -107,6 +109,7 @@ export function VerticalGalleryNav({
   onNavigate,
   className = "",
   onWidthChange,
+  hiddenOnMobile = false,
 }: VerticalGalleryNavProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -254,7 +257,7 @@ export function VerticalGalleryNav({
     <div
       ref={rootRef}
       data-vertical-gallery-nav="true"
-      className={`fixed right-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] z-20 flex flex-col pointer-events-auto ${className}`}
+      className={`fixed right-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] z-20 flex-col pointer-events-auto ${hiddenOnMobile ? 'hidden md:flex' : 'flex'} ${className}`}
       style={{ top: 'calc(var(--nav-h) + 16px)', height: 'calc(100vh - var(--nav-h) - 32px)' }}
       {...{ [scrollLockExemptAttr]: "true" }}
       onClick={(e) => e.stopPropagation()}

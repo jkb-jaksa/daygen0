@@ -549,9 +549,9 @@ const AvatarCard: React.FC<{
 }> = ({ item, variant, rank, likeCount, isFavorite, onToggleFavorite }) => {
   const isFeature = variant === "feature";
   const isSpotlight = variant === "spotlight";
-  const padding = isFeature ? "p-8 sm:p-10" : isSpotlight ? "p-6 sm:p-7" : "p-6";
+  const padding = isFeature ? "p-5 sm:p-8 md:p-10" : isSpotlight ? "p-4 sm:p-6 md:p-7" : "p-4 sm:p-6";
   const radius = "rounded-2xl";
-  const minHeight = isFeature ? "min-h-[320px] sm:min-h-[380px] md:min-h-[420px]" : isSpotlight ? "min-h-[220px] sm:min-h-[250px] md:min-h-[280px]" : "min-h-[200px] sm:min-h-[230px] md:min-h-[260px]";
+  const minHeight = isFeature ? "min-h-[280px] sm:min-h-[320px] md:min-h-[380px] lg:min-h-[420px]" : isSpotlight ? "min-h-[180px] sm:min-h-[220px] md:min-h-[250px] lg:min-h-[280px]" : "min-h-[160px] sm:min-h-[200px] md:min-h-[230px] lg:min-h-[260px]";
 
   return (
     <article
@@ -818,6 +818,19 @@ const CustomMultiSelect: React.FC<{
 
 const Explore: React.FC = () => {
   const { storagePrefix, token } = useAuth();
+
+  // Mobile detection for responsive full-size view
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 768px)').matches : false
+  );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    const handleChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
 
   // Filter state
   const [galleryFilters, setGalleryFilters] = useState<{
@@ -1525,6 +1538,50 @@ const Explore: React.FC = () => {
     right: 24,
   }));
 
+  // Touch swipe state for mobile navigation
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const minSwipeDistance = 50;
+
+
+  // Navigation functions for full-size view
+  const navigateFullSizeImage = useCallback((direction: 'prev' | 'next') => {
+    const totalImages = filteredGallery.length;
+    if (totalImages === 0) return;
+
+    const newIndex = direction === 'prev'
+      ? (currentImageIndex > 0 ? currentImageIndex - 1 : totalImages - 1)
+      : (currentImageIndex < totalImages - 1 ? currentImageIndex + 1 : 0);
+
+    setCurrentImageIndex(newIndex);
+    setSelectedFullImage(filteredGallery[newIndex]);
+  }, [filteredGallery, currentImageIndex, setCurrentImageIndex, setSelectedFullImage]);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchEndX.current = null;
+    touchStartX.current = e.targetTouches[0].clientX;
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    const distance = touchStartX.current - touchEndX.current;
+    if (Math.abs(distance) > minSwipeDistance) {
+      if (distance > 0) {
+        // Swiped left - go to next image
+        navigateFullSizeImage('next');
+      } else {
+        // Swiped right - go to previous image
+        navigateFullSizeImage('prev');
+      }
+    }
+    touchStartX.current = null;
+    touchEndX.current = null;
+  }, [navigateFullSizeImage]);
+
   const updateFullSizePadding = useCallback(() => {
     if (typeof window === "undefined") {
       return;
@@ -1737,18 +1794,7 @@ const Explore: React.FC = () => {
     });
   };
 
-  // Navigation functions for full-size view
-  const navigateFullSizeImage = useCallback((direction: 'prev' | 'next') => {
-    const totalImages = filteredGallery.length;
-    if (totalImages === 0) return;
 
-    const newIndex = direction === 'prev'
-      ? (currentImageIndex > 0 ? currentImageIndex - 1 : totalImages - 1)
-      : (currentImageIndex < totalImages - 1 ? currentImageIndex + 1 : 0);
-
-    setCurrentImageIndex(newIndex);
-    setSelectedFullImage(filteredGallery[newIndex]);
-  }, [filteredGallery, currentImageIndex, setCurrentImageIndex, setSelectedFullImage]);
 
   // Open full-size view
   const openFullSizeView = (item: GalleryItem) => {
@@ -2064,7 +2110,7 @@ const Explore: React.FC = () => {
                               }));
                             }
                           }}
-                          className={`px-4 py-2 rounded-full text-sm font-raleway transition-all duration-100 ${isSelected
+                          className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-raleway transition-all duration-100 ${isSelected
                             ? 'bg-theme-white text-theme-black border border-theme-white shadow-lg shadow-theme-white/20'
                             : 'bg-theme-black/40 text-theme-white border border-theme-dark hover:border-theme-mid hover:text-theme-text'
                             }`}
@@ -2253,7 +2299,7 @@ const Explore: React.FC = () => {
           activeGalleryView === 'creations' ? (
             <section className="relative pb-12 -mt-6">
               <div className={`${layout.container}`}>
-                <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-2 xl:grid-cols-3">
                   {visibleGallery.map((item) => {
                     const isMenuActive = moreActionMenu?.id === item.id;
                     const isSaved = savedImageUrls.has(item.imageUrl);
@@ -2270,7 +2316,7 @@ const Explore: React.FC = () => {
                           openFullSizeView(item);
                         }}
                       >
-                        <div className={`relative ${orientationStyles[item.orientation]} min-h-[240px] sm:min-h-[280px] xl:min-h-[320px]`}>
+                        <div className={`relative ${orientationStyles[item.orientation]} min-h-[180px] sm:min-h-[240px] md:min-h-[280px] xl:min-h-[320px]`}>
                           <img
                             src={item.imageUrl}
                             alt={`Image by ${item.creator.name}`}
@@ -2850,38 +2896,47 @@ const Explore: React.FC = () => {
         {
           isFullSizeOpen && selectedFullImage && (
             <div
-              className="fixed inset-0 z-[60] bg-theme-black/80 backdrop-blur-md flex items-start justify-center py-4"
-              style={{
+              className={`fixed inset-0 z-[60] bg-theme-black/90 md:bg-theme-black/80 backdrop-blur-md flex items-center md:items-start justify-center ${isMobile ? 'p-0' : 'py-4'}`}
+              style={isMobile ? {} : {
                 paddingLeft: `${fullSizePadding.left}px`,
                 paddingRight: `${fullSizePadding.right}px`,
               }}
               onClick={closeFullSizeView}
             >
-              <div className="relative max-w-[95vw] max-h-[90vh] group flex items-start justify-center mt-14" style={{ transform: 'translateX(-50px)' }} onClick={(e) => e.stopPropagation()}>
+              <div
+                className={`relative group flex items-center justify-center ${isMobile ? 'w-full h-full max-w-none max-h-none' : 'max-w-[95vw] max-h-[90vh] mt-14'}`}
+                style={isMobile ? {} : { transform: 'translateX(-50px)' }}
+                onClick={(e) => e.stopPropagation()}
+                onTouchStart={isMobile ? handleTouchStart : undefined}
+                onTouchMove={isMobile ? handleTouchMove : undefined}
+                onTouchEnd={isMobile ? handleTouchEnd : undefined}
+              >
                 {/* Navigation arrows for full-size modal */}
                 {filteredGallery.length > 1 && (
                   <>
                     <button
                       onClick={() => navigateFullSizeImage('prev')}
-                      className={`${glass.promptDark} absolute left-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:text-theme-text`}
+                      className={`${glass.promptDark} absolute ${isMobile ? 'left-2 p-3.5' : 'left-4 p-2.5'} top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-full focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'} hover:text-theme-text`}
                       title="Previous image (←)"
                       aria-label="Previous image"
                     >
-                      <ChevronLeft className="w-5 h-5 text-current transition-colors duration-100" />
+                      <ChevronLeft className={`${isMobile ? 'w-6 h-6' : 'w-5 h-5'} text-current transition-colors duration-100`} />
                     </button>
                     <button
                       onClick={() => navigateFullSizeImage('next')}
-                      className={`${glass.promptDark} absolute right-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:text-theme-text`}
+                      className={`${glass.promptDark} absolute ${isMobile ? 'right-2 p-3.5' : 'right-4 p-2.5'} top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-full focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'} hover:text-theme-text`}
                       title="Next image (→)"
                       aria-label="Next image"
                     >
-                      <ChevronRight className="w-5 h-5" />
+                      <ChevronRight className={`${isMobile ? 'w-6 h-6' : 'w-5 h-5'}`} />
                     </button>
                   </>
                 )}
 
+
+
                 <div
-                  className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat blur-[100px] opacity-50 scale-110 pointer-events-none"
+                  className={`absolute inset-0 z-0 bg-cover bg-center bg-no-repeat blur-[100px] opacity-50 scale-110 pointer-events-none ${isMobile ? 'hidden' : ''}`}
                   style={{ backgroundImage: `url(${selectedFullImage.imageUrl})` }}
                 />
 
@@ -2889,17 +2944,17 @@ const Explore: React.FC = () => {
                   src={selectedFullImage.imageUrl}
                   alt={`Image by ${selectedFullImage.creator.name}`}
                   loading="lazy"
-                  className="relative z-10 max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
-                  style={{ objectPosition: 'top' }}
+                  className={`relative z-10 object-contain shadow-2xl ${isMobile ? 'w-full h-auto max-h-[85vh] rounded-none' : 'max-w-full max-h-[90vh] rounded-lg'}`}
+                  style={isMobile ? {} : { objectPosition: 'top' }}
                 />
 
                 {/* Action buttons */}
-                <div className="image-gallery-actions absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-2 px-4 pt-4 pointer-events-none">
+                <div className={`image-gallery-actions absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-2 ${isMobile ? 'px-2 pt-2' : 'px-4 pt-4'} pointer-events-none`}>
                   {/* Left side - Recreate button */}
                   <div className="relative">
                     <button
                       type="button"
-                      className={`image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 ${recreateActionMenu?.id === selectedFullImage.id
+                      className={`image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 ${isMobile || recreateActionMenu?.id === selectedFullImage.id
                         ? 'opacity-100 pointer-events-auto'
                         : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
                         }`}
@@ -2961,7 +3016,7 @@ const Explore: React.FC = () => {
                   {/* Right side - Save, Heart, More, and Close buttons */}
                   <div className="flex items-center gap-2">
                     <div
-                      className={`flex items-center gap-1 transition-opacity duration-100 ${moreActionMenu?.id === selectedFullImage.id || recreateActionMenu?.id === selectedFullImage.id
+                      className={`flex items-center gap-1 transition-opacity duration-100 ${isMobile || moreActionMenu?.id === selectedFullImage.id || recreateActionMenu?.id === selectedFullImage.id
                         ? 'opacity-100 pointer-events-auto'
                         : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
                         }`}
@@ -3060,15 +3115,17 @@ const Explore: React.FC = () => {
                 {/* Close button - positioned on right side of image */}
                 <button
                   onClick={closeFullSizeView}
-                  className="absolute -top-3 -right-3 z-[60] p-1.5 rounded-full bg-[color:var(--glass-dark-bg)] text-theme-white hover:text-theme-text backdrop-blur-sm transition-colors duration-200"
+                  className={`absolute z-[60] rounded-full bg-[color:var(--glass-dark-bg)] text-theme-white hover:text-theme-text backdrop-blur-sm transition-colors duration-200 ${isMobile ? 'top-2 right-2 p-2.5' : '-top-3 -right-3 p-1.5'}`}
                   aria-label="Close"
                 >
-                  <X className="w-4 h-4" />
+                  <X className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'}`} />
                 </button>
 
                 {/* Image info overlay */}
                 <div
-                  className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 z-30 ${recreateActionMenu?.id === selectedFullImage.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
+                  className={`PromptDescriptionBar absolute ${isMobile ? 'bottom-2 left-2 right-2 p-3' : 'bottom-4 left-4 right-4 p-4'} rounded-2xl text-theme-text transition-opacity duration-100 z-30 ${isMobile || recreateActionMenu?.id === selectedFullImage.id
+                    ? 'opacity-100'
+                    : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
                     }`}
                 >
                   <div className="flex items-center justify-center">
@@ -3120,18 +3177,20 @@ const Explore: React.FC = () => {
                 )}
               </div>
 
-              {/* Vertical Gallery Navigation */}
-              <VerticalGalleryNav
-                images={filteredGallery.map(item => ({ url: item.imageUrl, id: item.id }))}
-                currentIndex={currentImageIndex}
-                onNavigate={(index) => {
-                  if (index >= 0 && index < filteredGallery.length) {
-                    setSelectedFullImage(filteredGallery[index]);
-                    setCurrentImageIndex(index);
-                  }
-                }}
-                onWidthChange={handleGalleryNavWidthChange}
-              />
+              {/* Vertical Gallery Navigation - hidden on mobile */}
+              {!isMobile && (
+                <VerticalGalleryNav
+                  images={filteredGallery.map(item => ({ url: item.imageUrl, id: item.id }))}
+                  currentIndex={currentImageIndex}
+                  onNavigate={(index) => {
+                    if (index >= 0 && index < filteredGallery.length) {
+                      setSelectedFullImage(filteredGallery[index]);
+                      setCurrentImageIndex(index);
+                    }
+                  }}
+                  onWidthChange={handleGalleryNavWidthChange}
+                />
+              )}
             </div>
           )
         }

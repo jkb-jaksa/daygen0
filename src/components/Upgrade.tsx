@@ -53,7 +53,7 @@ export default function Upgrade() {
 
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-5xl font-normal tracking-tight leading-[1.1] font-raleway mb-6 text-theme-text">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-normal tracking-tight leading-[1.1] font-raleway mb-4 sm:mb-6 text-theme-text">
             Choose your plan.
           </h1>
           <p className="mx-auto mb-6 max-w-2xl text-lg font-raleway font-normal text-theme-white">
@@ -67,7 +67,7 @@ export default function Upgrade() {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`relative px-6 py-2 rounded-full font-raleway text-base font-medium transition-colors duration-200 z-10 ${activeTab === tab ? 'text-theme-black' : 'text-theme-white hover:text-theme-text'
+                  className={`relative px-4 py-2 sm:px-6 rounded-full font-raleway text-sm sm:text-base font-medium transition-colors duration-200 z-10 ${activeTab === tab ? 'text-theme-black' : 'text-theme-white hover:text-theme-text'
                     }`}
                 >
                   {activeTab === tab && (
@@ -119,11 +119,11 @@ export default function Upgrade() {
         )}
 
         {/* Footer Info */}
-        <div className={`${glass.surface} p-8 max-w-4xl mx-auto mt-16`}>
-          <h3 className="text-2xl font-raleway font-normal text-theme-text mb-4 text-center">
+        <div className={`${glass.surface} p-5 sm:p-8 max-w-4xl mx-auto mt-10 sm:mt-16`}>
+          <h3 className="text-xl sm:text-2xl font-raleway font-normal text-theme-text mb-4 text-center">
             All plans include
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-theme-text/10 flex items-center justify-center">
                 <Zap className="w-5 h-5 text-theme-text" />

@@ -15,7 +15,7 @@ export default function Footer() {
     <footer>
       {/* Footer panel */}
       <section className="relative footer-gradient-bg overflow-hidden border-t border-theme-dark">
-        <div className={`${layout.container} pt-8 pb-80 relative z-0`}>
+        <div className={`${layout.container} pt-6 sm:pt-8 pb-48 sm:pb-80 relative z-0`}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
             {/* Left block: brand + copy */}
             <div className="pt-4">
@@ -41,7 +41,7 @@ export default function Footer() {
           </div>
         </div>
       </section>
-      
+
       {/* Copyright bar - extends to bottom of footer */}
       <div className={`${glass.promptDark} w-full py-4`}>
         <div className={`${layout.container} relative flex items-center justify-between`}>

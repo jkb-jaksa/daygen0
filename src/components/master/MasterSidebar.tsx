@@ -1,5 +1,5 @@
 import { memo, useState } from "react";
-import { Link } from "react-router-dom";
+
 import { glass } from "../../styles/designSystem";
 import { SIDEBAR_TOP_PADDING, SIDEBAR_WIDTH, SIDEBAR_PROMPT_GAP } from "../create/layoutConstants";
 import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from "../create/sidebarData";
@@ -33,7 +33,8 @@ function MasterSidebarComponent({
     ? `calc(var(--nav-h) + 16px)`
     : `calc(var(--nav-h) + ${SIDEBAR_TOP_PADDING}px)`;
   const zIndex = isFullSizeOpen ? 'z-[120]' : 'lg:z-30';
-  const responsiveClass = isFullSizeOpen ? '' : 'hidden lg:block';
+  // Hide on mobile when full-size view is open (md:block) to prevent covering the image
+  const responsiveClass = isFullSizeOpen ? 'hidden md:block' : 'hidden lg:block';
   const navClasses = isFullSizeOpen
     ? `${glass.promptDark} border-theme-dark rounded-2xl flex flex-col fixed left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] w-[160px] ${zIndex} px-3 py-4`
     : `${glass.promptDark} border-theme-dark rounded-2xl lg:flex lg:flex-col lg:fixed lg:left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] lg:w-[160px] ${zIndex} px-3 py-4`;
@@ -50,12 +51,11 @@ function MasterSidebarComponent({
           className="flex flex-1 flex-col gap-0 overflow-y-auto pr-1"
           {...(isFullSizeOpen ? { [scrollLockExemptAttr]: "true" } : {})}
         >
-          <Link
-            to="/app"
-            className="flex items-center px-2 text-[12px] text-theme-text font-raleway uppercase tracking-wider mb-1 sidebar-section-header hover:opacity-80 transition-opacity cursor-pointer"
+          <div
+            className="flex items-center px-2 text-[12px] text-theme-text font-raleway uppercase tracking-wider mb-1 sidebar-section-header cursor-default select-none"
           >
             create
-          </Link>
+          </div>
 
           {CREATE_CATEGORIES.map(({ key, label, Icon, gradient, iconColor }) => {
             const isActive = activeCategory === key;

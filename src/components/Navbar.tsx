@@ -672,15 +672,15 @@ export default function Navbar() {
             className="absolute inset-x-0"
             style={{ top: navH }}
           >
-            <div className={`${glass.promptDark} border-t-0 px-6 pb-6 pt-4 space-y-6`}>
+            <div className={`${glass.promptDark} border-t-0 px-4 sm:px-6 pb-4 sm:pb-6 pt-4 space-y-5 sm:space-y-6`}>
               <ThemeToggleButton showLabel={true} className="w-full justify-center gap-2" />
-              <div className="space-y-2">
+              <div className="space-y-1 sm:space-y-2">
                 {filteredNavItems.map((item) => (
                   <NavLink
                     key={`mobile-${item.label}`}
                     to={item.path}
                     className={({ isActive }) =>
-                      `relative overflow-hidden group block rounded-full px-4 py-2 text-base font-raleway font-normal transition-colors duration-200 ${isActive ? "bg-theme-white/10 text-theme-text" : "text-theme-white hover:text-theme-text hover:bg-theme-white/10"
+                      `relative overflow-hidden group block rounded-full px-4 py-3 text-base font-raleway font-normal transition-colors duration-200 ${isActive ? "bg-theme-white/10 text-theme-text" : "text-theme-white hover:text-theme-text hover:bg-theme-white/10"
                       }`
                     }
                     onClick={() => {

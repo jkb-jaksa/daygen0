@@ -150,8 +150,7 @@ export default function KnowledgeBase() {
                 key={link.to}
                 to={link.to}
                 className={({ isActive }) =>
-                  `relative overflow-hidden group ${glass.promptDark} px-4 py-2 rounded-full text-sm font-raleway transition-colors lowercase ${
-                    isActive ? "text-theme-text border border-theme-mid" : "text-theme-white/80 hover:text-theme-text"
+                  `relative overflow-hidden group ${glass.promptDark} px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-raleway transition-colors lowercase ${isActive ? "text-theme-text border border-theme-mid" : "text-theme-white/80 hover:text-theme-text"
                   }`
                 }
               >
@@ -189,7 +188,7 @@ export default function KnowledgeBase() {
                 {CATEGORIES.map((category) => {
                   const isActive = category.id === activeCategory;
                   const Icon = category.Icon;
-                  
+
                   // Color-specific shadow mappings for each category
                   const shadowColorMap: Record<string, string> = {
                     text: "rgba(251, 191, 36, 0.15)",
@@ -197,7 +196,7 @@ export default function KnowledgeBase() {
                     video: "rgba(59, 130, 246, 0.15)",
                     audio: "rgba(34, 211, 238, 0.15)",
                   };
-                  
+
                   // Pressed state shadow colors (slightly higher opacity for subtle effect)
                   const pressedShadowColorMap: Record<string, string> = {
                     text: "rgba(251, 191, 36, 0.22)",
@@ -205,7 +204,7 @@ export default function KnowledgeBase() {
                     video: "rgba(59, 130, 246, 0.22)",
                     audio: "rgba(34, 211, 238, 0.22)",
                   };
-                  
+
                   // Color-specific border class mappings for each category
                   const borderColorMap: Record<string, string> = {
                     text: "border-amber-400/25",
@@ -213,19 +212,19 @@ export default function KnowledgeBase() {
                     video: "border-blue-500/25",
                     audio: "border-cyan-400/25",
                   };
-                  
+
                   const isPressed = pressedCategory === category.id;
-                  
+
                   // Enhanced shadow effect: slightly deeper when pressed (very subtle)
                   // Active items get colored shadow, inactive items get neutral shadow
                   const insetShadow = isPressed && isActive
                     ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em ${pressedShadowColorMap[category.id]}` }
                     : isPressed && !isActive
-                    ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em rgba(255, 255, 255, 0.08)` }
-                    : isActive
-                    ? { boxShadow: `inset 0 -0.5em 1.2em -0.125em ${shadowColorMap[category.id]}` }
-                    : {};
-                  
+                      ? { boxShadow: `inset 0 -0.5em 1.4em -0.12em rgba(255, 255, 255, 0.08)` }
+                      : isActive
+                        ? { boxShadow: `inset 0 -0.5em 1.2em -0.125em ${shadowColorMap[category.id]}` }
+                        : {};
+
                   return (
                     <li key={category.id}>
                       <button
@@ -236,11 +235,10 @@ export default function KnowledgeBase() {
                         onMouseLeave={() => setPressedCategory(null)}
                         onTouchStart={() => setPressedCategory(category.id)}
                         onTouchEnd={() => setPressedCategory(null)}
-                        className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-6 py-2 lg:pl-4 lg:w-full text-sm font-raleway transition-all duration-100 focus:outline-none group ${
-                          isActive
+                        className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-6 py-2 lg:pl-4 lg:w-full text-sm font-raleway transition-all duration-100 focus:outline-none group ${isActive
                             ? `border ${borderColorMap[category.id]} text-theme-text`
                             : "border border-transparent text-theme-white hover:text-theme-text"
-                        }`}
+                          }`}
                         style={insetShadow}
                       >
                         {isActive && (
@@ -257,19 +255,19 @@ export default function KnowledgeBase() {
             <div className="flex-1 lg:h-full">
               <div className={`${glass.surface} rounded-3xl border-theme-dark px-6 pt-2 pb-6 sm:px-8 sm:pt-4 sm:pb-8`}
                 aria-live="polite" aria-busy="false">
-                 <h2 className="text-xl font-raleway font-normal text-theme-text">
-                   {activeCategory === "image" 
-                     ? "Image generation" 
-                     : activeCategory === "text"
-                       ? "Text generation"
-                       : activeCategory === "video"
-                         ? "Video generation"
-                         : activeCategory === "avatars"
-                           ? "Avatars generation"
-                           : activeCategory === "audio"
-                             ? "Audio generation"
-                             : `${activeCategory} generation`}
-                 </h2>
+                <h2 className="text-xl font-raleway font-normal text-theme-text">
+                  {activeCategory === "image"
+                    ? "Image generation"
+                    : activeCategory === "text"
+                      ? "Text generation"
+                      : activeCategory === "video"
+                        ? "Video generation"
+                        : activeCategory === "avatars"
+                          ? "Avatars generation"
+                          : activeCategory === "audio"
+                            ? "Audio generation"
+                            : `${activeCategory} generation`}
+                </h2>
                 <p className="mt-2 text-sm font-raleway text-theme-white">
                   {hasContent
                     ? "Here are the tools you can use with DayGen."

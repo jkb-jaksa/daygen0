@@ -139,6 +139,24 @@ const FullImageModal = memo(() => {
   const [makeVideoModalState, setMakeVideoModalState] = useState<{ isOpen: boolean; initialPrompt: string } | null>(null);
   const [changeAngleModalState, setChangeAngleModalState] = useState<{ isOpen: boolean; selectedAngle: AngleOption | null } | null>(null);
 
+  // Mobile detection for responsive full-size view
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 768px)').matches : false
+  );
+
+  // Mobile swipe gesture state
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const minSwipeDistance = 50;
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    const handleChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+
   // Reference modal state
   const [isReferenceModalOpen, setIsReferenceModalOpen] = useState(false);
 
@@ -382,6 +400,32 @@ const FullImageModal = memo(() => {
       openFullSize(nextItem, fullIndex >= 0 ? fullIndex : nextCategoryIndex);
     }
   }, [categoryFilteredItems, fullSizeImage, filteredItems, openFullSize]);
+
+  // Mobile swipe gesture handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchEndX.current = null;
+    touchStartX.current = e.targetTouches[0].clientX;
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    const distance = touchStartX.current - touchEndX.current;
+    if (Math.abs(distance) > minSwipeDistance) {
+      if (distance > 0) {
+        // Swiped left - go to next image
+        handleNext();
+      } else {
+        // Swiped right - go to previous image
+        handlePrevious();
+      }
+    }
+    touchStartX.current = null;
+    touchEndX.current = null;
+  }, [handleNext, handlePrevious, minSwipeDistance]);
 
   // Handle escape key
   useEffect(() => {
@@ -1135,36 +1179,41 @@ const FullImageModal = memo(() => {
         >
           {/* Image container */}
           <div
-            className="relative group flex items-start justify-center mt-14"
-            style={{ transform: 'translateX(-50px)' }}
+            className={`relative group flex items-center justify-center ${isMobile ? 'w-full h-full' : 'mt-14'}`}
+            style={isMobile ? {} : { transform: 'translateX(-50px)' }}
             onClick={(e) => e.stopPropagation()}
+            onTouchStart={isMobile ? handleTouchStart : undefined}
+            onTouchMove={isMobile ? handleTouchMove : undefined}
+            onTouchEnd={isMobile ? handleTouchEnd : undefined}
           >
             {/* Navigation arrows */}
             {!isVideo && hasMultipleItems && (
               <>
                 <button
                   onClick={handlePrevious}
-                  className={`${glass.promptDark} hover:border-theme-mid absolute -left-14 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
+                  className={`${glass.promptDark} hover:border-theme-mid absolute ${isMobile ? 'left-2 p-3.5' : '-left-14 p-2.5'} top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-full focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} hover:text-theme-text`}
                   title="Previous image (←)"
                   aria-label="Previous image"
                 >
-                  <ChevronLeft className="w-5 h-5 text-current transition-colors duration-100" />
+                  <ChevronLeft className={`${isMobile ? 'w-6 h-6' : 'w-5 h-5'} text-current transition-colors duration-100`} />
                 </button>
                 <button
                   onClick={handleNext}
-                  className={`${glass.promptDark} hover:border-theme-mid absolute -right-14 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
+                  className={`${glass.promptDark} hover:border-theme-mid absolute ${isMobile ? 'right-2 p-3.5' : '-right-14 p-2.5'} top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-full focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} hover:text-theme-text`}
                   title="Next image (→)"
                   aria-label="Next image"
                 >
-                  <ChevronRight className="w-5 h-5 text-current transition-colors duration-100" />
+                  <ChevronRight className={`${isMobile ? 'w-6 h-6' : 'w-5 h-5'} text-current transition-colors duration-100`} />
                 </button>
               </>
             )}
 
+
+
             {/* Left side - Edit button for non-gallery and Variate button for all images */}
-            <div className="image-gallery-actions absolute top-4 left-4 flex items-start gap-1 z-[40]">
+            <div className={`image-gallery-actions absolute ${isMobile ? 'top-2 left-2' : 'top-4 left-4'} flex items-start gap-1 z-[40]`}>
               <div
-                className={`flex items-center gap-1 ${editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || isImageActionMenuOpen
+                className={`flex items-center gap-1 ${isMobile || editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || isImageActionMenuOpen
                   ? 'opacity-100'
                   : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
                   } transition-opacity duration-100`}
@@ -1194,9 +1243,9 @@ const FullImageModal = memo(() => {
             </div>
 
             {/* Action buttons overlay - right side (only show on hover or when edit menu is open) */}
-            <div className="image-gallery-actions absolute top-4 right-4 flex items-start gap-1 z-[40]">
+            <div className={`image-gallery-actions absolute ${isMobile ? 'top-2 right-2' : 'top-4 right-4'} flex items-start gap-1 z-[40]`}>
               <div
-                className={`flex items-center gap-1 ${editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || isImageActionMenuOpen
+                className={`flex items-center gap-1 ${isMobile || editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || isImageActionMenuOpen
                   ? 'opacity-100'
                   : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
                   } transition-opacity duration-100`}
@@ -1374,19 +1423,62 @@ const FullImageModal = memo(() => {
             {/* Close button - positioned on right side of image */}
             <button
               onClick={closeFullSize}
-              className="absolute -top-3 -right-3 p-1.5 rounded-full bg-[color:var(--glass-dark-bg)] text-theme-white hover:text-theme-text backdrop-blur-sm transition-colors duration-200"
+              className={`absolute ${isMobile ? 'top-2 right-2 p-2.5' : '-top-3 -right-3 p-1.5'} rounded-full bg-[color:var(--glass-dark-bg)] text-theme-white hover:text-theme-text backdrop-blur-sm transition-colors duration-200 z-50`}
               aria-label="Close"
             >
-              <X className="w-4 h-4" />
+              <X className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'}`} />
             </button>
+
+            {/* Mobile-only top action bar - positioned above image to uncover prompt description */}
+            {isMobile && (
+              <div
+                className={`${glass.promptDark} absolute top-14 left-1/2 -translate-x-1/2 rounded-full py-1.5 px-3 flex items-center justify-center gap-2 z-50`}
+              >
+                <button
+                  type="button"
+                  onClick={handleDownloadClick}
+                  className="p-2.5 rounded-full text-theme-white hover:text-theme-text transition-colors flex items-center justify-center"
+                  aria-label="Download"
+                >
+                  <Download className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleToggleLikeClick}
+                  className="p-2.5 rounded-full text-theme-white hover:text-theme-text transition-colors flex items-center justify-center"
+                  aria-label={fullSizeImage.isLiked ? "Unlike" : "Like"}
+                >
+                  <Heart className={`w-4 h-4 ${fullSizeImage.isLiked ? 'fill-red-500 text-red-500' : ''}`} />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleTogglePublicClick}
+                  className="p-2.5 rounded-full text-theme-white hover:text-theme-text transition-colors flex items-center justify-center"
+                  aria-label={fullSizeImage.isPublic ? "Make private" : "Make public"}
+                >
+                  {fullSizeImage.isPublic ? <Globe className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteClick}
+                  className="p-2.5 rounded-full text-theme-white hover:text-red-500 transition-colors flex items-center justify-center"
+                  aria-label="Delete"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            )}
 
             {/* PromptDescriptionBar overlay */}
             {shouldRenderPromptBar && (
               <div
                 className={`PromptDescriptionBar absolute left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-150 ${isVideo
                   ? `bottom-4 z-30 ${isVideoPromptExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`
-                  : 'bottom-4 opacity-0 group-hover:opacity-100'
+                  : isMobile
+                    ? 'opacity-100 pointer-events-auto'
+                    : 'bottom-4 opacity-0 group-hover:opacity-100'
                   }`}
+                style={isMobile && !isVideo ? { bottom: 'max(1rem, env(safe-area-inset-bottom))' } : undefined}
                 onMouseEnter={() => {
                   if (isVideo) setIsVideoPromptExpanded(true);
                 }}
@@ -1721,8 +1813,8 @@ const FullImageModal = memo(() => {
           </div>
         </div>
 
-        {/* Right sidebar with actions */}
-        {fullSizeImage && (
+        {/* Right sidebar with actions - hidden on mobile */}
+        {fullSizeImage && !isMobile && (
           <aside
             ref={sidebarRef}
             className={`${glass.promptDark} w-[200px] rounded-2xl p-4 flex flex-col gap-0 overflow-y-auto fixed z-[120]`}
@@ -1902,6 +1994,7 @@ const FullImageModal = memo(() => {
                 }
               }}
               className="z-[130]"
+              hiddenOnMobile
             />
           </Suspense>
         )}

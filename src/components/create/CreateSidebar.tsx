@@ -32,7 +32,8 @@ function CreateSidebarComponent({
     ? `calc(var(--nav-h) + 16px)`
     : `calc(var(--nav-h) + ${SIDEBAR_TOP_PADDING}px)`;
   const zIndex = isFullSizeOpen ? 'z-[120]' : 'lg:z-30';
-  const responsiveClass = isFullSizeOpen ? '' : 'hidden lg:block';
+  // Hide on mobile when full-size view is open (md:block) to prevent covering the image
+  const responsiveClass = isFullSizeOpen ? 'hidden md:block' : 'hidden lg:block';
   const navClasses = isFullSizeOpen
     ? `${glass.promptDark} rounded-2xl flex flex-col fixed left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] w-[160px] ${zIndex} px-3 py-4`
     : `${glass.promptDark} rounded-2xl lg:flex lg:flex-col lg:fixed lg:left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] lg:w-[160px] ${zIndex} px-3 py-4`;
@@ -49,7 +50,7 @@ function CreateSidebarComponent({
           className="flex flex-1 flex-col gap-0 overflow-y-auto pr-1"
           {...(isFullSizeOpen ? { [scrollLockExemptAttr]: "true" } : {})}
         >
-          <div className="flex items-center px-2 text-[12px] text-theme-text font-raleway uppercase tracking-wider mb-1 sidebar-section-header">
+          <div className="flex items-center px-2 text-[12px] text-theme-text font-raleway uppercase tracking-wider mb-1 sidebar-section-header cursor-default select-none">
             create
           </div>
 
@@ -102,8 +103,8 @@ function CreateSidebarComponent({
                 onTouchStart={() => setPressedCategory(key)}
                 onTouchEnd={() => setPressedCategory(null)}
                 className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-4 py-2 flex-shrink-0 text-sm font-raleway transition-all duration-100 focus:outline-none group ${isActive
-                    ? `border ${borderColorMap[key]} text-theme-text`
-                    : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"
+                  ? `border ${borderColorMap[key]} text-theme-text`
+                  : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"
                   }`}
                 style={insetShadow}
                 aria-pressed={isActive}
@@ -148,8 +149,8 @@ function CreateSidebarComponent({
                 onTouchStart={() => setPressedCategory(key)}
                 onTouchEnd={() => setPressedCategory(null)}
                 className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-4 py-2 flex-shrink-0 text-sm font-raleway transition-all duration-100 focus:outline-none group ${isActive
-                    ? "border border-theme-dark text-theme-text"
-                    : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"
+                  ? "border border-theme-dark text-theme-text"
+                  : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"
                   }`}
                 style={insetShadow}
                 aria-pressed={isActive}
@@ -170,8 +171,8 @@ function CreateSidebarComponent({
             onTouchStart={() => setPressedCategory(FOLDERS_ENTRY.key)}
             onTouchEnd={() => setPressedCategory(null)}
             className={`parallax-small relative overflow-hidden flex items-center gap-2 rounded-2xl pl-4 pr-4 py-2 flex-shrink-0 text-sm font-raleway transition-all duration-100 focus:outline-none group ${activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"
-                ? "border border-theme-dark text-theme-text"
-                : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"
+              ? "border border-theme-dark text-theme-text"
+              : "border border-transparent text-theme-white hover:text-theme-text hover:bg-theme-white/10"
               }`}
             style={(() => {
               const isActive = activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view";
@@ -189,8 +190,8 @@ function CreateSidebarComponent({
           >
             <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full blur-3xl bg-white transition-opacity duration-100 ${(activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view") ? 'opacity-60' : 'opacity-0 group-hover:opacity-20'}`} />
             <FOLDERS_ENTRY.Icon className={`h-4 w-4 flex-shrink-0 relative z-10 transition-colors duration-100 ${activeCategory === FOLDERS_ENTRY.key || activeCategory === "folder-view"
-                ? 'text-theme-text'
-                : 'text-theme-text group-hover:text-theme-text'
+              ? 'text-theme-text'
+              : 'text-theme-text group-hover:text-theme-text'
               }`} />
             <span className="relative z-10 whitespace-nowrap">{FOLDERS_ENTRY.label}</span>
           </button>
