@@ -411,6 +411,7 @@ type GalleryContextType = {
   needsMigration: boolean;
   loadMore: () => void;
   hasMore: boolean;
+  currentContentType: 'image' | 'video' | undefined;
 };
 
 const GalleryContext = createContext<GalleryContextType | null>(null);
@@ -445,6 +446,20 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
   const previousActiveJobsRef = useRef<typeof generation.state.activeJobs>([]);
   const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasFoldersLoadedRef = useRef(false);
+
+  // Detect current content type from URL for section-specific loading
+  const currentContentType = useMemo((): 'image' | 'video' | undefined => {
+    const path = location.pathname;
+    if (path.includes('/image')) return 'image';
+    if (path.includes('/video')) return 'video';
+    // For gallery view, load all types (no filter)
+    return undefined;
+  }, [location.pathname]);
+
+  // Wrapped loadMore that passes the current content type
+  const wrappedLoadMore = useCallback(() => {
+    loadMore(currentContentType);
+  }, [loadMore, currentContentType]);
 
   useEffect(() => {
     stateRef.current = state;
@@ -1401,8 +1416,9 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     refresh: fetchGalleryImages,
     hasBase64Images,
     needsMigration,
-    loadMore,
+    loadMore: wrappedLoadMore,
     hasMore,
+    currentContentType,
   }), [
     state,
     setImages,
@@ -1456,6 +1472,8 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     needsMigration,
     loadMore,
     hasMore,
+    wrappedLoadMore,
+    currentContentType,
   ]);
 
   return (

@@ -41,6 +41,7 @@ const EditButtonMenu = lazy(() => import('./EditButtonMenu'));
 import QuickEditModal, { type QuickEditOptions } from './QuickEditModal';
 const MakeVideoModal = lazy(() => import('./MakeVideoModal'));
 const GenerationProgress = lazy(() => import('./GenerationProgress'));
+import LazyImage from '../LazyImage';
 
 // Helper to get consistent item identifier for UI actions (jobId → r2FileId → url)
 const getItemIdentifier = (item: GalleryImageLike | GalleryVideoLike): string | null => {
@@ -1245,10 +1246,10 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                       baseActionTooltipId={baseActionTooltipId}
                     />
                   ) : (
-                    <img
+                    <LazyImage
                       src={item.url}
                       alt={item.prompt || `Generated ${index + 1} `}
-                      loading="lazy"
+                      wrapperClassName="h-full w-full"
                       className="relative z-[1] h-full w-full object-cover cursor-grab active:cursor-grabbing"
                       draggable={true}
                       onDragStart={(e) => {

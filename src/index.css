@@ -89,6 +89,20 @@
   animation: gradient-colors 3s ease-in-out infinite;
 }
 
+/* Shimmer animation for skeleton placeholders */
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
 /* Day mode keyframe for gradient-colors animation - ensure 100% opacity */
 @keyframes gradient-colors-day {
   0% {

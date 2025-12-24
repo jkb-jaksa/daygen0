@@ -214,7 +214,7 @@ export const useGalleryImages = () => {
   }, [isR2Url]);
 
   // Fetch gallery images from backend
-  const fetchGalleryImages = useCallback(async (options: { cursor?: string | null; reset?: boolean } = {}) => {
+  const fetchGalleryImages = useCallback(async (options: { cursor?: string | null; reset?: boolean; type?: 'image' | 'video' } = {}) => {
     if (!token) {
       setState(prev => ({ ...prev, images: [], error: 'Not authenticated' }));
       return;
@@ -243,10 +243,14 @@ export const useGalleryImages = () => {
 
       // Fetch from R2 API
       const query = new URLSearchParams();
-      // Default limit 50
-      query.append('limit', '50');
+      // Reduced limit for faster initial load - more items load on scroll
+      query.append('limit', '20');
       if (options.cursor) {
         query.append('cursor', options.cursor);
+      }
+      // Add type filter if specified (for section-specific loading)
+      if (options.type) {
+        query.append('type', options.type);
       }
 
       const apiUrl = getApiUrl(`/api/r2files?${query.toString()}`);
@@ -336,13 +340,24 @@ export const useGalleryImages = () => {
         }
       }
 
+      // On initial load (reset mode), cap displayed items to 20 for faster rendering
+      // More items will be loaded via infinite scroll
+      const displayLimit = 20;
+      const displayedImages = options.reset !== false
+        ? dedupedImages.slice(0, displayLimit)
+        : dedupedImages;
+
+      // Use the newly fetched items' last cursor, not the merged array
+      // This ensures pagination continues from where the API left off
+      const effectiveCursor = r2Images.length >= displayLimit ? nextCursor : null;
+
       setState({
-        images: dedupedImages,
+        images: displayedImages,
         isLoading: false,
         error: null,
         hasBase64Images,
         needsMigration: hasBase64Images && r2Images.length > 0,
-        nextCursor,
+        nextCursor: effectiveCursor,
       });
     } catch (error) {
       // Fallback to local images if R2 fetch fails
@@ -654,9 +669,9 @@ export const useGalleryImages = () => {
     }
   }, [token, fetchGalleryImages]);
 
-  const loadMore = useCallback(() => {
+  const loadMore = useCallback((type?: 'image' | 'video') => {
     if (state.nextCursor && !state.isLoading) {
-      fetchGalleryImages({ cursor: state.nextCursor, reset: false });
+      fetchGalleryImages({ cursor: state.nextCursor, reset: false, type });
     }
   }, [state.nextCursor, state.isLoading, fetchGalleryImages]);
 
