@@ -46,10 +46,10 @@ export function CreatorBadge({ name, profileImage, userId, size = "md", classNam
                     <img
                         src={profileImage}
                         alt={name}
-                        className={`${avatarSizeClasses[size]} rounded-full object-cover border border-theme-white`}
+                        className={`${avatarSizeClasses[size]} rounded-full object-cover border border-theme-dark`}
                     />
                 ) : (
-                    <div className={`${avatarSizeClasses[size]} rounded-full flex items-center justify-center border border-theme-white bg-[conic-gradient(from_0deg,_rgba(245,158,11,0.6),_rgba(239,68,68,0.6),_rgba(59,130,246,0.6),_rgba(34,211,238,0.6),_rgba(245,158,11,0.6))]`}>
+                    <div className={`${avatarSizeClasses[size]} rounded-full flex items-center justify-center border border-theme-dark bg-[conic-gradient(from_0deg,_rgba(245,158,11,0.6),_rgba(239,68,68,0.6),_rgba(59,130,246,0.6),_rgba(34,211,238,0.6),_rgba(245,158,11,0.6))]`}>
                         <span className="text-[8px] font-raleway font-medium text-theme-text">{name?.[0]?.toUpperCase() || '?'}</span>
                     </div>
                 )}

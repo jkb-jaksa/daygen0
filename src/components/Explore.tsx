@@ -1814,7 +1814,7 @@ const Explore: React.FC = () => {
               )}
 
               {/* Filters Section */}
-              <div className={`w-full mb-0 p-3 ${glass.promptDark} rounded-[20px] transition-all duration-300`}>
+              <div className={`w-full mb-0 p-3 ${glass.promptDark} rounded-[20px] transition-all duration-100`}>
                 <div className="flex items-center justify-between">
                   <button
                     onClick={() => setIsFiltersOpen(!isFiltersOpen)}
@@ -1822,7 +1822,7 @@ const Explore: React.FC = () => {
                   >
                     <Settings className="w-4 h-4 text-theme-text" />
                     <h3 className="text-sm font-raleway text-theme-white group-hover:text-theme-text transition-colors duration-200">Filters</h3>
-                    <ChevronDown className={`w-4 h-4 text-theme-white/60 transition-transform duration-300 ${isFiltersOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-4 h-4 text-theme-white/60 transition-transform duration-100 ${isFiltersOpen ? 'rotate-180' : ''}`} />
                   </button>
                   <button
                     onClick={(e) => {
@@ -1843,7 +1843,7 @@ const Explore: React.FC = () => {
                 </div>
 
                 {/* Main filter grid: Modality and Model */}
-                <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 overflow-hidden transition-all duration-300 ${isFiltersOpen ? 'mt-4 max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 overflow-hidden transition-all duration-100 ${isFiltersOpen ? 'mt-4 max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
                   {/* Modality Filter */}
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs text-theme-white/70 font-raleway">Modality</label>
@@ -1936,7 +1936,6 @@ const Explore: React.FC = () => {
 
 
               <div className="flex flex-wrap items-center gap-3">
-                <span className="text-xs font-medium uppercase tracking-[0.28em] text-theme-white/60">Sort</span>
                 <div className="inline-flex rounded-full border border-theme-dark/70 bg-theme-black/40 p-1">
                   <button
                     type="button"

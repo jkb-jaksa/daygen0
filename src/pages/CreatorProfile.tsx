@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, Suspense, lazy, useRef } from 'react';
+import { useState, useEffect, useCallback, Suspense, lazy, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { User, Copy, RefreshCw, BookmarkPlus, BookmarkCheck, Heart, MoreHorizontal, Share2, Download, Edit } from 'lucide-react';
 import { createPortal } from 'react-dom';
@@ -158,6 +158,10 @@ export default function CreatorProfile() {
     const [recreateActionMenu, setRecreateActionMenu] = useState<{ id: string; anchor: HTMLElement | null } | null>(null);
     const [localLikedItems, setLocalLikedItems] = useState<Set<string>>(new Set());
     const [localSavedItems, setLocalSavedItems] = useState<Set<string>>(new Set());
+
+    // Sort mode state (matching Explore section)
+    const [sortMode, setSortMode] = useState<"recent" | "top">("recent");
+    const [topSortOrder, setTopSortOrder] = useState<string[]>([]); // Store IDs in sorted order for stable top sorting
 
     const { token } = useAuth();
     const navigate = useNavigate();
@@ -399,38 +403,84 @@ export default function CreatorProfile() {
         };
     }, [fullViewIndex]);
 
+    // Update the stable sort order when switching to Top mode or when items are initially loaded
+    useEffect(() => {
+        if (sortMode === "top" && topSortOrder.length === 0 && profileData?.items?.length) {
+            // Initialize sort order when first entering Top mode
+            const sortedIds = [...profileData.items]
+                .sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0))
+                .map(item => item.id);
+            setTopSortOrder(sortedIds);
+        }
+    }, [sortMode, topSortOrder.length, profileData?.items]);
+
+    // Reset sort order when switching away from Top mode
+    const handleSortModeChange = useCallback((mode: "recent" | "top") => {
+        if (mode === "recent") {
+            setTopSortOrder([]); // Clear sort order so it recalculates next time we enter Top
+        } else if (mode === "top" && topSortOrder.length === 0 && profileData?.items?.length) {
+            // Pre-calculate sort order when entering Top mode
+            const sortedIds = [...profileData.items]
+                .sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0))
+                .map(item => item.id);
+            setTopSortOrder(sortedIds);
+        }
+        setSortMode(mode);
+    }, [profileData?.items, topSortOrder.length]);
+
     // Use username (Profile URL) as primary display name, with displayName as fallback
     const displayName = profileData?.user?.username || profileData?.user?.displayName || 'Creator';
     const profileImage = profileData?.user?.profileImage;
     const bio = profileData?.user?.bio;
     const generations = profileData?.items || [];
 
+    // Sorted generations based on sortMode
+    const sortedGenerations = useMemo(() => {
+        if (sortMode === "top") {
+            if (topSortOrder.length > 0) {
+                // Use stable sort order - items keep their positions based on initial sort
+                const orderMap = new Map(topSortOrder.map((id, index) => [id, index]));
+                return [...generations].sort((a, b) => {
+                    const aIndex = orderMap.get(a.id) ?? Number.MAX_SAFE_INTEGER;
+                    const bIndex = orderMap.get(b.id) ?? Number.MAX_SAFE_INTEGER;
+                    return aIndex - bIndex;
+                });
+            }
+            // Fallback: sort by likes if no stable order yet
+            return [...generations].sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
+        }
+        // Recent: sort by createdAt descending (newest first)
+        return [...generations].sort((a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+    }, [generations, sortMode, topSortOrder]);
+
     return (
-        <div className={`${layout.page} min-h-screen pt-[calc(var(--nav-h,4rem)+2rem)] pb-20`}>
+        <div className={`${layout.page} min-h-screen pt-[calc(var(--nav-h,4rem)+1rem)] pb-20`}>
             <div className={layout.container}>
                 {/* Profile Header */}
-                <div className="mb-12 flex flex-col items-center text-center sm:flex-row sm:items-start sm:text-left gap-6 sm:gap-8">
+                <div className="mb-4 flex flex-col items-center text-center sm:flex-row sm:items-start sm:text-left gap-4 sm:gap-6">
                     {/* Avatar */}
                     <div className="relative shrink-0">
                         {profileImage ? (
                             <img
                                 src={profileImage}
                                 alt={displayName}
-                                className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border border-theme-white"
+                                className="w-20 h-20 sm:w-28 sm:h-28 rounded-full object-cover border border-theme-dark"
                             />
                         ) : (
-                            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-[conic-gradient(from_0deg,_rgba(245,158,11,0.6),_rgba(239,68,68,0.6),_rgba(59,130,246,0.6),_rgba(34,211,238,0.6),_rgba(245,158,11,0.6))] flex items-center justify-center border border-theme-white">
-                                <span className="text-4xl sm:text-5xl font-raleway font-medium text-theme-text">{displayName?.[0]?.toUpperCase() || '?'}</span>
+                            <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-full bg-[conic-gradient(from_0deg,_rgba(245,158,11,0.6),_rgba(239,68,68,0.6),_rgba(59,130,246,0.6),_rgba(34,211,238,0.6),_rgba(245,158,11,0.6))] flex items-center justify-center border border-theme-dark">
+                                <span className="text-3xl sm:text-4xl font-raleway font-medium text-theme-text">{displayName?.[0]?.toUpperCase() || '?'}</span>
                             </div>
                         )}
                     </div>
 
                     {/* Info */}
-                    <div className="flex-1 min-w-0 pt-2">
-                        <h1 className="text-3xl sm:text-4xl font-raleway font-normal text-theme-text mb-2">
+                    <div className="flex-1 min-w-0 pt-1">
+                        <h1 className="text-2xl sm:text-3xl font-raleway font-normal text-theme-text mb-1">
                             {displayName}
                         </h1>
-                        <p className="text-theme-white mb-2 font-raleway">
+                        <p className="text-theme-white mb-1 font-raleway">
                             {profileData?.totalCount || 0} public generation{profileData?.totalCount !== 1 ? 's' : ''}
                         </p>
                         {bio && (
@@ -459,159 +509,188 @@ export default function CreatorProfile() {
                         <p className="text-theme-white/60 font-raleway text-lg">No public generations yet</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-1 sm:gap-4">
-                        {generations.map((item, index) => {
-                            const isLiked = localLikedItems.has(item.id);
-                            const isSaved = localSavedItems.has(item.id);
-                            const isMenuActive = moreActionMenu?.id === item.id;
-                            const isRecreateActive = recreateActionMenu?.id === item.id;
-
-                            return (
-                                <div
-                                    key={item.id}
-                                    className="group relative flex flex-col overflow-hidden rounded-[24px] bg-theme-black border border-theme-dark hover:bg-theme-dark hover:border-theme-mid transition-all duration-100 cursor-pointer parallax-large shadow-lg"
-                                    onClick={() => setFullViewIndex(index)}
+                    <>
+                        {/* Sort Controls */}
+                        <div className="flex flex-wrap items-center gap-3 mb-4">
+                            <div className="inline-flex rounded-full border border-theme-dark/70 bg-theme-black/40 p-1">
+                                <button
+                                    type="button"
+                                    aria-pressed={sortMode === 'recent'}
+                                    onClick={() => handleSortModeChange('recent')}
+                                    className={`px-4 py-1.5 text-xs font-medium font-raleway rounded-full transition-colors duration-200 ${sortMode === 'recent'
+                                        ? 'bg-theme-white text-theme-black shadow-lg shadow-theme-white/20'
+                                        : 'text-theme-white/70 hover:text-theme-text'
+                                        }`}
                                 >
+                                    Recent
+                                </button>
+                                <button
+                                    type="button"
+                                    aria-pressed={sortMode === 'top'}
+                                    onClick={() => handleSortModeChange('top')}
+                                    className={`px-4 py-1.5 text-xs font-medium font-raleway rounded-full transition-colors duration-200 ${sortMode === 'top'
+                                        ? 'bg-theme-white text-theme-black shadow-lg shadow-theme-white/20'
+                                        : 'text-theme-white/70 hover:text-theme-text'
+                                        }`}
+                                >
+                                    Top
+                                </button>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+                            {sortedGenerations.map((item, index) => {
+                                const isLiked = localLikedItems.has(item.id);
+                                const isSaved = localSavedItems.has(item.id);
+                                const isMenuActive = moreActionMenu?.id === item.id;
+                                const isRecreateActive = recreateActionMenu?.id === item.id;
+
+                                return (
                                     <div
-                                        className="relative aspect-square overflow-hidden card-media-frame"
-                                        data-has-image={Boolean(item.fileUrl)}
-                                        style={createCardImageStyle(item.fileUrl)}
+                                        key={item.id}
+                                        className="group relative flex flex-col overflow-hidden rounded-[24px] bg-theme-black border border-theme-dark hover:bg-theme-dark hover:border-theme-mid transition-all duration-100 cursor-pointer parallax-large shadow-lg"
+                                        onClick={() => setFullViewIndex(index)}
                                     >
-                                        <img
-                                            src={item.fileUrl}
-                                            alt={item.prompt || 'AI Generated'}
-                                            className="relative z-[1] w-full h-full object-cover"
-                                            loading="lazy"
-                                        />
-                                    </div>
+                                        <div
+                                            className="relative aspect-square overflow-hidden card-media-frame"
+                                            data-has-image={Boolean(item.fileUrl)}
+                                            style={createCardImageStyle(item.fileUrl)}
+                                        >
+                                            <img
+                                                src={item.fileUrl}
+                                                alt={item.prompt || 'AI Generated'}
+                                                className="relative z-[1] w-full h-full object-cover"
+                                                loading="lazy"
+                                            />
+                                        </div>
 
-                                    {/* Action Buttons Overlay */}
-                                    <div className="image-gallery-actions absolute left-3 top-3 flex items-center gap-2 transition-opacity duration-200 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto z-20">
-                                        {/* Left: Recreate */}
-                                        <div className="relative">
+                                        {/* Action Buttons Overlay */}
+                                        <div className="image-gallery-actions absolute left-3 top-3 flex items-center gap-2 transition-opacity duration-200 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto z-20">
+                                            {/* Left: Recreate */}
+                                            <div className="relative">
+                                                <button
+                                                    type="button"
+                                                    className={`image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-200 ${isRecreateActive ? 'opacity-100 pointer-events-auto' : ''}`}
+                                                    onClick={(e) => toggleRecreateActionMenu(item.id, e.currentTarget as HTMLElement, e)}
+                                                >
+                                                    <Edit className="w-3.5 h-3.5" />
+                                                    <span className="text-xs font-medium">Recreate</span>
+                                                </button>
+                                                <ImageActionMenuPortal
+                                                    anchorEl={recreateActionMenu?.id === item.id ? recreateActionMenu?.anchor ?? null : null}
+                                                    open={isRecreateActive}
+                                                    onClose={() => setRecreateActionMenu(null)}
+                                                    isRecreateMenu={true}
+                                                >
+                                                    <button
+                                                        type="button"
+                                                        className="relative overflow-hidden group/item flex w-full items-center gap-1.5 px-2 py-1.5 text-xs font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                                        onClick={(e) => { e.stopPropagation(); handleRecreateEdit(item); }}
+                                                    >
+                                                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover/item:opacity-100" />
+                                                        <Edit className="h-3.5 w-3.5 relative z-10" />
+                                                        <span className="relative z-10">Edit image</span>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="relative overflow-hidden group/item flex w-full items-center gap-1.5 px-2 py-1.5 text-xs font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                                        onClick={(e) => { e.stopPropagation(); handleRecreateUseAsReference(item); }}
+                                                    >
+                                                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover/item:opacity-100" />
+                                                        <Copy className="h-3.5 w-3.5 relative z-10" />
+                                                        <span className="relative z-10">Use as reference</span>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="relative overflow-hidden group/item flex w-full items-center gap-1.5 px-2 py-1.5 text-xs font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                                        onClick={(e) => { e.stopPropagation(); handleRecreateRunPrompt(item); }}
+                                                    >
+                                                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover/item:opacity-100" />
+                                                        <RefreshCw className="h-3.5 w-3.5 relative z-10" />
+                                                        <span className="relative z-10">Run the same prompt</span>
+                                                    </button>
+                                                </ImageActionMenuPortal>
+                                            </div>
+                                        </div>
+
+                                        <div className="image-gallery-actions absolute right-3 top-3 flex items-center gap-1 transition-opacity duration-200 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto z-20">
+                                            {/* Right: Save, Like, More */}
                                             <button
                                                 type="button"
-                                                className={`image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-200 ${isRecreateActive ? 'opacity-100 pointer-events-auto' : ''}`}
-                                                onClick={(e) => toggleRecreateActionMenu(item.id, e.currentTarget as HTMLElement, e)}
+                                                onClick={(e) => toggleSave(item.id, e)}
+                                                className={`image-action-btn image-action-btn--labelled parallax-large ${isSaved ? 'border-theme-white/50 bg-theme-white/10 text-theme-text' : ''}`}
                                             >
-                                                <Edit className="w-3.5 h-3.5" />
-                                                <span className="text-xs font-medium">Recreate</span>
+                                                {isSaved ? <BookmarkCheck className="size-3.5" /> : <BookmarkPlus className="size-3.5" />}
                                             </button>
-                                            <ImageActionMenuPortal
-                                                anchorEl={recreateActionMenu?.id === item.id ? recreateActionMenu?.anchor ?? null : null}
-                                                open={isRecreateActive}
-                                                onClose={() => setRecreateActionMenu(null)}
-                                                isRecreateMenu={true}
-                                            >
-                                                <button
-                                                    type="button"
-                                                    className="relative overflow-hidden group/item flex w-full items-center gap-1.5 px-2 py-1.5 text-xs font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                                                    onClick={(e) => { e.stopPropagation(); handleRecreateEdit(item); }}
-                                                >
-                                                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover/item:opacity-100" />
-                                                    <Edit className="h-3.5 w-3.5 relative z-10" />
-                                                    <span className="relative z-10">Edit image</span>
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    className="relative overflow-hidden group/item flex w-full items-center gap-1.5 px-2 py-1.5 text-xs font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                                                    onClick={(e) => { e.stopPropagation(); handleRecreateUseAsReference(item); }}
-                                                >
-                                                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover/item:opacity-100" />
-                                                    <Copy className="h-3.5 w-3.5 relative z-10" />
-                                                    <span className="relative z-10">Use as reference</span>
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    className="relative overflow-hidden group/item flex w-full items-center gap-1.5 px-2 py-1.5 text-xs font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                                                    onClick={(e) => { e.stopPropagation(); handleRecreateRunPrompt(item); }}
-                                                >
-                                                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover/item:opacity-100" />
-                                                    <RefreshCw className="h-3.5 w-3.5 relative z-10" />
-                                                    <span className="relative z-10">Run the same prompt</span>
-                                                </button>
-                                            </ImageActionMenuPortal>
-                                        </div>
-                                    </div>
 
-                                    <div className="image-gallery-actions absolute right-3 top-3 flex items-center gap-1 transition-opacity duration-200 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto z-20">
-                                        {/* Right: Save, Like, More */}
-                                        <button
-                                            type="button"
-                                            onClick={(e) => toggleSave(item.id, e)}
-                                            className={`image-action-btn image-action-btn--labelled parallax-large ${isSaved ? 'border-theme-white/50 bg-theme-white/10 text-theme-text' : ''}`}
-                                        >
-                                            {isSaved ? <BookmarkCheck className="size-3.5" /> : <BookmarkPlus className="size-3.5" />}
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={(e) => toggleLike(item, e)}
-                                            className="image-action-btn image-action-btn--labelled parallax-large favorite-toggle"
-                                        >
-                                            <Heart className={`size-3.5 transition-colors duration-200 ${isLiked ? 'fill-red-500 text-red-500' : 'text-current fill-none'}`} />
-                                            {item.likeCount || 0}
-                                        </button>
-
-                                        <div className="relative">
                                             <button
                                                 type="button"
-                                                className="image-action-btn parallax-large"
-                                                onClick={(e) => toggleMoreActionMenu(item.id, e.currentTarget as HTMLElement, e)}
+                                                onClick={(e) => toggleLike(item, e)}
+                                                className="image-action-btn image-action-btn--labelled parallax-large favorite-toggle"
                                             >
-                                                <MoreHorizontal className="size-4" />
+                                                <Heart className={`size-3.5 transition-colors duration-200 ${isLiked ? 'fill-red-500 text-red-500' : 'text-current fill-none'}`} />
+                                                {item.likeCount || 0}
                                             </button>
-                                            <ImageActionMenuPortal
-                                                anchorEl={moreActionMenu?.id === item.id ? moreActionMenu?.anchor ?? null : null}
-                                                open={isMenuActive}
-                                                onClose={() => setMoreActionMenu(null)}
-                                            >
-                                                <button
-                                                    type="button"
-                                                    className="relative overflow-hidden group/item flex w-full items-center gap-1.5 px-2 py-1.5 text-xs font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                                                    onClick={(e) => { e.stopPropagation(); handleCopyLink(item.fileUrl); }}
-                                                >
-                                                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover/item:opacity-100" />
-                                                    <Share2 className="h-3.5 w-3.5 relative z-10" />
-                                                    <span className="relative z-10">Copy link</span>
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    className="relative overflow-hidden group/item flex w-full items-center gap-1.5 px-2 py-1.5 text-xs font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                                                    onClick={(e) => { e.stopPropagation(); handleDownload(item.fileUrl, item.id, item.model?.includes('video') ? 'video' : 'image'); }}
-                                                >
-                                                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover/item:opacity-100" />
-                                                    <Download className="h-3.5 w-3.5 relative z-10" />
-                                                    <span className="relative z-10">Download</span>
-                                                </button>
-                                            </ImageActionMenuPortal>
-                                        </div>
-                                    </div>
 
-                                    {/* Prompt Bar Overlay */}
-                                    <div className="PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-opacity duration-200 opacity-0 group-hover:opacity-100 z-10">
-                                        <div className="p-3">
-                                            <p className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-2 mb-2">
-                                                {item.prompt || 'AI Generated Image'}
-                                            </p>
-                                            <div className="flex items-center gap-1 flex-wrap">
-                                                {item.model && (
-                                                    <Suspense fallback={null}>
-                                                        <ModelBadge model={item.model} size="sm" />
-                                                    </Suspense>
-                                                )}
-                                                {item.aspectRatio && (
-                                                    <Suspense fallback={null}>
-                                                        <AspectRatioBadge aspectRatio={item.aspectRatio} size="sm" />
-                                                    </Suspense>
-                                                )}
+                                            <div className="relative">
+                                                <button
+                                                    type="button"
+                                                    className="image-action-btn parallax-large"
+                                                    onClick={(e) => toggleMoreActionMenu(item.id, e.currentTarget as HTMLElement, e)}
+                                                >
+                                                    <MoreHorizontal className="size-4" />
+                                                </button>
+                                                <ImageActionMenuPortal
+                                                    anchorEl={moreActionMenu?.id === item.id ? moreActionMenu?.anchor ?? null : null}
+                                                    open={isMenuActive}
+                                                    onClose={() => setMoreActionMenu(null)}
+                                                >
+                                                    <button
+                                                        type="button"
+                                                        className="relative overflow-hidden group/item flex w-full items-center gap-1.5 px-2 py-1.5 text-xs font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                                        onClick={(e) => { e.stopPropagation(); handleCopyLink(item.fileUrl); }}
+                                                    >
+                                                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover/item:opacity-100" />
+                                                        <Share2 className="h-3.5 w-3.5 relative z-10" />
+                                                        <span className="relative z-10">Copy link</span>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="relative overflow-hidden group/item flex w-full items-center gap-1.5 px-2 py-1.5 text-xs font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                                        onClick={(e) => { e.stopPropagation(); handleDownload(item.fileUrl, item.id, item.model?.includes('video') ? 'video' : 'image'); }}
+                                                    >
+                                                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover/item:opacity-100" />
+                                                        <Download className="h-3.5 w-3.5 relative z-10" />
+                                                        <span className="relative z-10">Download</span>
+                                                    </button>
+                                                </ImageActionMenuPortal>
+                                            </div>
+                                        </div>
+
+                                        {/* Prompt Bar Overlay */}
+                                        <div className="PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-opacity duration-200 opacity-0 group-hover:opacity-100 z-10">
+                                            <div className="p-3">
+                                                <p className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-2 mb-2">
+                                                    {item.prompt || 'AI Generated Image'}
+                                                </p>
+                                                <div className="flex items-center gap-1 flex-wrap">
+                                                    {item.model && (
+                                                        <Suspense fallback={null}>
+                                                            <ModelBadge model={item.model} size="sm" />
+                                                        </Suspense>
+                                                    )}
+                                                    {item.aspectRatio && (
+                                                        <Suspense fallback={null}>
+                                                            <AspectRatioBadge aspectRatio={item.aspectRatio} size="sm" />
+                                                        </Suspense>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                                );
+                            })}
+                        </div>
+                    </>
                 )}
             </div>
 
@@ -622,7 +701,7 @@ export default function CreatorProfile() {
                         isOpen={true}
                         onClose={() => setFullViewIndex(null)}
                         initialIndex={fullViewIndex}
-                        items={generations}
+                        items={sortedGenerations}
                     />
                 </Suspense>
             )}

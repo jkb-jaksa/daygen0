@@ -416,7 +416,7 @@ export function CreatorProfileModal({
                     {/* Profile header */}
                     <div className="p-6 pb-4 border-b border-theme-dark/50">
                         <div
-                            className="flex items-center gap-4 group/profile cursor-pointer"
+                            className="flex items-center gap-4 cursor-pointer"
                             onClick={() => {
                                 onClose();
                                 // Prefer username over userId for cleaner URLs
@@ -430,10 +430,10 @@ export function CreatorProfileModal({
                                 <img
                                     src={profileImage}
                                     alt={displayName}
-                                    className="w-16 h-16 rounded-full object-cover border-2 border-theme-dark/50 self-start transition-colors duration-200 group-hover/profile:border-theme-text"
+                                    className="w-16 h-16 rounded-full object-cover border border-theme-dark self-start transition-colors duration-200 hover:border-theme-mid"
                                 />
                             ) : (
-                                <div className="w-16 h-16 rounded-full bg-[conic-gradient(from_0deg,_rgba(245,158,11,0.6),_rgba(239,68,68,0.6),_rgba(59,130,246,0.6),_rgba(34,211,238,0.6),_rgba(245,158,11,0.6))] flex items-center justify-center border border-theme-white self-start transition-colors duration-200 group-hover/profile:border-theme-text">
+                                <div className="w-16 h-16 rounded-full bg-[conic-gradient(from_0deg,_rgba(245,158,11,0.6),_rgba(239,68,68,0.6),_rgba(59,130,246,0.6),_rgba(34,211,238,0.6),_rgba(245,158,11,0.6))] flex items-center justify-center border border-theme-dark self-start transition-colors duration-200 hover:border-theme-mid">
                                     <span className="text-2xl font-raleway font-medium text-theme-text">{displayName?.[0]?.toUpperCase() || '?'}</span>
                                 </div>
                             )}
