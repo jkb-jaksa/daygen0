@@ -1890,13 +1890,13 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                 {/* Top Section: Image + Aspect Ratio Sidebar */}
                                 <div className="flex flex-row flex-1 overflow-hidden min-h-0 gap-4">
                                     {/* Center: Image Canvas */}
-                                    <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden bg-theme-black/20 rounded-xl">
+                                    <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden rounded-xl">
                                         {resizeAspectRatio && resizeLayoutInfo ? (
                                             <div className="flex flex-col items-center justify-center gap-2 w-full h-full p-2 overflow-y-auto">
                                                 {/* Interactive Canvas Preview */}
                                                 <div
                                                     ref={resizeCanvasRef}
-                                                    className="relative shadow-2xl border-2 border-theme-text overflow-hidden rounded-xl flex-shrink-0"
+                                                    className="relative shadow-2xl border border-theme-text overflow-hidden rounded-xl flex-shrink-0"
                                                     style={(() => {
                                                         const targetRatio = parseAspectRatio(resizeAspectRatio);
                                                         const isWide = targetRatio > 1;
@@ -1946,7 +1946,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         }}
                                                         onMouseDown={handleResizeDragStart}
                                                         onTouchStart={handleResizeDragStart}
-                                                        className="rounded-lg overflow-hidden shadow-lg ring-2 ring-theme-text/50"
+                                                        className="rounded-lg overflow-hidden shadow-lg ring-1 ring-theme-text/50"
                                                     >
                                                         <img
                                                             src={imageUrl}
