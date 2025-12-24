@@ -3125,9 +3125,10 @@ export default function Edit() {
             >
               <div className="relative max-w-[95vw] max-h-[90vh] group flex items-start justify-center mt-14" onClick={(e) => e.stopPropagation()}>
                 <img
+                  key={selectedFullImage}
                   src={selectedFullImage}
                   alt="Full size"
-                  className="max-w-full max-h-[90vh] object-contain"
+                  className="max-w-full max-h-[90vh] object-contain animate-fade-in-static"
                   style={{ objectPosition: 'top' }}
                 />
 

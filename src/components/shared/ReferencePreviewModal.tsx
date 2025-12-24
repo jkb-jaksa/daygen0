@@ -145,9 +145,10 @@ export function ReferencePreviewModal({ open, imageUrl, imageUrls, onClose }: Re
 
                 {/* Full-size image */}
                 <img
+                    key={fullSizeIndex}
                     src={images[fullSizeIndex]}
                     alt={`Reference ${fullSizeIndex + 1}`}
-                    className="max-w-[90vw] max-h-[90vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
+                    className="max-w-[90vw] max-h-[90vh] w-auto h-auto object-contain rounded-lg shadow-2xl animate-fade-in-static"
                     onClick={(e) => e.stopPropagation()}
                 />
             </div>,

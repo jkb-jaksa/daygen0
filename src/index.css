@@ -130,6 +130,22 @@
   }
 }
 
+/* Static fade in (opacity only) for full-size view */
+@keyframes simple-fade-in {
+  from {
+    opacity: 0.8;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in-static {
+  animation: simple-fade-in 0.3s ease-out both;
+  will-change: opacity;
+}
+
 /* Day mode keyframe for gradient-colors animation - ensure 100% opacity */
 @keyframes gradient-colors-day {
   0% {

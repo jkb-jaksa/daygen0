@@ -3914,9 +3914,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
             })()}
 
             <img
+              key={selectedFullImage.id}
               src={selectedFullImage.url}
               alt={selectedFullImage.prompt || "Avatar creation"}
-              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+              className="max-w-full max-h-[90vh] object-contain rounded-lg animate-fade-in-static"
               style={{ objectPosition: 'top' }}
             />
 

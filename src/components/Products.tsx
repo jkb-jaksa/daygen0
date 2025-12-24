@@ -2779,9 +2779,10 @@ export default function Products() {
               })()}
 
               <img
+                key={selectedFullImage.id}
                 src={selectedFullImage.url}
                 alt={selectedFullImage.prompt || "Product creation"}
-                className="max-w-full max-h-[90vh] object-contain rounded-lg"
+                className="max-w-full max-h-[90vh] object-contain rounded-lg animate-fade-in-static"
                 style={{ objectPosition: 'top' }}
               />
 

@@ -393,7 +393,10 @@ export function ProfileFullView({
 
                     {/* Media */}
                     {isVideo ? (
-                        <div className="relative z-10 max-w-full max-h-[90vh] flex items-center justify-center">
+                        <div
+                            key={item.id}
+                            className="relative z-10 max-w-full max-h-[90vh] flex items-center justify-center animate-fade-in-static"
+                        >
                             <VideoPlayer
                                 src={item.fileUrl}
                                 className="rounded-lg shadow-2xl"
@@ -406,10 +409,11 @@ export function ProfileFullView({
                         </div>
                     ) : (
                         <img
+                            key={item.id}
                             src={item.fileUrl}
                             alt={item.prompt || 'Generated Content'}
                             loading="lazy"
-                            className="relative z-10 max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                            className="relative z-10 max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl animate-fade-in-static"
                             style={{ objectPosition: 'top' }}
                         />
                     )}

@@ -41,6 +41,7 @@ import {
 } from "lucide-react";
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
 import { normalizeAssetUrl } from "../utils/api";
+import { createCardImageStyle } from "../utils/cardImageStyle";
 import { debugError, debugWarn } from "../utils/debug";
 import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
 import { useAuth } from "../auth/useAuth";
@@ -1923,12 +1924,12 @@ const Explore: React.FC = () => {
                       openFullSizeView(item);
                     }}
                   >
-                    <div className={`relative ${orientationStyles[item.orientation]} min-h-[180px] sm:min-h-[240px] md:min-h-[280px] xl:min-h-[320px]`}>
+                    <div className={`relative ${orientationStyles[item.orientation]} min-h-[180px] sm:min-h-[240px] md:min-h-[280px] xl:min-h-[320px] card-media-frame`} data-has-image={Boolean(item.imageUrl)} style={createCardImageStyle(item.imageUrl)}>
                       <LazyImage
                         src={item.imageUrl}
                         alt={`Image by ${item.creator.name}`}
                         wrapperClassName="absolute inset-0 h-full w-full"
-                        className="h-full w-full object-cover object-center"
+                        className="relative z-[1] h-full w-full object-cover object-center"
                       />
                       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/70" aria-hidden="true" />
 
@@ -2385,10 +2386,11 @@ const Explore: React.FC = () => {
                 />
 
                 <img
+                  key={selectedFullImage.id}
                   src={selectedFullImage.imageUrl}
                   alt={`Image by ${selectedFullImage.creator.name}`}
                   loading="lazy"
-                  className={`relative z-10 object-contain shadow-2xl ${isMobile ? 'w-full h-auto max-h-[85vh] rounded-none' : 'max-w-full max-h-[90vh] rounded-lg'}`}
+                  className={`relative z-10 object-contain shadow-2xl animate-fade-in-static ${isMobile ? 'w-full h-auto max-h-[85vh] rounded-none' : 'max-w-full max-h-[90vh] rounded-lg'}`}
                   style={isMobile ? {} : { objectPosition: 'top' }}
                 />
 
@@ -2601,7 +2603,7 @@ const Explore: React.FC = () => {
                           <Suspense fallback={null}>
                             <AspectRatioBadge aspectRatio={selectedFullImage.aspectRatio || '1:1'} size="md" />
                           </Suspense>
-                          <CreatorBadge name={selectedFullImage.creator.name} profileImage={selectedFullImage.creator.profileImage} userId={selectedFullImage.creator.userId} country={selectedFullImage.creator.country} size="md" onClick={openCreatorProfile} />
+                          <CreatorBadge name={selectedFullImage.creator.name} profileImage={selectedFullImage.creator.profileImage} userId={selectedFullImage.creator.userId} country={selectedFullImage.creator.country} size="md" onClick={openCreatorProfile} hideFlag={true} />
                         </div>
                       </div>
                     </div>
