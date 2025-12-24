@@ -519,7 +519,7 @@ export default function CreatorProfile() {
                                     onClick={() => handleSortModeChange('recent')}
                                     className={`px-4 py-1.5 text-xs font-medium font-raleway rounded-full transition-colors duration-200 ${sortMode === 'recent'
                                         ? 'bg-theme-text text-theme-black shadow-lg shadow-theme-text/20'
-                                        : 'text-theme-white/70 hover:text-theme-text'
+                                        : 'text-theme-white hover:text-theme-text'
                                         }`}
                                 >
                                     Recent
@@ -530,7 +530,7 @@ export default function CreatorProfile() {
                                     onClick={() => handleSortModeChange('top')}
                                     className={`px-4 py-1.5 text-xs font-medium font-raleway rounded-full transition-colors duration-200 ${sortMode === 'top'
                                         ? 'bg-theme-text text-theme-black shadow-lg shadow-theme-text/20'
-                                        : 'text-theme-white/70 hover:text-theme-text'
+                                        : 'text-theme-white hover:text-theme-text'
                                         }`}
                                 >
                                     Top
