@@ -1,3 +1,4 @@
+import { normalizeAssetUrl } from '../utils/api';
 import { useState, useCallback } from 'react';
 import { useAuth } from '../auth/useAuth';
 import { resolveGenerationCatchError } from '../utils/errorMessages';
@@ -233,7 +234,7 @@ const parseIdeogramJobResult = (
   const jobId = response.jobId ?? snapshot.job.id ?? undefined;
 
   return urls.map((url) => ({
-    url,
+    url: normalizeAssetUrl(url) || url,
     prompt: options.prompt,
     timestamp: new Date().toISOString(),
     model: 'ideogram',
@@ -273,7 +274,7 @@ const parseImmediateIdeogramResult = (
   }
 
   return urls.map((url) => ({
-    url,
+    url: normalizeAssetUrl(url) || url,
     prompt: options.prompt,
     timestamp: new Date().toISOString(),
     model: 'ideogram',

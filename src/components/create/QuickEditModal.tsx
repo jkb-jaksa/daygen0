@@ -55,9 +55,13 @@ export interface QuickEditOptions {
     batchSize: number;
     avatarId?: string;
     productId?: string;
+    avatarIds?: string[]; // New: Array of IDs
+    productIds?: string[]; // New: Array of IDs
     styleId?: string;
     avatarImageUrl?: string;
     productImageUrl?: string;
+    avatarImageUrls?: string[]; // New: Array of URLs
+    productImageUrls?: string[]; // New: Array of URLs
     mask?: string;
     geminiMask?: string;
     model?: string;
@@ -729,7 +733,8 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
 
 
     const {
-        selectedAvatar,
+        selectedAvatar, // To be deprecated/removed in favor of selectedAvatars
+        selectedAvatars, // Use this
         avatarButtonRef,
         isAvatarPickerOpen,
         setIsAvatarPickerOpen,
@@ -739,7 +744,8 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     } = avatarHandlers;
 
     const {
-        selectedProduct,
+        selectedProduct, // To be deprecated/removed in favor of selectedProducts
+        selectedProducts, // Use this
         productButtonRef,
         isProductPickerOpen,
         setIsProductPickerOpen,
@@ -1239,16 +1245,30 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                 }
             }
 
+            // Collect all avatar/product URLs
+            const avatarImageUrls = selectedAvatars.map(a => a.imageUrl);
+            const productImageUrls = selectedProducts.map(p => p.imageUrl);
+            const avatarIds = selectedAvatars.map(a => a.id);
+            const productIds = selectedProducts.map(p => p.id);
+
             onSubmit({
                 prompt: prompt.trim(),
                 referenceFiles: referenceFiles.length > 0 ? referenceFiles : undefined,
                 aspectRatio,
                 batchSize,
-                avatarId: selectedAvatar?.id,
-                productId: selectedProduct?.id,
+                // Pass single first values for compatibility
+                avatarId: selectedAvatars[0]?.id,
+                productId: selectedProducts[0]?.id,
+                // Pass full arrays
+                avatarIds,
+                productIds,
                 styleId: styleHandlers.selectedStylesList[0]?.id,
-                avatarImageUrl: selectedAvatar?.imageUrl,
-                productImageUrl: selectedProduct?.imageUrl,
+                // Pass single first values for compatibility
+                avatarImageUrl: selectedAvatars[0]?.imageUrl,
+                productImageUrl: selectedProducts[0]?.imageUrl,
+                // Pass full arrays
+                avatarImageUrls,
+                productImageUrls,
                 mask: finalMask,
                 geminiMask: finalGeminiMask,
                 // Pass the selected model for editing
@@ -2314,7 +2334,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         onDrop={handleAvatarButtonDrop}
                                                         onMouseEnter={() => setIsAvatarButtonHovered(true)}
                                                         onMouseLeave={() => setIsAvatarButtonHovered(false)}
-                                                        className={`${glass.promptBorderless} ${isDraggingOverAvatarButton || avatarSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-theme-dark/10 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${selectedAvatar || avatarSelection ? 'hover:border-theme-mid' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                        className={`${glass.promptBorderless} ${isDraggingOverAvatarButton || avatarSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-theme-dark/10 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${selectedAvatars.length > 0 || avatarSelection ? 'hover:border-theme-mid' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                                                         onPointerMove={onPointerMove}
                                                         onPointerEnter={onPointerEnter}
                                                         onPointerLeave={onPointerLeave}
@@ -2334,7 +2354,8 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                                 </div>
                                                             </>
                                                         )}
-                                                        {!selectedAvatar && !avatarDragPreviewUrl && !avatarSelection && (
+                                                        {/* Empty State */}
+                                                        {selectedAvatars.length === 0 && !avatarDragPreviewUrl && !avatarSelection && (
                                                             <>
                                                                 <div className="flex-1 flex items-center justify-center lg:mt-3">
                                                                     {isAvatarButtonHovered ? (
@@ -2350,33 +2371,102 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                                 </div>
                                                             </>
                                                         )}
-                                                        {(selectedAvatar || avatarSelection) && !avatarDragPreviewUrl && (
+                                                        {/* Avatar Selection (Pending) */}
+                                                        {avatarSelection && !avatarDragPreviewUrl && (
                                                             <>
                                                                 <img
-                                                                    src={avatarSelection?.imageUrl ?? selectedAvatar?.imageUrl}
-                                                                    alt={avatarSelection ? 'Avatar' : (selectedAvatar?.name ?? 'Avatar')}
+                                                                    src={avatarSelection.imageUrl}
+                                                                    alt="Avatar"
                                                                     loading="lazy"
-                                                                    className={`absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover ${avatarSelection ? 'opacity-80' : ''}`}
-                                                                    title={avatarSelection ? 'Avatar' : (selectedAvatar?.name ?? 'Avatar')}
+                                                                    className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover opacity-80"
+                                                                    title="Avatar"
                                                                 />
-                                                                <div className={`hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 ${avatarSelection ? 'z-20' : ''}`}>
+                                                                <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-20">
                                                                     <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
-                                                                        {avatarSelection ? 'Avatar' : (selectedAvatar?.name ?? 'Avatar')}
+                                                                        Avatar
                                                                     </span>
                                                                 </div>
                                                             </>
                                                         )}
+                                                        {/* Single Avatar */}
+                                                        {selectedAvatars.length === 1 && !avatarSelection && !avatarDragPreviewUrl && (
+                                                            <>
+                                                                <img
+                                                                    src={selectedAvatars[0].imageUrl}
+                                                                    alt={selectedAvatars[0].name}
+                                                                    loading="lazy"
+                                                                    className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover"
+                                                                    title={selectedAvatars[0].name}
+                                                                />
+                                                                <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
+                                                                    <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
+                                                                        {selectedAvatars[0].name}
+                                                                    </span>
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                        {/* Multiple Avatars (2-4) */}
+                                                        {selectedAvatars.length >= 2 && selectedAvatars.length <= 4 && !avatarSelection && !avatarDragPreviewUrl && (
+                                                            <>
+                                                                <div className={`absolute inset-0 grid gap-0.5 ${selectedAvatars.length === 2 ? 'grid-cols-2' : 'grid-cols-2 grid-rows-2'}`}>
+                                                                    {selectedAvatars.slice(0, 4).map((avatar, index) => (
+                                                                        <img
+                                                                            key={avatar.id}
+                                                                            src={avatar.imageUrl}
+                                                                            alt={avatar.name}
+                                                                            loading="lazy"
+                                                                            className={`w-full h-full object-cover ${selectedAvatars.length === 2 ? 'rounded-full lg:rounded-lg' : 'rounded-sm lg:rounded-md'} ${selectedAvatars.length === 3 && index === 2 ? 'col-span-2' : ''}`}
+                                                                            title={avatar.name}
+                                                                        />
+                                                                    ))}
+                                                                </div>
+                                                                <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-10">
+                                                                    <span className="text-xs font-raleway text-n-text text-center">
+                                                                        {selectedAvatars.length} Avatars
+                                                                    </span>
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                        {/* 5+ Avatars */}
+                                                        {selectedAvatars.length > 4 && !avatarSelection && !avatarDragPreviewUrl && (
+                                                            <>
+                                                                <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-0.5">
+                                                                    {selectedAvatars.slice(0, 4).map((avatar) => (
+                                                                        <img
+                                                                            key={avatar.id}
+                                                                            src={avatar.imageUrl}
+                                                                            alt={avatar.name}
+                                                                            loading="lazy"
+                                                                            className="w-full h-full object-cover rounded-sm lg:rounded-md"
+                                                                            title={avatar.name}
+                                                                        />
+                                                                    ))}
+                                                                </div>
+                                                                <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-10 cursor-pointer hover:from-black/95">
+                                                                    <span className="text-xs font-raleway text-white/90 hover:text-white">
+                                                                        +{selectedAvatars.length - 4} more
+                                                                    </span>
+                                                                </div>
+                                                                <div className="lg:hidden absolute bottom-0.5 right-0.5 bg-theme-black/80 rounded-full px-1 py-0.5 z-10">
+                                                                    <span className="text-[10px] font-raleway text-white">+{selectedAvatars.length - 4}</span>
+                                                                </div>
+                                                            </>
+                                                        )}
                                                     </button>
-                                                    {selectedAvatar && !isDraggingOverAvatarButton && (
+                                                    {selectedAvatars.length > 0 && !isDraggingOverAvatarButton && (
                                                         <button
                                                             type="button"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                avatarHandlers.handleAvatarSelect(null);
+                                                                if ('clearAllAvatars' in avatarHandlers) {
+                                                                    (avatarHandlers as any).clearAllAvatars();
+                                                                } else {
+                                                                    (avatarHandlers as any).handleAvatarSelect(null);
+                                                                }
                                                             }}
                                                             className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
-                                                            title="Remove avatar"
-                                                            aria-label="Remove avatar"
+                                                            title="Remove all avatars"
+                                                            aria-label="Remove all avatars"
                                                         >
                                                             <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
                                                         </button>
@@ -2404,7 +2494,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         onDrop={handleProductButtonDrop}
                                                         onMouseEnter={() => setIsProductButtonHovered(true)}
                                                         onMouseLeave={() => setIsProductButtonHovered(false)}
-                                                        className={`${glass.promptBorderless} ${isDraggingOverProductButton || productSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-theme-dark/10 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${selectedProduct || productSelection ? 'hover:border-theme-mid' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                        className={`${glass.promptBorderless} ${isDraggingOverProductButton || productSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-theme-dark/10 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${selectedProducts.length > 0 || productSelection ? 'hover:border-theme-mid' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                                                         onPointerMove={onPointerMove}
                                                         onPointerEnter={onPointerEnter}
                                                         onPointerLeave={onPointerLeave}
@@ -2424,7 +2514,8 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                                 </div>
                                                             </>
                                                         )}
-                                                        {!selectedProduct && !productDragPreviewUrl && !productSelection && (
+                                                        {/* Empty State */}
+                                                        {selectedProducts.length === 0 && !productDragPreviewUrl && !productSelection && (
                                                             <>
                                                                 <div className="flex-1 flex items-center justify-center lg:mt-3">
                                                                     {isProductButtonHovered ? (
@@ -2440,33 +2531,102 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                                 </div>
                                                             </>
                                                         )}
-                                                        {(selectedProduct || productSelection) && !productDragPreviewUrl && (
+                                                        {/* Product Selection (Pending) */}
+                                                        {productSelection && !productDragPreviewUrl && (
                                                             <>
                                                                 <img
-                                                                    src={productSelection?.imageUrl ?? selectedProduct?.imageUrl}
-                                                                    alt={productSelection ? 'Product' : (selectedProduct?.name ?? 'Product')}
+                                                                    src={productSelection.imageUrl}
+                                                                    alt="Product"
                                                                     loading="lazy"
-                                                                    className={`absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover ${productSelection ? 'opacity-80' : ''}`}
-                                                                    title={productSelection ? 'Product' : (selectedProduct?.name ?? 'Product')}
+                                                                    className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover opacity-80"
+                                                                    title="Product"
                                                                 />
-                                                                <div className={`hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 ${productSelection ? 'z-20' : ''}`}>
+                                                                <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-20">
                                                                     <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
-                                                                        {productSelection ? 'Product' : (selectedProduct?.name ?? 'Product')}
+                                                                        Product
                                                                     </span>
                                                                 </div>
                                                             </>
                                                         )}
+                                                        {/* Single Product */}
+                                                        {selectedProducts.length === 1 && !productSelection && !productDragPreviewUrl && (
+                                                            <>
+                                                                <img
+                                                                    src={selectedProducts[0].imageUrl}
+                                                                    alt={selectedProducts[0].name}
+                                                                    loading="lazy"
+                                                                    className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover"
+                                                                    title={selectedProducts[0].name}
+                                                                />
+                                                                <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
+                                                                    <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
+                                                                        {selectedProducts[0].name}
+                                                                    </span>
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                        {/* Multiple Products (2-4) */}
+                                                        {selectedProducts.length >= 2 && selectedProducts.length <= 4 && !productSelection && !productDragPreviewUrl && (
+                                                            <>
+                                                                <div className={`absolute inset-0 grid gap-0.5 ${selectedProducts.length === 2 ? 'grid-cols-2' : 'grid-cols-2 grid-rows-2'}`}>
+                                                                    {selectedProducts.slice(0, 4).map((product, index) => (
+                                                                        <img
+                                                                            key={product.id}
+                                                                            src={product.imageUrl}
+                                                                            alt={product.name}
+                                                                            loading="lazy"
+                                                                            className={`w-full h-full object-cover ${selectedProducts.length === 2 ? 'rounded-full lg:rounded-lg' : 'rounded-sm lg:rounded-md'} ${selectedProducts.length === 3 && index === 2 ? 'col-span-2' : ''}`}
+                                                                            title={product.name}
+                                                                        />
+                                                                    ))}
+                                                                </div>
+                                                                <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-10">
+                                                                    <span className="text-xs font-raleway text-n-text text-center">
+                                                                        {selectedProducts.length} Products
+                                                                    </span>
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                        {/* 5+ Products */}
+                                                        {selectedProducts.length > 4 && !productSelection && !productDragPreviewUrl && (
+                                                            <>
+                                                                <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-0.5">
+                                                                    {selectedProducts.slice(0, 4).map((product) => (
+                                                                        <img
+                                                                            key={product.id}
+                                                                            src={product.imageUrl}
+                                                                            alt={product.name}
+                                                                            loading="lazy"
+                                                                            className="w-full h-full object-cover rounded-sm lg:rounded-md"
+                                                                            title={product.name}
+                                                                        />
+                                                                    ))}
+                                                                </div>
+                                                                <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-10 cursor-pointer hover:from-black/95">
+                                                                    <span className="text-xs font-raleway text-white/90 hover:text-white">
+                                                                        +{selectedProducts.length - 4} more
+                                                                    </span>
+                                                                </div>
+                                                                <div className="lg:hidden absolute bottom-0.5 right-0.5 bg-theme-black/80 rounded-full px-1 py-0.5 z-10">
+                                                                    <span className="text-[10px] font-raleway text-white">+{selectedProducts.length - 4}</span>
+                                                                </div>
+                                                            </>
+                                                        )}
                                                     </button>
-                                                    {selectedProduct && !isDraggingOverProductButton && (
+                                                    {selectedProducts.length > 0 && !isDraggingOverProductButton && (
                                                         <button
                                                             type="button"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                productHandlers.handleProductSelect(null);
+                                                                if ('clearAllProducts' in productHandlers) {
+                                                                    (productHandlers as any).clearAllProducts();
+                                                                } else {
+                                                                    (productHandlers as any).handleProductSelect(null);
+                                                                }
                                                             }}
                                                             className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
-                                                            title="Remove product"
-                                                            aria-label="Remove product"
+                                                            title="Remove all products"
+                                                            aria-label="Remove all products"
                                                         >
                                                             <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
                                                         </button>
@@ -2595,7 +2755,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         onDrop={handleAvatarButtonDrop}
                                                         onMouseEnter={() => setIsAvatarButtonHovered(true)}
                                                         onMouseLeave={() => setIsAvatarButtonHovered(false)}
-                                                        className={`${glass.promptBorderless} ${isDraggingOverAvatarButton || avatarSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-theme-dark/10 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${selectedAvatar || avatarSelection ? 'hover:border-theme-mid' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                        className={`${glass.promptBorderless} ${isDraggingOverAvatarButton || avatarSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-theme-dark/10 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${selectedAvatars.length > 0 || avatarSelection ? 'hover:border-theme-mid' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                                                         onPointerMove={onPointerMove}
                                                         onPointerEnter={onPointerEnter}
                                                         onPointerLeave={onPointerLeave}
@@ -2615,7 +2775,8 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                                 </div>
                                                             </>
                                                         )}
-                                                        {!selectedAvatar && !avatarDragPreviewUrl && !avatarSelection && (
+                                                        {/* Empty State */}
+                                                        {selectedAvatars.length === 0 && !avatarDragPreviewUrl && !avatarSelection && (
                                                             <>
                                                                 <div className="flex-1 flex items-center justify-center lg:mt-3">
                                                                     {isAvatarButtonHovered ? (
@@ -2631,33 +2792,102 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                                 </div>
                                                             </>
                                                         )}
-                                                        {(selectedAvatar || avatarSelection) && !avatarDragPreviewUrl && (
+                                                        {/* Avatar Selection (Pending) */}
+                                                        {avatarSelection && !avatarDragPreviewUrl && (
                                                             <>
                                                                 <img
-                                                                    src={avatarSelection?.imageUrl ?? selectedAvatar?.imageUrl}
-                                                                    alt={avatarSelection ? 'Avatar' : (selectedAvatar?.name ?? 'Avatar')}
+                                                                    src={avatarSelection.imageUrl}
+                                                                    alt="Avatar"
                                                                     loading="lazy"
-                                                                    className={`absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover ${avatarSelection ? 'opacity-80' : ''}`}
-                                                                    title={avatarSelection ? 'Avatar' : (selectedAvatar?.name ?? 'Avatar')}
+                                                                    className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover opacity-80"
+                                                                    title="Avatar"
                                                                 />
-                                                                <div className={`hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 ${avatarSelection ? 'z-20' : ''}`}>
+                                                                <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-20">
                                                                     <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
-                                                                        {avatarSelection ? 'Avatar' : (selectedAvatar?.name ?? 'Avatar')}
+                                                                        Avatar
                                                                     </span>
                                                                 </div>
                                                             </>
                                                         )}
+                                                        {/* Single Avatar */}
+                                                        {selectedAvatars.length === 1 && !avatarSelection && !avatarDragPreviewUrl && (
+                                                            <>
+                                                                <img
+                                                                    src={selectedAvatars[0].imageUrl}
+                                                                    alt={selectedAvatars[0].name}
+                                                                    loading="lazy"
+                                                                    className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover"
+                                                                    title={selectedAvatars[0].name}
+                                                                />
+                                                                <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
+                                                                    <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
+                                                                        {selectedAvatars[0].name}
+                                                                    </span>
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                        {/* Multiple Avatars (2-4) */}
+                                                        {selectedAvatars.length >= 2 && selectedAvatars.length <= 4 && !avatarSelection && !avatarDragPreviewUrl && (
+                                                            <>
+                                                                <div className={`absolute inset-0 grid gap-0.5 ${selectedAvatars.length === 2 ? 'grid-cols-2' : 'grid-cols-2 grid-rows-2'}`}>
+                                                                    {selectedAvatars.slice(0, 4).map((avatar, index) => (
+                                                                        <img
+                                                                            key={avatar.id}
+                                                                            src={avatar.imageUrl}
+                                                                            alt={avatar.name}
+                                                                            loading="lazy"
+                                                                            className={`w-full h-full object-cover ${selectedAvatars.length === 2 ? 'rounded-full lg:rounded-lg' : 'rounded-sm lg:rounded-md'} ${selectedAvatars.length === 3 && index === 2 ? 'col-span-2' : ''}`}
+                                                                            title={avatar.name}
+                                                                        />
+                                                                    ))}
+                                                                </div>
+                                                                <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-10">
+                                                                    <span className="text-xs font-raleway text-n-text text-center">
+                                                                        {selectedAvatars.length} Avatars
+                                                                    </span>
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                        {/* 5+ Avatars */}
+                                                        {selectedAvatars.length > 4 && !avatarSelection && !avatarDragPreviewUrl && (
+                                                            <>
+                                                                <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-0.5">
+                                                                    {selectedAvatars.slice(0, 4).map((avatar) => (
+                                                                        <img
+                                                                            key={avatar.id}
+                                                                            src={avatar.imageUrl}
+                                                                            alt={avatar.name}
+                                                                            loading="lazy"
+                                                                            className="w-full h-full object-cover rounded-sm lg:rounded-md"
+                                                                            title={avatar.name}
+                                                                        />
+                                                                    ))}
+                                                                </div>
+                                                                <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-10 cursor-pointer hover:from-black/95">
+                                                                    <span className="text-xs font-raleway text-white/90 hover:text-white">
+                                                                        +{selectedAvatars.length - 4} more
+                                                                    </span>
+                                                                </div>
+                                                                <div className="lg:hidden absolute bottom-0.5 right-0.5 bg-theme-black/80 rounded-full px-1 py-0.5 z-10">
+                                                                    <span className="text-[10px] font-raleway text-white">+{selectedAvatars.length - 4}</span>
+                                                                </div>
+                                                            </>
+                                                        )}
                                                     </button>
-                                                    {selectedAvatar && !isDraggingOverAvatarButton && (
+                                                    {selectedAvatars.length > 0 && !isDraggingOverAvatarButton && (
                                                         <button
                                                             type="button"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                avatarHandlers.handleAvatarSelect(null);
+                                                                if ('clearAllAvatars' in avatarHandlers) {
+                                                                    (avatarHandlers as any).clearAllAvatars();
+                                                                } else {
+                                                                    (avatarHandlers as any).handleAvatarSelect(null);
+                                                                }
                                                             }}
                                                             className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
-                                                            title="Remove avatar"
-                                                            aria-label="Remove avatar"
+                                                            title="Remove all avatars"
+                                                            aria-label="Remove all avatars"
                                                         >
                                                             <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
                                                         </button>
@@ -2685,7 +2915,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         onDrop={handleProductButtonDrop}
                                                         onMouseEnter={() => setIsProductButtonHovered(true)}
                                                         onMouseLeave={() => setIsProductButtonHovered(false)}
-                                                        className={`${glass.promptBorderless} ${isDraggingOverProductButton || productSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-theme-dark/10 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${selectedProduct || productSelection ? 'hover:border-theme-mid' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                        className={`${glass.promptBorderless} ${isDraggingOverProductButton || productSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-theme-dark/10 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${selectedProducts.length > 0 || productSelection ? 'hover:border-theme-mid' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                                                         onPointerMove={onPointerMove}
                                                         onPointerEnter={onPointerEnter}
                                                         onPointerLeave={onPointerLeave}
@@ -2705,7 +2935,8 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                                 </div>
                                                             </>
                                                         )}
-                                                        {!selectedProduct && !productDragPreviewUrl && !productSelection && (
+                                                        {/* Empty State */}
+                                                        {selectedProducts.length === 0 && !productDragPreviewUrl && !productSelection && (
                                                             <>
                                                                 <div className="flex-1 flex items-center justify-center lg:mt-3">
                                                                     {isProductButtonHovered ? (
@@ -2721,33 +2952,102 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                                 </div>
                                                             </>
                                                         )}
-                                                        {(selectedProduct || productSelection) && !productDragPreviewUrl && (
+                                                        {/* Product Selection (Pending) */}
+                                                        {productSelection && !productDragPreviewUrl && (
                                                             <>
                                                                 <img
-                                                                    src={productSelection?.imageUrl ?? selectedProduct?.imageUrl}
-                                                                    alt={productSelection ? 'Product' : (selectedProduct?.name ?? 'Product')}
+                                                                    src={productSelection.imageUrl}
+                                                                    alt="Product"
                                                                     loading="lazy"
-                                                                    className={`absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover ${productSelection ? 'opacity-80' : ''}`}
-                                                                    title={productSelection ? 'Product' : (selectedProduct?.name ?? 'Product')}
+                                                                    className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover opacity-80"
+                                                                    title="Product"
                                                                 />
-                                                                <div className={`hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 ${productSelection ? 'z-20' : ''}`}>
+                                                                <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-20">
                                                                     <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
-                                                                        {productSelection ? 'Product' : (selectedProduct?.name ?? 'Product')}
+                                                                        Product
                                                                     </span>
                                                                 </div>
                                                             </>
                                                         )}
+                                                        {/* Single Product */}
+                                                        {selectedProducts.length === 1 && !productSelection && !productDragPreviewUrl && (
+                                                            <>
+                                                                <img
+                                                                    src={selectedProducts[0].imageUrl}
+                                                                    alt={selectedProducts[0].name}
+                                                                    loading="lazy"
+                                                                    className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover"
+                                                                    title={selectedProducts[0].name}
+                                                                />
+                                                                <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
+                                                                    <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
+                                                                        {selectedProducts[0].name}
+                                                                    </span>
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                        {/* Multiple Products (2-4) */}
+                                                        {selectedProducts.length >= 2 && selectedProducts.length <= 4 && !productSelection && !productDragPreviewUrl && (
+                                                            <>
+                                                                <div className={`absolute inset-0 grid gap-0.5 ${selectedProducts.length === 2 ? 'grid-cols-2' : 'grid-cols-2 grid-rows-2'}`}>
+                                                                    {selectedProducts.slice(0, 4).map((product, index) => (
+                                                                        <img
+                                                                            key={product.id}
+                                                                            src={product.imageUrl}
+                                                                            alt={product.name}
+                                                                            loading="lazy"
+                                                                            className={`w-full h-full object-cover ${selectedProducts.length === 2 ? 'rounded-full lg:rounded-lg' : 'rounded-sm lg:rounded-md'} ${selectedProducts.length === 3 && index === 2 ? 'col-span-2' : ''}`}
+                                                                            title={product.name}
+                                                                        />
+                                                                    ))}
+                                                                </div>
+                                                                <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-10">
+                                                                    <span className="text-xs font-raleway text-n-text text-center">
+                                                                        {selectedProducts.length} Products
+                                                                    </span>
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                        {/* 5+ Products */}
+                                                        {selectedProducts.length > 4 && !productSelection && !productDragPreviewUrl && (
+                                                            <>
+                                                                <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-0.5">
+                                                                    {selectedProducts.slice(0, 4).map((product) => (
+                                                                        <img
+                                                                            key={product.id}
+                                                                            src={product.imageUrl}
+                                                                            alt={product.name}
+                                                                            loading="lazy"
+                                                                            className="w-full h-full object-cover rounded-sm lg:rounded-md"
+                                                                            title={product.name}
+                                                                        />
+                                                                    ))}
+                                                                </div>
+                                                                <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-10 cursor-pointer hover:from-black/95">
+                                                                    <span className="text-xs font-raleway text-white/90 hover:text-white">
+                                                                        +{selectedProducts.length - 4} more
+                                                                    </span>
+                                                                </div>
+                                                                <div className="lg:hidden absolute bottom-0.5 right-0.5 bg-theme-black/80 rounded-full px-1 py-0.5 z-10">
+                                                                    <span className="text-[10px] font-raleway text-white">+{selectedProducts.length - 4}</span>
+                                                                </div>
+                                                            </>
+                                                        )}
                                                     </button>
-                                                    {selectedProduct && !isDraggingOverProductButton && (
+                                                    {selectedProducts.length > 0 && !isDraggingOverProductButton && (
                                                         <button
                                                             type="button"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                productHandlers.handleProductSelect(null);
+                                                                if ('clearAllProducts' in productHandlers) {
+                                                                    (productHandlers as any).clearAllProducts();
+                                                                } else {
+                                                                    (productHandlers as any).handleProductSelect(null);
+                                                                }
                                                             }}
                                                             className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
-                                                            title="Remove product"
-                                                            aria-label="Remove product"
+                                                            title="Remove all products"
+                                                            aria-label="Remove all products"
                                                         >
                                                             <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
                                                         </button>

@@ -1,3 +1,4 @@
+import { normalizeAssetUrl } from '../utils/api';
 import { useCallback, useState } from 'react';
 import { resolveGenerationCatchError } from '../utils/errorMessages';
 import {
@@ -42,8 +43,10 @@ export interface VideoGenerationOptions {
   pollRequestTimeoutMs?: number;
   references?: string[];
   avatarId?: string;
+  avatarIds?: string[];
   avatarImageId?: string;
   productId?: string;
+  productIds?: string[];
   script?: string;
   voiceId?: string;
   isLipSyncEnabled?: boolean;
@@ -125,7 +128,7 @@ const parseVeoVideoJobResult = (
   }
 
   return {
-    url,
+    url: normalizeAssetUrl(url) || url,
     prompt: options.prompt,
     model: options.model ?? 'veo-3.1-generate-preview',
     timestamp: new Date().toISOString(),
@@ -149,7 +152,7 @@ const parseImmediateVeoVideoResult = (
   }
 
   return {
-    url,
+    url: normalizeAssetUrl(url) || url,
     prompt: options.prompt,
     model: options.model ?? 'veo-3.1-generate-preview',
     timestamp: new Date().toISOString(),
@@ -197,8 +200,10 @@ export const useVeoVideoGeneration = () => {
           imageUrls: options.references, // Check if backend expects imageUrls for omnihuman
           providerOptions,
           avatarId: options.avatarId,
+          avatarIds: options.avatarIds,
           avatarImageId: options.avatarImageId,
           productId: options.productId,
+          productIds: options.productIds,
           script: options.script,
           voiceId: options.voiceId,
         },

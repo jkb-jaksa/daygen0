@@ -1,3 +1,4 @@
+import { normalizeAssetUrl } from '../utils/api';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { debugLog, debugWarn } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
@@ -185,11 +186,14 @@ const parseGeminiJobResult = (
   modelUsed: string,
 ): GeneratedImage => {
   const urls = collectGeminiResultUrls(snapshot, response);
-  const resolvedUrl = urls[0];
+  const rawUrl = urls[0];
 
-  if (!resolvedUrl) {
+  if (!rawUrl) {
     throw new Error('Job completed but no result URL was provided.');
   }
+
+  // Normalize URL to assets.daygen.ai
+  const resolvedUrl = normalizeAssetUrl(rawUrl) || rawUrl;
 
   return {
     url: resolvedUrl,
@@ -229,6 +233,11 @@ const parseImmediateGeminiResult = (
 
   if (!url) {
     return undefined;
+  }
+
+  // Normalize only if it's a URL (not data URI)
+  if (!url.startsWith('data:')) {
+    url = normalizeAssetUrl(url) || url;
   }
 
   const jobId =

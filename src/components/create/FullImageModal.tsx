@@ -742,7 +742,7 @@ const FullImageModal = memo(() => {
       return;
     }
 
-    const { prompt, referenceFiles, aspectRatio, model, script, voiceId, isLipSyncEnabled } = options;
+    const { prompt, referenceFiles, aspectRatio, model, script, voiceId, isLipSyncEnabled, avatarIds, productIds, avatarImageUrls, productImageUrls } = options;
 
     // Close modal so user sees the generation in progress
     setMakeVideoModalState(null);
@@ -754,7 +754,15 @@ const FullImageModal = memo(() => {
     // 1. Add initial image URL as first reference
     references.push(fullSizeImage.url);
 
-    // 2. Add uploaded reference files (convert Files to data URLs)
+    // 2. Add avatar and product image URLs
+    if (avatarImageUrls && avatarImageUrls.length > 0) {
+      references.push(...avatarImageUrls);
+    }
+    if (productImageUrls && productImageUrls.length > 0) {
+      references.push(...productImageUrls);
+    }
+
+    // 3. Add uploaded reference files (convert Files to data URLs)
     if (referenceFiles && referenceFiles.length > 0) {
       for (const referenceItem of referenceFiles) {
         try {
@@ -784,8 +792,10 @@ const FullImageModal = memo(() => {
       aspectRatio: aspectRatio as '16:9' | '9:16',
       references: references,
       avatarId: fullSizeImage.avatarId,
+      avatarIds: avatarIds,
       avatarImageId: fullSizeImage.avatarImageId,
       productId: fullSizeImage.productId,
+      productIds: productIds,
       script,
       voiceId,
       isLipSyncEnabled,

@@ -76,6 +76,7 @@ vi.mock('./hooks/useAvatarHandlers', () => ({
         handleAvatarSelect: vi.fn(),
         processAvatarImageFile: vi.fn(),
         loadStoredAvatars: vi.fn(),
+        selectedAvatars: [],
     }),
 }));
 
@@ -91,6 +92,7 @@ vi.mock('./hooks/useProductHandlers', () => ({
         productQuickUploadInputRef: { current: null },
         processProductImageFile: vi.fn(),
         loadStoredProducts: vi.fn(),
+        selectedProducts: [],
     }),
 }));
 
@@ -242,6 +244,10 @@ describe('QuickEditModal', () => {
             styleId: undefined,
             avatarImageUrl: undefined,
             productImageUrl: undefined,
+            avatarIds: [],
+            avatarImageUrls: [],
+            productIds: [],
+            productImageUrls: [],
             mask: undefined,
             geminiMask: undefined,
             model: 'gemini-3.0-pro-image',

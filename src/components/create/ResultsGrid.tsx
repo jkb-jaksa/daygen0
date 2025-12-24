@@ -16,6 +16,8 @@ import { useToast } from '../../hooks/useToast';
 import { loadSavedPrompts } from '../../lib/savedPrompts';
 import { useGeminiImageGeneration } from '../../hooks/useGeminiImageGeneration';
 import { useIdeogramImageGeneration } from '../../hooks/useIdeogramImageGeneration';
+import { useVeoVideoGeneration } from '../../hooks/useVeoVideoGeneration';
+import type { MakeVideoOptions } from './MakeVideoModal';
 import type { GalleryImageLike, GalleryVideoLike } from './types';
 import type { StoredAvatar } from '../avatars/types';
 import type { StoredProduct } from '../products/types';
@@ -710,7 +712,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       reader.readAsDataURL(file);
     });
 
-  const handleQuickEditSubmit = useCallback(async ({ prompt, referenceFiles, avatarImageUrl, productImageUrl, mask, model }: QuickEditOptions) => {
+  const handleQuickEditSubmit = useCallback(async ({ prompt, referenceFiles, avatarImageUrl, productImageUrl, avatarImageUrls, productImageUrls, mask, model }: QuickEditOptions) => {
     if (!quickEditModalState?.item || !quickEditModalState.item.url) {
       showToast('No image URL available');
       return;
@@ -728,10 +730,15 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       const references = [item.url.split('?')[0]]; // Strip query params for original quality
 
       // Add avatar and product image URLs as references (hidden from UI but used for generation)
-      if (avatarImageUrl) {
+      if (avatarImageUrls && avatarImageUrls.length > 0) {
+        references.push(...avatarImageUrls);
+      } else if (avatarImageUrl) {
         references.push(avatarImageUrl);
       }
-      if (productImageUrl) {
+
+      if (productImageUrls && productImageUrls.length > 0) {
+        references.push(...productImageUrls);
+      } else if (productImageUrl) {
         references.push(productImageUrl);
       }
 
@@ -818,6 +825,94 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       finalizeQuickEditJob(syntheticJobId, 'failed');
     }
   }, [quickEditModalState, generateGeminiImage, generateIdeogramImage, addImage, showToast, startQuickEditJob, finalizeQuickEditJob]);
+
+  // Video Generation Hook
+  const { startGeneration: startVeoGeneration } = useVeoVideoGeneration();
+  const { addVideo } = useGalleryActions();
+
+  const handleMakeVideoSubmit = useCallback(async (options: MakeVideoOptions) => {
+    if (!makeVideoModalState?.item || !makeVideoModalState.item.url) {
+      showToast('No image URL available');
+      return;
+    }
+
+    const item = makeVideoModalState.item;
+    const { prompt, referenceFiles, aspectRatio, model, script, voiceId, isLipSyncEnabled, avatarIds, productIds, avatarImageUrls, productImageUrls } = options;
+
+    // Close modal immediately
+    setMakeVideoModalState(null);
+
+    // Prepare references - pass URLs directly, backend handles downloading
+    const references: string[] = [];
+
+    // 1. Add initial image URL as first reference
+    references.push(item.url.split('?')[0]);
+
+    // 2. Add avatar and product image URLs
+    if (avatarImageUrls && avatarImageUrls.length > 0) {
+      references.push(...avatarImageUrls);
+    }
+    if (productImageUrls && productImageUrls.length > 0) {
+      references.push(...productImageUrls);
+    }
+
+    // 3. Add uploaded reference files (convert Files to data URLs)
+    if (referenceFiles && referenceFiles.length > 0) {
+      for (const referenceItem of referenceFiles) {
+        try {
+          if (typeof referenceItem === 'string') {
+            // Pass URLs/data URLs directly
+            references.push(referenceItem.trim());
+          } else {
+            // Convert File objects to data URLs
+            const base64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(referenceItem);
+            });
+            references.push(base64);
+          }
+        } catch (e) {
+          debugError('Failed to convert reference file for video', e);
+        }
+      }
+    }
+
+    // Start Veo generation (Fire and forget, handle result in background)
+    startVeoGeneration({
+      prompt: prompt,
+      model: (model as 'veo-3.1-generate-preview' | 'veo-3.1-fast-generate-preview') || 'veo-3.1-generate-preview',
+      aspectRatio: aspectRatio as '16:9' | '9:16',
+      references: references,
+      avatarId: item.avatarId,
+      avatarIds: avatarIds,
+      avatarImageId: item.avatarImageId,
+      productId: item.productId,
+      productIds: productIds,
+      script,
+      voiceId,
+      isLipSyncEnabled,
+    }).then((result) => {
+      if (result && result.url) {
+        // Add video to gallery when done
+        addVideo({
+          url: result.url,
+          prompt: prompt,
+          model: result.model || model || 'veo-3.1-generate-preview',
+          timestamp: result.timestamp || new Date().toISOString(),
+          jobId: result.jobId,
+          type: 'video',
+          ownerId: item.ownerId,
+          isLiked: false,
+          isPublic: false,
+        });
+      }
+    }).catch((error) => {
+      debugError('Failed to generate video:', error);
+      showToast('Failed to generate video');
+    });
+  }, [makeVideoModalState, startVeoGeneration, addVideo, showToast]);
 
   const handleQuickEditClose = useCallback(() => {
     setQuickEditModalState(null);
@@ -1844,6 +1939,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
             <MakeVideoModal
               isOpen={makeVideoModalState.isOpen}
               onClose={() => setMakeVideoModalState(null)}
+              onSubmit={handleMakeVideoSubmit}
               initialPrompt={makeVideoModalState.initialPrompt}
               imageUrl={makeVideoModalState.item.url}
               item={makeVideoModalState.item}
