@@ -104,6 +104,32 @@
   animation: shimmer 1.5s ease-in-out infinite;
 }
 
+/* Smooth gallery card entry animation to prevent grid flickering */
+@keyframes gallery-card-fade-in {
+  from {
+    opacity: 0.6;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.gallery-card-enter {
+  animation: gallery-card-fade-in 0.3s ease-out both;
+  contain: layout style paint;
+  will-change: opacity, transform;
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .gallery-card-enter {
+    animation: none;
+  }
+}
+
 /* Day mode keyframe for gradient-colors animation - ensure 100% opacity */
 @keyframes gradient-colors-day {
   0% {

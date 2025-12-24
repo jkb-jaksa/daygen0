@@ -1914,7 +1914,7 @@ const Explore: React.FC = () => {
                 return (
                   <article
                     key={item.id}
-                    className="group relative overflow-hidden rounded-2xl border border-theme-dark hover:border-theme-mid transition-all duration-100 bg-theme-black/40 shadow-[0_24px_70px_rgba(0,0,0,0.45)] parallax-small cursor-pointer"
+                    className="group relative overflow-hidden rounded-2xl border border-theme-dark hover:border-theme-mid transition-all duration-100 bg-theme-black/40 shadow-[0_24px_70px_rgba(0,0,0,0.45)] parallax-small cursor-pointer gallery-card-enter"
                     onClick={(event) => {
                       // Check if the click came from a copy button
                       const target = event.target as HTMLElement;
