@@ -518,7 +518,7 @@ export default function CreatorProfile() {
                                     aria-pressed={sortMode === 'recent'}
                                     onClick={() => handleSortModeChange('recent')}
                                     className={`px-4 py-1.5 text-xs font-medium font-raleway rounded-full transition-colors duration-200 ${sortMode === 'recent'
-                                        ? 'bg-theme-white text-theme-black shadow-lg shadow-theme-white/20'
+                                        ? 'bg-theme-text text-theme-black shadow-lg shadow-theme-text/20'
                                         : 'text-theme-white/70 hover:text-theme-text'
                                         }`}
                                 >
@@ -529,7 +529,7 @@ export default function CreatorProfile() {
                                     aria-pressed={sortMode === 'top'}
                                     onClick={() => handleSortModeChange('top')}
                                     className={`px-4 py-1.5 text-xs font-medium font-raleway rounded-full transition-colors duration-200 ${sortMode === 'top'
-                                        ? 'bg-theme-white text-theme-black shadow-lg shadow-theme-white/20'
+                                        ? 'bg-theme-text text-theme-black shadow-lg shadow-theme-text/20'
                                         : 'text-theme-white/70 hover:text-theme-text'
                                         }`}
                                 >
