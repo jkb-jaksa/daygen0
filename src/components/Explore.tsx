@@ -487,18 +487,24 @@ const Explore: React.FC = () => {
   const [galleryFilters, setGalleryFilters] = useState<{
     models: string[];
     types: string[];
-    tags: string[];
   }>({
     models: [],
     types: [],
     tags: [],
   });
 
+  // Collapsible filters state
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+
   // Public generations state
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>(fallbackGalleryItems);
   const [isLoadingPublic, setIsLoadingPublic] = useState(false);
   const [publicApiCursor, setPublicApiCursor] = useState<string | null>(null);
   const [hasMorePublic, setHasMorePublic] = useState(true);
+
+  // Track if we've done an authenticated fetch and the stable sort order for Top mode
+  const lastFetchWasAuthenticatedRef = useRef(false);
+  const [topSortOrder, setTopSortOrder] = useState<string[]>([]); // Store IDs in sorted order
 
   // Gradient colors for creator avatars
   const avatarGradients = useMemo(() => [
@@ -648,6 +654,8 @@ const Explore: React.FC = () => {
     } finally {
       isLoadingPublicRef.current = false;
       setIsLoadingPublic(false);
+      // Track if this fetch was authenticated
+      lastFetchWasAuthenticatedRef.current = !!token;
     }
   }, [avatarGradients, formatTimeAgo, getOrientationFromAspectRatio, inferMediaType, token]);
 
@@ -655,6 +663,13 @@ const Explore: React.FC = () => {
   useEffect(() => {
     void fetchPublicGenerations();
   }, [fetchPublicGenerations]);
+
+  // Re-fetch when token becomes available if we haven't done an authenticated fetch yet
+  useEffect(() => {
+    if (token && !lastFetchWasAuthenticatedRef.current && !isLoadingPublicRef.current) {
+      void fetchPublicGenerations();
+    }
+  }, [token, fetchPublicGenerations]);
 
   // Filter function for gallery
   const filterGalleryItems = useCallback((items: GalleryItem[]) => {
@@ -699,14 +714,96 @@ const Explore: React.FC = () => {
   // Sort mode for gallery (recent or top)
   const [sortMode, setSortMode] = useState<"recent" | "top">("recent");
 
+  // Update the stable sort order when switching to Top mode or when items are initially loaded
+  useEffect(() => {
+    if (sortMode === "top" && topSortOrder.length === 0 && galleryItems.length > 0) {
+      // Initialize sort order when first entering Top mode
+      const sortedIds = [...galleryItems]
+        .sort((a, b) => b.likes - a.likes)
+        .map(item => item.id);
+      setTopSortOrder(sortedIds);
+    }
+  }, [sortMode, topSortOrder.length, galleryItems]);
+
+  // Reset sort order when switching away from Top mode
+  const handleSortModeChange = useCallback((mode: "recent" | "top") => {
+    if (mode === "recent") {
+      setTopSortOrder([]); // Clear sort order so it recalculates next time we enter Top
+    } else if (mode === "top" && topSortOrder.length === 0) {
+      // Pre-calculate sort order when entering Top mode
+      const sortedIds = [...galleryItems]
+        .sort((a, b) => b.likes - a.likes)
+        .map(item => item.id);
+      setTopSortOrder(sortedIds);
+    }
+    setSortMode(mode);
+  }, [galleryItems, topSortOrder.length]);
+
   const filteredGallery = useMemo(() => {
     const filtered = filterGalleryItems(galleryItems);
-    // Sort based on sortMode: "recent" keeps API order (newest first), "top" sorts by likes
+    // Sort based on sortMode: "recent" keeps API order (newest first), "top" uses stable sort order
     if (sortMode === "top") {
+      if (topSortOrder.length > 0) {
+        // Use stable sort order - items keep their positions based on initial sort
+        const orderMap = new Map(topSortOrder.map((id, index) => [id, index]));
+        return [...filtered].sort((a, b) => {
+          const aIndex = orderMap.get(a.id) ?? Number.MAX_SAFE_INTEGER;
+          const bIndex = orderMap.get(b.id) ?? Number.MAX_SAFE_INTEGER;
+          return aIndex - bIndex;
+        });
+      }
+      // Fallback: sort by likes if no stable order yet
       return [...filtered].sort((a, b) => b.likes - a.likes);
     }
     return filtered;
-  }, [filterGalleryItems, galleryItems, sortMode]);
+  }, [filterGalleryItems, galleryItems, sortMode, topSortOrder]);
+
+  // Compute top creators by aggregating likes across their images
+  const topCreators = useMemo(() => {
+    // Group items by creator userId
+    const creatorMap = new Map<string, {
+      userId: string;
+      name: string;
+      profileImage?: string;
+      avatarColor: string;
+      totalLikes: number;
+      imageCount: number;
+      bestImage: string; // Highest-liked image for thumbnail
+      bestImageLikes: number;
+    }>();
+
+    galleryItems.forEach(item => {
+      const userId = item.creator.userId;
+      if (!userId) return; // Skip items without userId
+
+      const existing = creatorMap.get(userId);
+      if (existing) {
+        existing.totalLikes += item.likes;
+        existing.imageCount += 1;
+        // Update best image if this one has more likes
+        if (item.likes > existing.bestImageLikes) {
+          existing.bestImage = item.imageUrl;
+          existing.bestImageLikes = item.likes;
+        }
+      } else {
+        creatorMap.set(userId, {
+          userId,
+          name: item.creator.name,
+          profileImage: item.creator.profileImage,
+          avatarColor: item.creator.avatarColor,
+          totalLikes: item.likes,
+          imageCount: 1,
+          bestImage: item.imageUrl,
+          bestImageLikes: item.likes,
+        });
+      }
+    });
+
+    // Convert to array and sort by total likes
+    return Array.from(creatorMap.values())
+      .sort((a, b) => b.totalLikes - a.totalLikes)
+      .slice(0, 8); // Get top 8 creators
+  }, [galleryItems]);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -1627,29 +1724,126 @@ const Explore: React.FC = () => {
             </header>
 
             <div className="flex flex-col gap-4">
-              {/* Filters Section */}
-              <div className={`w-full mb-0 p-3 ${glass.promptDark} rounded-[20px]`}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Settings className="w-4 h-4 text-theme-text" />
-                    <h3 className="text-sm font-raleway text-theme-white">Filters</h3>
+              {/* Top Creators Section - Moved Here */}
+              {topCreators.length > 0 && (
+                <div className="w-full">
+                  <div className={`${glass.promptDark} rounded-[20px] p-4`}>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-theme-text/20 to-theme-text/5 flex items-center justify-center border border-theme-dark">
+                        <Heart className="w-5 h-5 text-theme-text" />
+                      </div>
+                      <div>
+                        <h2 className="text-lg font-raleway font-normal text-theme-text">Top Creators</h2>
+                      </div>
+                    </div>
+
+                    <div className={`grid sm:gap-4 gap-2 ${topCreators.slice(0, 5).length === 1 ? 'grid-cols-1 sm:grid-cols-1' :
+                      topCreators.slice(0, 5).length === 2 ? 'grid-cols-1 sm:grid-cols-2' :
+                        topCreators.slice(0, 5).length === 3 ? 'grid-cols-1 sm:grid-cols-3' :
+                          topCreators.slice(0, 5).length === 4 ? 'grid-cols-2 sm:grid-cols-4' :
+                            'grid-cols-2 sm:grid-cols-5'
+                      }`}>
+                      {topCreators.slice(0, 5).map((creator, index) => (
+                        <button
+                          key={creator.userId}
+                          type="button"
+                          onClick={() => openCreatorProfile(creator.userId, creator.name, creator.profileImage)}
+                          className={`group relative overflow-hidden rounded-2xl transition-all duration-100 parallax-large cursor-pointer w-full ${glass.promptDark}`}
+                        >
+                          {/* Background thumbnail with overlay */}
+                          <div className="absolute inset-0 rounded-2xl overflow-hidden">
+                            <img
+                              src={creator.bestImage}
+                              alt=""
+                              className="w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity duration-100 scale-110"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-theme-black/90 via-theme-black/60 to-transparent" />
+                          </div>
+
+                          {/* Content */}
+                          <div className="relative p-3 flex flex-col items-center text-center">
+                            {/* Rank badge with glass styling */}
+                            <div className={`absolute top-2 left-2 w-6 h-6 rounded-full ${glass.promptDark} flex items-center justify-center`}>
+                              <span className="text-xs text-theme-text">{index + 1}</span>
+                            </div>
+
+                            {/* Avatar - larger */}
+                            <div className="relative mb-4 mt-2">
+                              {creator.profileImage ? (
+                                <img
+                                  src={creator.profileImage}
+                                  alt={creator.name}
+                                  className="w-14 h-14 rounded-full object-cover border border-theme-white/30 group-hover:border-theme-text/50 transition-all duration-100 shadow-xl group-hover:shadow-theme-text/20"
+                                />
+                              ) : (
+                                <div className={`w-14 h-14 rounded-full flex items-center justify-center border border-theme-white/30 group-hover:border-theme-text/50 transition-all duration-100 shadow-xl group-hover:shadow-theme-text/20 bg-gradient-to-br ${creator.avatarColor}`}>
+                                  <span className="text-lg font-raleway font-semibold text-theme-white drop-shadow-lg">
+                                    {creator.name?.[0]?.toUpperCase() || '?'}
+                                  </span>
+                                </div>
+                              )}
+                              {/* Glow effect on hover */}
+                              <div className="absolute inset-0 rounded-full bg-theme-text/0 group-hover:bg-theme-text/20 transition-all duration-100 blur-2xl -z-10 scale-125" />
+                            </div>
+
+                            {/* Name */}
+                            <h4 className="font-raleway text-sm text-theme-text mb-2 truncate max-w-full transition-colors duration-100">
+                              {creator.name}
+                            </h4>
+
+                            {/* Stats with glass pills */}
+                            <div className="flex items-center gap-1.5">
+                              <span className={`${glass.promptDark} px-2 py-1 rounded-full flex items-center gap-1 text-xs`}>
+                                <span className="font-medium text-theme-text">{creator.imageCount}</span>
+                                <span className="text-theme-white">{creator.imageCount === 1 ? 'image' : 'images'}</span>
+                              </span>
+                              <span className={`${glass.promptDark} px-2 py-1 rounded-full flex items-center gap-1 text-xs`}>
+                                <Heart className="w-3 h-3 fill-red-500 text-red-500" />
+                                <span className="font-semibold text-theme-white">{creator.totalLikes >= 1000 ? `${(creator.totalLikes / 1000).toFixed(1)}k` : creator.totalLikes}</span>
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Border Overlay - ensures border color is not affected by inner opacity changes */}
+                          <div className="absolute inset-0 rounded-2xl border border-transparent group-hover:border-theme-mid pointer-events-none z-10 transition-colors duration-100" />
+                        </button>
+                      ))}
+                    </div>
                   </div>
+                </div>
+              )}
+
+              {/* Filters Section */}
+              <div className={`w-full mb-0 p-3 ${glass.promptDark} rounded-[20px] transition-all duration-300`}>
+                <div className="flex items-center justify-between">
                   <button
-                    onClick={() =>
+                    onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+                    className="flex items-center gap-2 group w-full"
+                  >
+                    <Settings className="w-4 h-4 text-theme-text" />
+                    <h3 className="text-sm font-raleway text-theme-white group-hover:text-theme-text transition-colors duration-200">Filters</h3>
+                    <ChevronDown className={`w-4 h-4 text-theme-white/60 transition-transform duration-300 ${isFiltersOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setGalleryFilters({
                         models: [],
                         types: [],
                         tags: [],
-                      })
-                    }
-                    className="px-2.5 py-1 text-xs text-theme-white hover:text-theme-text transition-colors duration-200 font-raleway"
+                      });
+                    }}
+                    className={`px-2.5 py-1 text-xs text-theme-white hover:text-theme-text transition-colors duration-200 font-raleway ${galleryFilters.models.length > 0 || galleryFilters.types.length > 0 || galleryFilters.tags.length > 0
+                      ? 'opacity-100 pointer-events-auto'
+                      : 'opacity-0 pointer-events-none'
+                      }`}
                   >
                     Clear
                   </button>
                 </div>
 
                 {/* Main filter grid: Modality and Model */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 overflow-hidden transition-all duration-300 ${isFiltersOpen ? 'mt-4 max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
                   {/* Modality Filter */}
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs text-theme-white/70 font-raleway">Modality</label>
@@ -1740,13 +1934,14 @@ const Explore: React.FC = () => {
                 </div>
               </div>
 
+
               <div className="flex flex-wrap items-center gap-3">
                 <span className="text-xs font-medium uppercase tracking-[0.28em] text-theme-white/60">Sort</span>
                 <div className="inline-flex rounded-full border border-theme-dark/70 bg-theme-black/40 p-1">
                   <button
                     type="button"
                     aria-pressed={sortMode === 'recent'}
-                    onClick={() => setSortMode('recent')}
+                    onClick={() => handleSortModeChange('recent')}
                     className={`px-4 py-1.5 text-xs font-medium font-raleway rounded-full transition-colors duration-200 ${sortMode === 'recent'
                       ? 'bg-theme-white text-theme-black shadow-lg shadow-theme-white/20'
                       : 'text-theme-white/70 hover:text-theme-text'
@@ -1757,7 +1952,7 @@ const Explore: React.FC = () => {
                   <button
                     type="button"
                     aria-pressed={sortMode === 'top'}
-                    onClick={() => setSortMode('top')}
+                    onClick={() => handleSortModeChange('top')}
                     className={`px-4 py-1.5 text-xs font-medium font-raleway rounded-full transition-colors duration-200 ${sortMode === 'top'
                       ? 'bg-theme-white text-theme-black shadow-lg shadow-theme-white/20'
                       : 'text-theme-white/70 hover:text-theme-text'
@@ -1780,7 +1975,7 @@ const Explore: React.FC = () => {
                 return (
                   <article
                     key={item.id}
-                    className="group relative overflow-hidden rounded-2xl border border-theme-dark hover:border-theme-mid transition-colors duration-200 bg-theme-black/40 shadow-[0_24px_70px_rgba(0,0,0,0.45)] parallax-large cursor-pointer"
+                    className="group relative overflow-hidden rounded-2xl border border-theme-dark hover:border-theme-mid transition-all duration-100 bg-theme-black/40 shadow-[0_24px_70px_rgba(0,0,0,0.45)] parallax-large cursor-pointer"
                     onClick={(event) => {
                       // Check if the click came from a copy button
                       const target = event.target as HTMLElement;
@@ -2037,6 +2232,8 @@ const Explore: React.FC = () => {
             )}
           </div>
         </section>
+
+
 
         {
           savePrompt.open && savePrompt.item && (
