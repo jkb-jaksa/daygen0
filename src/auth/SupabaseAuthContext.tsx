@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { getApiUrl } from '../utils/api';
-import { SupabaseAuthContext, type SupabaseUser } from './contexts/SupabaseAuthContext';
+import { SupabaseAuthContext, type SupabaseUser, type SupabaseAuthContextValue } from './contexts/SupabaseAuthContext';
 import { debugError, debugWarn } from '../utils/debug';
 
 // Context moved to ./contexts/SupabaseAuthContext to satisfy react-refresh/only-export-components
@@ -36,7 +36,6 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
     return {
       id: authUser.id,
       email: authUser.email || '',
-      displayName: authUser.user_metadata?.display_name || null,
       credits: 20,
       profileImage: authUser.user_metadata?.avatar_url || null,
       role: 'USER',
@@ -45,16 +44,13 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
     };
   }, [session]);
 
-  const signUp = useCallback(async (email: string, password: string, displayName?: string) => {
+  const signUp = useCallback(async (email: string, password: string) => {
     try {
       // Use Supabase password-based signup with email confirmation
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: {
-            display_name: displayName,
-          },
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
@@ -74,7 +70,6 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
             },
             body: JSON.stringify({
               email: data.user.email,
-              displayName: displayName,
               authUserId: data.user.id,
             }),
           });

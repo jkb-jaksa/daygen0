@@ -4,7 +4,6 @@ import type { Session } from '@supabase/supabase-js';
 export interface SupabaseUser {
   id: string;
   email: string;
-  displayName: string | null;
   credits: number;
   profileImage: string | null;
   role: 'USER' | 'ADMIN';
@@ -17,7 +16,7 @@ export interface SupabaseAuthContextValue {
   session: Session | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  signUp: (email: string, password: string, displayName?: string) => Promise<{ needsEmailConfirmation: boolean }>;
+  signUp: (email: string, password: string) => Promise<{ needsEmailConfirmation: boolean }>;
   signInWithPassword: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;

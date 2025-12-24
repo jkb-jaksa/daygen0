@@ -97,7 +97,7 @@ export function ProfileCard({
                 />
               ) : (
                 <div className="size-12 rounded-full flex items-center justify-center text-theme-text text-lg font-medium font-raleway border border-theme-dark group-hover:opacity-80 transition-opacity bg-[conic-gradient(from_0deg,_rgba(245,158,11,0.6),_rgba(239,68,68,0.6),_rgba(59,130,246,0.6),_rgba(34,211,238,0.6),_rgba(245,158,11,0.6))]">
-                  {(user.username || user.displayName || user.email)[0]?.toUpperCase()}
+                  {(user.username || user.email)[0]?.toUpperCase()}
                 </div>
               )}
               <div className="pointer-events-none absolute inset-0 bg-theme-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">

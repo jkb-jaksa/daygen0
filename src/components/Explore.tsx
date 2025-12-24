@@ -526,7 +526,6 @@ const Explore: React.FC = () => {
           likeCount?: number;
           isLiked?: boolean;
           owner?: {
-            displayName?: string;
             username?: string;
             authUserId: string;
             profileImage?: string;
@@ -539,8 +538,8 @@ const Explore: React.FC = () => {
 
       // Transform API response to GalleryItem format
       const transformedItems: GalleryItem[] = data.items.map((item, index) => {
-        // Use username (Profile URL) as the creator name, with displayName as fallback
-        const creatorName = item.owner?.username || item.owner?.displayName || 'Community Creator';
+        // Use username (Profile URL) as the creator name
+        const creatorName = item.owner?.username || 'Community Creator';
         // Use username for handle if available, otherwise use truncated authUserId
         const creatorHandle = item.owner?.username
           ? `@${item.owner.username}`
@@ -1257,8 +1256,8 @@ const Explore: React.FC = () => {
           const galleryItem: GalleryItem = {
             id: item.id,
             creator: {
-              // Use username (Profile URL) as the creator name, with displayName as fallback
-              name: item.owner?.username || item.owner?.displayName || 'Community Creator',
+              // Use username (Profile URL) as the creator name
+              name: item.owner?.username || 'Community Creator',
               // Use username for handle if available, otherwise use truncated authUserId
               handle: item.owner?.username
                 ? `@${item.owner.username}`

@@ -23,11 +23,6 @@ const createFallbackUser = (authUser: SupabaseUser): AppUser => ({
   authUserId: authUser.id,
   email: authUser.email ?? '',
   username: null,
-  displayName:
-    (authUser.user_metadata?.display_name as string | undefined)?.trim() ||
-    (authUser.user_metadata?.full_name as string | undefined)?.trim() ||
-    authUser.email?.split('@')[0] ||
-    null,
   credits: 20,
   profileImage:
     (authUser.user_metadata?.avatar_url as string | undefined) ?? null,
@@ -45,10 +40,6 @@ const normalizeBackendUser = (payload: Record<string, unknown>): AppUser => ({
   email: (payload.email as string | undefined) ?? '',
   username:
     (payload.username as string | undefined) ??
-    null,
-  displayName:
-    (payload.displayName as string | undefined) ??
-    (payload.display_name as string | undefined) ??
     null,
   credits:
     typeof payload.credits === 'number'
@@ -270,14 +261,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = useCallback<
     AuthContextValue['signUp']
-  >(async (email, password, displayName) => {
+  >(async (email, password) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: {
-          display_name: displayName,
-        },
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });

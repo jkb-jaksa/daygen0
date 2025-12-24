@@ -1352,7 +1352,10 @@ const FullImageModal = memo(() => {
             ) : (
               <>
                 {isVideo ? (
-                  <div className="max-w-[90vw] sm:max-w-[calc(100vw-20rem)] lg:max-w-[calc(100vw-40rem)] max-h-[85vh] w-full h-full flex items-center justify-center">
+                  <div
+                    key={currentItemId}
+                    className="max-w-[90vw] sm:max-w-[calc(100vw-20rem)] lg:max-w-[calc(100vw-40rem)] max-h-[85vh] w-full h-full flex items-center justify-center gallery-card-enter"
+                  >
                     <VideoPlayer
                       src={fullSizeImage.url}
                       className="rounded-lg"
@@ -1369,11 +1372,12 @@ const FullImageModal = memo(() => {
                   </div>
                 ) : (
                   <img
+                    key={currentItemId}
                     ref={imageRef}
                     src={fullSizeImage.url}
                     alt={fullSizeImage.prompt || 'Generated image'}
                     loading="lazy"
-                    className="max-w-[90vw] sm:max-w-[calc(100vw-20rem)] lg:max-w-[calc(100vw-40rem)] max-h-[85vh] object-contain rounded-lg"
+                    className="max-w-[90vw] sm:max-w-[calc(100vw-20rem)] lg:max-w-[calc(100vw-40rem)] max-h-[85vh] object-contain rounded-lg gallery-card-enter"
                     style={{ objectPosition: 'top' }}
                     onLoad={handleImageLoad}
                     onError={handleImageError}

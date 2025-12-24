@@ -5,7 +5,6 @@ type User = {
   authUserId: string;
   email: string;
   username: string | null;
-  displayName: string | null;
   credits: number;
   profileImage: string | null;
   bio?: string | null;
@@ -16,7 +15,6 @@ type User = {
 };
 
 type UpdateProfilePayload = {
-  displayName?: string | null;
   username?: string | null;
   profileImage?: string | null;
   bio?: string | null;
@@ -30,7 +28,7 @@ type AuthContextValue = {
   isAuthenticated: boolean;
   storagePrefix: string;
   signIn: (email: string, password: string) => Promise<User>;
-  signUp: (email: string, password: string, displayName?: string) => Promise<User>;
+  signUp: (email: string, password: string) => Promise<User>;
   signInWithGoogle: () => Promise<void>;
   logOut: () => void;
   refreshUser: () => Promise<User>;

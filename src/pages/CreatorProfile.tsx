@@ -129,7 +129,6 @@ interface ProfileGeneration {
 
 interface ProfileData {
     user?: {
-        displayName?: string;
         authUserId: string;
         username?: string;
         profileImage?: string;
@@ -430,8 +429,8 @@ export default function CreatorProfile() {
         setSortMode(mode);
     }, [profileData?.items, topSortOrder.length]);
 
-    // Use username (Profile URL) as primary display name, with displayName as fallback
-    const displayName = profileData?.user?.username || profileData?.user?.displayName || 'Creator';
+    // Use username (Profile URL) as primary display name
+    const displayName = profileData?.user?.username || 'Creator';
     const profileImage = profileData?.user?.profileImage;
     const bio = profileData?.user?.bio;
     const userCountry = profileData?.user?.country;
