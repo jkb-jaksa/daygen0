@@ -74,9 +74,32 @@ interface ResultsGridProps {
   filterIds?: string[];
 }
 
-const MAX_GALLERY_TILES = 6;
+const MAX_GALLERY_TILES = 8;
 
 type IconComponent = React.ComponentType<React.SVGProps<SVGSVGElement>>;
+
+// Render a single placeholder tile
+const renderPlaceholderTile = (
+  Icon: IconComponent,
+  idx: number,
+  {
+    onTileClick,
+    message = 'Create something amazing.',
+  }: { onTileClick?: (() => void) | null; message?: string } = {},
+) => (
+  <div
+    key={`ph-${idx}`}
+    className="relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-dark grid place-items-center aspect-square cursor-pointer hover:bg-theme-mid hover:border-theme-mid transition-colors duration-200"
+    onClick={onTileClick ? () => onTileClick() : undefined}
+    role={onTileClick ? 'button' : undefined}
+    tabIndex={onTileClick ? 0 : -1}
+  >
+    <div className="flex flex-col items-center gap-2 text-center px-2">
+      <Icon className="w-8 h-8 text-theme-light" />
+      <div className="text-theme-light font-raleway text-base font-normal">{message}</div>
+    </div>
+  </div>
+);
 
 const renderPlaceholderGrid = (
   Icon: IconComponent,
@@ -84,23 +107,13 @@ const renderPlaceholderGrid = (
     className = '',
     onTileClick,
     message = 'Create something amazing.',
-  }: { className?: string; onTileClick?: (() => void) | null; message?: string } = {},
+    count = MAX_GALLERY_TILES,
+  }: { className?: string; onTileClick?: (() => void) | null; message?: string; count?: number } = {},
 ) => (
   <div className={`grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 w-full p-1 ${className}`}>
-    {Array.from({ length: MAX_GALLERY_TILES }).map((_, idx) => (
-      <div
-        key={`ph-${idx}`}
-        className="relative rounded-[24px] overflow-hidden border border-theme-dark bg-theme-dark grid place-items-center aspect-square cursor-pointer hover:bg-theme-mid hover:border-theme-mid transition-colors duration-200"
-        onClick={onTileClick ? () => onTileClick() : undefined}
-        role={onTileClick ? 'button' : undefined}
-        tabIndex={onTileClick ? 0 : -1}
-      >
-        <div className="flex flex-col items-center gap-2 text-center px-2">
-          <Icon className="w-8 h-8 text-theme-light" />
-          <div className="text-theme-light font-raleway text-base font-normal">{message}</div>
-        </div>
-      </div>
-    ))}
+    {Array.from({ length: count }).map((_, idx) =>
+      renderPlaceholderTile(Icon, idx, { onTileClick, message })
+    )}
   </div>
 );
 
@@ -845,17 +858,9 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     );
   }
 
-  // Empty state check
-  if (filteredItems.length === 0 && activeJobPlaceholders.length === 0 && !hasMore) {
-    // Show placeholder grid ONLY for generation categories (image/video)
-    if (isGenerationCategory) {
-      const PlaceholderIcon = activeCategory === 'image' ? ImageIcon : VideoIcon;
-      return renderPlaceholderGrid(PlaceholderIcon, {
-        className,
-        onTileClick: onFocusPrompt ? () => onFocusPrompt() : null,
-      });
-    }
-
+  // Empty state check - only for non-generation categories (gallery/my-folders)
+  // Generation categories (image/video) show placeholders inline in the grid
+  if (filteredItems.length === 0 && activeJobPlaceholders.length === 0 && !hasMore && !isGenerationCategory) {
     // Show simple empty message for gallery/my-folders categories (no tiles)
     return (
       <div className={`flex flex-col items-center justify-center py-16 ${className}`}>
@@ -870,6 +875,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
         </div>
       </div>
     );
+
   }
 
   // Determine grid columns based on category
@@ -1803,6 +1809,17 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
               </div >
             );
           })}
+          {/* Render remaining placeholder tiles to fill 8 slots for image/video categories */}
+          {isGenerationCategory && (() => {
+            const remainingSlots = Math.max(0, MAX_GALLERY_TILES - filteredItems.length - activeJobPlaceholders.length);
+            if (remainingSlots === 0) return null;
+            const PlaceholderIcon = activeCategory === 'image' ? ImageIcon : VideoIcon;
+            return Array.from({ length: remainingSlots }).map((_, idx) =>
+              renderPlaceholderTile(PlaceholderIcon, idx, {
+                onTileClick: onFocusPrompt ? () => onFocusPrompt() : null,
+              })
+            );
+          })()}
         </div >
 
         {hasMore && (

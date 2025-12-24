@@ -106,6 +106,7 @@ export default function AuthCallback() {
         } else if (code) {
           // Likely an OAuth PKCE flow (Google, etc.) → exchange the code
           // Clean URL early to avoid duplicate exchanges from StrictMode re-runs
+          debugWarn('[AuthCallback] PKCE flow detected, code present:', code.substring(0, 10) + '...');
           try {
             const cleanUrl = `${window.location.origin}${window.location.pathname}`;
             window.history.replaceState({}, '', cleanUrl);
@@ -113,12 +114,24 @@ export default function AuthCallback() {
             // Intentionally ignore replaceState errors (e.g., in sandboxed iframes)
           }
 
+          debugWarn('[AuthCallback] Calling exchangeCodeForSession...');
           const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          debugWarn('[AuthCallback] exchangeCodeForSession result:', {
+            hasSession: !!data?.session,
+            hasUser: !!data?.session?.user,
+            userEmail: data?.session?.user?.email,
+            error: exchangeError?.message || null,
+          });
           if (exchangeError) {
             // In dev/StrictMode this can run twice; if the session already exists, continue silently
             debugWarn('Exchange code warning:', exchangeError);
             // Fallback: see if session is already established automatically
             const { data: retry, error: sessionError } = await supabase.auth.getSession();
+            debugWarn('[AuthCallback] Fallback getSession result:', {
+              hasSession: !!retry?.session,
+              hasUser: !!retry?.session?.user,
+              error: sessionError?.message || null,
+            });
             if (retry.session && !sessionError) {
               activeSession = retry.session;
             } else {
@@ -130,6 +143,7 @@ export default function AuthCallback() {
             }
           } else {
             activeSession = data.session;
+            debugWarn('[AuthCallback] Session established successfully for:', data.session?.user?.email);
           }
         } else {
           // No code in query → rely on existing session

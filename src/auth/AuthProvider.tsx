@@ -332,6 +332,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'select_account',
+        },
       },
     });
 
@@ -341,25 +345,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logOutInternal = useCallback(async () => {
+    // Immediately clear user state for instant UI feedback
+    setUser(null);
+    setSession(null);
+
+    // Reset token caches synchronously
+    try {
+      resetTokenCache();
+      try { authMetrics.increment('token_cache_reset'); } catch (e) { void e; }
+    } catch (e) { void e; }
+
+    // Fire-and-forget: notify backend (don't wait for response)
     const accessToken = session?.access_token;
     if (accessToken) {
-      try {
-        await fetch(getApiUrl('/api/auth/signout'), {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-      } catch (error) {
+      fetch(getApiUrl('/api/auth/signout'), {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }).catch((error) => {
         debugWarn('Failed to sign out backend session:', error);
-      }
+      });
     }
 
+    // Sign out from Supabase (this is fast and important)
     const { error } = await supabase.auth.signOut();
     if (error) {
       debugError('Error signing out:', error);
       // Manually clear Supabase session from localStorage if signOut failed
-      // This handles cases like dev login where the session lacks proper OAuth metadata
       try {
         localStorage.removeItem('daygen-auth');
       } catch (e) {
@@ -367,24 +380,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // Reset token caches and clear per-user persisted values
-    try {
-      resetTokenCache();
-      try { authMetrics.increment('token_cache_reset'); } catch (e) { void e; }
-    } catch (e) { void e; }
-    try {
-      if (storagePrefix) {
-        await removePersistedValue(storagePrefix, 'gallery');
-        await removePersistedValue(storagePrefix, 'favorites');
-        await removePersistedValue(storagePrefix, 'folders');
-        await removePersistedValue(storagePrefix, 'editGallery');
-        await removePersistedValue(storagePrefix, 'inspirations');
-        await removePersistedValue(storagePrefix, 'avatars');
-        await removePersistedValue(storagePrefix, 'avatar-favorites');
-      }
-    } catch (e) { void e; }
-    setUser(null);
-    setSession(null);
+    // Fire-and-forget: clear per-user persisted values in background
+    if (storagePrefix) {
+      Promise.all([
+        removePersistedValue(storagePrefix, 'gallery'),
+        removePersistedValue(storagePrefix, 'favorites'),
+        removePersistedValue(storagePrefix, 'folders'),
+        removePersistedValue(storagePrefix, 'editGallery'),
+        removePersistedValue(storagePrefix, 'inspirations'),
+        removePersistedValue(storagePrefix, 'avatars'),
+        removePersistedValue(storagePrefix, 'avatar-favorites'),
+      ]).catch(() => { /* ignore cleanup errors */ });
+    }
   }, [session?.access_token, storagePrefix]);
 
   // Add ref to track refresh state and prevent loops

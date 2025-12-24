@@ -14,7 +14,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
 
   const fetchUserProfile = useCallback(async (authUser: User, currentSession?: Session | null): Promise<SupabaseUser> => {
     const activeSession = currentSession || session;
-    
+
     try {
       // Try backend first, fallback to basic user info
       const response = await fetch(getApiUrl('/api/auth/me'), {
@@ -129,7 +129,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
           redirectTo: `${window.location.origin}/auth/callback`,
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent',
+            prompt: 'select_account',
           },
         },
       });

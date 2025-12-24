@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { getApiUrl, parseJsonSafe } from '../utils/api';
+import { getApiUrl, parseJsonSafe, normalizeAssetUrl } from '../utils/api';
 import { debugLog, debugError } from '../utils/debug';
 import { useAuth } from '../auth/useAuth';
 import { getPersistedValue, setPersistedValue } from '../lib/clientStorage';
@@ -86,7 +86,8 @@ export const useGalleryImages = () => {
   // Convert R2File response to GalleryImageLike format
   const convertR2FileToGalleryItem = useCallback(
     (r2File: R2FileResponse): GalleryImageLike | GalleryVideoLike => {
-      const normalizedUrl = r2File.fileUrl?.trim() ?? r2File.fileUrl;
+      // Normalize URL: convert legacy R2 URLs to assets.daygen.ai
+      const normalizedUrl = normalizeAssetUrl(r2File.fileUrl?.trim()) ?? r2File.fileUrl;
       const base: GalleryImageLike = {
         url: normalizedUrl,
         prompt: r2File.prompt || '',
@@ -145,7 +146,7 @@ export const useGalleryImages = () => {
     }
   }, [storagePrefix]);
 
-  // Helper to check if a URL is an R2 URL
+  // Helper to check if a URL is an R2 URL (including custom domain assets.daygen.ai)
   const isR2Url = useCallback((url: string | undefined): boolean => {
     if (!url) return false;
     try {
@@ -153,7 +154,8 @@ export const useGalleryImages = () => {
       return (
         urlObj.hostname.includes('r2.dev') ||
         urlObj.hostname.includes('cloudflarestorage.com') ||
-        urlObj.hostname.includes('pub-')
+        urlObj.hostname.includes('pub-') ||
+        urlObj.hostname === 'assets.daygen.ai'
       );
     } catch {
       return false;

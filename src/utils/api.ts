@@ -52,7 +52,7 @@ export function withTimeout(
   timeoutMs: number = 120000
 ): AbortSignal {
   const controller = new AbortController();
-  
+
   // If parent aborts, abort child
   if (parentSignal) {
     if (parentSignal.aborted) {
@@ -63,17 +63,17 @@ export function withTimeout(
       });
     }
   }
-  
+
   // Auto-abort after timeout
   const timeoutId = setTimeout(() => {
     controller.abort(new Error('Request timeout'));
   }, timeoutMs);
-  
+
   // Clean up timeout when signal aborts
   controller.signal.addEventListener('abort', () => {
     clearTimeout(timeoutId);
   });
-  
+
   return controller.signal;
 };
 
@@ -100,20 +100,20 @@ export function buildUrl(
   query?: Record<string, string | number | boolean | undefined | null>
 ): string {
   const baseUrl = getApiUrl(path);
-  
+
   if (!query) {
     return baseUrl;
   }
-  
+
   const params = new URLSearchParams();
-  
+
   // Add non-null/undefined values to params
   Object.entries(query).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
       params.append(key, String(value));
     }
   });
-  
+
   const queryString = params.toString();
   return queryString ? `${baseUrl}?${queryString}` : baseUrl;
 }
@@ -128,13 +128,13 @@ export async function parseJsonSafe(response: Response): Promise<unknown> {
   if (response.status === 204 || response.headers.get('Content-Length') === '0') {
     return null;
   }
-  
+
   // Check Content-Type
   const contentType = response.headers.get('Content-Type');
   if (!contentType || !contentType.includes('application/json')) {
     return null;
   }
-  
+
   // Try parsing, return null on failure
   try {
     return await response.json();
@@ -192,7 +192,7 @@ async function withRetry<T>(
       return await fn();
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
-      
+
       // Don't retry if we've hit max attempts
       if (attempt >= maxRetries) {
         throw lastError;
@@ -209,7 +209,7 @@ async function withRetry<T>(
         initialDelayMs * Math.pow(RETRY_BACKOFF_MULTIPLIER, attempt),
         maxDelayMs
       );
-      
+
       // Add ±25% jitter to prevent thundering herd
       const jitter = (Math.random() - 0.5) * 0.5 * baseDelay;
       const delay = Math.max(0, baseDelay + jitter);
@@ -221,10 +221,10 @@ async function withRetry<T>(
       }
 
       const finalDelay = retryAfterMs !== null ? retryAfterMs : delay;
-      
+
       // Wait before retrying
       await new Promise(resolve => setTimeout(resolve, finalDelay));
-      
+
       attempt++;
     }
   }
@@ -240,14 +240,14 @@ function isRetryableError(error: Error, retryableStatuses: number[]): boolean {
   if ((error as ErrorWithStatus).status && typeof (error as ErrorWithStatus).status === 'number') {
     return retryableStatuses.includes((error as ErrorWithStatus).status);
   }
-  
+
   // Check if error message contains a status code
   const statusMatch = error.message.match(/status[:\s]*(\d{3})/i);
   if (statusMatch) {
     const status = parseInt(statusMatch[1], 10);
     return retryableStatuses.includes(status);
   }
-  
+
   // Check for specific error patterns that indicate retryable conditions
   const message = error.message.toLowerCase();
   return (
@@ -268,7 +268,7 @@ function parseRetryAfterHeader(error: Error): number | null {
   if (retryAfterMatch) {
     return parseInt(retryAfterMatch[1], 10) * 1000; // Convert seconds to milliseconds
   }
-  
+
   return null;
 }
 
@@ -398,7 +398,7 @@ export async function apiFetch<T = unknown>(
           message: errorMessage,
           context,
         });
-        
+
         // Create error with status code for retry logic
         const error = new Error(message);
         (error as ErrorWithStatus).status = response.status;
@@ -420,20 +420,58 @@ export async function apiFetch<T = unknown>(
       // Check for AbortError (DOMException)
       if (error.name === 'AbortError') {
         const isTimeout = error.message.includes('timeout') || error.message.includes('Request timeout');
-        const message = isTimeout 
+        const message = isTimeout
           ? resolveApiErrorMessage({ context, message: 'Request timeout' })
           : resolveApiErrorMessage({ context, message: 'Request cancelled' });
         throw new Error(message);
       }
-      
+
       // Check for timeout in error message
       if (error.message.toLowerCase().includes('timeout')) {
         const message = resolveApiErrorMessage({ context, message: 'Request timeout' });
         throw new Error(message);
       }
     }
-    
+
     // Re-throw other errors
     throw error;
   });
+}
+
+/**
+ * The legacy R2 public URL that some old images may still use.
+ * New images use assets.daygen.ai (custom domain).
+ */
+const LEGACY_R2_DOMAIN = 'pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev';
+const ASSETS_DOMAIN = 'assets.daygen.ai';
+
+/**
+ * Normalize asset URLs from legacy R2 domain to the new assets.daygen.ai domain.
+ * This ensures consistent image loading, as the old R2 URLs may have CORS issues
+ * or not work properly in some contexts.
+ * 
+ * @param url - The URL to normalize (can be undefined/null)
+ * @returns Normalized URL with assets.daygen.ai domain, or original if not applicable
+ * 
+ * @example
+ * normalizeAssetUrl('https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/generated-images/abc.jpg')
+ * // => 'https://assets.daygen.ai/generated-images/abc.jpg'
+ * 
+ * @example
+ * normalizeAssetUrl('https://assets.daygen.ai/generated-images/abc.jpg')
+ * // => 'https://assets.daygen.ai/generated-images/abc.jpg' (unchanged)
+ * 
+ * @example
+ * normalizeAssetUrl('data:image/png;base64,...')
+ * // => 'data:image/png;base64,...' (unchanged, not an R2 URL)
+ */
+export function normalizeAssetUrl(url: string | undefined | null): string | undefined {
+  if (!url) return undefined;
+
+  // Check if this is a legacy R2 URL that needs normalization
+  if (url.includes(LEGACY_R2_DOMAIN)) {
+    return url.replace(LEGACY_R2_DOMAIN, ASSETS_DOMAIN);
+  }
+
+  return url;
 }

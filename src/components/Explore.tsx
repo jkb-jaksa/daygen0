@@ -40,6 +40,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
+import { normalizeAssetUrl } from "../utils/api";
 import { debugError, debugWarn } from "../utils/debug";
 import { useDropdownScrollLock } from "../hooks/useDropdownScrollLock";
 import { useAuth } from "../auth/useAuth";
@@ -563,7 +564,7 @@ const Explore: React.FC = () => {
           isLiked: item.isLiked, // Map backend relationship status
           prompt: item.prompt || 'AI Generated Image',
           tags: item.model ? [item.model.split('-')[0]] : ['ai'],
-          imageUrl: item.fileUrl,
+          imageUrl: normalizeAssetUrl(item.fileUrl) ?? item.fileUrl,
           orientation: getOrientationFromAspectRatio(item.aspectRatio),
           aspectRatio: item.aspectRatio,
           mediaType: inferMediaType(item.model, item.mimeType), // Use helper function

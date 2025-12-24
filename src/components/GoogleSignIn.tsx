@@ -18,6 +18,10 @@ export default function GoogleSignIn({ onError, disabled = false, className = ""
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'select_account',
+          },
         },
       });
       console.log('[GoogleSignIn] Redirecting to:', `${window.location.origin}/auth/callback`);
