@@ -101,23 +101,6 @@ const renderPlaceholderTile = (
   </div>
 );
 
-const renderPlaceholderGrid = (
-  Icon: IconComponent,
-  {
-    className = '',
-    onTileClick,
-    message = 'Create something amazing.',
-    count = MAX_GALLERY_TILES,
-  }: { className?: string; onTileClick?: (() => void) | null; message?: string; count?: number } = {},
-) => (
-  <div className={`grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 w-full p-1 ${className}`}>
-    {Array.from({ length: count }).map((_, idx) =>
-      renderPlaceholderTile(Icon, idx, { onTileClick, message })
-    )}
-  </div>
-);
-
-
 
 interface GridVideoItemProps {
   item: GalleryVideoLike;
