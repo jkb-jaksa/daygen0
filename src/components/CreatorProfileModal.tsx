@@ -497,7 +497,7 @@ export function CreatorProfileModal({
                                     return (
                                         <div
                                             key={item.id}
-                                            className="group relative overflow-hidden rounded-xl border border-theme-dark/50 hover:border-theme-mid transition-colors duration-200 aspect-square cursor-pointer parallax-large"
+                                            className="group relative overflow-hidden rounded-xl border border-theme-dark/50 hover:border-theme-mid transition-colors duration-200 aspect-square cursor-pointer parallax-small"
                                             onClick={() => setFullViewIndex(index)}
                                         >
                                             <img

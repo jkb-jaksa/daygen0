@@ -43,6 +43,8 @@ const PaymentSuccess = lazy(() => import("./components/payments/PaymentSuccess")
 const PaymentCancel = lazy(() => import("./pages/PaymentCancel"));
 const DebugPanel = lazy(() => import("./components/DebugPanel").then(({ DebugPanel }) => ({ default: DebugPanel })));
 const CreatorProfile = lazy(() => import("./pages/CreatorProfile"));
+const ResetCache = lazy(() => import("./pages/ResetCache"));
+
 
 function JobRedirect() {
   const { jobId } = useParams();
@@ -111,8 +113,7 @@ function UseCaseCard({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: 0.5, delay, ease: "easeOut" }}
-      whileHover={{ y: -5, transition: { duration: 0.2 } }}
-      className="relative parallax-large mouse-glow border border-theme-dark hover:border-theme-mid transition-colors duration-200 rounded-2xl overflow-hidden cursor-pointer"
+      className="relative parallax-large mouse-glow shadow-lg border border-theme-dark hover:border-theme-mid transition-all duration-100 rounded-2xl overflow-hidden cursor-pointer"
       onPointerMove={onPointerMove}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
@@ -123,7 +124,7 @@ function UseCaseCard({
         alt={imageAlt}
         loading="lazy"
         decoding="async"
-        className={`${imageHeight} w-full object-cover parallax-isolate transition-transform duration-500 hover:scale-105`}
+        className={`${imageHeight} w-full object-cover`}
       />
       <div className="absolute bottom-0 left-0 right-0 h-[80px] bg-gradient-to-t from-black/95 via-black/50 to-transparent pointer-events-none" />
       <div className="absolute bottom-2 left-2 right-2 flex items-end">
@@ -172,7 +173,7 @@ function ModalityContainer({
       whileInView={{ opacity: 1, scale: 1 }}
       viewport={{ once: true }}
       transition={{ duration: 0.4, delay, ease: "easeOut" }}
-      className={`${glass.surface} parallax-small relative overflow-hidden group flex flex-col rounded-3xl border border-theme-dark hover:border-theme-mid transition-colors duration-200 aspect-[4/3]`}
+      className={`${glass.surface} parallax-large relative overflow-hidden group flex flex-col rounded-3xl border border-theme-dark hover:border-theme-mid transition-all duration-100 aspect-[4/3]`}
       onPointerMove={onPointerMove}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
@@ -188,15 +189,14 @@ function ModalityContainer({
             <p className="text-sm text-theme-text font-raleway text-center line-clamp-5 leading-relaxed selection:bg-amber-500/30">"{content}"</p>
           </div>
         )}
-        {/* Images and Videos: Slight scale on hover for dynamic feel */}
         {category.id === 'image' && (
-          <img src={content} alt="Persona content" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+          <img src={content} alt="Persona content" className="w-full h-full object-cover" />
         )}
         {category.id === 'video' && (
           <div className="relative w-full h-full">
-            <img src={content} alt="Video thumbnail" className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105" />
+            <img src={content} alt="Video thumbnail" className="w-full h-full object-cover opacity-90" />
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/20 group-hover:scale-110 transition-transform duration-200 shadow-lg">
+              <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/20 shadow-lg">
                 <div className="w-0 h-0 border-t-[6px] border-t-transparent border-l-[10px] border-l-white border-b-[6px] border-b-transparent ml-1" />
               </div>
             </div>
@@ -404,7 +404,7 @@ function Home() {
                 <div className="flex items-start justify-between gap-4 w-full">
                   <div className="flex flex-col gap-2 lg:max-w-xl">
                     <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-left bg-gradient-to-r from-theme-text via-theme-text/80 to-theme-text/60 bg-clip-text text-transparent pb-1`}>
-                      Create your Digital Copy.
+                      Create your Digital Copy. (DEBUG MODE)
                     </h1>
                     <motion.p
                       initial={{ opacity: 0 }}
@@ -624,28 +624,28 @@ function Home() {
                       <div className="grid gap-x-2 gap-y-3 sm:gap-x-3 sm:gap-y-4 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                         <UseCaseCard
                           title="lifestyle images"
-                          imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/lifestyle images.png"
+                          imageUrl="https://assets.daygen.ai/website-assets/lifestyle images.png"
                           imageAlt="Lifestyle images example"
                           onClick={openStyleModal}
                           delay={0.1}
                         />
                         <UseCaseCard
                           title="formal images"
-                          imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/3b632ef0-3d13-4359-a2ba-5dec11fc3eab.png"
+                          imageUrl="https://assets.daygen.ai/website-assets/3b632ef0-3d13-4359-a2ba-5dec11fc3eab.png"
                           imageAlt="Business woman in a suit"
                           onClick={openStyleModal}
                           delay={0.15}
                         />
                         <UseCaseCard
                           title="artistic images"
-                          imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/artistic images.png"
+                          imageUrl="https://assets.daygen.ai/website-assets/artistic images.png"
                           imageAlt="Artistic images example"
                           onClick={openStyleModal}
                           delay={0.2}
                         />
                         <UseCaseCard
                           title="add object/product"
-                          imageUrl="https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/product visualizations.png"
+                          imageUrl="https://assets.daygen.ai/website-assets/product visualizations.png"
                           imageAlt="Add object/product example"
                           onClick={openStyleModal}
                           delay={0.25}
@@ -721,6 +721,7 @@ function RequireAuth({ children }: { children: ReactNode }) {
 
     setPendingAuthRedirect(nextPath);
 
+    console.log('[RequireAuth] Redirecting to:', AUTH_ENTRY_PATH);
     return <Navigate to={AUTH_ENTRY_PATH} replace />;
   }
 
@@ -835,7 +836,8 @@ function AppContent() {
               <Route path="/courses" element={<Navigate to="/learn/courses" replace />} />
               <Route path="/about-us" element={<AboutUs />} />
               <Route path="/explore" element={<Explore />} />
-              <Route path="/creator/:userId" element={<CreatorProfile />} />
+              <Route path="/creator/:username" element={<CreatorProfile />} />
+              <Route path="/reset-cache" element={<ResetCache />} />
               <Route path="/learn/tools/:toolSlug" element={<LearnToolPage />} />
               <Route path="/create/*" element={<CreateRoutes />} />
               <Route element={<CreateProtectedLayout />}>

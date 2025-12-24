@@ -14,7 +14,7 @@ const UseCaseCard = memo(({ useCase }: { useCase: UseCaseItem }) => {
   return (
     <Link
       to="/learn/tools"
-      className={`${glass.surface} group flex flex-col gap-2 rounded-2xl border-theme-dark px-4 py-4 transition-colors duration-100 hover:border-theme-mid parallax-large mouse-glow focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-theme-black`}
+      className={`${glass.surface} group flex flex-col gap-2 rounded-2xl border-theme-dark px-4 py-4 transition-all duration-100 hover:border-theme-mid parallax-large mouse-glow shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-theme-black`}
       aria-label={`Open ${useCase.title}`}
       onPointerMove={onPointerMove}
       onPointerEnter={onPointerEnter}

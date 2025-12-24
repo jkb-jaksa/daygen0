@@ -1058,7 +1058,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
             return (
               <div
                 key={item.jobId || index}
-                className={`group flex flex-col overflow-hidden rounded-[24px] border transition-all duration-100 shadow-lg parallax-large cursor-pointer relative ${isSelected
+                className={`group flex flex-col overflow-hidden rounded-[24px] border transition-all duration-100 shadow-lg parallax-small cursor-pointer relative ${isSelected
                   ? 'border-theme-white bg-theme-black hover:bg-theme-dark'
                   : 'border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid'
                   } ${isMenuActive ? 'parallax-active' : ''} ${shouldDim ? 'opacity-50' : ''} `}

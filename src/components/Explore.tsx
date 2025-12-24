@@ -1686,7 +1686,7 @@ const Explore: React.FC = () => {
                           key={creator.userId}
                           type="button"
                           onClick={() => openCreatorProfile(creator.userId, creator.name, creator.profileImage)}
-                          className="group relative overflow-hidden rounded-xl transition-all duration-100 parallax-large cursor-pointer w-full border border-theme-dark hover:border-theme-mid glass-liquid backdrop-blur-3xl bg-theme-black/80"
+                          className="group relative overflow-hidden rounded-xl transition-all duration-100 parallax-small cursor-pointer w-full border border-theme-dark hover:border-theme-mid glass-liquid backdrop-blur-3xl bg-theme-black/80"
                         >
                           {/* Background thumbnail with overlay */}
                           <div className="absolute inset-0 rounded-xl overflow-hidden">
@@ -1913,7 +1913,7 @@ const Explore: React.FC = () => {
                 return (
                   <article
                     key={item.id}
-                    className="group relative overflow-hidden rounded-2xl border border-theme-dark hover:border-theme-mid transition-all duration-100 bg-theme-black/40 shadow-[0_24px_70px_rgba(0,0,0,0.45)] parallax-large cursor-pointer"
+                    className="group relative overflow-hidden rounded-2xl border border-theme-dark hover:border-theme-mid transition-all duration-100 bg-theme-black/40 shadow-[0_24px_70px_rgba(0,0,0,0.45)] parallax-small cursor-pointer"
                     onClick={(event) => {
                       // Check if the click came from a copy button
                       const target = event.target as HTMLElement;

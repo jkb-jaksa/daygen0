@@ -199,31 +199,31 @@ const TOOL_LOGO_GROUPS: readonly ToolLogoGroup[] = [
     names: ['Tavus'],
   },
   {
-    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/claude logo.jpg',
+    logo: 'https://assets.daygen.ai/website-assets/claude logo.jpg',
     names: ['Claude'],
   },
   {
-    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/perplexity logo.jpg',
+    logo: 'https://assets.daygen.ai/website-assets/perplexity logo.jpg',
     names: ['Perplexity'],
   },
   {
-    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/notebook lm logo.jpg',
+    logo: 'https://assets.daygen.ai/website-assets/notebook lm logo.jpg',
     names: ['NotebookLM'],
   },
   {
-    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/kimi ai logo.jpg',
+    logo: 'https://assets.daygen.ai/website-assets/kimi ai logo.jpg',
     names: ['Kimi'],
   },
   {
-    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/deepseek logo.jpg',
+    logo: 'https://assets.daygen.ai/website-assets/deepseek logo.jpg',
     names: ['Deepseek'],
   },
   {
-    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/meta logo.jpg',
+    logo: 'https://assets.daygen.ai/website-assets/meta logo.jpg',
     names: ['Meta', 'Llama'],
   },
   {
-    logo: 'https://pub-82eeb6c8781b41e6ad18622c727f1cfc.r2.dev/website-assets/topaz logo.jpg',
+    logo: 'https://assets.daygen.ai/website-assets/topaz logo.jpg',
     names: ['Topaz'],
   },
 ];

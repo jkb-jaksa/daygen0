@@ -551,7 +551,7 @@ export default function CreatorProfile() {
                                 return (
                                     <div
                                         key={item.id}
-                                        className="group relative flex flex-col overflow-hidden rounded-[24px] bg-theme-black border border-theme-dark hover:bg-theme-dark hover:border-theme-mid transition-all duration-100 cursor-pointer parallax-large shadow-lg"
+                                        className="group relative flex flex-col overflow-hidden rounded-[24px] bg-theme-black border border-theme-dark hover:bg-theme-dark hover:border-theme-mid transition-all duration-100 cursor-pointer parallax-small shadow-lg"
                                         onClick={() => setFullViewIndex(index)}
                                     >
                                         <div

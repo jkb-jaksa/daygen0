@@ -76,7 +76,14 @@ const normalizeBackendUser = (payload: Record<string, unknown>): AppUser => ({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AppUser | null>(null);
+  const [user, _setUser] = useState<AppUser | null>(null);
+
+  const setUser = useCallback((newUser: AppUser | null) => {
+    debugLog(`[AuthDebug] setUser called with: ${newUser?.email || 'null'}`);
+    // debugTrace('[AuthDebug] setUser trace'); // Uncomment if full stack trace needed
+    _setUser(newUser);
+  }, []);
+
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const lastProfileUpdateRef = useRef<number>(0);
@@ -596,6 +603,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Only log non-INITIAL_SESSION events, or INITIAL_SESSION when there's actually a session
       if (event !== 'INITIAL_SESSION' || nextSession) {
         debugLog('Auth state changed:', event, nextSession?.user?.email);
+      }
+
+      // Add extra debug logging for session clearing - helps debugging login loops
+      if (event === 'SIGNED_OUT' || (!nextSession && event !== 'INITIAL_SESSION')) {
+        debugWarn('Session cleared due to event:', event);
       }
 
       if (nextSession?.user) {

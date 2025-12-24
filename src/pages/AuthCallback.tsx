@@ -30,7 +30,7 @@ export default function AuthCallback() {
       }
       hasHandledRef.current = true;
       sessionStorage.setItem(handledKey, Date.now().toString());
-      
+
       // Guard timeout to avoid infinite authenticating state
       let timeoutFired = false;
       const guard = setTimeout(() => {
@@ -44,7 +44,7 @@ export default function AuthCallback() {
           navigate('/login', { replace: true });
         }, 2000);
       }, 10000); // Reduced to 10 seconds
-      
+
       try {
         const code = searchParams.get('code');
         const errorParam = searchParams.get('error');
@@ -170,7 +170,8 @@ export default function AuthCallback() {
                 setTimeout(() => reject(new Error('Backend sync timeout')), 5000)
               ),
             ]);
-            
+
+
             if (!syncResponse.ok) {
               const errorText = await syncResponse.text().catch(() => '');
               // Check for the specific email_change NULL error
@@ -203,16 +204,18 @@ export default function AuthCallback() {
 
         // Wait a moment for Supabase to propagate the session to localStorage
         // This helps avoid race conditions with onAuthStateChange
-        await new Promise((r) => setTimeout(r, 200));
+        await new Promise((r) => setTimeout(r, 500)); // Increased from 200ms
 
         // Try to refresh user, but don't hang if it fails
         try {
+          debugWarn('[AuthCallback] Attempting refreshUser...');
           await Promise.race([
             refreshUser(),
             new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('Refresh user timeout')), 5000)
+              setTimeout(() => reject(new Error('Refresh user timeout')), 15000) // Increased from 5s
             ),
           ]);
+          debugWarn('[AuthCallback] refreshUser success');
         } catch (refreshError) {
           debugWarn('Failed to refresh user in callback (continuing anyway):', refreshError);
           // Verify session is still available before navigating
@@ -226,13 +229,24 @@ export default function AuthCallback() {
           }
         }
 
+        // Final verification: ensure we actually have a session in Supabase before redirecting
+        const finalSessionCheck = await supabase.auth.getSession();
+        if (!finalSessionCheck.data.session) {
+          debugError('[AuthCallback] Final session check failed - navigating to login');
+          clearTimeout(guard);
+          setIsLoading(false);
+          navigate('/login', { replace: true });
+          return;
+        }
+
         // Clear the handled flag on success to allow future callbacks
         sessionStorage.removeItem(handledKey);
-        
+
         // Navigate to app
         if (!timeoutFired) {
           clearTimeout(guard);
           setIsLoading(false);
+          debugWarn('[AuthCallback] Navigating to /app');
           navigate('/app', { replace: true });
         }
       } catch (err) {

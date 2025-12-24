@@ -1327,7 +1327,7 @@ export default function Products() {
     return (
       <div
         key={`${keyPrefix}-${product.id}`}
-        className={`group flex flex-col overflow-hidden rounded-[28px] border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-large${isInteractive ? " cursor-pointer" : ""
+        className={`group flex flex-col overflow-hidden rounded-[28px] border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small${isInteractive ? " cursor-pointer" : ""
           }`}
         role={isInteractive ? "button" : undefined}
         tabIndex={isInteractive ? 0 : undefined}
@@ -1657,7 +1657,7 @@ export default function Products() {
   const renderCreationImageCard = (image: GalleryImageLike) => (
     <div
       key={`creation-${image.url}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-large cursor-pointer"
+      className="group flex flex-col overflow-hidden rounded-2xl border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-small cursor-pointer"
       onClick={() => openFullSizeView(image)}
     >
       <div

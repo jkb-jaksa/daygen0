@@ -94,6 +94,7 @@
   0% {
     background-position: 200% 0;
   }
+
   100% {
     background-position: -200% 0;
   }
@@ -1594,7 +1595,6 @@ html[data-theme="day"] .card-overlay-gradient {
 
 
 .parallax-mid {
-  perspective: 1000px;
   transition: transform 0.1s;
 }
 
@@ -1606,26 +1606,28 @@ html[data-theme="day"] .card-overlay-gradient {
 }
 
 .parallax-large {
-  perspective: 1000px;
+  --rotate-x: 0deg;
+  --rotate-y: 0deg;
   transition: transform 0.1s;
+  will-change: transform;
 }
 
 /* More pronounced effect for large elements */
 .parallax-large:hover,
 .parallax-large.parallax-active {
-  transform: translateZ(150px) scale(1.006);
+  transform: perspective(1000px) rotateX(var(--rotate-x)) rotateY(var(--rotate-y)) scale3d(1.01, 1.01, 1.01);
   transition: transform 0.1s;
 }
 
-/* Remove translateZ jump on glass surfaces to avoid hover flicker */
+/* Override for glass surfaces */
 .glass-liquid.parallax-large:hover,
 .glass-liquid.parallax-large.parallax-active {
-  transform: scale(1.006);
+  transform: scale(1.01);
 }
 
 /* Force parallax effect for footer icons - bypasses reduced motion */
 .parallax-force:hover {
-  transform: translateZ(150px) scale(1.01) !important;
+  transform: scale(1.01) !important;
   transition: transform 0.1s !important;
 }
 
@@ -1637,12 +1639,12 @@ html[data-theme="day"] .card-overlay-gradient {
 
 /* Slightly subtler parallax for small/FAQ cards */
 .parallax-small {
-  perspective: 1000px;
+  transition: transform 0.1s;
 }
 
 .parallax-small:hover,
 .parallax-small.parallax-active {
-  transform: translateZ(25px) scale(1.001);
+  transform: scale(1.005);
   transition: transform 0.1s;
 }
 
@@ -1908,13 +1910,13 @@ html[data-theme="day"] .group.border-theme-dark:hover {
 }
 
 .parallax-small:hover .parallax-isolate .parallax-large:hover {
-  transform: translateZ(150px) scale(1.015) !important;
+  transform: scale(1.015) !important;
 }
 
 /* Preserve centering transform for parallax elements that need it */
 .parallax-large[class*="-translate-x-1/2"]:hover,
 .parallax-large[class*="-translate-x-1/2"].parallax-active {
-  transform: translateX(-50%) translateZ(150px) scale(1.01) !important;
+  transform: translateX(-50%) scale(1.01) !important;
 }
 
 /* Remove translateZ for glass elements to prevent flickering */
