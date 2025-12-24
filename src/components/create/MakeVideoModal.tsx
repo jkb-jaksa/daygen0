@@ -34,6 +34,8 @@ const PromptsDropdown = lazy(() =>
 
 import ImageBadgeRow from '../shared/ImageBadgeRow';
 import { ReferencePreviewModal } from '../shared/ReferencePreviewModal';
+import { useMentionSuggestions } from './hooks/useMentionSuggestions';
+import { MentionDropdown } from './MentionDropdown';
 
 export interface MakeVideoOptions {
     prompt: string;
@@ -84,6 +86,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
     item,
 }) => {
     const [prompt, setPrompt] = useState(initialPrompt);
+    const [cursorPosition, setCursorPosition] = useState(0);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const modalRef = useRef<HTMLDivElement>(null);
     const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLButtonElement>();
@@ -286,6 +289,36 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
         setCreationsModalProduct,
     } = productHandlers;
 
+    // @ mention suggestions hook (avatars and products)
+    const mentionSuggestions = useMentionSuggestions({
+        storedAvatars: avatarHandlers.storedAvatars,
+        storedProducts: productHandlers.storedProducts,
+        prompt,
+        cursorPosition,
+        onSelectAvatar: avatarHandlers.handleAvatarToggle,
+        onDeselectAvatar: avatarHandlers.removeSelectedAvatar,
+        selectedAvatars: avatarHandlers.selectedAvatars,
+        onSelectProduct: productHandlers.handleProductToggle,
+        onDeselectProduct: productHandlers.removeSelectedProduct,
+        selectedProducts: productHandlers.selectedProducts,
+    });
+
+    // Handle mention selection from dropdown
+    const handleMentionSelect = useCallback((item: { id: string; name: string; type: 'avatar' | 'product' }) => {
+        const result = mentionSuggestions.selectSuggestion(item as Parameters<typeof mentionSuggestions.selectSuggestion>[0]);
+        if (result) {
+            setPrompt(result.newPrompt);
+            setCursorPosition(result.newCursorPos);
+            // Focus textarea and set cursor position
+            setTimeout(() => {
+                if (inputRef.current) {
+                    inputRef.current.focus();
+                    inputRef.current.setSelectionRange(result.newCursorPos, result.newCursorPos);
+                }
+            }, 0);
+        }
+    }, [mentionSuggestions]);
+
     // Drag handlers for Avatar button
     const handleAvatarButtonDragOver = useCallback((event: React.DragEvent) => {
         event.preventDefault();
@@ -461,6 +494,38 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         e.stopPropagation();
+
+        // Handle mention navigation first
+        if (mentionSuggestions.isOpen && mentionSuggestions.suggestions.length > 0) {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                mentionSuggestions.setSelectedIndex(
+                    (mentionSuggestions.selectedIndex + 1) % mentionSuggestions.suggestions.length
+                );
+                return;
+            }
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                mentionSuggestions.setSelectedIndex(
+                    (mentionSuggestions.selectedIndex - 1 + mentionSuggestions.suggestions.length) % mentionSuggestions.suggestions.length
+                );
+                return;
+            }
+            if (e.key === 'Enter' || e.key === 'Tab') {
+                e.preventDefault();
+                const selected = mentionSuggestions.suggestions[mentionSuggestions.selectedIndex];
+                if (selected) {
+                    handleMentionSelect(selected);
+                }
+                return;
+            }
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                mentionSuggestions.closeSuggestions();
+                return;
+            }
+        }
+
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSubmit(e);
@@ -797,11 +862,26 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                         id="make-video-prompt"
                                         ref={inputRef}
                                         value={prompt}
-                                        onChange={(e) => setPrompt(e.target.value)}
+                                        onChange={(e) => {
+                                            setPrompt(e.target.value);
+                                            setCursorPosition(e.target.selectionStart);
+                                        }}
+                                        onSelect={(e) => setCursorPosition((e.target as HTMLTextAreaElement).selectionStart)}
                                         onKeyDown={handleKeyDown}
                                         className="w-full min-h-[100px] bg-transparent border-none focus:ring-0 text-theme-text placeholder:text-n-light font-raleway text-base px-3 py-2 resize-none focus:outline-none"
                                         placeholder="e.g. Make it a sunny day, Add a red hat..."
                                         disabled={isLoading}
+                                    />
+                                    {/* @ mention dropdown */}
+                                    <MentionDropdown
+                                        isOpen={mentionSuggestions.isOpen}
+                                        suggestions={mentionSuggestions.suggestions}
+                                        selectedIndex={mentionSuggestions.selectedIndex}
+                                        anchorRef={inputRef as React.RefObject<HTMLTextAreaElement>}
+                                        onSelect={handleMentionSelect}
+                                        onClose={mentionSuggestions.closeSuggestions}
+                                        setSelectedIndex={mentionSuggestions.setSelectedIndex}
+                                        mentionType={mentionSuggestions.currentMentionType as 'avatar' | 'product' | null}
                                     />
                                     {isLipSyncEnabled && (
                                         <div className="border-t border-n-dark px-3 py-2">

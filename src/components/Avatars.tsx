@@ -1512,9 +1512,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
         }
       >
         <div
-          className="relative aspect-square overflow-hidden card-media-frame"
-          data-has-image={Boolean(avatar.imageUrl)}
-          style={createCardImageStyle(avatar.imageUrl)}
+          className="relative aspect-square overflow-hidden"
         >
           <div className="image-gallery-actions absolute left-2 top-2 z-10 flex items-center gap-0.5">
             {isMasterSection ? (

@@ -754,20 +754,12 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         storedProducts: productHandlers.storedProducts,
         prompt,
         cursorPosition,
-        onSelectAvatar: avatarHandlers.handleAvatarSelect,
-        onDeselectAvatar: (id) => {
-            if (selectedAvatar?.id === id) {
-                avatarHandlers.handleAvatarSelect(null);
-            }
-        },
-        selectedAvatars: selectedAvatar ? [selectedAvatar] : [],
-        onSelectProduct: productHandlers.handleProductSelect,
-        onDeselectProduct: (id) => {
-            if (selectedProduct?.id === id) {
-                productHandlers.handleProductSelect(null);
-            }
-        },
-        selectedProducts: selectedProduct ? [selectedProduct] : [],
+        onSelectAvatar: avatarHandlers.handleAvatarToggle,
+        onDeselectAvatar: avatarHandlers.removeSelectedAvatar,
+        selectedAvatars: avatarHandlers.selectedAvatars,
+        onSelectProduct: productHandlers.handleProductToggle,
+        onDeselectProduct: productHandlers.removeSelectedProduct,
+        selectedProducts: productHandlers.selectedProducts,
     });
 
     // Handle mention selection from dropdown
