@@ -1528,7 +1528,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
             )}
 
             <div
-                className={`fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/75 px-4 backdrop-blur-sm ${isResizeMode ? 'pt-20 pb-4' : 'pt-24 pb-8'}`}
+                className={`fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/80 px-4 ${isResizeMode ? 'pt-20 pb-4' : 'pt-24 pb-8'}`}
                 onClick={(e) => {
                     e.stopPropagation();
                     onClose();
@@ -1536,7 +1536,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
             >
                 <div
                     ref={modalRef}
-                    className={`${glass.promptDark} w-full ${isResizeMode ? 'max-w-6xl flex flex-col p-4' : 'max-w-[96vw] flex flex-col md:flex-row p-8'} rounded-3xl border border-theme-dark shadow-2xl gap-8 transition-all duration-200`}
+                    className={`${glass.promptDark} w-full ${isResizeMode ? 'max-w-6xl flex flex-col p-4' : 'max-w-[96vw] flex flex-col md:flex-row p-8'} rounded-2xl gap-8 transition-colors duration-200`}
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Left Column - Image Preview (hidden in resize mode since canvas is in right column) */}

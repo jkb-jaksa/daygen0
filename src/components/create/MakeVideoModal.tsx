@@ -587,7 +587,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
             )}
 
             <div
-                className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/75 px-4 pt-20 pb-6 backdrop-blur-sm"
+                className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/80 px-4 pt-20 pb-6"
                 onClick={(e) => {
                     e.stopPropagation();
                     onClose();
@@ -595,7 +595,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
             >
                 <div
                     ref={modalRef}
-                    className={`${glass.promptDark} w-full max-w-[96vw] rounded-3xl border border-theme-dark p-6 shadow-2xl flex flex-col md:flex-row gap-6 transition-all duration-200`}
+                    className={`${glass.promptDark} w-full max-w-[96vw] rounded-2xl p-6 flex flex-col md:flex-row gap-6 transition-colors duration-200`}
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Left Column - Image Preview */}
