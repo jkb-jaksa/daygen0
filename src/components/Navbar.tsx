@@ -537,7 +537,7 @@ export default function Navbar() {
                   <button
                     ref={accountBtnRef}
                     onClick={() => setMenuOpen(v => !v)}
-                    className={`${buttons.ghostSlim} flex items-center gap-1.5 rounded-full py-2 text-sm min-w-0`}
+                    className={`${buttons.ghostSlim} group flex items-center gap-1.5 rounded-full py-2 text-sm min-w-0`}
                     aria-haspopup="menu"
                     aria-expanded={menuOpen}
                     aria-label="My account"
@@ -546,11 +546,11 @@ export default function Navbar() {
                       <img
                         src={`${currentUser.profileImage}?t=${Date.now()}`}
                         alt="Profile"
-                        className="size-5 rounded-full object-cover border border-theme-dark"
+                        className="size-5 rounded-full object-cover border border-theme-dark group-hover:border-theme-mid transition-colors duration-200"
                       />
                     ) : (
                       <span
-                        className="inline-grid place-items-center size-5 rounded-full text-theme-text text-xs font-medium font-raleway border border-theme-dark bg-[conic-gradient(from_0deg,_rgba(245,158,11,0.6),_rgba(239,68,68,0.6),_rgba(59,130,246,0.6),_rgba(34,211,238,0.6),_rgba(245,158,11,0.6))]"
+                        className="inline-grid place-items-center size-5 rounded-full text-theme-text text-xs font-medium font-raleway border border-theme-dark bg-[conic-gradient(from_0deg,_rgba(245,158,11,0.6),_rgba(239,68,68,0.6),_rgba(59,130,246,0.6),_rgba(34,211,238,0.6),_rgba(245,158,11,0.6))] group-hover:border-theme-mid transition-colors duration-200"
                       >
                         {(currentUser.username || currentUser.displayName || currentUser.email)[0]?.toUpperCase()}
                       </span>

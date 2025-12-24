@@ -4504,7 +4504,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       {/* Voice Upload Modal */}
       {isVoiceUploadModalOpen && (
         <div
-          className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/90 px-4 py-10 overflow-y-auto"
+          className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 backdrop-blur-md px-4 py-10 overflow-y-auto"
           onClick={(e) => {
             // Close modal when clicking the backdrop
             if (e.target === e.currentTarget) {
@@ -4516,10 +4516,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
           <div className="w-full max-w-2xl relative">
             <button
               onClick={() => setIsVoiceUploadModalOpen(false)}
-              className="absolute -top-12 right-0 p-2 text-theme-white/60 hover:text-theme-text transition-colors"
+              className="absolute -top-12 right-0 p-2 rounded-full bg-theme-black/40 text-theme-white/60 hover:text-theme-text hover:bg-theme-black/60 transition-colors backdrop-blur-sm"
               aria-label="Close modal"
             >
-              <X className="w-8 h-8" />
+              <X className="w-6 h-6" />
             </button>
             <VoiceUploader
               onSuccess={() => {

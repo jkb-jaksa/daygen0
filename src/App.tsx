@@ -791,7 +791,7 @@ function AppContent() {
 
   // Hide footer in app section
   useEffect(() => {
-    const shouldHideFooter = location.pathname.startsWith("/app") || location.pathname.startsWith("/edit");
+    const shouldHideFooter = location.pathname.startsWith("/app") || location.pathname.startsWith("/edit") || location.pathname.startsWith("/gallery");
     setFooterVisible(!shouldHideFooter);
 
     // Cleanup: restore footer visibility on unmount

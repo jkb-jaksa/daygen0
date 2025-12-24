@@ -874,7 +874,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   // Determine grid columns based on category
   const isGalleryView = activeCategory === 'gallery' || activeCategory === 'my-folders';
   const gridCols = isGalleryView
-    ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6'
+    ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'
     : 'grid-cols-2 sm:grid-cols-3 xl:grid-cols-4';
 
   type ActiveJob = typeof generationState.activeJobs[number];

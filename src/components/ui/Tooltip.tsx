@@ -21,20 +21,35 @@ export function Tooltip({
     const [coords, setCoords] = useState({ top: 0, left: 0 });
     const triggerRef = useRef<HTMLDivElement>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const showTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const showTooltip = () => {
-        timeoutRef.current = setTimeout(() => {
+        if (hideTimeoutRef.current) {
+            clearTimeout(hideTimeoutRef.current);
+            hideTimeoutRef.current = null;
+        }
+        showTimeoutRef.current = setTimeout(() => {
             setIsVisible(true);
         }, delay);
     };
 
     const hideTooltip = () => {
-        if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-            timeoutRef.current = null;
+        if (showTimeoutRef.current) {
+            clearTimeout(showTimeoutRef.current);
+            showTimeoutRef.current = null;
         }
-        setIsVisible(false);
+        hideTimeoutRef.current = setTimeout(() => {
+            setIsVisible(false);
+        }, 150); // Small grace period to move cursor into tooltip
+    };
+
+    const handleMouseEnter = () => {
+        showTooltip();
+    };
+
+    const handleMouseLeave = () => {
+        hideTooltip();
     };
 
     useEffect(() => {
@@ -97,9 +112,8 @@ export function Tooltip({
 
     useEffect(() => {
         return () => {
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-            }
+            if (showTimeoutRef.current) clearTimeout(showTimeoutRef.current);
+            if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
         };
     }, []);
 
@@ -131,8 +145,8 @@ export function Tooltip({
         <>
             <div
                 ref={triggerRef}
-                onMouseEnter={showTooltip}
-                onMouseLeave={hideTooltip}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
                 onFocus={showTooltip}
                 onBlur={hideTooltip}
                 className="inline-flex"
@@ -144,6 +158,8 @@ export function Tooltip({
                     <div
                         ref={tooltipRef}
                         role="tooltip"
+                        onMouseEnter={handleMouseEnter}
+                        onMouseLeave={handleMouseLeave}
                         className={`${glass.promptDark} fixed z-[100000] rounded-lg px-3 py-2 text-xs font-raleway text-theme-white shadow-lg transition-opacity duration-150 ${className}`}
                         style={{
                             top: coords.top,

@@ -131,11 +131,10 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({ value, onChange, option
                   onChange(option.value);
                   setIsOpen(false);
                 }}
-                className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway rounded-lg border transition-all duration-100 ${
-                  option.value === value
+                className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway rounded-lg border transition-all duration-100 ${option.value === value
                     ? "bg-white border-0 shadow-lg shadow-white/30 text-theme-black"
                     : "bg-transparent hover:bg-theme-text/20 border-0 text-theme-white hover:text-theme-text"
-                }`}
+                  }`}
               >
                 {option.label}
               </button>
@@ -239,9 +238,9 @@ const CustomMultiSelect: React.FC<CustomMultiSelectProps> = ({ values, onChange,
         className={`w-full min-h-[38px] px-2.5 py-1.5 rounded-lg text-theme-white font-raleway text-sm focus:outline-none focus:border-theme-white transition-colors duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed ${glass.promptDark}`}
       >
         <span className={values.length > 0 ? "text-theme-white" : "text-theme-white/50"}>
-          {values.length === 0 
-            ? placeholder || "Select..." 
-            : values.length === 1 
+          {values.length === 0
+            ? placeholder || "Select..."
+            : values.length === 1
               ? options.find(o => o.value === values[0])?.label || `${values.length} selected`
               : `${values.length} selected`}
         </span>
@@ -268,11 +267,10 @@ const CustomMultiSelect: React.FC<CustomMultiSelectProps> = ({ values, onChange,
                   key={option.value}
                   type="button"
                   onClick={() => toggleValue(option.value)}
-                  className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway rounded-lg border transition-all duration-100 ${
-                    isSelected
+                  className={`w-full px-2.5 py-1.5 text-left text-sm font-raleway rounded-lg border transition-all duration-100 ${isSelected
                       ? "bg-[color:var(--theme-text)] border-0 shadow-lg shadow-[color:var(--theme-text)]/30 text-[color:var(--theme-black)]"
                       : "bg-transparent hover:bg-theme-text/20 border-0 text-theme-white hover:text-theme-text"
-                  }`}
+                    }`}
                 >
                   {option.label}
                 </button>
@@ -527,11 +525,10 @@ export function GalleryPanel({
           <button
             onClick={() => setGalleryFilters({ liked: false, public: false, models: [], types: [], folder: "all", avatar: "all", product: "all" })}
             disabled={filtersDisabled}
-            className={`px-2.5 py-1 text-xs transition-colors duration-200 font-raleway ${
-              filtersDisabled
+            className={`px-2.5 py-1 text-xs transition-colors duration-200 font-raleway ${filtersDisabled
                 ? "text-theme-white/50 cursor-not-allowed"
                 : "text-theme-white hover:text-theme-text"
-            }`}
+              }`}
           >
             Clear
           </button>
@@ -544,13 +541,11 @@ export function GalleryPanel({
             <button
               disabled={filtersDisabled}
               onClick={() => setGalleryFilters(prev => ({ ...prev, liked: !prev.liked }))}
-              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${
-                galleryFilters.liked
+              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${galleryFilters.liked
                   ? "text-theme-text border-theme-mid bg-theme-white/10"
                   : "text-theme-white border-theme-dark hover:border-theme-mid hover:text-theme-text"
-              } ${
-                filtersDisabled ? "cursor-not-allowed opacity-50 hover:text-theme-white hover:border-theme-dark" : ""
-              }`}
+                } ${filtersDisabled ? "cursor-not-allowed opacity-50 hover:text-theme-white hover:border-theme-dark" : ""
+                }`}
             >
               <Heart className={`w-3.5 h-3.5 ${galleryFilters.liked ? "fill-red-500 text-red-500" : "text-current fill-none"}`} />
               <span>Liked</span>
@@ -558,13 +553,11 @@ export function GalleryPanel({
             <button
               disabled={filtersDisabled}
               onClick={() => setGalleryFilters(prev => ({ ...prev, public: !prev.public }))}
-              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${
-                galleryFilters.public
+              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-colors duration-200 ${glass.promptDark} font-raleway text-xs ${galleryFilters.public
                   ? "text-theme-text border-theme-mid bg-theme-white/10"
                   : "text-theme-white border-theme-dark hover:border-theme-mid hover:text-theme-text"
-              } ${
-                filtersDisabled ? "cursor-not-allowed opacity-50 hover:text-theme-white hover:border-theme-dark" : ""
-              }`}
+                } ${filtersDisabled ? "cursor-not-allowed opacity-50 hover:text-theme-white hover:border-theme-dark" : ""
+                }`}
             >
               <Globe className={`w-3.5 h-3.5 ${galleryFilters.public ? "text-theme-text" : "text-current"}`} />
               <span>Public</span>
@@ -735,38 +728,36 @@ export function GalleryPanel({
         {/* Active Filter Tags - Only for filters without inline tags */}
         {(galleryFilters.liked ||
           galleryFilters.public) && (
-          <div className="mt-3 pt-3 border-t border-theme-dark/50">
-            <div className="flex flex-wrap items-center gap-2">
-              {galleryFilters.liked && (
-                <button
-                  disabled={filtersDisabled}
-                  onClick={() => setGalleryFilters(prev => ({ ...prev, liked: false }))}
-                  className={`flex items-center gap-1.5 px-2 py-1 rounded-md border border-theme-mid/30 text-theme-white text-xs font-raleway transition-colors duration-200 ${
-                    filtersDisabled ? "bg-theme-white/5 cursor-not-allowed opacity-60" : "bg-theme-white/10 hover:bg-theme-white/20"
-                  }`}
-                >
-                  <Heart className="w-3 h-3 fill-red-500 text-red-500" />
-                  <span>Liked</span>
-                  <X className="w-3 h-3" />
-                </button>
-              )}
+            <div className="mt-3 pt-3 border-t border-theme-dark/50">
+              <div className="flex flex-wrap items-center gap-2">
+                {galleryFilters.liked && (
+                  <button
+                    disabled={filtersDisabled}
+                    onClick={() => setGalleryFilters(prev => ({ ...prev, liked: false }))}
+                    className={`flex items-center gap-1.5 px-2 py-1 rounded-md border border-theme-mid/30 text-theme-white text-xs font-raleway transition-colors duration-200 ${filtersDisabled ? "bg-theme-white/5 cursor-not-allowed opacity-60" : "bg-theme-white/10 hover:bg-theme-white/20"
+                      }`}
+                  >
+                    <Heart className="w-3 h-3 fill-red-500 text-red-500" />
+                    <span>Liked</span>
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
 
-              {galleryFilters.public && (
-                <button
-                  disabled={filtersDisabled}
-                  onClick={() => setGalleryFilters(prev => ({ ...prev, public: false }))}
-                  className={`flex items-center gap-1.5 px-2 py-1 rounded-md border border-theme-mid/30 text-theme-white text-xs font-raleway transition-colors duration-200 ${
-                    filtersDisabled ? "bg-theme-white/5 cursor-not-allowed opacity-60" : "bg-theme-white/10 hover:bg-theme-white/20"
-                  }`}
-                >
-                  <Globe className="w-3 h-3" />
-                  <span>Public</span>
-                  <X className="w-3 h-3" />
-                </button>
-              )}
+                {galleryFilters.public && (
+                  <button
+                    disabled={filtersDisabled}
+                    onClick={() => setGalleryFilters(prev => ({ ...prev, public: false }))}
+                    className={`flex items-center gap-1.5 px-2 py-1 rounded-md border border-theme-mid/30 text-theme-white text-xs font-raleway transition-colors duration-200 ${filtersDisabled ? "bg-theme-white/5 cursor-not-allowed opacity-60" : "bg-theme-white/10 hover:bg-theme-white/20"
+                      }`}
+                  >
+                    <Globe className="w-3 h-3" />
+                    <span>Public</span>
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
       </div>
 
       <div className={`${glass.promptDark} rounded-2xl mb-4 flex flex-wrap items-center justify-between gap-3 px-4 py-2`}>
@@ -775,9 +766,8 @@ export function GalleryPanel({
             type="button"
             disabled={filtersDisabled}
             onClick={toggleSelectMode}
-            className={`${buttons.subtle} !h-8 !text-theme-white hover:!text-theme-text !font-normal ${
-              isSelectMode ? "!bg-theme-mid/20 !text-theme-text !border-theme-mid/40" : ""
-            }`}
+            className={`${buttons.subtle} !h-8 !text-theme-white hover:!text-theme-text !font-normal ${isSelectMode ? "!bg-theme-mid/20 !text-theme-text !border-theme-mid/40" : ""
+              }`}
           >
             {isSelectMode ? "Done" : "Select"}
           </button>
@@ -915,7 +905,7 @@ export function GalleryPanel({
         )}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1 w-full p-1">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1 w-full p-1">
         {filteredGallery.map((img, idx) => renderGalleryItem(img, idx))}
 
         {gallery.length === 0 && (

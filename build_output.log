@@ -1,0 +1,25 @@
+
+> daygen@0.0.0 build
+> vite build
+
+vite v6.4.0 building for production...
+transforming...
+
+/noise.png referenced in /noise.png didn't resolve at build time, it will remain unchanged to be resolved at runtime
+✓ 2366 modules transformed.
+✗ Build failed in 4.98s
+error during build:
+[vite]: Rollup failed to resolve import "wavesurfer.js" from "/Users/jakubst/Desktop/daygen-project/daygen-frontend/src/components/shared/MusicSelector.tsx".
+This is most likely unintended because it can break your application at runtime.
+If you do want to externalize this module explicitly add it to
+`build.rollupOptions.external`
+    at viteLog (file:///Users/jakubst/Desktop/daygen-project/daygen-frontend/node_modules/vite/dist/node/chunks/dep-N2lvmi1C.js:46373:15)
+    at file:///Users/jakubst/Desktop/daygen-project/daygen-frontend/node_modules/vite/dist/node/chunks/dep-N2lvmi1C.js:46431:18
+    at onwarn (file:///Users/jakubst/Desktop/daygen-project/daygen-frontend/node_modules/@vitejs/plugin-react-swc/index.js:90:7)
+    at file:///Users/jakubst/Desktop/daygen-project/daygen-frontend/node_modules/vite/dist/node/chunks/dep-N2lvmi1C.js:46429:7
+    at onRollupLog (file:///Users/jakubst/Desktop/daygen-project/daygen-frontend/node_modules/vite/dist/node/chunks/dep-N2lvmi1C.js:46421:5)
+    at onLog (file:///Users/jakubst/Desktop/daygen-project/daygen-frontend/node_modules/vite/dist/node/chunks/dep-N2lvmi1C.js:46071:7)
+    at file:///Users/jakubst/Desktop/daygen-project/daygen-frontend/node_modules/rollup/dist/es/shared/node-entry.js:20866:32
+    at Object.logger [as onLog] (file:///Users/jakubst/Desktop/daygen-project/daygen-frontend/node_modules/rollup/dist/es/shared/node-entry.js:22748:9)
+    at ModuleLoader.handleInvalidResolvedId (file:///Users/jakubst/Desktop/daygen-project/daygen-frontend/node_modules/rollup/dist/es/shared/node-entry.js:21492:26)
+    at file:///Users/jakubst/Desktop/daygen-project/daygen-frontend/node_modules/rollup/dist/es/shared/node-entry.js:21450:26

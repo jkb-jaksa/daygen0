@@ -1709,7 +1709,7 @@ const Explore: React.FC = () => {
       <div className="relative isolate">
         <div className={`${layout.backdrop}`} aria-hidden />
 
-        <section className="relative pb-12 pt-[calc(var(--nav-h,4rem)+16px)]">
+        <section className="relative pb-6 pt-[calc(var(--nav-h,4rem)+16px)]">
           <div className={`${layout.container} space-y-1`}>
             <header className="mb-1">
               <div className={headings.tripleHeading.container}>
@@ -1729,8 +1729,8 @@ const Explore: React.FC = () => {
                 <div className="w-full">
                   <div className={`${glass.promptDark} rounded-[20px] p-4`}>
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-theme-text/20 to-theme-text/5 flex items-center justify-center border border-theme-dark">
-                        <Heart className="w-5 h-5 text-theme-text" />
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-theme-text/20 to-theme-text/5 flex items-center justify-center border border-theme-dark">
+                        <Heart className="w-4 h-4 text-theme-text" />
                       </div>
                       <div>
                         <h2 className="text-lg font-raleway font-normal text-theme-text">Top Creators</h2>
@@ -1748,64 +1748,64 @@ const Explore: React.FC = () => {
                           key={creator.userId}
                           type="button"
                           onClick={() => openCreatorProfile(creator.userId, creator.name, creator.profileImage)}
-                          className={`group relative overflow-hidden rounded-2xl transition-all duration-100 parallax-large cursor-pointer w-full ${glass.promptDark}`}
+                          className="group relative overflow-hidden rounded-xl transition-all duration-100 parallax-large cursor-pointer w-full border border-theme-dark hover:border-theme-mid glass-liquid backdrop-blur-3xl bg-theme-black/80"
                         >
                           {/* Background thumbnail with overlay */}
-                          <div className="absolute inset-0 rounded-2xl overflow-hidden">
+                          <div className="absolute inset-0 rounded-xl overflow-hidden">
                             <img
                               src={creator.bestImage}
                               alt=""
                               className="w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity duration-100 scale-110"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-theme-black/90 via-theme-black/60 to-transparent" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-theme-black/95 via-theme-black/80 to-transparent" />
                           </div>
 
-                          {/* Content */}
-                          <div className="relative p-3 flex flex-col items-center text-center">
-                            {/* Rank badge with glass styling */}
-                            <div className={`absolute top-2 left-2 w-6 h-6 rounded-full ${glass.promptDark} flex items-center justify-center`}>
-                              <span className="text-xs text-theme-text">{index + 1}</span>
+                          {/* Content - Row Layout */}
+                          <div className="relative p-2 flex flex-row items-center gap-3 text-left">
+                            {/* Rank badge - simplified with no inset shadows */}
+                            <div className="absolute top-0 right-0 w-8 h-8 rounded-bl-lg border-l border-b border-theme-dark bg-theme-black/40 backdrop-blur-md flex items-center justify-center">
+                              <span className="text-xs font-normal text-theme-text/80">#{index + 1}</span>
                             </div>
 
-                            {/* Avatar - larger */}
-                            <div className="relative mb-4 mt-2">
+                            {/* Avatar - slightly bigger */}
+                            <div className="relative flex-shrink-0 z-10">
                               {creator.profileImage ? (
                                 <img
                                   src={creator.profileImage}
                                   alt={creator.name}
-                                  className="w-14 h-14 rounded-full object-cover border border-theme-white/30 group-hover:border-theme-text/50 transition-all duration-100 shadow-xl group-hover:shadow-theme-text/20"
+                                  className="w-12 h-12 rounded-full object-cover border border-theme-dark group-hover:border-theme-mid transition-all duration-100 shadow-xl group-hover:shadow-theme-text/5"
                                 />
                               ) : (
-                                <div className={`w-14 h-14 rounded-full flex items-center justify-center border border-theme-white/30 group-hover:border-theme-text/50 transition-all duration-100 shadow-xl group-hover:shadow-theme-text/20 bg-gradient-to-br ${creator.avatarColor}`}>
-                                  <span className="text-lg font-raleway font-semibold text-theme-white drop-shadow-lg">
+                                <div className={`w-12 h-12 rounded-full flex items-center justify-center border border-theme-dark group-hover:border-theme-mid transition-all duration-100 shadow-xl group-hover:shadow-theme-text/5 bg-gradient-to-br ${creator.avatarColor}`}>
+                                  <span className="text-base font-raleway font-semibold text-theme-white drop-shadow-md">
                                     {creator.name?.[0]?.toUpperCase() || '?'}
                                   </span>
                                 </div>
                               )}
-                              {/* Glow effect on hover */}
-                              <div className="absolute inset-0 rounded-full bg-theme-text/0 group-hover:bg-theme-text/20 transition-all duration-100 blur-2xl -z-10 scale-125" />
+                              {/* Glow effect on hover - Even more subdued */}
+                              <div className="absolute inset-0 rounded-full bg-theme-text/0 group-hover:bg-theme-text/5 transition-all duration-100 blur-2xl -z-10 scale-125" />
                             </div>
 
-                            {/* Name */}
-                            <h4 className="font-raleway text-sm text-theme-text mb-2 truncate max-w-full transition-colors duration-100">
-                              {creator.name}
-                            </h4>
+                            {/* Info Column */}
+                            <div className="flex flex-col min-w-0 flex-1">
+                              {/* Name */}
+                              <h4 className="font-raleway text-base font-normal text-theme-text truncate w-full pr-6 transition-colors duration-100">
+                                {creator.name}
+                              </h4>
 
-                            {/* Stats with glass pills */}
-                            <div className="flex items-center gap-1.5">
-                              <span className={`${glass.promptDark} px-2 py-1 rounded-full flex items-center gap-1 text-xs`}>
-                                <span className="font-medium text-theme-text">{creator.imageCount}</span>
-                                <span className="text-theme-white">{creator.imageCount === 1 ? 'image' : 'images'}</span>
-                              </span>
-                              <span className={`${glass.promptDark} px-2 py-1 rounded-full flex items-center gap-1 text-xs`}>
-                                <Heart className="w-3 h-3 fill-red-500 text-red-500" />
-                                <span className="font-semibold text-theme-white">{creator.totalLikes >= 1000 ? `${(creator.totalLikes / 1000).toFixed(1)}k` : creator.totalLikes}</span>
-                              </span>
+                              {/* Stats - Compact row */}
+                              <div className="flex items-center gap-3 mt-0">
+                                <span className="text-xs text-theme-text/70 flex items-center gap-1 truncate">
+                                  <span className="font-medium text-theme-text">{creator.imageCount}</span>
+                                  <span>{creator.imageCount === 1 ? 'image' : 'images'}</span>
+                                </span>
+                                <span className="text-xs text-theme-text/70 flex items-center gap-1 truncate">
+                                  <Heart className="w-3 h-3 fill-red-500 text-red-500" />
+                                  <span className="font-medium text-theme-text">{creator.totalLikes >= 1000 ? `${(creator.totalLikes / 1000).toFixed(1)}k` : creator.totalLikes}</span>
+                                </span>
+                              </div>
                             </div>
                           </div>
-
-                          {/* Border Overlay - ensures border color is not affected by inner opacity changes */}
-                          <div className="absolute inset-0 rounded-2xl border border-transparent group-hover:border-theme-mid pointer-events-none z-10 transition-colors duration-100" />
                         </button>
                       ))}
                     </div>
@@ -1814,11 +1814,11 @@ const Explore: React.FC = () => {
               )}
 
               {/* Filters Section */}
-              <div className={`w-full mb-0 p-3 ${glass.promptDark} rounded-[20px] transition-all duration-100`}>
+              <div className={`w-full mb-0 px-4 py-2 ${glass.promptDark} rounded-[20px] transition-all duration-100`}>
                 <div className="flex items-center justify-between">
                   <button
                     onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-                    className="flex items-center gap-2 group w-full"
+                    className="flex items-center gap-2 group w-full py-1"
                   >
                     <Settings className="w-4 h-4 text-theme-text" />
                     <h3 className="text-sm font-raleway text-theme-white group-hover:text-theme-text transition-colors duration-200">Filters</h3>
@@ -1843,7 +1843,7 @@ const Explore: React.FC = () => {
                 </div>
 
                 {/* Main filter grid: Modality and Model */}
-                <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 overflow-hidden transition-all duration-100 ${isFiltersOpen ? 'mt-4 max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 overflow-hidden transition-all duration-100 ${isFiltersOpen ? 'mt-3 mb-2 max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
                   {/* Modality Filter */}
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs text-theme-white/70 font-raleway">Modality</label>
@@ -1965,7 +1965,7 @@ const Explore: React.FC = () => {
           </div>
         </section>
 
-        <section className="relative pb-12 -mt-6">
+        <section className="relative pb-12 -mt-2">
           <div className={`${layout.container}`}>
             <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-2 xl:grid-cols-3">
               {visibleGallery.map((item) => {

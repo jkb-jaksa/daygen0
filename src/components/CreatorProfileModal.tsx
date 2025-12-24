@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, Suspense, lazy, useRef } from 'react';
-import { X, User, Edit, Copy, RefreshCw, BookmarkPlus, BookmarkCheck, Heart, MoreHorizontal, Share2, Download } from 'lucide-react';
+import { X, User, Edit, Copy, RefreshCw, BookmarkPlus, BookmarkCheck, Heart, MoreHorizontal, Share2, Download, ArrowUpRight } from 'lucide-react';
 import { createPortal } from 'react-dom';
-import { glass } from '../styles/designSystem';
+import { glass, buttons } from '../styles/designSystem';
 import { useNavigate } from 'react-router-dom';
 
 const ModelBadge = lazy(() => import('./ModelBadge'));
@@ -415,31 +415,47 @@ export function CreatorProfileModal({
 
                     {/* Profile header */}
                     <div className="p-6 pb-4 border-b border-theme-dark/50">
-                        <div
-                            className="flex items-center gap-4 cursor-pointer"
-                            onClick={() => {
-                                onClose();
-                                // Prefer username over userId for cleaner URLs
-                                const profilePath = profileData?.user?.username
-                                    ? `/creator/${profileData.user.username}`
-                                    : `/creator/${userId}`;
-                                navigate(profilePath);
-                            }}
-                        >
-                            {profileImage ? (
-                                <img
-                                    src={profileImage}
-                                    alt={displayName}
-                                    className="w-16 h-16 rounded-full object-cover border border-theme-dark self-start transition-colors duration-200 hover:border-theme-mid"
-                                />
-                            ) : (
-                                <div className="w-16 h-16 rounded-full bg-[conic-gradient(from_0deg,_rgba(245,158,11,0.6),_rgba(239,68,68,0.6),_rgba(59,130,246,0.6),_rgba(34,211,238,0.6),_rgba(245,158,11,0.6))] flex items-center justify-center border border-theme-dark self-start transition-colors duration-200 hover:border-theme-mid">
-                                    <span className="text-2xl font-raleway font-medium text-theme-text">{displayName?.[0]?.toUpperCase() || '?'}</span>
-                                </div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                                <h2 className="text-2xl font-raleway font-normal text-theme-text mb-1">{displayName}</h2>
-                                <p className="text-sm text-theme-white mb-1">
+                        <div className="flex items-center gap-4">
+                            <div
+                                className="relative flex-shrink-0 z-10 group cursor-pointer"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onClose();
+                                    const profilePath = profileData?.user?.username
+                                        ? `/creator/${profileData.user.username}`
+                                        : `/creator/${userId}`;
+                                    navigate(profilePath);
+                                }}
+                            >
+                                {profileImage ? (
+                                    <img
+                                        src={profileImage}
+                                        alt={displayName}
+                                        className="w-20 h-20 rounded-full object-cover border border-theme-dark group-hover:border-theme-mid self-start transition-all duration-100 shadow-xl group-hover:shadow-theme-text/5"
+                                    />
+                                ) : (
+                                    <div className="w-20 h-20 rounded-full bg-[conic-gradient(from_0deg,_rgba(245,158,11,0.6),_rgba(239,68,68,0.6),_rgba(59,130,246,0.6),_rgba(34,211,238,0.6),_rgba(245,158,11,0.6))] flex items-center justify-center border border-theme-dark group-hover:border-theme-mid self-start transition-all duration-100 shadow-xl group-hover:shadow-theme-text/5">
+                                        <span className="text-3xl font-raleway font-medium text-theme-text">{displayName?.[0]?.toUpperCase() || '?'}</span>
+                                    </div>
+                                )}
+                                {/* Glow effect on hover - Even more subdued */}
+                                <div className="absolute inset-0 rounded-full bg-theme-text/0 group-hover:bg-theme-text/5 transition-all duration-100 blur-2xl -z-10 scale-125" />
+                            </div>
+                            <div className="flex-1 min-w-0 flex flex-col gap-0">
+                                <h2
+                                    className="text-2xl font-raleway font-normal text-theme-text cursor-pointer w-fit"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onClose();
+                                        const profilePath = profileData?.user?.username
+                                            ? `/creator/${profileData.user.username}`
+                                            : `/creator/${userId}`;
+                                        navigate(profilePath);
+                                    }}
+                                >
+                                    {displayName}
+                                </h2>
+                                <p className="text-sm text-theme-white">
                                     {profileData?.totalCount || 0} public generation{profileData?.totalCount !== 1 ? 's' : ''}
                                 </p>
                                 {bio && (
@@ -488,15 +504,15 @@ export function CreatorProfileModal({
                                             />
 
                                             {/* Action Buttons Overlay - Matches Explore Grid */}
-                                            <div className="image-gallery-actions absolute left-3 top-3 flex items-center gap-2 transition-opacity duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto z-20">
+                                            <div className="image-gallery-actions absolute top-3 left-3 right-3 flex items-start gap-2 z-20 pointer-events-none">
                                                 {/* Left side actions (Recreate) */}
-                                                <div className="relative">
+                                                <div className={`relative transition-opacity duration-100 ${isRecreateActive
+                                                    ? 'opacity-100 pointer-events-auto'
+                                                    : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto'
+                                                    }`}>
                                                     <button
                                                         type="button"
-                                                        className={`image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 ${isRecreateActive
-                                                            ? 'opacity-100 pointer-events-auto'
-                                                            : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
-                                                            }`}
+                                                        className="image-action-btn image-action-btn--labelled parallax-large"
                                                         onClick={(e) => toggleRecreateActionMenu(item.id, e.currentTarget as HTMLElement, e)}
                                                     >
                                                         <Edit className="w-3.5 h-3.5" />
@@ -546,71 +562,72 @@ export function CreatorProfileModal({
                                                         </button>
                                                     </ImageActionMenuPortal>
                                                 </div>
-                                            </div>
 
-                                            <div className="image-gallery-actions absolute right-3 top-3 flex items-center gap-1 transition-opacity duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto z-20">
                                                 {/* Right side actions (Save, Like, More) */}
-                                                {/* Note: Save functionality requires full context (folders, etc), implementing visual stub/toggle for now to match UI request */}
-
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => toggleSave(item.id, e)}
-                                                    className={`image-action-btn image-action-btn--labelled parallax-large ${isSaved ? 'border-theme-white/50 bg-theme-white/10 text-theme-text' : ''}`}
-                                                    aria-label={isSaved ? "Remove from saved" : "Save"}
-                                                >
-                                                    {isSaved ? <BookmarkCheck className="size-3.5" /> : <BookmarkPlus className="size-3.5" />}
-                                                </button>
-
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => toggleLike(item, e)}
-                                                    className="image-action-btn image-action-btn--labelled parallax-large favorite-toggle"
-                                                    aria-label={isLiked ? "Remove from liked" : "Add to liked"}
-                                                >
-                                                    <Heart
-                                                        className={`size-3.5 transition-colors duration-100 ${isLiked ? 'fill-red-500 text-red-500' : 'text-current fill-none'}`}
-                                                    />
-                                                    {item.likeCount || 0}
-                                                </button>
-
-                                                <div className="relative">
+                                                <div className={`ml-auto flex items-center gap-1 transition-opacity duration-100 ${isMenuActive
+                                                    ? 'opacity-100 pointer-events-auto'
+                                                    : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto'
+                                                    }`}>
                                                     <button
                                                         type="button"
-                                                        className="image-action-btn parallax-large"
-                                                        onClick={(e) => toggleMoreActionMenu(item.id, e.currentTarget as HTMLElement, e)}
+                                                        onClick={(e) => toggleSave(item.id, e)}
+                                                        className={`image-action-btn image-action-btn--labelled parallax-large ${isSaved ? 'border-theme-white/50 bg-theme-white/10 text-theme-text' : ''}`}
+                                                        aria-label={isSaved ? "Remove from saved" : "Save"}
                                                     >
-                                                        <MoreHorizontal className="size-4" />
+                                                        {isSaved ? <BookmarkCheck className="size-3.5" /> : <BookmarkPlus className="size-3.5" />}
                                                     </button>
-                                                    <ImageActionMenuPortal
-                                                        anchorEl={moreActionMenu?.id === item.id ? moreActionMenu?.anchor ?? null : null}
-                                                        open={isMenuActive}
-                                                        onClose={() => setMoreActionMenu(null)}
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => toggleLike(item, e)}
+                                                        className="image-action-btn image-action-btn--labelled parallax-large favorite-toggle"
+                                                        aria-label={isLiked ? "Remove from liked" : "Add to liked"}
                                                     >
+                                                        <Heart
+                                                            className={`size-3.5 transition-colors duration-100 ${isLiked ? 'fill-red-500 text-red-500' : 'text-current fill-none'}`}
+                                                        />
+                                                        {item.likeCount || 0}
+                                                    </button>
+
+                                                    <div className="relative">
                                                         <button
                                                             type="button"
-                                                            className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 text-xs font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleCopyLink(item.fileUrl);
-                                                            }}
+                                                            className="image-action-btn parallax-large"
+                                                            onClick={(e) => toggleMoreActionMenu(item.id, e.currentTarget as HTMLElement, e)}
                                                         >
-                                                            <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-                                                            <Share2 className="h-3.5 w-3.5 relative z-10" />
-                                                            <span className="relative z-10">Copy link</span>
+                                                            <MoreHorizontal className="size-4" />
                                                         </button>
-                                                        <button
-                                                            type="button"
-                                                            className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 text-xs font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleDownload(item.fileUrl, item.id, item.model?.includes('video') ? 'video' : 'image');
-                                                            }}
+                                                        <ImageActionMenuPortal
+                                                            anchorEl={moreActionMenu?.id === item.id ? moreActionMenu?.anchor ?? null : null}
+                                                            open={isMenuActive}
+                                                            onClose={() => setMoreActionMenu(null)}
                                                         >
-                                                            <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-                                                            <Download className="h-3.5 w-3.5 relative z-10" />
-                                                            <span className="relative z-10">Download</span>
-                                                        </button>
-                                                    </ImageActionMenuPortal>
+                                                            <button
+                                                                type="button"
+                                                                className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 text-xs font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleCopyLink(item.fileUrl);
+                                                                }}
+                                                            >
+                                                                <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                                                                <Share2 className="h-3.5 w-3.5 relative z-10" />
+                                                                <span className="relative z-10">Copy link</span>
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 text-xs font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleDownload(item.fileUrl, item.id, item.model?.includes('video') ? 'video' : 'image');
+                                                                }}
+                                                            >
+                                                                <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                                                                <Download className="h-3.5 w-3.5 relative z-10" />
+                                                                <span className="relative z-10">Download</span>
+                                                            </button>
+                                                        </ImageActionMenuPortal>
+                                                    </div>
                                                 </div>
                                             </div>
 

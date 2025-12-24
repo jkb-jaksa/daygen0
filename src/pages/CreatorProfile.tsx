@@ -564,12 +564,15 @@ export default function CreatorProfile() {
                                         </div>
 
                                         {/* Action Buttons Overlay */}
-                                        <div className="image-gallery-actions absolute left-3 top-3 flex items-center gap-2 transition-opacity duration-200 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto z-20">
+                                        <div className="image-gallery-actions absolute top-3 left-3 right-3 flex items-start gap-2 z-20 pointer-events-none">
                                             {/* Left: Recreate */}
-                                            <div className="relative">
+                                            <div className={`relative transition-opacity duration-100 ${isRecreateActive
+                                                ? 'opacity-100 pointer-events-auto'
+                                                : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto'
+                                                }`}>
                                                 <button
                                                     type="button"
-                                                    className={`image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-200 ${isRecreateActive ? 'opacity-100 pointer-events-auto' : ''}`}
+                                                    className="image-action-btn image-action-btn--labelled parallax-large"
                                                     onClick={(e) => toggleRecreateActionMenu(item.id, e.currentTarget as HTMLElement, e)}
                                                 >
                                                     <Edit className="w-3.5 h-3.5" />
@@ -610,64 +613,67 @@ export default function CreatorProfile() {
                                                     </button>
                                                 </ImageActionMenuPortal>
                                             </div>
-                                        </div>
 
-                                        <div className="image-gallery-actions absolute right-3 top-3 flex items-center gap-1 transition-opacity duration-200 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto z-20">
                                             {/* Right: Save, Like, More */}
-                                            <button
-                                                type="button"
-                                                onClick={(e) => toggleSave(item.id, e)}
-                                                className={`image-action-btn image-action-btn--labelled parallax-large ${isSaved ? 'border-theme-white/50 bg-theme-white/10 text-theme-text' : ''}`}
-                                            >
-                                                {isSaved ? <BookmarkCheck className="size-3.5" /> : <BookmarkPlus className="size-3.5" />}
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                onClick={(e) => toggleLike(item, e)}
-                                                className="image-action-btn image-action-btn--labelled parallax-large favorite-toggle"
-                                            >
-                                                <Heart className={`size-3.5 transition-colors duration-200 ${isLiked ? 'fill-red-500 text-red-500' : 'text-current fill-none'}`} />
-                                                {item.likeCount || 0}
-                                            </button>
-
-                                            <div className="relative">
+                                            <div className={`ml-auto flex items-center gap-1 transition-opacity duration-100 ${isMenuActive
+                                                ? 'opacity-100 pointer-events-auto'
+                                                : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto'
+                                                }`}>
                                                 <button
                                                     type="button"
-                                                    className="image-action-btn parallax-large"
-                                                    onClick={(e) => toggleMoreActionMenu(item.id, e.currentTarget as HTMLElement, e)}
+                                                    onClick={(e) => toggleSave(item.id, e)}
+                                                    className={`image-action-btn image-action-btn--labelled parallax-large ${isSaved ? 'border-theme-white/50 bg-theme-white/10 text-theme-text' : ''}`}
                                                 >
-                                                    <MoreHorizontal className="size-4" />
+                                                    {isSaved ? <BookmarkCheck className="size-3.5" /> : <BookmarkPlus className="size-3.5" />}
                                                 </button>
-                                                <ImageActionMenuPortal
-                                                    anchorEl={moreActionMenu?.id === item.id ? moreActionMenu?.anchor ?? null : null}
-                                                    open={isMenuActive}
-                                                    onClose={() => setMoreActionMenu(null)}
+
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => toggleLike(item, e)}
+                                                    className="image-action-btn image-action-btn--labelled parallax-large favorite-toggle"
                                                 >
+                                                    <Heart className={`size-3.5 transition-colors duration-200 ${isLiked ? 'fill-red-500 text-red-500' : 'text-current fill-none'}`} />
+                                                    {item.likeCount || 0}
+                                                </button>
+
+                                                <div className="relative">
                                                     <button
                                                         type="button"
-                                                        className="relative overflow-hidden group/item flex w-full items-center gap-1.5 px-2 py-1.5 text-xs font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                                                        onClick={(e) => { e.stopPropagation(); handleCopyLink(item.fileUrl); }}
+                                                        className="image-action-btn parallax-large"
+                                                        onClick={(e) => toggleMoreActionMenu(item.id, e.currentTarget as HTMLElement, e)}
                                                     >
-                                                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover/item:opacity-100" />
-                                                        <Share2 className="h-3.5 w-3.5 relative z-10" />
-                                                        <span className="relative z-10">Copy link</span>
+                                                        <MoreHorizontal className="size-4" />
                                                     </button>
-                                                    <button
-                                                        type="button"
-                                                        className="relative overflow-hidden group/item flex w-full items-center gap-1.5 px-2 py-1.5 text-xs font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                                                        onClick={(e) => { e.stopPropagation(); handleDownload(item.fileUrl, item.id, item.model?.includes('video') ? 'video' : 'image'); }}
+                                                    <ImageActionMenuPortal
+                                                        anchorEl={moreActionMenu?.id === item.id ? moreActionMenu?.anchor ?? null : null}
+                                                        open={isMenuActive}
+                                                        onClose={() => setMoreActionMenu(null)}
                                                     >
-                                                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover/item:opacity-100" />
-                                                        <Download className="h-3.5 w-3.5 relative z-10" />
-                                                        <span className="relative z-10">Download</span>
-                                                    </button>
-                                                </ImageActionMenuPortal>
+                                                        <button
+                                                            type="button"
+                                                            className="relative overflow-hidden group/item flex w-full items-center gap-1.5 px-2 py-1.5 text-xs font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                                            onClick={(e) => { e.stopPropagation(); handleCopyLink(item.fileUrl); }}
+                                                        >
+                                                            <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover/item:opacity-100" />
+                                                            <Share2 className="h-3.5 w-3.5 relative z-10" />
+                                                            <span className="relative z-10">Copy link</span>
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className="relative overflow-hidden group/item flex w-full items-center gap-1.5 px-2 py-1.5 text-xs font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                                            onClick={(e) => { e.stopPropagation(); handleDownload(item.fileUrl, item.id, item.model?.includes('video') ? 'video' : 'image'); }}
+                                                        >
+                                                            <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover/item:opacity-100" />
+                                                            <Download className="h-3.5 w-3.5 relative z-10" />
+                                                            <span className="relative z-10">Download</span>
+                                                        </button>
+                                                    </ImageActionMenuPortal>
+                                                </div>
                                             </div>
                                         </div>
 
                                         {/* Prompt Bar Overlay */}
-                                        <div className="PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-opacity duration-200 opacity-0 group-hover:opacity-100 z-10">
+                                        <div className="PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-opacity duration-100 opacity-0 group-hover:opacity-100 z-10">
                                             <div className="p-3">
                                                 <p className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-2 mb-2">
                                                     {item.prompt || 'AI Generated Image'}
