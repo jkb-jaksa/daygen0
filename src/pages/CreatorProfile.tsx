@@ -9,6 +9,7 @@ import { createCardImageStyle } from '../utils/cardImageStyle';
 const ModelBadge = lazy(() => import('../components/ModelBadge'));
 const AspectRatioBadge = lazy(() => import('../components/shared/AspectRatioBadge'));
 const ProfileFullView = lazy(() => import('../components/ProfileFullView'));
+import { CountryFlag } from "../components/shared/CountryFlag";
 
 // ImageActionMenuPortal implementation matching Explore/ProfileFullView
 function ImageActionMenuPortal({
@@ -133,6 +134,7 @@ interface ProfileData {
         username?: string;
         profileImage?: string;
         bio?: string;
+        country?: string;
     };
     items: ProfileGeneration[];
     totalCount: number;
@@ -432,6 +434,7 @@ export default function CreatorProfile() {
     const displayName = profileData?.user?.username || profileData?.user?.displayName || 'Creator';
     const profileImage = profileData?.user?.profileImage;
     const bio = profileData?.user?.bio;
+    const userCountry = profileData?.user?.country;
     const generations = profileData?.items || [];
 
     // Sorted generations based on sortMode
@@ -477,8 +480,9 @@ export default function CreatorProfile() {
 
                     {/* Info */}
                     <div className="flex-1 min-w-0 pt-1">
-                        <h1 className="text-2xl sm:text-3xl font-raleway font-normal text-theme-text mb-1">
+                        <h1 className="text-2xl sm:text-3xl font-raleway font-normal text-theme-text mb-1 flex items-center gap-2">
                             {displayName}
+                            {userCountry && <CountryFlag code={userCountry} size="lg" />}
                         </h1>
                         <p className="text-theme-white mb-1 font-raleway">
                             {profileData?.totalCount || 0} public generation{profileData?.totalCount !== 1 ? 's' : ''}

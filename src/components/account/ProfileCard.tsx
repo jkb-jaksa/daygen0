@@ -3,6 +3,7 @@ import type { ChangeEvent, RefObject } from "react";
 import { useEffect } from "react";
 import type { User } from "../../auth/context";
 import { buttons, glass, inputs } from "../../styles/designSystem";
+import { CountrySelect } from "./CountrySelect";
 
 export type ProfileCardProps = {
   user: User;
@@ -26,6 +27,8 @@ export type ProfileCardProps = {
   bioTouched: boolean;
   isBioValid: boolean;
   bioErrorMessage: string;
+  country: string | null | undefined;
+  onCountryChange: (value: string | null) => void;
   onSaveProfile: () => void;
   onLogOut: () => void;
 };
@@ -40,6 +43,8 @@ export function ProfileCard({
   bioTouched,
   isBioValid,
   bioErrorMessage,
+  country,
+  onCountryChange,
   saveError,
   canSaveProfile,
   isSavingProfile,
@@ -164,26 +169,21 @@ export function ProfileCard({
             {(saveError || (usernameTouched && !isUsernameValid)) && (
               <p className="mt-1 text-xs font-raleway text-red-400">{saveError ?? usernameErrorMessage}</p>
             )}
-            {isUsernameValid && username && (
-              <p className="mt-1 text-xs font-raleway text-theme-white/60">
-                Your profile: daygen.ai/creator/{username}
-              </p>
-            )}
           </div>
         </div>
 
-        <div className="-mt-4">
+        <div className="-mt-6">
           <label className="block text-sm text-theme-white mb-1 font-raleway" htmlFor="bio">
             Bio
           </label>
           <textarea
             id="bio"
-            className={`${inputs.base} min-h-[100px] resize-none py-2`}
+            className={`${inputs.base} min-h-[80px] resize-none py-2`}
             value={bio}
             onChange={(event) => onBioChange(event.target.value)}
             onBlur={onBioBlur}
             placeholder="Tell us about yourself..."
-            maxLength={500}
+            maxLength={200}
           />
           <div className="flex justify-between items-start min-h-[1rem] mt-1">
             <div aria-live="polite" role="status">
@@ -191,10 +191,19 @@ export function ProfileCard({
                 <p className="text-xs font-raleway text-red-400">{bioErrorMessage}</p>
               )}
             </div>
-            <span className="text-xs text-theme-white/50">{bio.length}/500</span>
+            <span className="text-xs text-theme-white/50">{bio.length}/200</span>
           </div>
         </div>
 
+        <div className="-mt-5 mb-4">
+          <label className="block text-sm text-theme-white mb-1 font-raleway" htmlFor="country">
+            Country
+          </label>
+          <CountrySelect
+            value={country}
+            onChange={onCountryChange}
+          />
+        </div>
 
         <div className="flex gap-2 items-center">
           <button type="button" className={buttons.ghost} onClick={onLogOut}>

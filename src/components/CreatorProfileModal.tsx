@@ -8,6 +8,7 @@ const ModelBadge = lazy(() => import('./ModelBadge'));
 const AspectRatioBadge = lazy(() => import('./shared/AspectRatioBadge'));
 const ProfileFullView = lazy(() => import('./ProfileFullView'));
 import { useAuth } from "../auth/useAuth";
+import { CountryFlag } from "./shared/CountryFlag";
 
 // ImageActionMenuPortal implementation matching Explore/ProfileFullView
 function ImageActionMenuPortal({
@@ -140,6 +141,7 @@ interface ProfileData {
         username?: string;
         profileImage?: string;
         bio?: string;
+        country?: string;
     };
     items: ProfileGeneration[];
     totalCount: number;
@@ -391,6 +393,7 @@ export function CreatorProfileModal({
     const displayName = profileData?.user?.username || profileData?.user?.displayName || initialName || 'Creator';
     const profileImage = profileData?.user?.profileImage || initialProfileImage;
     const bio = profileData?.user?.bio;
+    const userCountry = profileData?.user?.country;
     const generations = profileData?.items || [];
 
     return createPortal(
@@ -443,7 +446,7 @@ export function CreatorProfileModal({
                             </div>
                             <div className="flex-1 min-w-0 flex flex-col gap-0">
                                 <h2
-                                    className="text-2xl font-raleway font-normal text-theme-text cursor-pointer w-fit"
+                                    className="text-2xl font-raleway font-normal text-theme-text cursor-pointer w-fit flex items-center gap-2"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         onClose();
@@ -454,6 +457,7 @@ export function CreatorProfileModal({
                                     }}
                                 >
                                     {displayName}
+                                    {userCountry && <CountryFlag code={userCountry} size="md" />}
                                 </h2>
                                 <p className="text-sm text-theme-white">
                                     {profileData?.totalCount || 0} public generation{profileData?.totalCount !== 1 ? 's' : ''}

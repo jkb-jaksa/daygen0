@@ -9,6 +9,7 @@ type User = {
   credits: number;
   profileImage: string | null;
   bio?: string | null;
+  country?: string | null;
   role: 'USER' | 'ADMIN';
   createdAt: string;
   updatedAt: string;
@@ -19,6 +20,7 @@ type UpdateProfilePayload = {
   username?: string | null;
   profileImage?: string | null;
   bio?: string | null;
+  country?: string | null;
 };
 
 type AuthContextValue = {

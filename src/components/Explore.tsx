@@ -55,8 +55,7 @@ import ModelBadge from './ModelBadge';
 import AspectRatioBadge from './shared/AspectRatioBadge';
 import CreatorBadge from './CreatorBadge';
 import CreatorProfileModal from './CreatorProfileModal';
-
-
+import { CountryFlag } from './shared/CountryFlag';
 
 type GalleryItem = {
   id: string;
@@ -67,6 +66,7 @@ type GalleryItem = {
     location: string;
     profileImage?: string;
     userId?: string;
+    country?: string;
   };
   modelId: string;
   modelLabel?: string;
@@ -82,72 +82,7 @@ type GalleryItem = {
   isPublic?: boolean;
 };
 
-// Fallback placeholder items shown when no public generations are available
-const fallbackGalleryItems: GalleryItem[] = [
-  {
-    id: "luminous-neon",
-    creator: {
-      name: "Mina Ito",
-      handle: "@mina_ito",
-      avatarColor: "from-fuchsia-500/70 via-cyan-400/70 to-sky-500/70",
-      location: "Tokyo, JP",
-    },
-    modelId: "flux-2",
-    modelLabel: "FLUX.2 Pro",
-    timeAgo: "2h ago",
-    likes: 248,
-    prompt:
-      "Hyper-detailed cyberpunk portrait of a violinist bathed in neon reflections, chrome accessories, volumetric light rays, twilight city skyline in the background.",
-    tags: ["portrait", "flux", "neon"],
-    imageUrl:
-      "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80",
-    orientation: "portrait",
-    mediaType: "image",
-    isPublic: true,
-  },
-  {
-    id: "desert-dream",
-    creator: {
-      name: "Rafael Sol",
-      handle: "@rafael.sol",
-      avatarColor: "from-theme-white/70 via-slate-300/70 to-stone-400/70",
-      location: "Lisbon, PT",
-    },
-    modelId: "luma-photon-1",
-    modelLabel: "Luma Dream Machine",
-    timeAgo: "4h ago",
-    likes: 192,
-    prompt:
-      "Retro-futuristic desert resort with mirrored surfaces, palm shadows, soft morning haze, architectural photography style, medium format.",
-    tags: ["architecture", "luma", "sunrise"],
-    imageUrl:
-      "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1200&q=80&sat=-20",
-    orientation: "landscape",
-    mediaType: "image",
-    isPublic: true,
-  },
-  {
-    id: "velvet-astral",
-    creator: {
-      name: "Daria Bloom",
-      handle: "@daria.codes",
-      avatarColor: "from-emerald-400/70 via-teal-400/70 to-lime-400/70",
-      location: "Berlin, DE",
-    },
-    modelId: "ideogram",
-    modelLabel: "Ideogram Studio",
-    timeAgo: "1d ago",
-    likes: 321,
-    prompt:
-      "Illustrated terrarium floating in zero gravity, bioluminescent plants, soft ink shading, glowing dust particles, cosmic backdrop.",
-    tags: ["illustration", "ideogram", "botanical"],
-    imageUrl:
-      "https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?auto=format&fit=crop&w=900&q=80&sat=30",
-    orientation: "square",
-    mediaType: "image",
-    isPublic: true,
-  },
-];
+
 
 
 
@@ -497,7 +432,7 @@ const Explore: React.FC = () => {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   // Public generations state
-  const [galleryItems, setGalleryItems] = useState<GalleryItem[]>(fallbackGalleryItems);
+  const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
   const [isLoadingPublic, setIsLoadingPublic] = useState(false);
   const [publicApiCursor, setPublicApiCursor] = useState<string | null>(null);
   const [hasMorePublic, setHasMorePublic] = useState(true);
@@ -593,6 +528,7 @@ const Explore: React.FC = () => {
             username?: string;
             authUserId: string;
             profileImage?: string;
+            country?: string;
           };
         }>;
         nextCursor: string | null;
@@ -618,6 +554,7 @@ const Explore: React.FC = () => {
             location: "Daygen.ai",
             profileImage: item.owner?.profileImage,
             userId: item.owner?.authUserId,
+            country: item.owner?.country,
           },
           modelId: item.model || 'unknown',
           timeAgo: formatTimeAgo(new Date(item.createdAt)),
@@ -640,9 +577,7 @@ const Explore: React.FC = () => {
         setGalleryItems(prev => [...prev, ...transformedItems]);
       } else {
         // Replace items (initial load)
-        if (transformedItems.length > 0) {
-          setGalleryItems(transformedItems);
-        }
+        setGalleryItems(transformedItems);
         // Keep fallback items if no public generations exist
       }
 
@@ -766,6 +701,7 @@ const Explore: React.FC = () => {
       name: string;
       profileImage?: string;
       avatarColor: string;
+      country?: string;
       totalLikes: number;
       imageCount: number;
       bestImage: string; // Highest-liked image for thumbnail
@@ -791,6 +727,7 @@ const Explore: React.FC = () => {
           name: item.creator.name,
           profileImage: item.creator.profileImage,
           avatarColor: item.creator.avatarColor,
+          country: item.creator.country,
           totalLikes: item.likes,
           imageCount: 1,
           bestImage: item.imageUrl,
@@ -1776,7 +1713,7 @@ const Explore: React.FC = () => {
                                   className="w-12 h-12 rounded-full object-cover border border-theme-dark group-hover:border-theme-mid transition-all duration-100 shadow-xl group-hover:shadow-theme-text/5"
                                 />
                               ) : (
-                                <div className={`w-12 h-12 rounded-full flex items-center justify-center border border-theme-dark group-hover:border-theme-mid transition-all duration-100 shadow-xl group-hover:shadow-theme-text/5 bg-gradient-to-br ${creator.avatarColor}`}>
+                                <div className="w-12 h-12 rounded-full flex items-center justify-center border border-theme-dark group-hover:border-theme-mid transition-all duration-100 shadow-xl group-hover:shadow-theme-text/5 bg-[conic-gradient(from_0deg,_rgba(245,158,11,0.6),_rgba(239,68,68,0.6),_rgba(59,130,246,0.6),_rgba(34,211,238,0.6),_rgba(245,158,11,0.6))]">
                                   <span className="text-base font-raleway font-semibold text-theme-white drop-shadow-md">
                                     {creator.name?.[0]?.toUpperCase() || '?'}
                                   </span>
@@ -1788,9 +1725,10 @@ const Explore: React.FC = () => {
 
                             {/* Info Column */}
                             <div className="flex flex-col min-w-0 flex-1">
-                              {/* Name */}
-                              <h4 className="font-raleway text-base font-normal text-theme-text truncate w-full pr-6 transition-colors duration-100">
-                                {creator.name}
+                              {/* Name with flag */}
+                              <h4 className="font-raleway text-base font-normal text-theme-text truncate w-full pr-6 transition-colors duration-100 flex items-center gap-1.5">
+                                <span className="truncate">{creator.name}</span>
+                                {creator.country && <CountryFlag code={creator.country} size="sm" />}
                               </h4>
 
                               {/* Stats - Compact row */}
@@ -2201,7 +2139,7 @@ const Explore: React.FC = () => {
                                   <AspectRatioBadge aspectRatio={item.aspectRatio} size="md" />
                                 </Suspense>
                               )}
-                              <CreatorBadge name={item.creator.name} profileImage={item.creator.profileImage} userId={item.creator.userId} size="md" onClick={openCreatorProfile} />
+                              <CreatorBadge name={item.creator.name} profileImage={item.creator.profileImage} userId={item.creator.userId} country={item.creator.country} size="md" onClick={openCreatorProfile} hideFlag={true} />
                             </div>
                           </div>
                         </div>
@@ -2662,7 +2600,7 @@ const Explore: React.FC = () => {
                           <Suspense fallback={null}>
                             <AspectRatioBadge aspectRatio={selectedFullImage.aspectRatio || '1:1'} size="md" />
                           </Suspense>
-                          <CreatorBadge name={selectedFullImage.creator.name} profileImage={selectedFullImage.creator.profileImage} userId={selectedFullImage.creator.userId} size="md" onClick={openCreatorProfile} />
+                          <CreatorBadge name={selectedFullImage.creator.name} profileImage={selectedFullImage.creator.profileImage} userId={selectedFullImage.creator.userId} country={selectedFullImage.creator.country} size="md" onClick={openCreatorProfile} />
                         </div>
                       </div>
                     </div>

@@ -64,6 +64,7 @@ export default function Account() {
   const { showToast } = useToast();
   const [username, setUsername] = useState(user?.username ?? "");
   const [bio, setBio] = useState(user?.bio ?? "");
+  const [country, setCountry] = useState<string | null>(user?.country ?? null);
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
   const [isUploadingPic, setIsUploadingPic] = useState(false);
   const [cropModalOpen, setCropModalOpen] = useState(false);
@@ -102,6 +103,9 @@ export default function Account() {
     [sanitizedNextPath],
   );
 
+  // Track if we've done the initial sync
+  const initialSyncDoneRef = useRef(false);
+
   useEffect(() => {
     // Only update username if it hasn't been touched yet
     if (user?.username && username === "" && !usernameTouched) {
@@ -111,7 +115,15 @@ export default function Account() {
     if (user?.bio && bio === "" && !bioTouched) {
       setBio(user.bio);
     }
-  }, [username, bio, user?.username, user?.bio, usernameTouched, bioTouched]);
+    // Sync country from user ONLY on initial load (when user first becomes available)
+    // After that, local state is the source of truth until save
+    if (!initialSyncDoneRef.current && user) {
+      initialSyncDoneRef.current = true;
+      if (user.country) {
+        setCountry(user.country);
+      }
+    }
+  }, [username, bio, user?.username, user?.bio, user?.country, usernameTouched, bioTouched]);
 
   useEffect(() => {
     let cancelled = false;
@@ -240,13 +252,15 @@ export default function Account() {
   const trimmedBio = useMemo(() => (bio ?? "").trim(), [bio]);
   const currentUsername = useMemo(() => (user?.username ?? "").trim(), [user?.username]);
   const currentUserBio = useMemo(() => (user?.bio ?? "").trim(), [user?.bio]);
+  const currentCountry = useMemo(() => user?.country ?? null, [user?.country]);
 
   const isUsernameValid = trimmedUsername.length >= 3 && trimmedUsername.length <= 30 && /^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(trimmedUsername);
-  const isBioValid = trimmedBio.length <= 500;
+  const isBioValid = trimmedBio.length <= 200;
 
   const isUsernameChanged = trimmedUsername !== currentUsername;
   const isBioChanged = trimmedBio !== currentUserBio;
-  const isFormChanged = isUsernameChanged || isBioChanged;
+  const isCountryChanged = country !== currentCountry;
+  const isFormChanged = isUsernameChanged || isBioChanged || isCountryChanged;
 
   const canSaveProfile = isUsernameValid && isBioValid && !isSavingProfile;
   const usernameErrorMessage = trimmedUsername.length < 3
@@ -254,7 +268,7 @@ export default function Account() {
     : trimmedUsername.length > 30
       ? "Profile URL must be 30 characters or fewer."
       : "Must use only lowercase letters, numbers, and hyphens.";
-  const bioErrorMessage = "Bio must be 500 characters or fewer.";
+  const bioErrorMessage = "Bio must be 200 characters or fewer.";
 
 
   const handleUsernameChange = useCallback(
@@ -291,6 +305,18 @@ export default function Account() {
     setBioTouched(true);
   }, []);
 
+  const handleCountryChange = useCallback((value: string | null) => {
+    setCountry(value);
+    if (saveError) {
+      setSaveError(null);
+    }
+  }, [saveError]);
+
+  const handleBack = useCallback(() => {
+    // Navigate to app (or next path) to close the account section
+    navigate(sanitizedNextPath ?? "/app", { replace: true });
+  }, [navigate, sanitizedNextPath]);
+
   const handleSaveProfile = useCallback(async () => {
     setUsernameTouched(true);
     setBioTouched(true);
@@ -306,7 +332,8 @@ export default function Account() {
     }
 
     if (!isFormChanged) {
-      showToast("Profile saved");
+      // Just close the section when there are no changes
+      handleBack();
       return;
     }
 
@@ -315,15 +342,20 @@ export default function Account() {
     try {
       await updateProfile({
         username: trimmedUsername,
-        bio: trimmedBio
+        bio: trimmedBio,
+        country: country,
       });
       setSaveError(null);
+      // Reset touched states after successful save
+      setUsernameTouched(false);
+      setBioTouched(false);
 
+      // Close the section after successful save
       if (sanitizedNextPath && sanitizedNextPath !== "/app") {
         debugLog("Account - redirecting after profile save to:", sanitizedNextPath);
         navigate(sanitizedNextPath, { replace: true });
       } else {
-        showToast("Profile saved");
+        handleBack();
       }
     } catch (error) {
       debugError("Account - Failed to save profile", error);
@@ -343,9 +375,10 @@ export default function Account() {
     bioErrorMessage,
     navigate,
     sanitizedNextPath,
-    showToast,
+    handleBack,
     trimmedUsername,
     trimmedBio,
+    country,
     updateProfile,
   ]);
 
@@ -354,13 +387,7 @@ export default function Account() {
     navigate("/");
   }, [logOut, navigate]);
 
-  const handleBack = useCallback(() => {
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate(sanitizedNextPath ?? "/app");
-    }
-  }, [navigate, sanitizedNextPath]);
+
 
   const handleProfileSubmit = useCallback(() => {
     void handleSaveProfile();
@@ -434,6 +461,8 @@ export default function Account() {
           onUsernameBlur={handleUsernameBlur}
           onBioChange={handleBioChange}
           onBioBlur={handleBioBlur}
+          country={country}
+          onCountryChange={handleCountryChange}
           onSaveProfile={handleProfileSubmit}
           onLogOut={handleLogOut}
         />

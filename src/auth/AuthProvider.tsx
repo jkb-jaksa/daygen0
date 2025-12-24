@@ -58,6 +58,12 @@ const normalizeBackendUser = (payload: Record<string, unknown>): AppUser => ({
     (payload.profileImage as string | undefined) ??
     (payload.profile_image as string | undefined) ??
     null,
+  bio:
+    (payload.bio as string | undefined) ??
+    null,
+  country:
+    (payload.country as string | undefined) ??
+    null,
   role: payload.role === 'ADMIN' ? 'ADMIN' : 'USER',
   createdAt:
     typeof payload.createdAt === 'string'

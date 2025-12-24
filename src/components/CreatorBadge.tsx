@@ -1,12 +1,15 @@
 import { badgeBaseClasses, badgeInnerGlowClass } from "./shared/badgeStyles";
+import { CountryFlag } from "./shared/CountryFlag";
 
 type CreatorBadgeProps = {
     name: string;
     profileImage?: string;
     userId?: string;
+    country?: string;
     size?: "sm" | "md" | "lg";
     className?: string;
     onClick?: (userId: string, name: string, profileImage?: string) => void;
+    hideFlag?: boolean;
 };
 
 const sizeClasses = {
@@ -21,7 +24,7 @@ const avatarSizeClasses = {
     lg: "w-5 h-5",
 };
 
-export function CreatorBadge({ name, profileImage, userId, size = "md", className = "", onClick }: CreatorBadgeProps) {
+export function CreatorBadge({ name, profileImage, userId, country, size = "md", className = "", onClick, hideFlag = false }: CreatorBadgeProps) {
     const handleClick = (e: React.MouseEvent) => {
         e.stopPropagation();
         if (onClick && userId) {
@@ -54,9 +57,11 @@ export function CreatorBadge({ name, profileImage, userId, size = "md", classNam
                     </div>
                 )}
                 <span className="leading-none max-w-[120px] truncate">{name}</span>
+                {!hideFlag && country && <CountryFlag code={country} size="sm" />}
             </div>
         </span>
     );
 }
 
 export default CreatorBadge;
+
