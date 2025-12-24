@@ -404,7 +404,7 @@ function Home() {
                 <div className="flex items-start justify-between gap-4 w-full">
                   <div className="flex flex-col gap-2 lg:max-w-xl">
                     <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-left bg-gradient-to-r from-theme-text via-theme-text/80 to-theme-text/60 bg-clip-text text-transparent pb-1`}>
-                      Create your Digital Copy. (DEBUG MODE)
+                      Create your Digital Copy.
                     </h1>
                     <motion.p
                       initial={{ opacity: 0 }}
