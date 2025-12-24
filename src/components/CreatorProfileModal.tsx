@@ -438,8 +438,8 @@ export function CreatorProfileModal({
                                 </div>
                             )}
                             <div className="flex-1 min-w-0">
-                                <h2 className="text-2xl font-raleway font-normal text-theme-text">{displayName}</h2>
-                                <p className="text-sm text-theme-white mb-2">
+                                <h2 className="text-2xl font-raleway font-normal text-theme-text mb-1">{displayName}</h2>
+                                <p className="text-sm text-theme-white mb-1">
                                     {profileData?.totalCount || 0} public generation{profileData?.totalCount !== 1 ? 's' : ''}
                                 </p>
                                 {bio && (
