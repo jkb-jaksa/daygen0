@@ -17,6 +17,7 @@ import {
   headings,
   tooltips,
 } from "../styles/designSystem";
+import LazyImage from './LazyImage';
 import {
   ArrowUpRight,
   BookmarkCheck,
@@ -497,7 +498,7 @@ const Explore: React.FC = () => {
     try {
       const apiBase = import.meta.env.VITE_API_BASE_URL || '';
       const params = new URLSearchParams();
-      params.set('limit', '50');
+      params.set('limit', '20');
       if (cursor) params.set('cursor', cursor);
 
       const headers: HeadersInit = {};
@@ -1923,11 +1924,11 @@ const Explore: React.FC = () => {
                     }}
                   >
                     <div className={`relative ${orientationStyles[item.orientation]} min-h-[180px] sm:min-h-[240px] md:min-h-[280px] xl:min-h-[320px]`}>
-                      <img
+                      <LazyImage
                         src={item.imageUrl}
                         alt={`Image by ${item.creator.name}`}
-                        className="absolute inset-0 h-full w-full object-cover object-center"
-                        loading="lazy"
+                        wrapperClassName="absolute inset-0 h-full w-full"
+                        className="h-full w-full object-cover object-center"
                       />
                       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/70" aria-hidden="true" />
 
