@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, Suspense, lazy, useRef } from 'react';
-import { X, User, Edit, Copy, RefreshCw, BookmarkPlus, BookmarkCheck, Heart, MoreHorizontal, Share2, Download, ArrowUpRight } from 'lucide-react';
+import { X, User, Edit, Copy, RefreshCw, BookmarkPlus, BookmarkCheck, Heart, MoreHorizontal, Share2, Download } from 'lucide-react';
 import { createPortal } from 'react-dom';
-import { glass, buttons } from '../styles/designSystem';
+import { glass } from '../styles/designSystem';
 import { useNavigate } from 'react-router-dom';
 
 const ModelBadge = lazy(() => import('./ModelBadge'));
