@@ -1329,7 +1329,7 @@ const PromptForm = memo<PromptFormProps>(
           onDragOver={handleDragAreaOver}
           onDrop={handleDragAreaDrop}
         >
-          <div className="flex gap-3 items-stretch">
+          <div className="flex flex-col lg:flex-row gap-3 items-stretch">
             {/* Left section: Textarea + Controls */}
             <div className="flex-1 flex flex-col">
               {/* Textarea - first row */}
@@ -1438,8 +1438,8 @@ const PromptForm = memo<PromptFormProps>(
                 />
               </div>
 
-              {/* Buttons - second row */}
-              <div className="flex items-center gap-2 px-3">
+              {/* Buttons - second row (mobile: full width with left/right alignment; desktop: left buttons only) */}
+              <div className="flex items-center gap-2 px-3 lg:px-3 w-full">
                 {/* Left icons and controls */}
                 <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
                   {/* Chat mode */}
@@ -1734,11 +1734,93 @@ const PromptForm = memo<PromptFormProps>(
                   </div>
 
                 </div>
+
+                {/* Mobile only: Right action buttons (Avatar, Product, Style, Generate) */}
+                <div className="flex lg:hidden items-center gap-1 flex-shrink-0 ml-auto">
+                  {/* Mobile Avatar button */}
+                  <button
+                    type="button"
+                    onClick={handleAvatarButtonClick}
+                    className={`${glass.promptBorderless} ${selectedAvatars.length > 0 ? 'bg-theme-text/20' : ''} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 w-8 rounded-full transition-all duration-200 relative overflow-hidden`}
+                    aria-label="Avatar"
+                  >
+                    {selectedAvatars.length > 0 ? (
+                      <img
+                        src={selectedAvatars[0]?.images?.[0]?.url ?? selectedAvatars[0]?.imageUrl}
+                        alt="Avatar"
+                        className="absolute inset-0 w-full h-full rounded-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-4 h-4 text-theme-text" />
+                    )}
+                    {selectedAvatars.length > 1 && (
+                      <div className="absolute -bottom-0.5 -right-0.5 bg-theme-black/80 rounded-full px-1 py-0.5 text-[8px] text-white">
+                        +{selectedAvatars.length - 1}
+                      </div>
+                    )}
+                  </button>
+
+                  {/* Mobile Product button */}
+                  <button
+                    type="button"
+                    onClick={handleProductButtonClick}
+                    className={`${glass.promptBorderless} ${selectedProducts.length > 0 ? 'bg-theme-text/20' : ''} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 w-8 rounded-full transition-all duration-200 relative overflow-hidden`}
+                    aria-label="Product"
+                  >
+                    {selectedProducts.length > 0 ? (
+                      <img
+                        src={selectedProducts[0]?.images?.[0]?.url ?? selectedProducts[0]?.imageUrl}
+                        alt="Product"
+                        className="absolute inset-0 w-full h-full rounded-full object-cover"
+                      />
+                    ) : (
+                      <Package className="w-4 h-4 text-theme-text" />
+                    )}
+                    {selectedProducts.length > 1 && (
+                      <div className="absolute -bottom-0.5 -right-0.5 bg-theme-black/80 rounded-full px-1 py-0.5 text-[8px] text-white">
+                        +{selectedProducts.length - 1}
+                      </div>
+                    )}
+                  </button>
+
+                  {/* Mobile Style button */}
+                  <button
+                    type="button"
+                    onClick={styleHandlers.handleStyleModalOpen}
+                    className={`${glass.promptBorderless} ${styleHandlers.firstSelectedStyle ? 'bg-theme-text/20' : ''} hover:bg-n-text/20 text-n-text hover:text-n-text flex items-center justify-center h-8 w-8 rounded-full transition-all duration-200 relative overflow-hidden`}
+                    aria-label="Style"
+                  >
+                    {styleHandlers.firstSelectedStyle?.image ? (
+                      <img
+                        src={styleHandlers.firstSelectedStyle.image}
+                        alt="Style"
+                        className="absolute inset-0 w-full h-full rounded-full object-cover"
+                      />
+                    ) : (
+                      <Palette className="w-4 h-4 text-theme-text" />
+                    )}
+                  </button>
+
+                  {/* Mobile Generate button */}
+                  <button
+                    onClick={triggerGenerate}
+                    disabled={!canGenerate || !hasGenerationCapacity || (user?.credits ?? 0) <= 0}
+                    className="btn btn-white font-raleway text-sm font-medium gap-1 h-8 px-3 min-w-0 disabled:cursor-not-allowed disabled:opacity-60"
+                    aria-label="Generate"
+                  >
+                    {effectiveIsButtonSpinning ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-n-black" />
+                    ) : (
+                      <Sparkles className="w-4 h-4 text-n-black" />
+                    )}
+                    <span className="text-n-black">{effectiveBatchSize}</span>
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Right section: Avatar + Product + Style + Generate */}
-            <div className="flex flex-row gap-1 lg:gap-2 flex-shrink-0 items-end">
+            {/* Right section: Avatar + Product + Style + Generate (desktop only) */}
+            <div className="hidden lg:flex flex-row gap-1 lg:gap-2 flex-shrink-0 items-end">
               {/* Avatar section - supports multiple selections */}
               <div className="relative">
                 <button

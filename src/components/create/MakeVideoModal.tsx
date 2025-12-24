@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Sparkles, Settings, Plus, Scan, Minus, Video, Copy, Bookmark, BookmarkPlus, User, Package, Palette, LayoutGrid, Loader2, Mic } from 'lucide-react';
+import { X, Sparkles, Settings, Plus, Scan, Minus, Video, Copy, Bookmark, BookmarkPlus, BookmarkIcon, User, Package, Palette, LayoutGrid, Loader2, Mic } from 'lucide-react';
 import { glass, buttons, tooltips } from '../../styles/designSystem';
 import { useReferenceHandlers } from './hooks/useReferenceHandlers';
 import { useParallaxHover } from '../../hooks/useParallaxHover';
@@ -9,6 +9,7 @@ import { useProductHandlers } from './hooks/useProductHandlers';
 import { BASIC_ASPECT_RATIO_OPTIONS } from '../../data/aspectRatios';
 import type { GeminiAspectRatio } from '../../types/aspectRatio';
 import { useSavedPrompts } from '../../hooks/useSavedPrompts';
+import { usePromptHistory } from '../../hooks/usePromptHistory';
 import { useAuth } from '../../auth/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { getStyleThumbnailUrl } from './hooks/useStyleHandlers';
@@ -27,6 +28,9 @@ const ModelSelector = lazy(() => import('./ModelSelector'));
 const StyleSelectionModal = lazy(() => import('./StyleSelectionModal'));
 const AvatarCreationModal = lazy(() => import('../avatars/AvatarCreationModal'));
 const ProductCreationModal = lazy(() => import('../products/ProductCreationModal'));
+const PromptsDropdown = lazy(() =>
+    import('../PromptsDropdown').then(module => ({ default: module.PromptsDropdown })),
+);
 
 import ImageBadgeRow from '../shared/ImageBadgeRow';
 import { ReferencePreviewModal } from '../shared/ReferencePreviewModal';
@@ -86,9 +90,12 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
     const { user } = useAuth();
     const { showToast } = useToast();
     const userKey = user?.id || user?.email || "anon";
-    const { savePrompt, isPromptSaved, removePrompt } = useSavedPrompts(userKey);
+    const { savedPrompts, savePrompt, isPromptSaved, removePrompt, updatePrompt } = useSavedPrompts(userKey);
+    const { history: recentPrompts, addPrompt: addToHistory, removePrompt: removeRecentPrompt } = usePromptHistory(userKey, 10);
     const [savePromptModalState, setSavePromptModalState] = useState<{ prompt: string; originalPrompt: string } | null>(null);
     const savePromptModalRef = useRef<HTMLDivElement>(null);
+    const promptsButtonRef = useRef<HTMLButtonElement>(null);
+    const [isPromptsDropdownOpen, setIsPromptsDropdownOpen] = useState(false);
 
     // Helper to convert styleId to StoredStyle
     const styleIdToStoredStyle = useMemo(() => (styleId: string): StoredStyle | null => {
@@ -809,7 +816,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                     )}
 
                                     {/* Middle Row: Voice, Avatar, Product, Style */}
-                                    <div className="flex items-center gap-2 border-t border-n-dark px-3 py-2">
+                                    <div className="flex flex-wrap items-center gap-2 border-t border-n-dark px-3 py-2">
                                         {/* Voice Button */}
                                         <div className="relative">
                                             <button
@@ -1045,8 +1052,8 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                     </div>
 
                                     {/* Bottom Controls Bar */}
-                                    <div className="flex items-center justify-between border-t border-n-dark px-3 py-2">
-                                        <div className="flex items-center gap-1">
+                                    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-n-dark px-3 py-2">
+                                        <div className="flex flex-wrap items-center gap-1">
                                             {/* Reference Image Controls */}
                                             <div className="relative">
                                                 <input
@@ -1228,6 +1235,26 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                 </button>
                                                 <TooltipPortal id="make-video-lipsync-tooltip">
                                                     Enable LipSync (Omnihuman)
+                                                </TooltipPortal>
+                                            </div>
+
+                                            {/* Your Prompts Button */}
+                                            <div className="relative">
+                                                <button
+                                                    type="button"
+                                                    ref={promptsButtonRef}
+                                                    onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
+                                                    className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-100 parallax-small`}
+                                                    onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'make-video-prompts-tooltip')}
+                                                    onMouseLeave={() => hideHoverTooltip('make-video-prompts-tooltip')}
+                                                    onPointerMove={onPointerMove}
+                                                    onPointerEnter={onPointerEnter}
+                                                    onPointerLeave={onPointerLeave}
+                                                >
+                                                    <BookmarkIcon className="w-4 h-4 flex-shrink-0 text-n-text transition-colors duration-100" />
+                                                </button>
+                                                <TooltipPortal id="make-video-prompts-tooltip">
+                                                    Your Prompts
                                                 </TooltipPortal>
                                             </div>
                                         </div>
@@ -1547,6 +1574,30 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                     </div>
                 </div>
             )}
+
+            {/* Your Prompts Dropdown */}
+            <Suspense fallback={null}>
+                <PromptsDropdown
+                    key={`make-video-prompts-${userKey}`}
+                    isOpen={isPromptsDropdownOpen}
+                    onClose={() => setIsPromptsDropdownOpen(false)}
+                    anchorEl={promptsButtonRef.current}
+                    recentPrompts={recentPrompts.slice(0, 5)}
+                    savedPrompts={savedPrompts.slice(0, 10)}
+                    onSelectPrompt={(text) => {
+                        setPrompt(text);
+                        setIsPromptsDropdownOpen(false);
+                    }}
+                    onRemoveSavedPrompt={(id) => removePrompt(id)}
+                    onRemoveRecentPrompt={(text) => removeRecentPrompt(text)}
+                    onUpdateSavedPrompt={(id, newText) => updatePrompt(id, newText)}
+                    onAddSavedPrompt={(text) => {
+                        savePrompt(text);
+                        return null;
+                    }}
+                    onSaveRecentPrompt={(text) => savePrompt(text)}
+                />
+            </Suspense>
         </>,
         document.body
     );

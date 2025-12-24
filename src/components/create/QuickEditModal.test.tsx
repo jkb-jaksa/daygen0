@@ -38,8 +38,20 @@ vi.mock('../../hooks/useToast', () => ({
 // Mock useSavedPrompts
 vi.mock('../../hooks/useSavedPrompts', () => ({
     useSavedPrompts: () => ({
+        savedPrompts: [],
         savePrompt: vi.fn(),
         isPromptSaved: vi.fn(() => false),
+        removePrompt: vi.fn(),
+        updatePrompt: vi.fn(),
+    }),
+}));
+
+// Mock usePromptHistory
+vi.mock('../../hooks/usePromptHistory', () => ({
+    usePromptHistory: () => ({
+        history: [],
+        addPrompt: vi.fn(),
+        removePrompt: vi.fn(),
     }),
 }));
 

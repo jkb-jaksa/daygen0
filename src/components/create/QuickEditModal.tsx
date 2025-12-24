@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { X, Sparkles, Edit, Loader2, Plus, Settings, User, Package, Scan, Minus, Palette, LayoutGrid, Copy, Bookmark, BookmarkPlus, Wand2, Undo2, Redo2, Eraser, RotateCcw, Scaling, ZoomIn, ZoomOut, Move, Crop, Info, Trash2 } from 'lucide-react';
+import { X, Sparkles, Edit, Loader2, Plus, Settings, User, Package, Scan, Minus, Palette, LayoutGrid, Copy, Bookmark, BookmarkPlus, BookmarkIcon, Wand2, Undo2, Redo2, Eraser, RotateCcw, Scaling, ZoomIn, ZoomOut, Move, Crop, Info, Trash2 } from 'lucide-react';
 import { debugLog, debugError } from '../../utils/debug';
 import { glass, buttons, tooltips } from '../../styles/designSystem';
 import { useReferenceHandlers } from './hooks/useReferenceHandlers';
@@ -14,6 +14,7 @@ import { getAspectRatiosForModel } from '../../utils/aspectRatioUtils';
 import type { GeminiAspectRatio } from '../../types/aspectRatio';
 import AvatarPickerPortal from './AvatarPickerPortal';
 import { useSavedPrompts } from '../../hooks/useSavedPrompts';
+import { usePromptHistory } from '../../hooks/usePromptHistory';
 import { useAuth } from '../../auth/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { getStyleThumbnailUrl } from './hooks/useStyleHandlers';
@@ -29,11 +30,16 @@ const ModelSelector = lazy(() => import('./ModelSelector'));
 const StyleSelectionModal = lazy(() => import('./StyleSelectionModal'));
 const AvatarCreationModal = lazy(() => import('../avatars/AvatarCreationModal'));
 const ProductCreationModal = lazy(() => import('../products/ProductCreationModal'));
+const PromptsDropdown = lazy(() =>
+    import('../PromptsDropdown').then(module => ({ default: module.PromptsDropdown })),
+);
 
 import ImageBadgeRow from '../shared/ImageBadgeRow';
 import { ReferencePreviewModal } from '../shared/ReferencePreviewModal';
 import { useBadgeNavigation } from './hooks/useBadgeNavigation';
 import { getDraggingImageUrl, setFloatingDragImageVisible } from './utils/dragState';
+import { useMentionSuggestions } from './hooks/useMentionSuggestions';
+import { MentionDropdown } from './MentionDropdown';
 
 
 // Helper to parse aspect ratio string to numeric value
@@ -97,6 +103,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     item,
 }) => {
     const [prompt, setPrompt] = useState(initialPrompt);
+    const [cursorPosition, setCursorPosition] = useState(0);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const modalRef = useRef<HTMLDivElement>(null);
     const { onPointerEnter, onPointerLeave, onPointerMove } = useParallaxHover<HTMLButtonElement>();
@@ -104,9 +111,12 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     const { user } = useAuth();
     const { showToast } = useToast();
     const userKey = user?.id || user?.email || "anon";
-    const { savePrompt, isPromptSaved, removePrompt } = useSavedPrompts(userKey);
+    const { savedPrompts, savePrompt, isPromptSaved, removePrompt, updatePrompt } = useSavedPrompts(userKey);
+    const { history: recentPrompts, addPrompt: addToHistory, removePrompt: removeRecentPrompt } = usePromptHistory(userKey, 10);
     const [savePromptModalState, setSavePromptModalState] = useState<{ prompt: string; originalPrompt: string } | null>(null);
     const savePromptModalRef = useRef<HTMLDivElement>(null);
+    const promptsButtonRef = useRef<HTMLButtonElement>(null);
+    const [isPromptsDropdownOpen, setIsPromptsDropdownOpen] = useState(false);
     const [copiedState, setCopiedState] = useState<Record<string, boolean>>({});
     const [activeTooltip, setActiveTooltip] = useState<{ id: string; text: string; x: number; y: number } | null>(null);
     const [referencePreviewUrl, setReferencePreviewUrl] = useState<string | null>(null);
@@ -738,6 +748,44 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         setCreationsModalProduct,
     } = productHandlers;
 
+    // @ mention suggestions hook (avatars and products)
+    const mentionSuggestions = useMentionSuggestions({
+        storedAvatars: avatarHandlers.storedAvatars,
+        storedProducts: productHandlers.storedProducts,
+        prompt,
+        cursorPosition,
+        onSelectAvatar: avatarHandlers.handleAvatarSelect,
+        onDeselectAvatar: (id) => {
+            if (selectedAvatar?.id === id) {
+                avatarHandlers.handleAvatarSelect(null);
+            }
+        },
+        selectedAvatars: selectedAvatar ? [selectedAvatar] : [],
+        onSelectProduct: productHandlers.handleProductSelect,
+        onDeselectProduct: (id) => {
+            if (selectedProduct?.id === id) {
+                productHandlers.handleProductSelect(null);
+            }
+        },
+        selectedProducts: selectedProduct ? [selectedProduct] : [],
+    });
+
+    // Handle mention selection from dropdown
+    const handleMentionSelect = useCallback((item: { id: string; name: string; type: 'avatar' | 'product' }) => {
+        const result = mentionSuggestions.selectSuggestion(item as Parameters<typeof mentionSuggestions.selectSuggestion>[0]);
+        if (result) {
+            setPrompt(result.newPrompt);
+            setCursorPosition(result.newCursorPos);
+            // Focus textarea and set cursor position
+            setTimeout(() => {
+                if (inputRef.current) {
+                    inputRef.current.focus();
+                    inputRef.current.setSelectionRange(result.newCursorPos, result.newCursorPos);
+                }
+            }, 0);
+        }
+    }, [mentionSuggestions]);
+
     // Drag handlers for Avatar button
     const avatarDragDepthRef = useRef(0);
     const productDragDepthRef = useRef(0);
@@ -1219,6 +1267,38 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         e.stopPropagation();
+
+        // Handle mention navigation first
+        if (mentionSuggestions.isOpen && mentionSuggestions.suggestions.length > 0) {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                mentionSuggestions.setSelectedIndex(
+                    (mentionSuggestions.selectedIndex + 1) % mentionSuggestions.suggestions.length
+                );
+                return;
+            }
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                mentionSuggestions.setSelectedIndex(
+                    (mentionSuggestions.selectedIndex - 1 + mentionSuggestions.suggestions.length) % mentionSuggestions.suggestions.length
+                );
+                return;
+            }
+            if (e.key === 'Enter' || e.key === 'Tab') {
+                e.preventDefault();
+                const selected = mentionSuggestions.suggestions[mentionSuggestions.selectedIndex];
+                if (selected) {
+                    handleMentionSelect(selected);
+                }
+                return;
+            }
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                mentionSuggestions.closeSuggestions();
+                return;
+            }
+        }
+
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSubmit(e);
@@ -2473,20 +2553,36 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                             setIsDragActive(false);
                                         }}
                                     >
-                                        <div className="flex flex-row items-stretch">
+                                        <div className="flex flex-col sm:flex-row items-stretch">
                                             <textarea
                                                 id="quick-edit-prompt"
                                                 ref={inputRef}
                                                 value={prompt}
-                                                onChange={(e) => setPrompt(e.target.value)}
+                                                onChange={(e) => {
+                                                    setPrompt(e.target.value);
+                                                    setCursorPosition(e.target.selectionStart || 0);
+                                                }}
                                                 onKeyDown={handleKeyDown}
+                                                onSelect={(e) => setCursorPosition((e.target as HTMLTextAreaElement).selectionStart || 0)}
+                                                onClick={(e) => setCursorPosition((e.target as HTMLTextAreaElement).selectionStart || 0)}
                                                 className="flex-1 min-h-[72px] bg-transparent border-none focus:ring-0 text-theme-text placeholder:text-n-light font-raleway text-base px-3 py-2 resize-none focus:outline-none"
                                                 placeholder="e.g. Make it a sunny day, Add a red hat..."
                                                 disabled={isLoading}
                                             />
+                                            {/* @ Mention Dropdown */}
+                                            <MentionDropdown
+                                                isOpen={mentionSuggestions.isOpen}
+                                                suggestions={mentionSuggestions.suggestions}
+                                                selectedIndex={mentionSuggestions.selectedIndex}
+                                                anchorRef={inputRef}
+                                                onSelect={handleMentionSelect}
+                                                onClose={mentionSuggestions.closeSuggestions}
+                                                setSelectedIndex={mentionSuggestions.setSelectedIndex}
+                                                mentionType={mentionSuggestions.currentMentionType}
+                                            />
 
                                             {/* Second Row: Avatar, Voice, Product, Style */}
-                                            <div className="flex items-end gap-2 px-3 py-2 flex-shrink-0">
+                                            <div className="flex items-center sm:items-end gap-2 px-3 py-2 flex-shrink-0 border-t border-n-dark sm:border-t-0 w-full sm:w-auto">
                                                 {/* Avatar Button */}
                                                 <div className="relative">
                                                     <button
@@ -2697,8 +2793,8 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                         </div>
 
                                         {/* Bottom Controls Bar */}
-                                        <div className="flex items-center justify-between border-t border-n-dark px-3 py-2">
-                                            <div className="flex items-center gap-1">
+                                        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-n-dark px-3 py-2">
+                                            <div className="flex flex-wrap items-center gap-1">
                                                 {/* Reference Image Controls */}
                                                 <div className="relative">
                                                     <input
@@ -2889,7 +2985,26 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         Batch size
                                                     </TooltipPortal>
                                                 </div>
-                                                {/* Batch Size (Visible on larger screens) */}
+
+                                                {/* Your Prompts Button */}
+                                                <div className="relative">
+                                                    <button
+                                                        type="button"
+                                                        ref={promptsButtonRef}
+                                                        onClick={() => setIsPromptsDropdownOpen(prev => !prev)}
+                                                        className={`${glass.promptBorderless} hover:bg-n-text/20 text-n-text hover:text-n-text grid place-items-center h-8 w-8 rounded-full transition-colors duration-100 parallax-small`}
+                                                        onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'edit-prompts-tooltip')}
+                                                        onMouseLeave={() => hideHoverTooltip('edit-prompts-tooltip')}
+                                                        onPointerMove={onPointerMove}
+                                                        onPointerEnter={onPointerEnter}
+                                                        onPointerLeave={onPointerLeave}
+                                                    >
+                                                        <BookmarkIcon className="w-4 h-4 flex-shrink-0 text-n-text transition-colors duration-100" />
+                                                    </button>
+                                                    <TooltipPortal id="edit-prompts-tooltip">
+                                                        Your Prompts
+                                                    </TooltipPortal>
+                                                </div>
 
                                             </div>
 
@@ -3433,6 +3548,30 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                     </div>
                 </div>
             )}
+
+            {/* Your Prompts Dropdown */}
+            <Suspense fallback={null}>
+                <PromptsDropdown
+                    key={`quick-edit-prompts-${userKey}`}
+                    isOpen={isPromptsDropdownOpen}
+                    onClose={() => setIsPromptsDropdownOpen(false)}
+                    anchorEl={promptsButtonRef.current}
+                    recentPrompts={recentPrompts.slice(0, 5)}
+                    savedPrompts={savedPrompts.slice(0, 10)}
+                    onSelectPrompt={(text) => {
+                        setPrompt(text);
+                        setIsPromptsDropdownOpen(false);
+                    }}
+                    onRemoveSavedPrompt={(id) => removePrompt(id)}
+                    onRemoveRecentPrompt={(text) => removeRecentPrompt(text)}
+                    onUpdateSavedPrompt={(id, newText) => updatePrompt(id, newText)}
+                    onAddSavedPrompt={(text) => {
+                        savePrompt(text);
+                        return null;
+                    }}
+                    onSaveRecentPrompt={(text) => savePrompt(text)}
+                />
+            </Suspense>
         </>,
         document.body
     );
