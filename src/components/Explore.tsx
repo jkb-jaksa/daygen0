@@ -702,54 +702,59 @@ const Explore: React.FC = () => {
     return filtered;
   }, [filterGalleryItems, galleryItems, sortMode, topSortOrder]);
 
-  // Compute top creators by aggregating likes across their images
-  const topCreators = useMemo(() => {
-    // Group items by creator userId
-    const creatorMap = new Map<string, {
-      userId: string;
-      name: string;
-      profileImage?: string;
-      avatarColor: string;
-      country?: string;
-      totalLikes: number;
-      imageCount: number;
-      bestImage: string; // Highest-liked image for thumbnail
-      bestImageLikes: number;
-    }>();
+  // Top creators state - fetched from dedicated API endpoint
+  const [topCreators, setTopCreators] = useState<{
+    userId: string;
+    name: string;
+    profileImage?: string;
+    avatarColor: string;
+    country?: string;
+    totalLikes: number;
+    imageCount: number;
+    bestImage: string;
+  }[]>([]);
 
-    galleryItems.forEach(item => {
-      const userId = item.creator.userId;
-      if (!userId) return; // Skip items without userId
+  // Fetch top creators from dedicated API endpoint
+  useEffect(() => {
+    const fetchTopCreators = async () => {
+      try {
+        const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+        const response = await fetch(`${apiBase}/api/r2files/public/top-creators?limit=5`);
 
-      const existing = creatorMap.get(userId);
-      if (existing) {
-        existing.totalLikes += item.likes;
-        existing.imageCount += 1;
-        // Update best image if this one has more likes
-        if (item.likes > existing.bestImageLikes) {
-          existing.bestImage = item.imageUrl;
-          existing.bestImageLikes = item.likes;
+        if (!response.ok) {
+          throw new Error(`Failed to fetch top creators: ${response.status}`);
         }
-      } else {
-        creatorMap.set(userId, {
-          userId,
-          name: item.creator.name,
-          profileImage: item.creator.profileImage,
-          avatarColor: item.creator.avatarColor,
-          country: item.creator.country,
-          totalLikes: item.likes,
-          imageCount: 1,
-          bestImage: item.imageUrl,
-          bestImageLikes: item.likes,
-        });
-      }
-    });
 
-    // Convert to array and sort by total likes
-    return Array.from(creatorMap.values())
-      .sort((a, b) => b.totalLikes - a.totalLikes)
-      .slice(0, 8); // Get top 8 creators
-  }, [galleryItems]);
+        const data = await response.json() as {
+          creators: Array<{
+            userId: string;
+            username?: string;
+            profileImage?: string;
+            country?: string;
+            totalLikes: number;
+            imageCount: number;
+            bestImage: string;
+          }>;
+        };
+
+        // Transform API response to match expected format
+        setTopCreators(data.creators.map((creator, index) => ({
+          userId: creator.userId,
+          name: creator.username || 'Community Creator',
+          profileImage: creator.profileImage,
+          avatarColor: avatarGradients[index % avatarGradients.length],
+          country: creator.country,
+          totalLikes: creator.totalLikes,
+          imageCount: creator.imageCount,
+          bestImage: creator.bestImage,
+        })));
+      } catch (error) {
+        debugError('Failed to fetch top creators:', error);
+      }
+    };
+
+    void fetchTopCreators();
+  }, [avatarGradients]);
 
   const navigate = useNavigate();
   const location = useLocation();
