@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
 import { debugError } from '../utils/debug';
-import { BackendAuthContext, type BackendUser } from './contexts/BackendAuthContext';
+import { BackendAuthContext, type BackendUser, type BackendAuthContextValue } from './contexts/BackendAuthContext';
 
 // Context moved to ./contexts/BackendAuthContext to satisfy react-refresh/only-export-components
 
@@ -26,7 +26,7 @@ export function BackendAuthProvider({ children }: { children: React.ReactNode })
   };
 
   const fetchUserProfile = useCallback(async (token: string): Promise<BackendUser> => {
-    const response = await fetch(getApiUrl('/api/auth/supabase/me'), {
+    const response = await fetch(getApiUrl('/api/auth/me'), {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -42,7 +42,7 @@ export function BackendAuthProvider({ children }: { children: React.ReactNode })
   }, []);
 
   const signUp = useCallback(async (email: string, password: string, displayName?: string) => {
-    const response = await fetch(getApiUrl('/api/auth/supabase/signup'), {
+    const response = await fetch(getApiUrl('/api/auth/signup'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, displayName }),
@@ -57,7 +57,7 @@ export function BackendAuthProvider({ children }: { children: React.ReactNode })
   }, []);
 
   const signInWithPassword = useCallback(async (email: string, password: string) => {
-    const response = await fetch(getApiUrl('/api/auth/supabase/login'), {
+    const response = await fetch(getApiUrl('/api/auth/login'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -68,7 +68,7 @@ export function BackendAuthProvider({ children }: { children: React.ReactNode })
     }
 
     const data = await response.json();
-    
+
     // Store the token and fetch user profile
     if (data.accessToken) {
       localStorage.setItem('daygen:authToken', data.accessToken);
@@ -78,7 +78,7 @@ export function BackendAuthProvider({ children }: { children: React.ReactNode })
   }, [fetchUserProfile]);
 
   const signInWithMagicLink = useCallback(async (email: string) => {
-    const response = await fetch(getApiUrl('/api/auth/supabase/magic-link'), {
+    const response = await fetch(getApiUrl('/api/auth/magic-link'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
@@ -91,7 +91,7 @@ export function BackendAuthProvider({ children }: { children: React.ReactNode })
 
   const signInWithGoogle = useCallback(async () => {
     // For Google OAuth, we'll redirect to the backend endpoint
-    const response = await fetch(getApiUrl('/api/auth/supabase/google'), {
+    const response = await fetch(getApiUrl('/api/auth/google'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
@@ -110,7 +110,7 @@ export function BackendAuthProvider({ children }: { children: React.ReactNode })
     const token = localStorage.getItem('daygen:authToken');
     if (token) {
       try {
-        await fetch(getApiUrl('/api/auth/supabase/signout'), {
+        await fetch(getApiUrl('/api/auth/signout'), {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,
@@ -120,13 +120,13 @@ export function BackendAuthProvider({ children }: { children: React.ReactNode })
         debugError('Error signing out:', error);
       }
     }
-    
+
     localStorage.removeItem('daygen:authToken');
     setUser(null);
   }, []);
 
   const resetPassword = useCallback(async (email: string) => {
-    const response = await fetch(getApiUrl('/api/auth/supabase/forgot-password'), {
+    const response = await fetch(getApiUrl('/api/auth/forgot-password'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
@@ -143,7 +143,7 @@ export function BackendAuthProvider({ children }: { children: React.ReactNode })
       throw new Error('Not authenticated');
     }
 
-    const response = await fetch(getApiUrl('/api/auth/supabase/reset-password'), {
+    const response = await fetch(getApiUrl('/api/auth/reset-password'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

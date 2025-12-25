@@ -15,8 +15,14 @@ export interface BackendAuthContextValue {
   user: BackendUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  fetchUser: (accessToken: string) => Promise<BackendUser | null>;
-  updateProfile: (payload: Partial<BackendUser>) => Promise<BackendUser>;
+  signUp: (email: string, password: string, displayName?: string) => Promise<{ needsEmailConfirmation: boolean }>;
+  signInWithPassword: (email: string, password: string) => Promise<void>;
+  signInWithMagicLink: (email: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
+  signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (newPassword: string) => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 export const BackendAuthContext = createContext<BackendAuthContextValue | undefined>(undefined);
