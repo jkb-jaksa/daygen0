@@ -2305,6 +2305,41 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               </div>
             )}
             <div className={`${isMasterSection ? 'flex flex-wrap gap-2' : 'grid grid-cols-1 gap-0.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-items-start'} ${isMasterSection ? 'mb-0' : ''}`}>
+              {/* Show "Add Me" placeholder if no avatar has isMe flag */}
+              {!isMasterSection && !avatars.some(a => a.isMe) && (
+                <div
+                  className="group flex flex-col overflow-hidden rounded-[28px] border-2 border-dashed border-cyan-500/40 hover:border-cyan-400/60 bg-theme-black/40 shadow-lg transition-all duration-200 cursor-pointer"
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Add your avatar as Me"
+                  onClick={openAvatarCreator}
+                  onKeyDown={event => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      openAvatarCreator();
+                    }
+                  }}
+                >
+                  <div className="relative aspect-square overflow-hidden flex flex-col items-center justify-center p-4 text-center">
+                    <div className="absolute -top-4 -right-4 w-36 h-36 bg-cyan-500/20 blur-[50px] rounded-full pointer-events-none" />
+                    <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-tr from-transparent via-transparent to-cyan-500/5 pointer-events-none" />
+                    <div className="mb-3">
+                      <User className="h-12 w-12 text-cyan-400/60" strokeWidth={1.5} />
+                    </div>
+                    <h3 className="text-base font-raleway font-medium text-theme-text mb-1 tracking-tight">
+                      Add yourself
+                    </h3>
+                    <p className="text-[10px] leading-tight text-theme-white/40 font-raleway mb-4 max-w-[140px]">
+                      Upload a photo to create your "me" avatar
+                    </p>
+                    <div className="flex items-center gap-2 bg-theme-text text-theme-black px-4 py-1.5 rounded-full text-xs font-bold">
+                      <Plus className="h-3 w-3" strokeWidth={3} />
+                      Add Me
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Show avatar cards if there are avatars */}
               {avatars.map(avatar => renderAvatarCard(avatar))}
 
