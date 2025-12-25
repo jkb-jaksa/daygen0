@@ -13,6 +13,7 @@ import { GEMINI_ASPECT_RATIO_OPTIONS } from '../../data/aspectRatios';
 import { getAspectRatiosForModel } from '../../utils/aspectRatioUtils';
 import type { GeminiAspectRatio } from '../../types/aspectRatio';
 import AvatarPickerPortal from './AvatarPickerPortal';
+import AvatarBadge from '../avatars/AvatarBadge';
 import { useSavedPrompts } from '../../hooks/useSavedPrompts';
 import { usePromptHistory } from '../../hooks/usePromptHistory';
 import { useAuth } from '../../auth/useAuth';
@@ -735,6 +736,10 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     const {
         selectedAvatar, // To be deprecated/removed in favor of selectedAvatars
         selectedAvatars, // Use this
+        selectedAvatarImageUrls, // Per-avatar selected image URLs
+        selectedAvatarImages, // Map of avatarId -> imageId
+        selectAvatarImage, // Handler to select specific image for avatar
+        removeSelectedAvatar, // Handler to remove avatar from selection
         avatarButtonRef,
         isAvatarPickerOpen,
         setIsAvatarPickerOpen,
@@ -1250,7 +1255,8 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
             }
 
             // Collect all avatar/product URLs
-            const avatarImageUrls = selectedAvatars.map(a => a.imageUrl);
+            // Collect all avatar/product URLs (uses per-avatar image selection)
+            const avatarImageUrls = selectedAvatarImageUrls;
             const productImageUrls = selectedProducts.map(p => p.imageUrl);
             const avatarIds = selectedAvatars.map(a => a.id);
             const productIds = selectedProducts.map(p => p.id);
@@ -2325,12 +2331,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         ref={avatarButtonRef}
                                                         onClick={() => {
                                                             setIsProductPickerOpen(false);
-                                                            if (avatarHandlers.storedAvatars.length === 0) {
-                                                                avatarHandlers.setAvatarUploadError(null);
-                                                                avatarHandlers.avatarQuickUploadInputRef.current?.click();
-                                                            } else {
-                                                                setIsAvatarPickerOpen(!isAvatarPickerOpen);
-                                                            }
+                                                            setIsAvatarPickerOpen(!isAvatarPickerOpen);
                                                         }}
                                                         onDragEnter={handleAvatarButtonDragEnter}
                                                         onDragOver={handleAvatarButtonDragOver}
@@ -2485,12 +2486,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         ref={productButtonRef}
                                                         onClick={() => {
                                                             setIsAvatarPickerOpen(false);
-                                                            if (productHandlers.storedProducts.length === 0) {
-                                                                productHandlers.setProductUploadError(null);
-                                                                productHandlers.productQuickUploadInputRef.current?.click();
-                                                            } else {
-                                                                setIsProductPickerOpen(!isProductPickerOpen);
-                                                            }
+                                                            setIsProductPickerOpen(!isProductPickerOpen);
                                                         }}
                                                         onDragEnter={handleProductButtonDragEnter}
                                                         onDragOver={handleProductButtonDragOver}
@@ -2746,12 +2742,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         ref={avatarButtonRef}
                                                         onClick={() => {
                                                             setIsProductPickerOpen(false);
-                                                            if (avatarHandlers.storedAvatars.length === 0) {
-                                                                avatarHandlers.setAvatarUploadError(null);
-                                                                avatarHandlers.avatarQuickUploadInputRef.current?.click();
-                                                            } else {
-                                                                setIsAvatarPickerOpen(!isAvatarPickerOpen);
-                                                            }
+                                                            setIsAvatarPickerOpen(!isAvatarPickerOpen);
                                                         }}
                                                         onDragEnter={handleAvatarButtonDragEnter}
                                                         onDragOver={handleAvatarButtonDragOver}
@@ -2906,12 +2897,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                         ref={productButtonRef}
                                                         onClick={() => {
                                                             setIsAvatarPickerOpen(false);
-                                                            if (productHandlers.storedProducts.length === 0) {
-                                                                productHandlers.setProductUploadError(null);
-                                                                productHandlers.productQuickUploadInputRef.current?.click();
-                                                            } else {
-                                                                setIsProductPickerOpen(!isProductPickerOpen);
-                                                            }
+                                                            setIsProductPickerOpen(!isProductPickerOpen);
                                                         }}
                                                         onDragEnter={handleProductButtonDragEnter}
                                                         onDragOver={handleProductButtonDragOver}
@@ -3303,6 +3289,22 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                 </div>
 
                                             </div>
+
+                                            {/* Selected Avatars - Image Selection Interface */}
+                                            {selectedAvatars.length > 0 && (
+                                                <div className="flex flex-wrap items-center gap-1.5 mt-2 mb-2">
+                                                    <span className="text-xs text-theme-white/60 font-raleway">Avatars:</span>
+                                                    {selectedAvatars.map(avatar => (
+                                                        <AvatarBadge
+                                                            key={avatar.id}
+                                                            avatar={avatar}
+                                                            selectedImageId={selectedAvatarImages[avatar.id] ?? null}
+                                                            onSelectImage={selectAvatarImage}
+                                                            onRemove={removeSelectedAvatar}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
 
                                             <button
                                                 type="submit"

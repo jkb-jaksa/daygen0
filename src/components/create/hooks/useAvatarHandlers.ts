@@ -35,6 +35,8 @@ export function useAvatarHandlers() {
   const [storedAvatars, setStoredAvatars] = useState<StoredAvatar[]>([]);
   // Support multiple selected avatars
   const [selectedAvatars, setSelectedAvatars] = useState<StoredAvatar[]>([]);
+  // Per-avatar image selection: maps avatarId -> imageId
+  const [selectedAvatarImages, setSelectedAvatarImages] = useState<Record<string, string>>({});
   const [selectedAvatarImageId, setSelectedAvatarImageId] = useState<string | null>(null);
   const [pendingAvatarId, setPendingAvatarId] = useState<string | null>(null);
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
@@ -87,12 +89,19 @@ export function useAvatarHandlers() {
     return selectedAvatarImage?.id ?? selectedAvatarImageId ?? selectedAvatar.primaryImageId ?? selectedAvatar.images[0]?.id ?? null;
   }, [selectedAvatar, selectedAvatarImage, selectedAvatarImageId]);
 
-  // Get image URLs for all selected avatars (for reference generation)
+  // Get image URLs for all selected avatars (using per-avatar image selection)
   const selectedAvatarImageUrls = useMemo(() => {
     return selectedAvatars.map(avatar => {
+      // Check if a specific image is selected for this avatar
+      const selectedImageId = selectedAvatarImages[avatar.id];
+      if (selectedImageId) {
+        const selectedImage = avatar.images.find(img => img.id === selectedImageId);
+        if (selectedImage) return selectedImage.url;
+      }
+      // Fallback to primary image or first image
       return avatar.images[0]?.url ?? avatar.imageUrl;
     }).filter(Boolean) as string[];
-  }, [selectedAvatars]);
+  }, [selectedAvatars, selectedAvatarImages]);
 
   // Load stored avatars - fetch from backend, fallback to local storage
   const loadStoredAvatars = useCallback(async () => {
@@ -361,12 +370,32 @@ export function useAvatarHandlers() {
   const clearAllAvatars = useCallback(() => {
     setSelectedAvatars([]);
     setSelectedAvatarImageId(null);
+    setSelectedAvatarImages({});
   }, []);
 
   // Remove specific avatar from selection
   const removeSelectedAvatar = useCallback((avatarId: string) => {
     setSelectedAvatars(prev => prev.filter(a => a.id !== avatarId));
+    // Also clear the image selection for this avatar
+    setSelectedAvatarImages(prev => {
+      const next = { ...prev };
+      delete next[avatarId];
+      return next;
+    });
   }, []);
+
+  // Select a specific image for an avatar (for per-avatar image selection)
+  const selectAvatarImage = useCallback((avatarId: string, imageId: string) => {
+    setSelectedAvatarImages(prev => ({
+      ...prev,
+      [avatarId]: imageId,
+    }));
+  }, []);
+
+  // Get the selected image ID for a specific avatar
+  const getSelectedImageForAvatar = useCallback((avatarId: string): string | null => {
+    return selectedAvatarImages[avatarId] ?? null;
+  }, [selectedAvatarImages]);
 
   // Handle avatar image selection
   const handleAvatarImageSelect = useCallback((imageId: string) => {
@@ -546,6 +575,7 @@ export function useAvatarHandlers() {
     selectedAvatarImageIndex,
     activeAvatarImageId,
     avatarMap,
+    selectedAvatarImages, // New: per-avatar image selection map
 
     // Refs
     avatarButtonRef,
@@ -561,6 +591,8 @@ export function useAvatarHandlers() {
     isAvatarSelected, // New: check if avatar is selected
     clearAllAvatars, // New: clear all selected avatars
     removeSelectedAvatar, // New: remove specific avatar from selection
+    selectAvatarImage, // New: select specific image for an avatar
+    getSelectedImageForAvatar, // New: get selected image ID for an avatar
     handleAvatarImageSelect,
     handleAvatarPickerOpen,
     handleAvatarPickerClose,
@@ -588,5 +620,6 @@ export function useAvatarHandlers() {
     setIsDraggingOverAvatarButton,
     setAvatarGalleryOpenTrigger,
     setAvatarName,
+    setSelectedAvatarImages, // New: set per-avatar image selections
   };
 }

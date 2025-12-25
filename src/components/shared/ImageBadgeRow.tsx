@@ -16,7 +16,16 @@ type ModelConfig = {
   onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
 };
 
-type AvatarEntry = { data: StoredAvatar; onClick?: (event: MouseEvent<HTMLButtonElement>) => void };
+type AvatarEntry = {
+  data: StoredAvatar;
+  onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
+  /** Per-avatar selected image ID (enables popover mode) */
+  selectedImageId?: string | null;
+  /** Called when user selects a different image */
+  onSelectImage?: (avatarId: string, imageId: string) => void;
+  /** Called when user removes avatar from selection */
+  onRemove?: (avatarId: string) => void;
+};
 type ProductEntry = { data: StoredProduct; onClick?: (event: MouseEvent<HTMLButtonElement>) => void };
 type StyleEntry = { data: StoredStyle; onClick?: (event: MouseEvent<HTMLButtonElement>) => void };
 
@@ -84,6 +93,9 @@ const ImageBadgeRow: React.FC<ImageBadgeRowProps> = ({
           key={avatar.data.id}
           avatar={avatar.data}
           onClick={avatar.onClick}
+          selectedImageId={avatar.selectedImageId}
+          onSelectImage={avatar.onSelectImage}
+          onRemove={avatar.onRemove}
         />
       ))}
 

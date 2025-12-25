@@ -77,6 +77,10 @@ vi.mock('./hooks/useAvatarHandlers', () => ({
         processAvatarImageFile: vi.fn(),
         loadStoredAvatars: vi.fn(),
         selectedAvatars: [],
+        selectedAvatarImageUrls: [],
+        selectedAvatarImages: {},
+        selectAvatarImage: vi.fn(),
+        removeSelectedAvatar: vi.fn(),
     }),
 }));
 

@@ -12,6 +12,8 @@ export interface MentionItem {
     type: MentionType;
     // For saved prompts, this contains the full prompt text
     promptText?: string;
+    // For "Me" avatar indicator
+    isMe?: boolean;
 }
 
 export interface ParsedMention {
@@ -68,7 +70,24 @@ export function useMentionSuggestions({
     const parsedMentions = useMemo((): ParsedMention[] => {
         const mentions: ParsedMention[] = [];
 
-        // 1. Check Avatars (@) - UNCHANGED
+        // Find the "Me" avatar
+        const meAvatar = storedAvatars.find(a => a.isMe);
+
+        // 0. Check for @me keyword (matches the isMe avatar)
+        if (meAvatar) {
+            const mePattern = /@me(?=\s|@|\/|\n|$)/gi;
+            let match;
+            while ((match = mePattern.exec(prompt)) !== null) {
+                mentions.push({
+                    name: meAvatar.name,  // Use the actual avatar name for selection
+                    type: 'avatar',
+                    startIndex: match.index,
+                    endIndex: match.index + match[0].length,
+                });
+            }
+        }
+
+        // 1. Check Avatars (@) - by their actual names
         for (const avatar of storedAvatars) {
             const mentionPattern = new RegExp(
                 `@${escapeRegex(avatar.name)}(?=\\s|@|/|\\n|$)`,
@@ -77,12 +96,18 @@ export function useMentionSuggestions({
 
             let match;
             while ((match = mentionPattern.exec(prompt)) !== null) {
-                mentions.push({
-                    name: avatar.name,
-                    type: 'avatar',
-                    startIndex: match.index,
-                    endIndex: match.index + match[0].length,
-                });
+                // Avoid duplicates (in case an avatar is named "me")
+                const alreadyAdded = mentions.some(
+                    m => m.startIndex === match!.index && m.endIndex === match!.index + match![0].length
+                );
+                if (!alreadyAdded) {
+                    mentions.push({
+                        name: avatar.name,
+                        type: 'avatar',
+                        startIndex: match.index,
+                        endIndex: match.index + match[0].length,
+                    });
+                }
             }
         }
 
@@ -116,7 +141,7 @@ export function useMentionSuggestions({
         return mentions;
     }, [prompt, storedAvatars, storedProducts]);
 
-    // Get suggestions list based on active trigger (@ or /)
+
     // @ shows BOTH avatars AND products (grouped)
     // / shows saved prompts
     const suggestions = useMemo((): MentionItem[] => {
@@ -126,15 +151,35 @@ export function useMentionSuggestions({
         const items: MentionItem[] = [];
 
         if (activeTrigger === '@') {
-            // Show BOTH Avatars AND Products with @ trigger
-            // Avatars first
+            // Find the "Me" avatar to show first
+            const meAvatar = storedAvatars.find(a => a.isMe);
+
+            // Special handling for @me keyword
+            if (lowerQuery === 'me' || lowerQuery === 'm' || lowerQuery === '') {
+                if (meAvatar) {
+                    items.push({
+                        id: meAvatar.id,
+                        name: 'me',  // Display as @me
+                        imageUrl: meAvatar.imageUrl,
+                        type: 'avatar',
+                        isMe: true,
+                    });
+                }
+            }
+
+            // Show other Avatars (exclude Me avatar since we show it specially)
             for (const avatar of storedAvatars) {
+                // Skip the "me" entry if we just added it
+                if (avatar.isMe && (lowerQuery === 'me' || lowerQuery === 'm' || lowerQuery === '')) {
+                    continue;
+                }
                 if (!lowerQuery || avatar.name.toLowerCase().includes(lowerQuery)) {
                     items.push({
                         id: avatar.id,
-                        name: avatar.name,
+                        name: avatar.isMe ? `${avatar.name} (me)` : avatar.name,
                         imageUrl: avatar.imageUrl,
                         type: 'avatar',
+                        isMe: avatar.isMe,
                     });
                 }
             }
@@ -187,7 +232,21 @@ export function useMentionSuggestions({
         if (!queryLower) return null;
 
         if (activeTrigger === '@') {
-            // Check avatars first
+            // Special handling for @me
+            if (queryLower === 'me') {
+                const meAvatar = storedAvatars.find(a => a.isMe);
+                if (meAvatar) {
+                    return {
+                        id: meAvatar.id,
+                        name: 'me',
+                        imageUrl: meAvatar.imageUrl,
+                        type: 'avatar',
+                        isMe: true,
+                    };
+                }
+            }
+
+            // Check avatars by name
             const exactAvatarMatch = storedAvatars.find(
                 a => a.name.toLowerCase() === queryLower
             );
@@ -197,6 +256,7 @@ export function useMentionSuggestions({
                     name: exactAvatarMatch.name,
                     imageUrl: exactAvatarMatch.imageUrl,
                     type: 'avatar',
+                    isMe: exactAvatarMatch.isMe,
                 };
             }
             // Then check products
@@ -216,6 +276,7 @@ export function useMentionSuggestions({
 
         return null;
     }, [query, mentionStartIndex, activeTrigger, storedAvatars, storedProducts]);
+
 
     // Detect @ or / being typed and show suggestions
     useEffect(() => {

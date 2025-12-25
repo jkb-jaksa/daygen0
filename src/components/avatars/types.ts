@@ -13,6 +13,7 @@ export interface StoredAvatar {
   slug: string;
   name: string;
   imageUrl: string;
+  isMe: boolean;  // Designates user's own avatar
   createdAt: string;
   source: AvatarSource;
   sourceId?: string;
@@ -24,6 +25,7 @@ export interface StoredAvatar {
 
 export interface AvatarSelection {
   imageUrl: string;
+  images: AvatarImage[];  // All selected images for creation
   source: AvatarSource;
   sourceId?: string;
 }

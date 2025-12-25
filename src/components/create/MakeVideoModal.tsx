@@ -17,6 +17,7 @@ import type { GalleryImageLike } from './types';
 import type { StoredStyle } from '../styles/types';
 import { useStyleHandlers } from './hooks/useStyleHandlers';
 import AvatarPickerPortal from './AvatarPickerPortal';
+import AvatarBadge from '../avatars/AvatarBadge';
 import { VoiceSelector } from '../shared/VoiceSelector';
 
 // Lazy load components to avoid circular dependencies and reduce bundle size
@@ -284,6 +285,10 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
     const {
         selectedAvatar, // To be deprecated/removed in favor of selectedAvatars
         selectedAvatars, // Use this
+        selectedAvatarImageUrls, // Per-avatar selected image URLs
+        selectedAvatarImages, // Map of avatarId -> imageId
+        selectAvatarImage, // Handler to select specific image for avatar
+        removeSelectedAvatar, // Handler to remove avatar from selection
         avatarButtonRef,
         isAvatarPickerOpen,
         setIsAvatarPickerOpen,
@@ -515,8 +520,8 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (onSubmit) {
-            // Collect all avatar/product URLs
-            const avatarImageUrls = selectedAvatars.map(a => a.imageUrl);
+            // Collect all avatar/product URLs (uses per-avatar image selection)
+            const avatarImageUrls = selectedAvatarImageUrls;
             const productImageUrls = selectedProducts.map(p => p.imageUrl);
             const avatarIds = selectedAvatars.map(a => a.id);
             const productIds = selectedProducts.map(p => p.id);
@@ -1022,12 +1027,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                     ref={avatarButtonRef}
                                                     onClick={() => {
                                                         setIsProductPickerOpen(false);
-                                                        if (avatarHandlers.storedAvatars.length === 0) {
-                                                            avatarHandlers.setAvatarUploadError(null);
-                                                            avatarHandlers.avatarQuickUploadInputRef.current?.click();
-                                                        } else {
-                                                            setIsAvatarPickerOpen(!isAvatarPickerOpen);
-                                                        }
+                                                        setIsAvatarPickerOpen(!isAvatarPickerOpen);
                                                     }}
                                                     onDragEnter={handleAvatarButtonDragEnter}
                                                     onDragOver={handleAvatarButtonDragOver}
@@ -1180,12 +1180,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                     ref={productButtonRef}
                                                     onClick={() => {
                                                         setIsAvatarPickerOpen(false);
-                                                        if (productHandlers.storedProducts.length === 0) {
-                                                            productHandlers.setProductUploadError(null);
-                                                            productHandlers.productQuickUploadInputRef.current?.click();
-                                                        } else {
-                                                            setIsProductPickerOpen(!isProductPickerOpen);
-                                                        }
+                                                        setIsProductPickerOpen(!isProductPickerOpen);
                                                     }}
                                                     onDragEnter={handleProductButtonDragEnter}
                                                     onDragOver={handleProductButtonDragOver}
@@ -1582,6 +1577,23 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                             </div>
 
                                         </div>
+
+                                        {/* Selected Avatars - Image Selection Interface */}
+                                        {selectedAvatars.length > 0 && (
+                                            <div className="flex flex-wrap items-center gap-1.5 mt-2 mb-2">
+                                                <span className="text-xs text-theme-white/60 font-raleway">Avatars:</span>
+                                                {selectedAvatars.map(avatar => (
+                                                    <AvatarBadge
+                                                        key={avatar.id}
+                                                        avatar={avatar}
+                                                        selectedImageId={selectedAvatarImages[avatar.id] ?? null}
+                                                        onSelectImage={selectAvatarImage}
+                                                        onRemove={removeSelectedAvatar}
+                                                    />
+                                                ))}
+                                            </div>
+                                        )}
+
                                         <button
                                             type="submit"
                                             disabled={isLoading || !prompt.trim()}
@@ -1609,7 +1621,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                     onClose={() => setIsAvatarPickerOpen(false)}
                 >
                     <div className="min-w-[260px] space-y-2">
-                        {avatarHandlers.storedAvatars.length > 0 ? (
+                        {avatarHandlers.storedAvatars.length > 0 && (
                             <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
                                 {avatarHandlers.storedAvatars.map(avatar => {
                                     const isActive = selectedAvatar?.id === avatar.id;
@@ -1643,11 +1655,25 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                     );
                                 })}
                             </div>
-                        ) : (
-                            <div className="py-4 text-center">
-                                <p className="text-sm text-theme-light">No avatars found</p>
+                        )}
+                        {avatarHandlers.storedAvatars.length === 0 && (
+                            <div className="py-2 text-center">
+                                <p className="text-sm text-theme-light mb-2">No avatars yet</p>
                             </div>
                         )}
+                        {/* Create New Avatar Button */}
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setIsAvatarPickerOpen(false);
+                                avatarHandlers.setAvatarUploadError(null);
+                                avatarHandlers.avatarQuickUploadInputRef.current?.click();
+                            }}
+                            className="w-full rounded-2xl border border-dashed border-theme-mid px-3 py-2 text-sm font-raleway text-theme-white hover:border-theme-text hover:text-theme-text transition-colors duration-200 flex items-center justify-center gap-2"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Create new avatar
+                        </button>
                     </div>
                 </AvatarPickerPortal>
 
@@ -1658,7 +1684,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                     onClose={() => setIsProductPickerOpen(false)}
                 >
                     <div className="min-w-[260px] space-y-2">
-                        {productHandlers.storedProducts.length > 0 ? (
+                        {productHandlers.storedProducts.length > 0 && (
                             <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
                                 {productHandlers.storedProducts.map(product => {
                                     const isActive = selectedProduct?.id === product.id;
@@ -1692,11 +1718,25 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                     );
                                 })}
                             </div>
-                        ) : (
-                            <div className="py-4 text-center">
-                                <p className="text-sm text-theme-light">No products found</p>
+                        )}
+                        {productHandlers.storedProducts.length === 0 && (
+                            <div className="py-2 text-center">
+                                <p className="text-sm text-theme-light mb-2">No products yet</p>
                             </div>
                         )}
+                        {/* Create New Product Button */}
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setIsProductPickerOpen(false);
+                                productHandlers.setProductUploadError(null);
+                                productHandlers.productQuickUploadInputRef.current?.click();
+                            }}
+                            className="w-full rounded-2xl border border-dashed border-theme-mid px-3 py-2 text-sm font-raleway text-theme-white hover:border-theme-text hover:text-theme-text transition-colors duration-200 flex items-center justify-center gap-2"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Create new product
+                        </button>
                     </div>
                 </AvatarPickerPortal>
 

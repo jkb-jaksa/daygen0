@@ -1825,6 +1825,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                       className="flex-1 text-base font-raleway font-normal text-theme-text px-3 break-words line-clamp-2"
                       title={avatar.name}
                     >
+                      {avatar.isMe && <span className="text-cyan-400 mr-1.5">(me)</span>}
                       {avatar.name || (isMasterSection ? "Enter your name..." : "Enter name...")}
                     </p>
                     {!disableModalTrigger && (
