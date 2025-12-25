@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { debugLog } from '../utils/debug';
 import { resolveGenerationCatchError } from '../utils/errorMessages';
+import { normalizeAssetUrl } from '../utils/api';
 import { useAuth } from '../auth/useAuth';
 import { useCreditCheck } from './useCreditCheck';
 import {
@@ -52,12 +53,12 @@ export interface ImageGenerationOptions {
 export const useRunwayImageGeneration = () => {
   const { user } = useAuth();
   const tracker = useGenerationJobTracker();
-  const { 
-    checkCredits, 
-    showInsufficientCreditsModal, 
-    creditCheckData, 
-    handleBuyCredits, 
-    handleCloseModal 
+  const {
+    checkCredits,
+    showInsufficientCreditsModal,
+    creditCheckData,
+    handleBuyCredits,
+    handleCloseModal
   } = useCreditCheck();
   const [state, setState] = useState<ImageGenerationState>({
     isLoading: false,
@@ -104,7 +105,8 @@ export const useRunwayImageGeneration = () => {
 
     const push = (value?: string) => {
       if (value) {
-        urls.add(value);
+        const normalized = normalizeAssetUrl(value);
+        if (normalized) urls.add(normalized);
       }
     };
 
@@ -215,7 +217,7 @@ export const useRunwayImageGeneration = () => {
     const jobId = response.jobId ?? pickString(payload.jobId) ?? `runway-${Date.now()}`;
 
     return {
-      url,
+      url: normalizeAssetUrl(url) || url,
       prompt: options.prompt,
       model: resolvedModel,
       timestamp: new Date().toISOString(),

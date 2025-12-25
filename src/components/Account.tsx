@@ -123,7 +123,7 @@ export default function Account() {
         setCountry(user.country);
       }
     }
-  }, [username, bio, user?.username, user?.bio, user?.country, usernameTouched, bioTouched]);
+  }, [username, bio, user, user?.username, user?.bio, user?.country, usernameTouched, bioTouched]);
 
   useEffect(() => {
     let cancelled = false;

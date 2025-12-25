@@ -1,3 +1,4 @@
+import { normalizeAssetUrl } from '../utils/api';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { resolveGenerationCatchError } from '../utils/errorMessages';
 import {
@@ -79,9 +80,9 @@ const collectVideoUrl = (
   if (metadata) {
     urls.push(
       pickString(metadata.resultUrl) ??
-        pickString(metadata.result_url) ??
-        pickString(metadata.url) ??
-        pickString(metadata.videoUrl),
+      pickString(metadata.result_url) ??
+      pickString(metadata.url) ??
+      pickString(metadata.videoUrl),
     );
 
     backup = pickString(metadata.backupUrl) ?? pickString(metadata.backup_url);
@@ -96,8 +97,8 @@ const collectVideoUrl = (
           if (record) {
             urls.push(
               pickString(record.url) ??
-                pickString(record.resultUrl) ??
-                pickString(record.videoUrl),
+              pickString(record.resultUrl) ??
+              pickString(record.videoUrl),
             );
           }
         }
@@ -176,10 +177,11 @@ const parseImmediateHailuoVideoResult = (
   options: HailuoGenerateOptions,
 ): HailuoGeneratedVideo | undefined => {
   const payload = response.payload;
-  const url =
+  const url = normalizeAssetUrl(
     pickString(payload.videoUrl) ??
     pickString(payload.resultUrl) ??
-    pickString(payload.dataUrl);
+    pickString(payload.dataUrl)
+  );
 
   if (!url) {
     return undefined;

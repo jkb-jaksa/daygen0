@@ -1470,7 +1470,6 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     fetchGalleryImages,
     hasBase64Images,
     needsMigration,
-    loadMore,
     hasMore,
     wrappedLoadMore,
     currentContentType,

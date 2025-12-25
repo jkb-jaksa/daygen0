@@ -1,3 +1,4 @@
+import { normalizeAssetUrl } from '../utils/api';
 import { useCallback, useState } from 'react';
 import { resolveGenerationCatchError } from '../utils/errorMessages';
 import {
@@ -77,9 +78,9 @@ const collectVideoUrl = (
   if (metadata) {
     candidates.push(
       pickString(metadata.resultUrl) ??
-        pickString(metadata.result_url) ??
-        pickString(metadata.url) ??
-        pickString(metadata.videoUrl),
+      pickString(metadata.result_url) ??
+      pickString(metadata.url) ??
+      pickString(metadata.videoUrl),
     );
 
     const results = metadata.results;
@@ -92,8 +93,8 @@ const collectVideoUrl = (
           if (record) {
             candidates.push(
               pickString(record.url) ??
-                pickString(record.resultUrl) ??
-                pickString(record.videoUrl),
+              pickString(record.resultUrl) ??
+              pickString(record.videoUrl),
             );
           }
         }
@@ -150,8 +151,13 @@ const parseImmediateSeedanceVideoResult = (
     return undefined;
   }
 
+  const normalizedUrl = normalizeAssetUrl(url);
+  if (!normalizedUrl) {
+    return undefined;
+  }
+
   return {
-    url,
+    url: normalizedUrl,
     prompt: options.prompt,
     model: options.model ?? 'seedance-1.0-pro',
     timestamp: new Date().toISOString(),

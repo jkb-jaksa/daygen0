@@ -46,7 +46,7 @@ export function SubscriptionPlans({ className, defaultPeriod = 'monthly', onPurc
     getSubscription()
       .then(setCurrentSubscription)
       .catch(() => setCurrentSubscription(null));
-  }, []);
+  }, [getSubscription]);
 
   const isSubscriptionActive = (status: string | undefined) => {
     if (!status) return false;

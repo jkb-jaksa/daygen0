@@ -434,7 +434,7 @@ export default function CreatorProfile() {
     const profileImage = profileData?.user?.profileImage;
     const bio = profileData?.user?.bio;
     const userCountry = profileData?.user?.country;
-    const generations = profileData?.items || [];
+    const generations = useMemo(() => profileData?.items || [], [profileData?.items]);
 
     // Sorted generations based on sortMode
     const sortedGenerations = useMemo(() => {

@@ -285,8 +285,8 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
         setIsAvatarPickerOpen,
         creationsModalAvatar,
         setCreationsModalAvatar,
-        avatarQuickUploadInputRef,
-        setAvatarUploadError,
+        // avatarQuickUploadInputRef,
+        // setAvatarUploadError,
     } = avatarHandlers;
 
     const {
@@ -297,8 +297,8 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
         setIsProductPickerOpen,
         creationsModalProduct,
         setCreationsModalProduct,
-        productQuickUploadInputRef,
-        setProductUploadError,
+        // productQuickUploadInputRef,
+        // setProductUploadError,
     } = productHandlers;
 
     // @ mention suggestions hook (avatars and products)
@@ -1122,10 +1122,10 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                         // I'll use `avatarHandlers.clearAllAvatars?.()` with safety check or just assume it is there.
                                                         // If not, I'll fix it in a subsequent step.
                                                         if ('clearAllAvatars' in avatarHandlers) {
-                                                            (avatarHandlers as any).clearAllAvatars();
+                                                            (avatarHandlers as { clearAllAvatars: () => void }).clearAllAvatars();
                                                         } else {
                                                             // Fallback
-                                                            (avatarHandlers as any).handleAvatarSelect(null);
+                                                            (avatarHandlers as { handleAvatarSelect: (v: null) => void }).handleAvatarSelect(null);
                                                         }
                                                     }}
                                                     className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove z-20"
@@ -1254,9 +1254,9 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         if ('clearAllProducts' in productHandlers) {
-                                                            (productHandlers as any).clearAllProducts();
+                                                            (productHandlers as { clearAllProducts: () => void }).clearAllProducts();
                                                         } else {
-                                                            (productHandlers as any).handleProductSelect(null);
+                                                            (productHandlers as { handleProductSelect: (v: null) => void }).handleProductSelect(null);
                                                         }
                                                     }}
                                                     className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"

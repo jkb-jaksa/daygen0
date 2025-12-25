@@ -2459,9 +2459,9 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 if ('clearAllAvatars' in avatarHandlers) {
-                                                                    (avatarHandlers as any).clearAllAvatars();
+                                                                    (avatarHandlers as { clearAllAvatars: () => void }).clearAllAvatars();
                                                                 } else {
-                                                                    (avatarHandlers as any).handleAvatarSelect(null);
+                                                                    (avatarHandlers as { handleAvatarSelect: (v: null) => void }).handleAvatarSelect(null);
                                                                 }
                                                             }}
                                                             className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
@@ -2619,9 +2619,9 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 if ('clearAllProducts' in productHandlers) {
-                                                                    (productHandlers as any).clearAllProducts();
+                                                                    (productHandlers as { clearAllProducts: () => void }).clearAllProducts();
                                                                 } else {
-                                                                    (productHandlers as any).handleProductSelect(null);
+                                                                    (productHandlers as { handleProductSelect: (v: null) => void }).handleProductSelect(null);
                                                                 }
                                                             }}
                                                             className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
@@ -2880,9 +2880,9 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 if ('clearAllAvatars' in avatarHandlers) {
-                                                                    (avatarHandlers as any).clearAllAvatars();
+                                                                    (avatarHandlers as { clearAllAvatars: () => void }).clearAllAvatars();
                                                                 } else {
-                                                                    (avatarHandlers as any).handleAvatarSelect(null);
+                                                                    (avatarHandlers as { handleAvatarSelect: (v: null) => void }).handleAvatarSelect(null);
                                                                 }
                                                             }}
                                                             className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
@@ -3040,9 +3040,9 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 if ('clearAllProducts' in productHandlers) {
-                                                                    (productHandlers as any).clearAllProducts();
+                                                                    (productHandlers as { clearAllProducts: () => void }).clearAllProducts();
                                                                 } else {
-                                                                    (productHandlers as any).handleProductSelect(null);
+                                                                    (productHandlers as { handleProductSelect: (v: null) => void }).handleProductSelect(null);
                                                                 }
                                                             }}
                                                             className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"

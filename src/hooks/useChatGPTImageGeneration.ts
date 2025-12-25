@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { debugError } from '../utils/debug';
+import { normalizeAssetUrl } from '../utils/api';
 import { resolveGenerationCatchError } from '../utils/errorMessages';
 import { useAuth } from '../auth/useAuth';
 import {
@@ -83,7 +84,7 @@ const parseChatGPTJobResult = (
   const metadata = asRecord(snapshot.job.metadata);
   const metadataUrl = metadata ? pickString(metadata.url) : undefined;
   const metadataImage = metadata ? pickString(metadata.imageUrl) : undefined;
-  const url = pickString(snapshot.job.resultUrl) ?? metadataUrl ?? metadataImage;
+  const url = normalizeAssetUrl(pickString(snapshot.job.resultUrl) ?? metadataUrl ?? metadataImage);
 
   if (!url) {
     throw new Error('Job completed but no result URL was provided.');
@@ -139,7 +140,7 @@ const parseImmediateResponse = (
   const payloadHeight = typeof payload?.height === 'number' ? payload.height : undefined;
 
   return {
-    url,
+    url: normalizeAssetUrl(url) || url,
     prompt,
     model: 'gpt-image-1.5',
     timestamp: new Date().toISOString(),

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '../auth/useAuth';
 import { resolveGenerationCatchError } from '../utils/errorMessages';
+import { normalizeAssetUrl } from '../utils/api';
 import {
   runGenerationJob,
   useGenerationJobTracker,
@@ -90,7 +91,8 @@ const extractUrls = (snapshot: JobStatusSnapshot, response: ProviderJobResponse)
 
   const push = (value?: string) => {
     if (value) {
-      urls.add(value);
+      const normalized = normalizeAssetUrl(value);
+      if (normalized) urls.add(normalized);
     }
   };
 
@@ -188,8 +190,8 @@ const parseImmediateQwenResult = (
   const payload = response.payload;
   const dataUrls = Array.isArray(payload.dataUrls)
     ? payload.dataUrls
-        .map(pickString)
-        .filter((value): value is string => Boolean(value))
+      .map(pickString)
+      .filter((value): value is string => Boolean(value))
     : [];
 
   const directUrl = pickString(payload.dataUrl) ?? pickString(payload.url) ?? pickString(payload.image);
@@ -201,7 +203,7 @@ const parseImmediateQwenResult = (
   }
 
   return urls.map((url) => ({
-    url,
+    url: normalizeAssetUrl(url) || url,
     prompt: options.prompt,
     timestamp: new Date().toISOString(),
     model: DEFAULT_MODEL,

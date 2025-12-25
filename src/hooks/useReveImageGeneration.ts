@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '../auth/useAuth';
+import { normalizeAssetUrl } from '../utils/api';
 import { resolveGenerationCatchError } from '../utils/errorMessages';
 import {
   runGenerationJob,
@@ -103,7 +104,8 @@ const collectCandidateUrls = (
 
   const push = (value?: string) => {
     if (value) {
-      urls.push(value);
+      const normalized = normalizeAssetUrl(value);
+      if (normalized) urls.push(normalized);
     }
   };
 
@@ -193,8 +195,8 @@ const parseImmediateReveResult = (
   const imageUrl =
     (Array.isArray(payload.images)
       ? payload.images
-          .map(pickString)
-          .find((value): value is string => Boolean(value))
+        .map(pickString)
+        .find((value): value is string => Boolean(value))
       : undefined) ??
     pickString(payload.dataUrl) ??
     pickString(payload.url) ??
@@ -211,7 +213,7 @@ const parseImmediateReveResult = (
     `reve-${Date.now()}`;
 
   return {
-    url: imageUrl,
+    url: normalizeAssetUrl(imageUrl) || imageUrl,
     prompt: options.prompt,
     model: options.model ?? DEFAULT_MODEL,
     timestamp: new Date().toISOString(),

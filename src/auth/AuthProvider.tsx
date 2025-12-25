@@ -178,7 +178,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           if (response.ok) {
             const payload = await parseJsonSafe(response);
-            return normalizeBackendUser(payload);
+            return normalizeBackendUser(payload as Record<string, unknown>);
           }
 
           if (response.status === 401) {
@@ -257,7 +257,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (e) { void e; }
     return profile;
-  }, [fetchUserProfile]);
+  }, [fetchUserProfile, setUser]);
 
   const signUp = useCallback<
     AuthContextValue['signUp']
@@ -313,7 +313,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (e) { void e; }
     return profile;
-  }, [fetchUserProfile]);
+  }, [fetchUserProfile, setUser]);
 
   const signInWithGoogle = useCallback(async () => {
     const { error } = await supabase.auth.signInWithOAuth({
@@ -380,7 +380,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         removePersistedValue(storagePrefix, 'avatar-favorites'),
       ]).catch(() => { /* ignore cleanup errors */ });
     }
-  }, [session?.access_token, storagePrefix]);
+  }, [session?.access_token, storagePrefix, setUser, setSession]);
 
   // Add ref to track refresh state and prevent loops
   const refreshInProgressRef = useRef(false);
@@ -435,7 +435,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       refreshInProgressRef.current = false;
     }
-  }, [session, fetchUserProfile, user]);
+  }, [session, fetchUserProfile, user, setUser]);
 
   // Cross-tab synchronization
   const { notifyCreditsUpdate, notifyUserLogout } = useCrossTabSync({
@@ -479,10 +479,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const payload = await parseJsonSafe(response);
-    const updatedProfile = normalizeBackendUser(payload);
+    const updatedProfile = normalizeBackendUser(payload as Record<string, unknown>);
     setUser(updatedProfile);
     return updatedProfile;
-  }, [session?.access_token]);
+  }, [session?.access_token, setUser]);
 
   const uploadProfilePicture = useCallback<
     AuthContextValue['uploadProfilePicture']
@@ -509,7 +509,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const payload = await parseJsonSafe(response);
-    const updatedProfile = normalizeBackendUser(payload);
+    const updatedProfile = normalizeBackendUser(payload as Record<string, unknown>);
 
     debugLog('Profile picture upload successful, updated profile:', updatedProfile);
 
@@ -523,7 +523,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // The backend should have the updated profile image now
 
     return updatedProfile;
-  }, [session?.access_token]);
+  }, [session?.access_token, setUser]);
 
   const removeProfilePicture = useCallback<
     AuthContextValue['removeProfilePicture']
@@ -546,14 +546,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const payload = await parseJsonSafe(response);
-    const updatedProfile = normalizeBackendUser(payload);
+    const updatedProfile = normalizeBackendUser(payload as Record<string, unknown>);
 
     // Set timestamp to prevent overwriting this update
     lastProfileUpdateRef.current = Date.now();
 
     setUser(updatedProfile);
     return updatedProfile;
-  }, [session?.access_token]);
+  }, [session?.access_token, setUser]);
 
   const requestPasswordReset = useCallback<
     AuthContextValue['requestPasswordReset']
@@ -712,7 +712,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [fetchUserProfile]);
+  }, [fetchUserProfile, setUser]);
 
   // Keep userRef in sync with user state
   useEffect(() => {
@@ -787,7 +787,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         clearTimeout(retryTimeout);
       }
     };
-  }, [fetchUserProfile]);
+  }, [fetchUserProfile, setUser]);
 
 
   const value: AuthContextValue = {

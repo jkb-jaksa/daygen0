@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import type { FluxModel, FluxModelType } from '../lib/bfl';
 import { FLUX_MODEL_MAP } from '../lib/bfl';
 import { debugError } from '../utils/debug';
+import { normalizeAssetUrl } from '../utils/api';
 import { resolveGenerationCatchError } from '../utils/errorMessages';
 import { useAuth } from '../auth/useAuth';
 import {
@@ -134,16 +135,17 @@ const parseFluxJobResult = (
   const metadataResults = metadata ? metadata.results : undefined;
   const firstResultUrl = Array.isArray(metadataResults)
     ? metadataResults
-        .map((item) => pickString(item))
-        .find((value): value is string => Boolean(value))
+      .map((item) => pickString(item))
+      .find((value): value is string => Boolean(value))
     : undefined;
 
-  const resolvedUrl =
+  const resolvedUrl = normalizeAssetUrl(
     pickString(snapshot.job.resultUrl) ??
     metadataFileUrl ??
     metadataR2FileUrl ??
     metadataUrl ??
-    firstResultUrl;
+    firstResultUrl
+  );
 
   if (!resolvedUrl) {
     const status = snapshot.status;

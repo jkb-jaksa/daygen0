@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { generateImage as recraftGenerateImage, imageToImage as recraftImageToImage, inpaint as recraftInpaint } from '../lib/recraft-api';
 import { debugError } from '../utils/debug';
 import { urlToFile, detectImageSize } from '../utils/imageUtils';
-import { getApiUrl } from '../utils/api';
+import { normalizeAssetUrl, getApiUrl } from '../utils/api';
 import type { RecraftSize } from '../lib/recraft';
 
 export interface RecraftGeneratedImage {
@@ -49,18 +49,18 @@ export function useRecraftImageGeneration() {
     try {
       const result = await recraftGenerateImage({
         prompt: options.prompt,
-        style: options.style || 'realistic_image',
-        model: options.model || 'recraftv3',
+        style: (options.style || 'realistic_image') as any,
+        model: (options.model || 'recraftv3') as any,
         n: options.n || 1,
-        size: options.size || '1024x1024',
+        size: (options.size || '1024x1024') as any,
         response_format: options.response_format || 'url',
         negative_prompt: options.negative_prompt,
       });
 
-      if (result && result.length > 0) {
-        const typedResult = result as Array<{ url?: string; b64_json?: string }>;
+      if (result && result.data && result.data.length > 0) {
+        const typedResult = result.data;
         const images: RecraftGeneratedImage[] = typedResult.map((img) => ({
-          url: img.url || img.b64_json || '',
+          url: normalizeAssetUrl(img.url) || img.b64_json || '',
           prompt: options.prompt,
           style: options.style,
         }));
@@ -78,7 +78,7 @@ export function useRecraftImageGeneration() {
       }
     } catch (error) {
       debugError('Recraft image generation failed:', error);
-      
+
       setState(prev => ({
         ...prev,
         isGenerating: false,
@@ -110,17 +110,16 @@ export function useRecraftImageGeneration() {
       const result = await recraftImageToImage(options.image, {
         prompt: options.prompt,
         strength: options.strength || 0.8,
-        style: options.style || 'realistic_image',
-        model: options.model || 'recraftv3',
+        style: (options.style || 'realistic_image') as any,
+        model: (options.model || 'recraftv3') as any,
         n: options.n || 1,
-        size: options.size || '1024x1024',
         response_format: 'url',
       });
 
-      if (result && result.length > 0) {
-        const typedResult = result as Array<{ url?: string; b64_json?: string }>;
+      if (result && result.data && result.data.length > 0) {
+        const typedResult = result.data;
         const images: RecraftGeneratedImage[] = typedResult.map((img) => ({
-          url: img.url || img.b64_json || '',
+          url: normalizeAssetUrl(img.url) || img.b64_json || '',
           prompt: options.prompt,
           style: options.style,
         }));
@@ -138,7 +137,7 @@ export function useRecraftImageGeneration() {
       }
     } catch (error) {
       debugError('Recraft image-to-image failed:', error);
-      
+
       setState(prev => ({
         ...prev,
         isGenerating: false,
@@ -170,18 +169,16 @@ export function useRecraftImageGeneration() {
     try {
       const result = await recraftInpaint(options.image, options.mask, {
         prompt: options.prompt,
-        strength: options.strength || 0.8,
-        style: options.style || 'realistic_image',
-        model: options.model || 'recraftv3',
+        style: (options.style || 'realistic_image') as any,
+        model: (options.model || 'recraftv3') as any,
         n: options.n || 1,
-        size: options.size || '1024x1024',
         response_format: 'url',
       });
 
-      if (result && result.length > 0) {
-        const typedResult = result as Array<{ url?: string; b64_json?: string }>;
+      if (result && result.data && result.data.length > 0) {
+        const typedResult = result.data;
         const images: RecraftGeneratedImage[] = typedResult.map((img) => ({
-          url: img.url || img.b64_json || '',
+          url: normalizeAssetUrl(img.url) || img.b64_json || '',
           prompt: options.prompt,
           style: options.style,
         }));
@@ -199,7 +196,7 @@ export function useRecraftImageGeneration() {
       }
     } catch (error) {
       debugError('Recraft inpaint failed:', error);
-      
+
       setState(prev => ({
         ...prev,
         isGenerating: false,
@@ -236,10 +233,10 @@ export function useRecraftImageGeneration() {
     try {
       // Convert URL to File
       const imageFile = await urlToFile(options.imageUrl);
-      
+
       // Detect size if not provided
       const detectedSize = options.size || await detectImageSize(options.imageUrl);
-      
+
       // Get auth token
       const { supabase } = await import('../lib/supabase');
       const { data: { session } } = await supabase.auth.getSession();
@@ -295,7 +292,7 @@ export function useRecraftImageGeneration() {
 
       if (items.length > 0) {
         images = items.map((item) => ({
-          url: item.url,
+          url: normalizeAssetUrl(item.url) ?? item.url,
           prompt: (typeof item.prompt === 'string' && item.prompt.trim().length > 0)
             ? item.prompt.trim()
             : fallbackPrompt,
@@ -307,7 +304,7 @@ export function useRecraftImageGeneration() {
         }));
       } else if (Array.isArray(result.dataUrls) && result.dataUrls.length > 0) {
         images = result.dataUrls.map((url: string) => ({
-          url,
+          url: normalizeAssetUrl(url) ?? url,
           prompt: fallbackPrompt,
           model: fallbackModel,
         }));
@@ -325,7 +322,7 @@ export function useRecraftImageGeneration() {
       return images;
     } catch (error) {
       debugError('Recraft variate image failed:', error);
-      
+
       setState(prev => ({
         ...prev,
         isGenerating: false,
@@ -350,7 +347,7 @@ export function useRecraftImageGeneration() {
     isGenerating: state.isGenerating,
     error: state.error,
     progress: state.progress,
-    
+
     // Actions
     generateImage,
     imageToImage,

@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useAuth } from '../auth/useAuth';
+import { normalizeAssetUrl } from '../utils/api';
 import { resolveGenerationCatchError } from '../utils/errorMessages';
 import {
   runGenerationJob,
@@ -107,10 +108,10 @@ export function useLumaImageGeneration() {
     if (metadata) {
       urls.push(
         pickString(metadata.resultUrl) ??
-          pickString(metadata.result_url) ??
-          pickString(metadata.url) ??
-          pickString(metadata.fileUrl) ??
-          pickString(metadata.imageUrl),
+        pickString(metadata.result_url) ??
+        pickString(metadata.url) ??
+        pickString(metadata.fileUrl) ??
+        pickString(metadata.imageUrl),
       );
 
       const results = metadata.results;
@@ -123,8 +124,8 @@ export function useLumaImageGeneration() {
             if (record) {
               urls.push(
                 pickString(record.url) ??
-                  pickString(record.resultUrl) ??
-                  pickString(record.imageUrl),
+                pickString(record.resultUrl) ??
+                pickString(record.imageUrl),
               );
             }
           }
@@ -213,7 +214,7 @@ export function useLumaImageGeneration() {
     options: LumaImageGenerationOptions,
     ownerId: string | undefined,
   ): LumaGeneratedImage => {
-    const url = collectResultUrl(snapshot, response);
+    const url = normalizeAssetUrl(collectResultUrl(snapshot, response));
 
     if (!url) {
       throw new Error('Job completed but no result URL was provided.');
@@ -265,7 +266,7 @@ export function useLumaImageGeneration() {
     const state = pickString(payload.state) ?? pickString(payload.status);
 
     return {
-      url: directUrl,
+      url: normalizeAssetUrl(directUrl) || directUrl,
       prompt: options.prompt,
       model: options.model,
       timestamp: new Date().toISOString(),
@@ -312,29 +313,29 @@ export function useLumaImageGeneration() {
           parseJobResult: (snapshot, response) =>
             parseLumaJobResult(snapshot, response, options, user?.id),
           onUpdate: (snapshot) => {
-        const metadata = asRecord(snapshot.job.metadata);
-        const status = snapshot.job.status ?? snapshot.status ?? null;
-        const generationId = extractGenerationId(snapshot) ?? undefined;
-        const contentType =
-          extractContentType(snapshot) ??
-          (metadata
-            ? pickString(metadata.contentType) ??
-              pickString(metadata.mimeType) ??
-              pickString(metadata.mime_type)
-            : undefined);
+            const metadata = asRecord(snapshot.job.metadata);
+            const status = snapshot.job.status ?? snapshot.status ?? null;
+            const generationId = extractGenerationId(snapshot) ?? undefined;
+            const contentType =
+              extractContentType(snapshot) ??
+              (metadata
+                ? pickString(metadata.contentType) ??
+                pickString(metadata.mimeType) ??
+                pickString(metadata.mime_type)
+                : undefined);
 
-        setState((prev) => ({
-          ...prev,
-          status,
-          generationId: generationId ?? prev.generationId,
-          contentType: contentType ?? prev.contentType,
-          progress:
-            snapshot.progress !== undefined
-              ? `${Math.round(snapshot.progress)}%`
-              : snapshot.stage ?? prev.progress,
-        }));
-      },
-    });
+            setState((prev) => ({
+              ...prev,
+              status,
+              generationId: generationId ?? prev.generationId,
+              contentType: contentType ?? prev.contentType,
+              progress:
+                snapshot.progress !== undefined
+                  ? `${Math.round(snapshot.progress)}%`
+                  : snapshot.stage ?? prev.progress,
+            }));
+          },
+        });
 
         setState((prev) => ({
           ...prev,

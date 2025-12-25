@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useAuth } from '../auth/useAuth';
+import { normalizeAssetUrl } from '../utils/api';
 import { resolveGenerationCatchError } from '../utils/errorMessages';
 import { debugError } from '../utils/debug';
 import {
@@ -90,12 +91,13 @@ const parseGrokJobResult = (
   ownerId: string | undefined,
 ): GrokGeneratedImage[] => {
   const metadata = asRecord(snapshot.job.metadata);
-  const url =
+  const url = normalizeAssetUrl(
     pickString(snapshot.job.resultUrl) ??
     pickString(metadata?.fileUrl) ??
     pickString(metadata?.r2FileUrl) ??
     pickString(metadata?.url) ??
-    pickString(metadata?.imageUrl);
+    pickString(metadata?.imageUrl)
+  );
 
   if (!url) {
     throw new Error('Job completed but no result URL was provided.');
@@ -134,7 +136,7 @@ const parseImmediateGrokResult = (
     pickString(payload.image) ??
     pickString(payload.url);
 
-  const url = dataUrls[0] ?? directUrl;
+  const url = normalizeAssetUrl(dataUrls[0] ?? directUrl);
   if (!url) {
     return undefined;
   }

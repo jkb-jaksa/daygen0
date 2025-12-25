@@ -1,3 +1,4 @@
+import { normalizeAssetUrl } from '../utils/api';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { resolveGenerationCatchError } from '../utils/errorMessages';
 import {
@@ -70,9 +71,9 @@ const collectVideoUrl = (
   if (metadata) {
     candidates.push(
       pickString(metadata.resultUrl) ??
-        pickString(metadata.result_url) ??
-        pickString(metadata.url) ??
-        pickString(metadata.videoUrl),
+      pickString(metadata.result_url) ??
+      pickString(metadata.url) ??
+      pickString(metadata.videoUrl),
     );
 
     const results = metadata.results;
@@ -85,8 +86,8 @@ const collectVideoUrl = (
           if (record) {
             candidates.push(
               pickString(record.url) ??
-                pickString(record.resultUrl) ??
-                pickString(record.videoUrl),
+              pickString(record.resultUrl) ??
+              pickString(record.videoUrl),
             );
           }
         }
@@ -141,8 +142,13 @@ const parseImmediateWanVideoResult = (
     return undefined;
   }
 
+  const normalizedUrl = normalizeAssetUrl(url);
+  if (!normalizedUrl) {
+    return undefined;
+  }
+
   return {
-    url,
+    url: normalizedUrl,
     prompt: options.prompt,
     model: options.model ?? 'wan2.2-t2v-plus',
     taskId: pickString(payload.jobId) ?? 'unknown',
