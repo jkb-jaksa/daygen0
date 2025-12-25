@@ -491,7 +491,13 @@ const Explore: React.FC = () => {
   // Use a ref to track loading state for the fetch guard to avoid dependency loops
   const isLoadingPublicRef = useRef(false);
 
-  // Fetch public generations from API
+  // Use a ref for token to avoid recreating fetchPublicGenerations on token changes
+  const tokenRef = useRef(token);
+  useEffect(() => {
+    tokenRef.current = token;
+  }, [token]);
+
+  // Fetch public generations from API - uses tokenRef to avoid dependency on token
   const fetchPublicGenerations = useCallback(async (cursor?: string) => {
     if (isLoadingPublicRef.current) return;
 
@@ -504,8 +510,9 @@ const Explore: React.FC = () => {
       if (cursor) params.set('cursor', cursor);
 
       const headers: HeadersInit = {};
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+      const currentToken = tokenRef.current;
+      if (currentToken) {
+        headers['Authorization'] = `Bearer ${currentToken}`;
       }
 
       const response = await fetch(`${apiBase}/api/r2files/public?${params.toString()}`, {
@@ -592,9 +599,9 @@ const Explore: React.FC = () => {
       isLoadingPublicRef.current = false;
       setIsLoadingPublic(false);
       // Track if this fetch was authenticated
-      lastFetchWasAuthenticatedRef.current = !!token;
+      lastFetchWasAuthenticatedRef.current = !!tokenRef.current;
     }
-  }, [avatarGradients, formatTimeAgo, getOrientationFromAspectRatio, inferMediaType, token]);
+  }, [avatarGradients, formatTimeAgo, getOrientationFromAspectRatio, inferMediaType]);
 
   // Initial fetch of public generations
   useEffect(() => {
@@ -1159,6 +1166,9 @@ const Explore: React.FC = () => {
     right: 24,
   }));
 
+  // Ref to track intentional opens (prevents deep-link effect from closing immediately)
+  const isIntentionalOpenRef = useRef(false);
+
   // Touch swipe state for mobile navigation
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
@@ -1289,9 +1299,16 @@ const Explore: React.FC = () => {
       };
       void fetchJob();
     } else if (!jobId && isFullSizeOpen) {
-      // If URL doesn't have jobId but modal is open (e.g. back button pressed), close it
-      setIsFullSizeOpen(false);
-      setSelectedFullImage(null);
+      // If URL doesn't have jobId but modal is open, check if it's an intentional open
+      // (the URL update may not have propagated yet)
+      if (isIntentionalOpenRef.current) {
+        // Reset the flag - the URL should update on the next render cycle
+        isIntentionalOpenRef.current = false;
+      } else {
+        // This is likely a back button press, close the modal
+        setIsFullSizeOpen(false);
+        setSelectedFullImage(null);
+      }
     }
   }, [location.search, token, avatarGradients, formatTimeAgo, getOrientationFromAspectRatio, inferMediaType, isFullSizeOpen, selectedFullImage]);
 
@@ -1419,9 +1436,16 @@ const Explore: React.FC = () => {
 
   // Open full-size view
   const openFullSizeView = (item: GalleryItem) => {
+    // Preload the image immediately to reduce loading time
+    const img = new Image();
+    img.src = item.imageUrl;
+
     const index = filteredGallery.findIndex(galleryItem => galleryItem.id === item.id);
     setCurrentImageIndex(index);
     setSelectedFullImage(item);
+
+    // Mark as intentional open to prevent deep-link effect from closing it
+    isIntentionalOpenRef.current = true;
     setIsFullSizeOpen(true);
 
     // Update URL with jobId
@@ -1933,14 +1957,11 @@ const Explore: React.FC = () => {
                       />
                       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/70" aria-hidden="true" />
 
-                      <div className="image-gallery-actions absolute left-4 top-4 flex items-center gap-2 transition-opacity duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto">
+                      <div className="image-gallery-actions absolute left-4 top-4 flex items-center gap-2 transition-opacity duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto z-10">
                         <div className="relative">
                           <button
                             type="button"
-                            className={`image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 ${recreateActionMenu?.id === item.id
-                              ? 'opacity-100 pointer-events-auto'
-                              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
-                              }`}
+                            className="image-action-btn image-action-btn--labelled parallax-large"
                             aria-haspopup="menu"
                             aria-expanded={recreateActionMenu?.id === item.id}
                             onClick={(event) => {
@@ -2001,10 +2022,7 @@ const Explore: React.FC = () => {
                       </div>
 
                       <div
-                        className={`image-gallery-actions absolute right-4 top-4 flex items-center gap-1 transition-opacity duration-100 ${isMenuActive
-                          ? 'opacity-100 pointer-events-auto'
-                          : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
-                          }`}
+                        className="image-gallery-actions absolute right-4 top-4 flex items-center gap-1 transition-opacity duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto z-10"
                       >
                         <button
                           type="button"
@@ -2389,7 +2407,7 @@ const Explore: React.FC = () => {
                   key={selectedFullImage.id}
                   src={selectedFullImage.imageUrl}
                   alt={`Image by ${selectedFullImage.creator.name}`}
-                  loading="lazy"
+                  loading="eager"
                   className={`relative z-10 object-contain shadow-2xl animate-fade-in-static ${isMobile ? 'w-full h-auto max-h-[85vh] rounded-none' : 'max-w-full max-h-[90vh] rounded-lg'}`}
                   style={isMobile ? {} : { objectPosition: 'top' }}
                 />

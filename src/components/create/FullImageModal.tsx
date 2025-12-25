@@ -813,6 +813,7 @@ const FullImageModal = memo(() => {
           avatarId: fullSizeImage.avatarId,
           avatarImageId: fullSizeImage.avatarImageId,
           productId: fullSizeImage.productId,
+          references: references,
         });
         showToast('Video generation complete!');
       }
@@ -900,6 +901,7 @@ const FullImageModal = memo(() => {
               isPublic: false,
               jobId: result.jobId,
               jobType: result.jobType || 'IMAGE_EDIT',
+              references: references,
             });
             finalizeQuickEditJob(syntheticJobId, 'completed');
           } else {
@@ -935,6 +937,7 @@ const FullImageModal = memo(() => {
               isPublic: false,
               r2FileId: result.r2FileId,
               jobType: result.jobType || 'IMAGE_EDIT',
+              references: references,
             });
             finalizeQuickEditJob(syntheticJobId, 'completed');
           } else {
@@ -1609,12 +1612,12 @@ const FullImageModal = memo(() => {
                               >
                                 <div className="flex gap-1">
                                   {displayReferences.map((ref, refIdx) => (
-                                    <div key={refIdx} className="relative">
+                                    <div key={refIdx} className="relative parallax-small">
                                       <img
                                         src={ref}
                                         alt={`Reference ${refIdx + 1}`}
                                         loading="lazy"
-                                        className="w-6 h-6 rounded object-cover border border-theme-dark hover:border-theme-mid transition-colors duration-100"
+                                        className="w-6 h-6 rounded object-cover border border-theme-dark transition-colors duration-100"
                                       />
                                       <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
                                         {refIdx + 1}
