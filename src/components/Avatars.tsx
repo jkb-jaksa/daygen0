@@ -374,6 +374,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const [selection, setSelection] = useState<AvatarSelection | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isDraggingOverAddMe, setIsDraggingOverAddMe] = useState(false);
   const [draggingOverSlot, setDraggingOverSlot] = useState<number | null>(null);
   const [editingAvatarId, setEditingAvatarId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
@@ -419,6 +420,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const [activeAvatarImageId, setActiveAvatarImageId] = useState<string | null>(null);
   const avatarImageInputRef = useRef<HTMLInputElement | null>(null);
   const hybridImageInputRef = useRef<HTMLInputElement | null>(null);
+  const addMeFileInputRef = useRef<HTMLInputElement | null>(null);
   const [avatarImageUploadTarget, setAvatarImageUploadTarget] = useState<string | null>(null);
   const [avatarImageUploadError, setAvatarImageUploadError] = useState<string | null>(null);
   const [uploadingAvatarIds, setUploadingAvatarIds] = useState<Set<string>>(new Set());
@@ -927,7 +929,40 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       setUploadError("We couldn't read that image. Re-upload or use a different format.");
     };
     reader.readAsDataURL(file);
+    reader.readAsDataURL(file);
   }, []);
+
+  const handleAddMeFileChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      processImageFile(file);
+      setIsPanelOpen(true);
+    }
+    event.target.value = "";
+  }, [processImageFile]);
+
+  const handleAddMeDragEnter = useCallback((event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDraggingOverAddMe(true);
+  }, []);
+
+  const handleAddMeDragLeave = useCallback((event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDraggingOverAddMe(false);
+  }, []);
+
+  const handleAddMeDrop = useCallback((event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDraggingOverAddMe(false);
+    const file = event.dataTransfer.files?.[0];
+    if (file) {
+      processImageFile(file);
+      setIsPanelOpen(true);
+    }
+  }, [processImageFile]);
 
   const handleSaveAvatar = useCallback(() => {
     if (!selection) return;
@@ -1487,7 +1522,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     return (
       <div
         key={`${keyPrefix}-${avatar.id}`}
-        className={`group flex flex-col overflow-hidden rounded-[28px] border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-large${isMasterSection ? " max-w-[200px] w-full" : ""
+        className={`group flex flex-col overflow-hidden rounded-[28px] border border-theme-dark bg-theme-black/60 shadow-lg transition-colors duration-200 hover:border-theme-mid parallax-large${isMasterSection ? " max-w-[170px] w-full" : ""
           }${isInteractive ? " cursor-pointer" : ""
           }`}
         role={isInteractive ? "button" : undefined}
@@ -2304,36 +2339,47 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 </button>
               </div>
             )}
+            <input
+              ref={addMeFileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAddMeFileChange}
+            />
             <div className={`${isMasterSection ? 'flex flex-wrap gap-2' : 'grid grid-cols-1 gap-0.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-items-start'} ${isMasterSection ? 'mb-0' : ''}`}>
               {/* Show "Add Me" placeholder if no avatar has isMe flag */}
-              {!isMasterSection && !avatars.some(a => a.isMe) && (
+              {!avatars.some(a => a.isMe) && (
                 <div
-                  className="group flex flex-col overflow-hidden rounded-[28px] border-2 border-dashed border-cyan-500/40 hover:border-cyan-400/60 bg-theme-black/40 shadow-lg transition-all duration-200 cursor-pointer"
+                  className={`group flex flex-col rounded-[28px] border-2 border-dashed ${isDraggingOverAddMe ? 'border-theme-text bg-theme-text/30 shadow-[0_0_32px_rgba(255,255,255,0.25)]' : 'border-red-500/40 hover:border-red-400/60 bg-theme-black/40'} shadow-lg transition-all duration-200 cursor-pointer${isMasterSection ? ' max-w-[170px] w-full' : ''}`}
                   role="button"
                   tabIndex={0}
                   aria-label="Add your avatar as Me"
-                  onClick={openAvatarCreator}
+                  onClick={() => addMeFileInputRef.current?.click()}
+                  onDragEnter={handleAddMeDragEnter}
+                  onDragOver={handleAddMeDragEnter}
+                  onDragLeave={handleAddMeDragLeave}
+                  onDrop={handleAddMeDrop}
                   onKeyDown={event => {
                     if (event.key === "Enter" || event.key === " ") {
                       event.preventDefault();
-                      openAvatarCreator();
+                      addMeFileInputRef.current?.click();
                     }
                   }}
                 >
                   <div className="relative aspect-square overflow-hidden flex flex-col items-center justify-center p-4 text-center">
-                    <div className="absolute -top-4 -right-4 w-36 h-36 bg-cyan-500/20 blur-[50px] rounded-full pointer-events-none" />
-                    <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-tr from-transparent via-transparent to-cyan-500/5 pointer-events-none" />
-                    <div className="mb-3">
-                      <User className="h-12 w-12 text-cyan-400/60" strokeWidth={1.5} />
+                    <div className="absolute -top-4 -right-4 w-36 h-36 bg-red-500/20 blur-[50px] rounded-full pointer-events-none" />
+                    <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-tr from-transparent via-transparent to-red-500/5 pointer-events-none" />
+                    <div className="mb-2">
+                      <User className="h-8 w-8 text-red-500" strokeWidth={1.5} />
                     </div>
-                    <h3 className="text-base font-raleway font-medium text-theme-text mb-1 tracking-tight">
+                    <h3 className="text-base font-raleway font-medium text-theme-text mb-2 tracking-tight">
                       Add yourself
                     </h3>
-                    <p className="text-[10px] leading-tight text-theme-white/40 font-raleway mb-4 max-w-[140px]">
+                    <p className="text-[10px] leading-tight text-theme-white font-raleway mb-3 max-w-[140px]">
                       Upload a photo to create your "me" avatar
                     </p>
-                    <div className="flex items-center gap-2 bg-theme-text text-theme-black px-4 py-1.5 rounded-full text-xs font-bold">
-                      <Plus className="h-3 w-3" strokeWidth={3} />
+                    <div className="flex items-center gap-2 bg-theme-text text-theme-black px-4 py-1.5 rounded-full text-xs font-medium font-raleway">
+                      <Plus className="h-3 w-3" strokeWidth={2} />
                       Add Me
                     </div>
                   </div>
@@ -2448,8 +2494,8 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                             Click anywhere, drag and drop, or paste your image to get started
                           </p>
 
-                          <button className="flex items-center gap-2 bg-theme-text text-theme-black px-4 py-1.5 rounded-full text-xs font-bold hover:bg-theme-text/90 transition-colors">
-                            <Upload className="h-3 w-3 text-red-500" strokeWidth={3} />
+                          <button className="flex items-center gap-2 bg-theme-text text-theme-black px-4 py-1.5 rounded-full text-xs font-medium font-raleway hover:bg-theme-text/90 transition-colors">
+                            <Upload className="h-3 w-3 text-red-500" strokeWidth={2} />
                             Upload
                           </button>
                         </div>
@@ -2462,7 +2508,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               {/* Voice card - show completed state when voice is ready */}
               {isMasterSection && (
                 <div
-                  className={`group flex flex-col overflow-hidden rounded-[28px] border-2 border-dashed ${hasVoiceReady ? 'border-green-500/50' : 'border-theme-white/10 hover:border-theme-white/30'} bg-black shadow-lg transition-all duration-200 parallax-small max-w-[200px] w-full ${hasVoiceReady ? '' : 'cursor-pointer'} relative`}
+                  className={`group flex flex-col overflow-hidden rounded-[28px] border-2 border-dashed ${hasVoiceReady ? 'border-green-500/50 bg-black' : 'border-cyan-500/40 hover:border-cyan-400/60 bg-theme-black/40'} shadow-lg transition-all duration-200 parallax-small max-w-[170px] w-full ${hasVoiceReady ? '' : 'cursor-pointer'} relative`}
                   role={hasVoiceReady ? undefined : "button"}
                   tabIndex={hasVoiceReady ? undefined : 0}
                   aria-label={hasVoiceReady ? "Voice ready" : "Add your voice"}
@@ -2481,17 +2527,17 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                   <div className="relative aspect-square overflow-hidden flex flex-col items-center justify-center p-4 text-center">
                     <div className="mb-2">
                       {hasVoiceReady ? (
-                        <Check className="h-8 w-8 text-green-400" strokeWidth={2} />
+                        <Check className="h-6 w-6 text-green-400" strokeWidth={2} />
                       ) : (
-                        <Mic className="h-8 w-8 text-cyan-400" strokeWidth={1.5} />
+                        <Mic className="h-6 w-6 text-cyan-400" strokeWidth={1.5} />
                       )}
                     </div>
 
-                    <h3 className="text-base font-raleway font-medium text-theme-text mb-1 tracking-tight">
+                    <h3 className="text-base font-raleway font-medium text-theme-text mb-2 tracking-tight">
                       {hasVoiceReady ? 'Voice ready' : 'Add your voice'}
                     </h3>
 
-                    <p className="text-[10px] leading-tight text-theme-white/40 font-raleway mb-4 max-w-[140px]">
+                    <p className="text-[10px] leading-tight text-theme-white font-raleway mb-3 max-w-[140px]">
                       {hasVoiceReady
                         ? 'Your voice clone is ready to use'
                         : 'Click anywhere, drag and drop, or paste your audio to get started'
@@ -2510,8 +2556,8 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                         Change voice
                       </button>
                     ) : (
-                      <button className="flex items-center gap-2 bg-theme-text text-theme-black px-4 py-1.5 rounded-full text-xs font-bold hover:bg-theme-text/90 transition-colors">
-                        <Upload className="h-3 w-3 text-cyan-500" strokeWidth={3} />
+                      <button className="flex items-center gap-2 bg-theme-text text-theme-black px-4 py-1.5 rounded-full text-xs font-medium font-raleway hover:bg-theme-text/90 transition-colors">
+                        <Upload className="h-3 w-3 text-cyan-500" strokeWidth={2} />
                         Upload
                       </button>
                     )}
