@@ -13,8 +13,7 @@ function readInitialTheme(): ThemeMode {
     return stored
   }
 
-  const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches
-  return prefersDark ? 'night' : 'day'
+  return 'night'
 }
 
 function applyTheme(mode: ThemeMode) {

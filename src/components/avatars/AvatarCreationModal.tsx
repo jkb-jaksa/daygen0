@@ -16,6 +16,8 @@ interface AvatarCreationModalProps {
   onSave: () => void;
   onClearSelection: () => void;
   onProcessFile: (file: File) => void;
+  onRemoveImage?: (imageId: string) => void;
+  onReorderImages?: (draggedImageId: string, targetIndex: number) => void;
   onDragStateChange: (dragging: boolean) => void;
   onUploadError: (message: string | null) => void;
 }
@@ -32,6 +34,8 @@ function AvatarCreationModalComponent({
   onSave,
   onClearSelection,
   onProcessFile,
+  onRemoveImage,
+  onReorderImages,
   onDragStateChange,
   onUploadError,
 }: AvatarCreationModalProps) {
@@ -76,7 +80,9 @@ function AvatarCreationModalComponent({
             onAvatarNameChange={onAvatarNameChange}
             onSave={onSave}
             onClearSelection={onClearSelection}
-            onProcessFile={onProcessFile}
+            onProcessFiles={(files) => files.forEach(onProcessFile)}
+            onRemoveImage={onRemoveImage}
+            onReorderImages={onReorderImages}
             onDragStateChange={onDragStateChange}
             onUploadError={onUploadError}
           />

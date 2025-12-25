@@ -79,6 +79,7 @@ type CreateAvatarRecordArgs = {
   sourceId?: string;
   ownerId?: string;
   existingAvatars?: StoredAvatar[];
+  isMe?: boolean;
 };
 
 export const createAvatarRecord = ({
@@ -88,6 +89,7 @@ export const createAvatarRecord = ({
   sourceId,
   ownerId,
   existingAvatars = [],
+  isMe = false,
 }: CreateAvatarRecordArgs): StoredAvatar => {
   const id = `avatar-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const existingSlugs = new Set(existingAvatars.map(avatar => avatar.slug).filter(Boolean));
@@ -103,6 +105,7 @@ export const createAvatarRecord = ({
     sourceId,
     published: false,
     ownerId,
+    isMe,
     ...createAvatarImagesState(imageUrl, source, sourceId),
   };
 };

@@ -18,12 +18,12 @@ type SessionTokens = {
   refreshToken?: string | null;
 };
 
-const createFallbackUser = (authUser: SupabaseUser): AppUser => ({
+const createFallbackUser = (authUser: SupabaseUser, previousCredits?: number): AppUser => ({
   id: authUser.id,
   authUserId: authUser.id,
   email: authUser.email ?? '',
   username: null,
-  credits: 20,
+  credits: previousCredits ?? 20,
   profileImage:
     (authUser.user_metadata?.avatar_url as string | undefined) ?? null,
   role: 'USER',
@@ -204,7 +204,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      return createFallbackUser(authUser);
+      return createFallbackUser(authUser, userRef.current?.credits);
     },
     [session?.access_token, session?.refresh_token, syncWithBackend],
   );

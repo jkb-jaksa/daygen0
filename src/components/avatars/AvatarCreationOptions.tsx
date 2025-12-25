@@ -17,6 +17,7 @@ export interface AvatarCreationOptionsProps {
   onClearSelection: () => void;
   onProcessFiles: (files: File[]) => void;
   onRemoveImage?: (imageId: string) => void;
+  onReorderImages?: (draggedImageId: string, targetIndex: number) => void;
   onDragStateChange: (dragging: boolean) => void;
   onUploadError: (message: string | null) => void;
   onVoiceClick?: (voiceId: string) => void;
@@ -34,6 +35,7 @@ function AvatarCreationOptionsComponent({
   onClearSelection,
   onProcessFiles,
   onRemoveImage,
+  onReorderImages,
   onDragStateChange,
   onUploadError,
   onVoiceClick,
@@ -43,6 +45,9 @@ function AvatarCreationOptionsComponent({
   const nameInputRef = useRef<HTMLInputElement | null>(null);
   const [isEditingName, setIsEditingName] = useState(true);
   const dragCounterRef = useRef(0);
+  const [draggingOverSlot, setDraggingOverSlot] = useState<number | null>(null);
+  const [draggedImageId, setDraggedImageId] = useState<string | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   // Auto-focus the name input when an avatar is selected
   useEffect(() => {
@@ -179,22 +184,52 @@ function AvatarCreationOptionsComponent({
                 const isPrimary = index === 0;
 
                 if (isEmptySlot && canAddMore) {
-                  // Empty slot - clickable to add more
-                  return (
-                    <button
-                      key={`empty-${index}`}
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      onDragEnter={handleDragEnter}
-                      onDragOver={handleDragOver}
-                      onDragLeave={handleDragLeave}
-                      onDrop={handleDrop}
-                      className={`aspect-square rounded-xl border-2 border-dashed transition-all duration-200 flex items-center justify-center ${isDragging ? 'border-brand bg-theme-text/10' : 'border-theme-white/20 hover:border-theme-text/50 hover:bg-theme-text/5'
-                        }`}
-                    >
-                      <Plus className="w-5 h-5 text-theme-white/40" />
-                    </button>
-                  );
+                  // Only the first empty slot (next available) should be interactive
+                  const isNextAvailable = index === images.length;
+                  const isSlotDragActive = draggingOverSlot === index;
+
+                  if (isNextAvailable) {
+                    // This is the next slot to be filled - make it interactive
+                    return (
+                      <button
+                        key={`empty-${index}`}
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        onDragEnter={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setDraggingOverSlot(index);
+                        }}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        onDragLeave={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setDraggingOverSlot(null);
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setDraggingOverSlot(null);
+                          handleFiles(Array.from(e.dataTransfer?.files ?? []));
+                        }}
+                        className={`aspect-square rounded-xl border-2 border-dashed transition-all duration-200 flex items-center justify-center ${isSlotDragActive ? 'border-theme-text bg-theme-text/30 shadow-[0_0_32px_rgba(255,255,255,0.25)]' : 'border-theme-white/20 hover:border-theme-text/50 hover:bg-theme-text/5'
+                          }`}
+                      >
+                        <Plus className="w-5 h-5 text-theme-white/40" />
+                      </button>
+                    );
+                  } else {
+                    // Future empty slots - not yet available for interaction
+                    return (
+                      <div
+                        key={`empty-${index}`}
+                        className="aspect-square rounded-xl border border-dashed border-theme-white/10 bg-theme-black/20"
+                      />
+                    );
+                  }
                 } else if (isEmptySlot) {
                   // Empty slot - max reached
                   return (
@@ -206,16 +241,68 @@ function AvatarCreationOptionsComponent({
                 }
 
                 // Image slot
+                const isDraggedOver = dragOverIndex === index && draggedImageId !== image.id;
+                const isBeingDragged = draggedImageId === image.id;
+
                 return (
                   <div
                     key={image.id}
-                    className="relative aspect-square rounded-xl overflow-hidden border border-theme-dark/60 bg-theme-black/60 group"
+                    draggable
+                    onDragStart={(e) => {
+                      setDraggedImageId(image.id);
+                      e.dataTransfer.effectAllowed = 'move';
+                      e.dataTransfer.setData('text/plain', image.id);
+                    }}
+                    onDragEnd={() => {
+                      setDraggedImageId(null);
+                      setDragOverIndex(null);
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (draggedImageId && draggedImageId !== image.id) {
+                        setDragOverIndex(index);
+                      }
+                    }}
+                    onDragEnter={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (draggedImageId && draggedImageId !== image.id) {
+                        setDragOverIndex(index);
+                      }
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      // Only clear if leaving to outside the grid
+                      const relatedTarget = e.relatedTarget as HTMLElement;
+                      if (!relatedTarget?.closest?.('[data-image-slot]')) {
+                        setDragOverIndex(null);
+                      }
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (draggedImageId && draggedImageId !== image.id) {
+                        onReorderImages?.(draggedImageId, index);
+                      }
+                      setDraggedImageId(null);
+                      setDragOverIndex(null);
+                    }}
+                    data-image-slot
+                    className={`relative aspect-square rounded-xl overflow-hidden border bg-theme-black/60 group cursor-grab active:cursor-grabbing transition-all duration-200 ${isDraggedOver
+                        ? 'border-theme-text border-2 scale-105 shadow-[0_0_24px_rgba(255,255,255,0.3)]'
+                        : isBeingDragged
+                          ? 'opacity-50 border-theme-dark/60'
+                          : 'border-theme-dark/60 hover:border-theme-mid'
+                      }`}
                     style={createCardImageStyle(image.url)}
                   >
                     <img
                       src={image.url}
                       alt={`Avatar image ${index + 1}`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover pointer-events-none"
+                      draggable={false}
                     />
                     {/* Primary indicator */}
                     {isPrimary && (
@@ -226,7 +313,10 @@ function AvatarCreationOptionsComponent({
                     {/* Remove button */}
                     <button
                       type="button"
-                      onClick={() => onRemoveImage?.(image.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRemoveImage?.(image.id);
+                      }}
                       className="absolute top-1 right-1 bg-theme-black/80 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-theme-black"
                       aria-label="Remove image"
                     >
@@ -304,7 +394,7 @@ function AvatarCreationOptionsComponent({
             <div className="flex-1">
               <div
                 className={`relative overflow-hidden border-2 border-dashed rounded-2xl p-12 text-center transition-colors duration-200 cursor-pointer ${isDragging
-                  ? "border-brand drag-active"
+                  ? "border-theme-text bg-theme-text/30 shadow-[0_0_32px_rgba(255,255,255,0.25)] drag-active"
                   : "border-theme-white/30 hover:border-theme-text/50"
                   }`}
                 onClick={() => fileInputRef.current?.click()}

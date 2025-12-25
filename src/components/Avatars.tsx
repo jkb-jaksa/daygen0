@@ -398,6 +398,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isDraggingOverAddMe, setIsDraggingOverAddMe] = useState(false);
+  const [isAddMeFlow, setIsAddMeFlow] = useState(false);
   const [draggingOverSlot, setDraggingOverSlot] = useState<number | null>(null);
   const [renameModalOpen, setRenameModalOpen] = useState(false);
   const [avatarToRename, setAvatarToRename] = useState<StoredAvatar | null>(null);
@@ -954,15 +955,30 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       if (typeof result === "string") {
         const id = crypto.randomUUID();
         const now = new Date().toISOString();
-        setSelection({
-          imageUrl: result,
-          source: "upload",
-          images: [{
-            id,
-            url: result,
-            createdAt: now,
-            source: "upload"
-          }]
+        const newImage = {
+          id,
+          url: result,
+          createdAt: now,
+          source: "upload" as const
+        };
+
+        setSelection(prev => {
+          // If there's an existing selection with images, append to it
+          if (prev && prev.images && prev.images.length > 0) {
+            const updatedImages = [...prev.images, newImage];
+            return {
+              ...prev,
+              images: updatedImages,
+              // Keep the primary image URL (first image)
+              imageUrl: prev.imageUrl
+            };
+          }
+          // Otherwise create a new selection with this as the primary image
+          return {
+            imageUrl: result,
+            source: "upload",
+            images: [newImage]
+          };
         });
         setAvatarName(prev => (prev.trim() ? prev : deriveSuggestedName()));
       }
@@ -971,12 +987,12 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       setUploadError("We couldn't read that image. Re-upload or use a different format.");
     };
     reader.readAsDataURL(file);
-    reader.readAsDataURL(file);
   }, []);
 
   const handleAddMeFileChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      setIsAddMeFlow(true);
       processImageFile(file);
       setIsPanelOpen(true);
     }
@@ -1001,6 +1017,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     setIsDraggingOverAddMe(false);
     const file = event.dataTransfer.files?.[0];
     if (file) {
+      setIsAddMeFlow(true);
       processImageFile(file);
       setIsPanelOpen(true);
     }
@@ -1027,6 +1044,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       sourceId: selection.sourceId,
       ownerId: user?.id ?? undefined,
       existingAvatars: avatars,
+      isMe: isAddMeFlow,
     });
 
     setAvatars(prev => {
@@ -1040,7 +1058,8 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     setSelection(null);
     setUploadError(null);
     setIsDragging(false);
-  }, [avatarName, avatars, persistAvatars, selection, user?.id]);
+    setIsAddMeFlow(false);
+  }, [avatarName, avatars, isAddMeFlow, persistAvatars, selection, user?.id]);
 
   const resetPanel = useCallback(() => {
     setIsPanelOpen(false);
@@ -1048,6 +1067,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     setSelection(null);
     setUploadError(null);
     setIsDragging(false);
+    setIsAddMeFlow(false);
   }, []);
 
   const handleAvatarNameChange = useCallback((name: string) => {
@@ -1057,6 +1077,52 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       setUploadError(null);
     }
   }, [uploadError]);
+
+  const handleRemoveSelectionImage = useCallback((imageId: string) => {
+    setSelection(prev => {
+      if (!prev || !prev.images) return prev;
+      const updatedImages = prev.images.filter(img => img.id !== imageId);
+      if (updatedImages.length === 0) {
+        // If no images left, clear selection entirely
+        return null;
+      }
+      // Update the primary image URL if we removed the first image
+      const newPrimaryUrl = updatedImages[0]?.url ?? prev.imageUrl;
+      return {
+        ...prev,
+        images: updatedImages,
+        imageUrl: newPrimaryUrl,
+      };
+    });
+  }, []);
+
+  const handleReorderSelectionImages = useCallback((draggedImageId: string, targetIndex: number) => {
+    setSelection(prev => {
+      if (!prev || !prev.images) return prev;
+
+      const draggedImage = prev.images.find(img => img.id === draggedImageId);
+      if (!draggedImage) return prev;
+
+      // Remove the dragged image from its current position
+      const filteredImages = prev.images.filter(img => img.id !== draggedImageId);
+
+      // Insert at the target position
+      const reorderedImages = [
+        ...filteredImages.slice(0, targetIndex),
+        draggedImage,
+        ...filteredImages.slice(targetIndex),
+      ];
+
+      // Update the primary image URL (first image is always primary)
+      const newPrimaryUrl = reorderedImages[0]?.url ?? prev.imageUrl;
+
+      return {
+        ...prev,
+        images: reorderedImages,
+        imageUrl: newPrimaryUrl,
+      };
+    });
+  }, []);
 
 
   const confirmDelete = useCallback(() => {
@@ -2334,6 +2400,8 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               onSave={handleSaveAvatar}
               onClearSelection={() => setSelection(null)}
               onProcessFiles={(files) => files.forEach(processImageFile)}
+              onRemoveImage={handleRemoveSelectionImage}
+              onReorderImages={handleReorderSelectionImages}
               onDragStateChange={setIsDragging}
               onUploadError={setUploadError}
               onVoiceClick={() => setIsVoiceUploadModalOpen(true)}
@@ -2345,7 +2413,14 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   };
 
   const renderAddMeCard = () => {
-    if (avatars.some(a => a.isMe)) return null;
+    const meAvatar = avatars.find(a => a.isMe);
+    if (meAvatar) {
+      // Render the isMe avatar in place of the Add Yourself card
+      return renderAvatarCard(meAvatar, {
+        widthClass: isMasterSection ? ' max-w-[170px] w-full' : '',
+        isCompact: isMasterSection
+      });
+    }
     return (
       <div
         className={`group flex flex-col rounded-[28px] border-2 border-dashed ${isDraggingOverAddMe ? 'border-theme-text bg-theme-text/30 shadow-[0_0_32px_rgba(255,255,255,0.25)]' : 'border-red-500/40 hover:border-red-400/60 bg-theme-black/40'} shadow-lg transition-all duration-200 cursor-pointer${isMasterSection ? ' max-w-[170px] w-full' : ''}`}
@@ -2607,9 +2682,9 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 </div>
 
                 {/* Bottom Section - Avatars */}
-                {avatars.length > 0 && (
+                {avatars.filter(a => !a.isMe).length > 0 && (
                   <div className="flex flex-wrap gap-2">
-                    {avatars.map(avatar => renderAvatarCard(avatar, {
+                    {avatars.filter(a => !a.isMe).map(avatar => renderAvatarCard(avatar, {
                       widthClass: " max-w-[150px] w-full",
                       isCompact: true
                     }))}
@@ -2619,7 +2694,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
             ) : (
               <div className="grid grid-cols-1 gap-0.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-items-start">
                 {renderAddMeCard()}
-                {avatars.map(avatar => renderAvatarCard(avatar))}
+                {avatars.filter(a => !a.isMe).map(avatar => renderAvatarCard(avatar))}
               </div>
             )}
           </div>
@@ -3301,6 +3376,8 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
             onSave={handleSaveAvatar}
             onClearSelection={() => setSelection(null)}
             onProcessFile={processImageFile}
+            onRemoveImage={handleRemoveSelectionImage}
+            onReorderImages={handleReorderSelectionImages}
             onDragStateChange={setIsDragging}
             onUploadError={setUploadError}
           />
