@@ -399,18 +399,23 @@ export function useAvatarHandlers() {
 
   // Handle avatar save
   const handleAvatarSave = useCallback(
-    async (name: string, selection: AvatarSelection): Promise<{ success: boolean; error?: string }> => {
+    async (name: string, selection: AvatarSelection, productNames?: string[]): Promise<{ success: boolean; error?: string }> => {
       if (!user?.id) return { success: false, error: 'You must be logged in to create an avatar.' };
 
       const trimmed = name.trim();
       if (!trimmed || !selection?.imageUrl) return { success: false, error: 'Name and image are required.' };
 
-      // Check for duplicate name (case-insensitive)
+      // Check for duplicate name (case-insensitive) among avatars
       const duplicateAvatar = storedAvatars.find(
         (a) => a.name.toLowerCase() === trimmed.toLowerCase()
       );
       if (duplicateAvatar) {
         return { success: false, error: 'An avatar with this name already exists.' };
+      }
+
+      // Check for name conflict with products (both use @ mention now)
+      if (productNames && productNames.some(n => n.toLowerCase() === trimmed.toLowerCase())) {
+        return { success: false, error: 'A product with this name already exists. Avatar and product names must be unique.' };
       }
 
       try {

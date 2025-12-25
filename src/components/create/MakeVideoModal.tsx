@@ -36,6 +36,7 @@ import ImageBadgeRow from '../shared/ImageBadgeRow';
 import { ReferencePreviewModal } from '../shared/ReferencePreviewModal';
 import { useMentionSuggestions } from './hooks/useMentionSuggestions';
 import { MentionDropdown } from './MentionDropdown';
+import { getDraggingImageUrl } from './utils/dragState';
 
 export interface MakeVideoOptions {
     prompt: string;
@@ -236,6 +237,9 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
     // Drag states for Avatar/Product buttons
     const [isDraggingOverAvatarButton, setIsDraggingOverAvatarButton] = useState(false);
     const [isDraggingOverProductButton, setIsDraggingOverProductButton] = useState(false);
+    const [avatarDragPreviewUrl, setAvatarDragPreviewUrl] = useState<string | null>(null);
+    const [productDragPreviewUrl, setProductDragPreviewUrl] = useState<string | null>(null);
+
 
     // Veo Specific States
     const [veoGenModel, setVeoGenModel] = useState<'veo-3.1-generate-preview' | 'veo-3.1-fast-generate-preview'>('veo-3.1-generate-preview');
@@ -285,6 +289,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
         setIsAvatarPickerOpen,
         creationsModalAvatar,
         setCreationsModalAvatar,
+        avatarSelection,
         // avatarQuickUploadInputRef,
         // setAvatarUploadError,
     } = avatarHandlers;
@@ -297,14 +302,16 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
         setIsProductPickerOpen,
         creationsModalProduct,
         setCreationsModalProduct,
+        productSelection,
         // productQuickUploadInputRef,
         // setProductUploadError,
     } = productHandlers;
 
-    // @ mention suggestions hook (avatars and products)
+    // @ mention suggestions hook (avatars and products) and / for saved prompts
     const mentionSuggestions = useMentionSuggestions({
         storedAvatars: avatarHandlers.storedAvatars,
         storedProducts: productHandlers.storedProducts,
+        savedPrompts,
         prompt,
         cursorPosition,
         onSelectAvatar: avatarHandlers.handleAvatarToggle,
@@ -313,11 +320,14 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
         onSelectProduct: productHandlers.handleProductToggle,
         onDeselectProduct: productHandlers.removeSelectedProduct,
         selectedProducts: productHandlers.selectedProducts,
+        onSelectSavedPrompt: () => {
+            // Saved prompt selection is handled via selectSuggestion which updates the prompt directly
+        },
     });
 
     // Handle mention selection from dropdown
-    const handleMentionSelect = useCallback((item: { id: string; name: string; type: 'avatar' | 'product' }) => {
-        const result = mentionSuggestions.selectSuggestion(item as Parameters<typeof mentionSuggestions.selectSuggestion>[0]);
+    const handleMentionSelect = useCallback((item: Parameters<typeof mentionSuggestions.selectSuggestion>[0]) => {
+        const result = mentionSuggestions.selectSuggestion(item);
         if (result) {
             setPrompt(result.newPrompt);
             setCursorPosition(result.newCursorPos);
@@ -332,6 +342,14 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
     }, [mentionSuggestions]);
 
     // Drag handlers for Avatar button
+    const handleAvatarButtonDragEnter = useCallback((event: React.DragEvent) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsDraggingOverAvatarButton(true);
+        const url = getDraggingImageUrl();
+        if (url) setAvatarDragPreviewUrl(url);
+    }, []);
+
     const handleAvatarButtonDragOver = useCallback((event: React.DragEvent) => {
         event.preventDefault();
         event.stopPropagation();
@@ -343,6 +361,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
         event.preventDefault();
         event.stopPropagation();
         setIsDraggingOverAvatarButton(false);
+        setAvatarDragPreviewUrl(null);
         avatarHandlers.handleAvatarDragLeave(event);
     }, [avatarHandlers]);
 
@@ -350,12 +369,21 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
         event.preventDefault();
         event.stopPropagation();
         setIsDraggingOverAvatarButton(false);
+        setAvatarDragPreviewUrl(null);
         setIsAvatarPickerOpen(false);
         setIsProductPickerOpen(false);
         avatarHandlers.handleAvatarDrop(event);
     }, [avatarHandlers, setIsAvatarPickerOpen, setIsProductPickerOpen]);
 
     // Drag handlers for Product button
+    const handleProductButtonDragEnter = useCallback((event: React.DragEvent) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsDraggingOverProductButton(true);
+        const url = getDraggingImageUrl();
+        if (url) setProductDragPreviewUrl(url);
+    }, []);
+
     const handleProductButtonDragOver = useCallback((event: React.DragEvent) => {
         event.preventDefault();
         event.stopPropagation();
@@ -367,6 +395,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
         event.preventDefault();
         event.stopPropagation();
         setIsDraggingOverProductButton(false);
+        setProductDragPreviewUrl(null);
         productHandlers.handleProductDragLeave(event);
     }, [productHandlers]);
 
@@ -374,6 +403,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
         event.preventDefault();
         event.stopPropagation();
         setIsDraggingOverProductButton(false);
+        setProductDragPreviewUrl(null);
         setIsProductPickerOpen(false);
         setIsAvatarPickerOpen(false);
         productHandlers.handleProductDrop(event);
@@ -878,424 +908,471 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                 </label>
                                 <div
                                     ref={promptContainerRef}
-                                    className={`relative flex flex-col rounded-xl transition-colors duration-200 ${glass.prompt} focus-within:border-theme-mid ${isDragActive ? 'border border-n-text' : ''}`}
-                                    onDragOver={handleDragOver}
-                                    onDragEnter={handleDragEnter}
-                                    onDragLeave={handleDragLeave}
-                                    onDrop={handleDrop}
+                                    className={`flex flex-col rounded-xl transition-all duration-200 ${glass.prompt} border border-transparent focus-within:border-theme-text/50 focus-within:shadow-[0_0_15px_rgba(var(--theme-text-rgb),0.1)] ${isDragActive ? 'border-theme-text shadow-[0_0_32px_rgba(255,255,255,0.25)]' : ''}`}
+                                    onDragOver={(e) => {
+                                        handleDragOver(e);
+                                        setIsDragActive(true);
+                                    }}
+                                    onDragEnter={(e) => {
+                                        handleDragEnter(e);
+                                        setIsDragActive(true);
+                                    }}
+                                    onDragLeave={(e) => {
+                                        handleDragLeave(e);
+                                        setIsDragActive(false);
+                                    }}
+                                    onDrop={(e) => {
+                                        handleDrop(e);
+                                        setIsDragActive(false);
+                                    }}
                                 >
-                                    <textarea
-                                        id="make-video-prompt"
-                                        ref={inputRef}
-                                        value={prompt}
-                                        onChange={(e) => {
-                                            setPrompt(e.target.value);
-                                            setCursorPosition(e.target.selectionStart);
-                                        }}
-                                        onSelect={(e) => setCursorPosition((e.target as HTMLTextAreaElement).selectionStart)}
-                                        onKeyDown={handleKeyDown}
-                                        className="w-full min-h-[100px] bg-transparent border-none focus:ring-0 text-theme-text placeholder:text-n-light font-raleway text-base px-3 py-2 resize-none focus:outline-none"
-                                        placeholder="e.g. Make it a sunny day, Add a red hat..."
-                                        disabled={isLoading}
-                                    />
-                                    {/* @ mention dropdown */}
-                                    <MentionDropdown
-                                        isOpen={mentionSuggestions.isOpen}
-                                        suggestions={mentionSuggestions.suggestions}
-                                        selectedIndex={mentionSuggestions.selectedIndex}
-                                        anchorRef={inputRef as React.RefObject<HTMLTextAreaElement>}
-                                        onSelect={handleMentionSelect}
-                                        onClose={mentionSuggestions.closeSuggestions}
-                                        setSelectedIndex={mentionSuggestions.setSelectedIndex}
-                                        mentionType={mentionSuggestions.currentMentionType as 'avatar' | 'product' | null}
-                                    />
+                                    {/* Top Row: Input + Side Buttons */}
+                                    <div className="flex flex-col sm:flex-row items-stretch">
+                                        <textarea
+                                            id="make-video-prompt"
+                                            ref={inputRef}
+                                            value={prompt}
+                                            onChange={(e) => {
+                                                setPrompt(e.target.value);
+                                                setCursorPosition(e.target.selectionStart || 0);
+                                            }}
+                                            onKeyDown={handleKeyDown}
+                                            onSelect={(e) => setCursorPosition((e.target as HTMLTextAreaElement).selectionStart || 0)}
+                                            onClick={(e) => setCursorPosition((e.target as HTMLTextAreaElement).selectionStart || 0)}
+                                            className="flex-1 min-h-[72px] bg-transparent border-none focus:ring-0 text-theme-text placeholder:text-n-light font-raleway text-base px-3 py-2 resize-none focus:outline-none"
+                                            placeholder="Describe your video..."
+                                            disabled={isLoading}
+                                        />
+                                        {/* @ Mention Dropdown */}
+                                        <MentionDropdown
+                                            isOpen={mentionSuggestions.isOpen}
+                                            suggestions={mentionSuggestions.suggestions}
+                                            selectedIndex={mentionSuggestions.selectedIndex}
+                                            anchorRef={inputRef}
+                                            onSelect={handleMentionSelect}
+                                            onClose={mentionSuggestions.closeSuggestions}
+                                            setSelectedIndex={mentionSuggestions.setSelectedIndex}
+                                            mentionType={mentionSuggestions.currentMentionType}
+                                        />
+
+                                        {/* Second Row: Avatar, Product, Style */}
+                                        <div className="flex items-center sm:items-end gap-2 px-3 py-2 flex-shrink-0 border-t border-n-dark sm:border-t-0 w-full sm:w-auto">
+                                            {/* Voice Button */}
+                                            <div className="relative">
+                                                <button
+                                                    type="button"
+                                                    ref={voiceButtonRef}
+                                                    onClick={() => setIsVoiceDropdownOpen(!isVoiceDropdownOpen)}
+                                                    className={`${glass.promptBorderless} hover:bg-n-text/20 border border-theme-dark/10 ${selectedVoiceId ? 'hover:border-theme-mid' : ''} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                    onPointerMove={onPointerMove}
+                                                    onPointerEnter={onPointerEnter}
+                                                    onPointerLeave={onPointerLeave}
+                                                >
+                                                    <div className="flex-1 flex items-center justify-center lg:mt-3">
+                                                        <Mic className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
+                                                    </div>
+                                                    <div className="hidden lg:flex items-center gap-1">
+                                                        <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
+                                                            Voice
+                                                        </span>
+                                                    </div>
+                                                </button>
+                                                {isVoiceDropdownOpen && createPortal(
+                                                    <div
+                                                        ref={voiceDropdownRef}
+                                                        className="fixed rounded-xl border border-theme-mid p-4 min-w-[280px] shadow-xl overflow-visible bg-theme-black/90 backdrop-blur-xl"
+                                                        style={{
+                                                            top: voiceButtonRef.current ? `${voiceButtonRef.current.getBoundingClientRect().bottom + 8}px` : '0px',
+                                                            left: promptContainerRef.current ? `${promptContainerRef.current.getBoundingClientRect().left}px` : (voiceButtonRef.current ? `${voiceButtonRef.current.getBoundingClientRect().left}px` : '0px'),
+                                                            zIndex: 10000,
+                                                        }}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    >
+                                                        <VoiceSelector
+                                                            value={selectedVoiceId}
+                                                            onChange={(voiceId) => {
+                                                                setSelectedVoiceId(voiceId);
+                                                                setIsVoiceDropdownOpen(false);
+                                                            }}
+                                                            className="w-full"
+                                                            defaultOpen={true}
+                                                        />
+                                                    </div>,
+                                                    document.body
+                                                )}
+                                                {selectedVoiceId && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSelectedVoiceId("");
+                                                        }}
+                                                        className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
+                                                        title="Remove voice"
+                                                        aria-label="Remove voice"
+                                                    >
+                                                        <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                            {/* Avatar Button */}
+                                            <div className="relative">
+                                                <button
+                                                    type="button"
+                                                    ref={avatarButtonRef}
+                                                    onClick={() => {
+                                                        setIsProductPickerOpen(false);
+                                                        if (avatarHandlers.storedAvatars.length === 0) {
+                                                            avatarHandlers.setAvatarUploadError(null);
+                                                            avatarHandlers.avatarQuickUploadInputRef.current?.click();
+                                                        } else {
+                                                            setIsAvatarPickerOpen(!isAvatarPickerOpen);
+                                                        }
+                                                    }}
+                                                    onDragEnter={handleAvatarButtonDragEnter}
+                                                    onDragOver={handleAvatarButtonDragOver}
+                                                    onDragLeave={handleAvatarButtonDragLeave}
+                                                    onDrop={handleAvatarButtonDrop}
+                                                    onMouseEnter={() => setIsAvatarButtonHovered(true)}
+                                                    onMouseLeave={() => setIsAvatarButtonHovered(false)}
+                                                    className={`${glass.promptBorderless} ${isDraggingOverAvatarButton || avatarSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-theme-dark/10 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${selectedAvatars.length > 0 || avatarSelection ? 'hover:border-theme-mid' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                    onPointerMove={onPointerMove}
+                                                    onPointerEnter={onPointerEnter}
+                                                    onPointerLeave={onPointerLeave}
+                                                >
+                                                    {/* Drag preview overlay */}
+                                                    {avatarDragPreviewUrl && isDraggingOverAvatarButton && (
+                                                        <>
+                                                            <img
+                                                                src={avatarDragPreviewUrl}
+                                                                alt="Drop to add as avatar"
+                                                                className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover z-10 opacity-80 pointer-events-none"
+                                                            />
+                                                            <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-20 pointer-events-none">
+                                                                <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
+                                                                    Avatar
+                                                                </span>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                    {/* Empty State */}
+                                                    {selectedAvatars.length === 0 && !avatarDragPreviewUrl && !avatarSelection && (
+                                                        <>
+                                                            <div className="flex-1 flex items-center justify-center lg:mt-3">
+                                                                {isAvatarButtonHovered ? (
+                                                                    <Plus className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
+                                                                ) : (
+                                                                    <User className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
+                                                                )}
+                                                            </div>
+                                                            <div className="hidden lg:flex items-center gap-1">
+                                                                <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
+                                                                    Avatar
+                                                                </span>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                    {/* Avatar Selection (Pending) */}
+                                                    {avatarSelection && !avatarDragPreviewUrl && (
+                                                        <>
+                                                            <img
+                                                                src={avatarSelection.imageUrl}
+                                                                alt="Avatar"
+                                                                loading="lazy"
+                                                                className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover opacity-80"
+                                                                title="Avatar"
+                                                            />
+                                                            <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-20">
+                                                                <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
+                                                                    Avatar
+                                                                </span>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                    {/* Single Avatar */}
+                                                    {selectedAvatars.length === 1 && !avatarSelection && !avatarDragPreviewUrl && (
+                                                        <>
+                                                            <img
+                                                                src={selectedAvatars[0].imageUrl}
+                                                                alt={selectedAvatars[0].name}
+                                                                loading="lazy"
+                                                                className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover"
+                                                                title={selectedAvatars[0].name}
+                                                            />
+                                                            <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
+                                                                <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
+                                                                    {selectedAvatars[0].name}
+                                                                </span>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                    {/* Multiple Avatars (2-4) */}
+                                                    {selectedAvatars.length >= 2 && selectedAvatars.length <= 4 && !avatarSelection && !avatarDragPreviewUrl && (
+                                                        <>
+                                                            <div className={`absolute inset-0 grid gap-0.5 ${selectedAvatars.length === 2 ? 'grid-cols-2' : 'grid-cols-2 grid-rows-2'}`}>
+                                                                {selectedAvatars.slice(0, 4).map((avatar, index) => (
+                                                                    <img
+                                                                        key={avatar.id}
+                                                                        src={avatar.imageUrl}
+                                                                        alt={avatar.name}
+                                                                        loading="lazy"
+                                                                        className={`w-full h-full object-cover ${selectedAvatars.length === 2 ? 'rounded-full lg:rounded-lg' : 'rounded-sm lg:rounded-md'} ${selectedAvatars.length === 3 && index === 2 ? 'col-span-2' : ''}`}
+                                                                        title={avatar.name}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                            <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-10">
+                                                                <span className="text-xs font-raleway text-n-text text-center">
+                                                                    {selectedAvatars.length} Avatars
+                                                                </span>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                    {/* 5+ Avatars */}
+                                                    {selectedAvatars.length > 4 && !avatarSelection && !avatarDragPreviewUrl && (
+                                                        <>
+                                                            <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-0.5">
+                                                                {selectedAvatars.slice(0, 4).map((avatar) => (
+                                                                    <img
+                                                                        key={avatar.id}
+                                                                        src={avatar.imageUrl}
+                                                                        alt={avatar.name}
+                                                                        loading="lazy"
+                                                                        className="w-full h-full object-cover rounded-sm lg:rounded-md"
+                                                                        title={avatar.name}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                            <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-10 cursor-pointer hover:from-black/95">
+                                                                <span className="text-xs font-raleway text-white/90 hover:text-white">
+                                                                    +{selectedAvatars.length - 4} more
+                                                                </span>
+                                                            </div>
+                                                            <div className="lg:hidden absolute bottom-0.5 right-0.5 bg-theme-black/80 rounded-full px-1 py-0.5 z-10">
+                                                                <span className="text-[10px] font-raleway text-white">+{selectedAvatars.length - 4}</span>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </button>
+                                                {selectedAvatars.length > 0 && !isDraggingOverAvatarButton && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            if ('clearAllAvatars' in avatarHandlers) {
+                                                                (avatarHandlers as { clearAllAvatars: () => void }).clearAllAvatars();
+                                                            } else {
+                                                                (avatarHandlers as { handleAvatarSelect: (v: null) => void }).handleAvatarSelect(null);
+                                                            }
+                                                        }}
+                                                        className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
+                                                        title="Remove all avatars"
+                                                        aria-label="Remove all avatars"
+                                                    >
+                                                        <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                            {/* Product Button */}
+                                            <div className="relative">
+                                                <button
+                                                    type="button"
+                                                    ref={productButtonRef}
+                                                    onClick={() => {
+                                                        setIsAvatarPickerOpen(false);
+                                                        if (productHandlers.storedProducts.length === 0) {
+                                                            productHandlers.setProductUploadError(null);
+                                                            productHandlers.productQuickUploadInputRef.current?.click();
+                                                        } else {
+                                                            setIsProductPickerOpen(!isProductPickerOpen);
+                                                        }
+                                                    }}
+                                                    onDragEnter={handleProductButtonDragEnter}
+                                                    onDragOver={handleProductButtonDragOver}
+                                                    onDragLeave={handleProductButtonDragLeave}
+                                                    onDrop={handleProductButtonDrop}
+                                                    onMouseEnter={() => setIsProductButtonHovered(true)}
+                                                    onMouseLeave={() => setIsProductButtonHovered(false)}
+                                                    className={`${glass.promptBorderless} ${isDraggingOverProductButton || productSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-theme-dark/10 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${selectedProducts.length > 0 || productSelection ? 'hover:border-theme-mid' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                    onPointerMove={onPointerMove}
+                                                    onPointerEnter={onPointerEnter}
+                                                    onPointerLeave={onPointerLeave}
+                                                >
+                                                    {/* Drag preview overlay */}
+                                                    {productDragPreviewUrl && isDraggingOverProductButton && (
+                                                        <>
+                                                            <img
+                                                                src={productDragPreviewUrl}
+                                                                alt="Drop to add as product"
+                                                                className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover z-10 opacity-80 pointer-events-none"
+                                                            />
+                                                            <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-20 pointer-events-none">
+                                                                <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
+                                                                    Product
+                                                                </span>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                    {/* Empty State */}
+                                                    {selectedProducts.length === 0 && !productDragPreviewUrl && !productSelection && (
+                                                        <>
+                                                            <div className="flex-1 flex items-center justify-center lg:mt-3">
+                                                                {isProductButtonHovered ? (
+                                                                    <Plus className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
+                                                                ) : (
+                                                                    <Package className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
+                                                                )}
+                                                            </div>
+                                                            <div className="hidden lg:flex items-center gap-1">
+                                                                <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
+                                                                    Product
+                                                                </span>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                    {/* Product Selection (Pending) */}
+                                                    {productSelection && !productDragPreviewUrl && (
+                                                        <>
+                                                            <img
+                                                                src={productSelection.imageUrl}
+                                                                alt="Product"
+                                                                loading="lazy"
+                                                                className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover opacity-80"
+                                                                title="Product"
+                                                            />
+                                                            <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-20">
+                                                                <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
+                                                                    Product
+                                                                </span>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                    {/* Single Product */}
+                                                    {selectedProducts.length === 1 && !productSelection && !productDragPreviewUrl && (
+                                                        <>
+                                                            <img
+                                                                src={selectedProducts[0].imageUrl}
+                                                                alt={selectedProducts[0].name}
+                                                                loading="lazy"
+                                                                className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover"
+                                                                title={selectedProducts[0].name}
+                                                            />
+                                                            <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
+                                                                <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
+                                                                    {selectedProducts[0].name}
+                                                                </span>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                    {/* Multiple Products (2-4) */}
+                                                    {selectedProducts.length >= 2 && selectedProducts.length <= 4 && !productSelection && !productDragPreviewUrl && (
+                                                        <>
+                                                            <div className={`absolute inset-0 grid gap-0.5 ${selectedProducts.length === 2 ? 'grid-cols-2' : 'grid-cols-2 grid-rows-2'}`}>
+                                                                {selectedProducts.slice(0, 4).map((product, index) => (
+                                                                    <img
+                                                                        key={product.id}
+                                                                        src={product.imageUrl}
+                                                                        alt={product.name}
+                                                                        loading="lazy"
+                                                                        className={`w-full h-full object-cover ${selectedProducts.length === 2 ? 'rounded-full lg:rounded-lg' : 'rounded-sm lg:rounded-md'} ${selectedProducts.length === 3 && index === 2 ? 'col-span-2' : ''}`}
+                                                                        title={product.name}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                            <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-10">
+                                                                <span className="text-xs font-raleway text-n-text text-center">
+                                                                    {selectedProducts.length} Products
+                                                                </span>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                    {/* 5+ Products */}
+                                                    {selectedProducts.length > 4 && !productSelection && !productDragPreviewUrl && (
+                                                        <>
+                                                            <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-0.5">
+                                                                {selectedProducts.slice(0, 4).map((product) => (
+                                                                    <img
+                                                                        key={product.id}
+                                                                        src={product.imageUrl}
+                                                                        alt={product.name}
+                                                                        loading="lazy"
+                                                                        className="w-full h-full object-cover rounded-sm lg:rounded-md"
+                                                                        title={product.name}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                            <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-10 cursor-pointer hover:from-black/95">
+                                                                <span className="text-xs font-raleway text-white/90 hover:text-white">
+                                                                    +{selectedProducts.length - 4} more
+                                                                </span>
+                                                            </div>
+                                                            <div className="lg:hidden absolute bottom-0.5 right-0.5 bg-theme-black/80 rounded-full px-1 py-0.5 z-10">
+                                                                <span className="text-[10px] font-raleway text-white">+{selectedProducts.length - 4}</span>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </button>
+                                                {selectedProducts.length > 0 && !isDraggingOverProductButton && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            if ('clearAllProducts' in productHandlers) {
+                                                                (productHandlers as { clearAllProducts: () => void }).clearAllProducts();
+                                                            } else {
+                                                                (productHandlers as { handleProductSelect: (v: null) => void }).handleProductSelect(null);
+                                                            }
+                                                        }}
+                                                        className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
+                                                        title="Remove all products"
+                                                        aria-label="Remove all products"
+                                                    >
+                                                        <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                            {/* Style Button */}
+                                            <div className="relative">
+                                                <button
+                                                    type="button"
+                                                    ref={styleButtonRef}
+                                                    onMouseEnter={() => setIsStyleButtonHovered(true)}
+                                                    onMouseLeave={() => setIsStyleButtonHovered(false)}
+                                                    onClick={styleHandlers.handleStyleModalOpen}
+                                                    className={`${glass.promptBorderless} hover:bg-n-text/20 border border-theme-dark/10 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                    onPointerMove={onPointerMove}
+                                                    onPointerEnter={onPointerEnter}
+                                                    onPointerLeave={onPointerLeave}
+                                                >
+                                                    <div className="flex-1 flex items-center justify-center lg:mt-3">
+                                                        {isStyleButtonHovered ? (
+                                                            <LayoutGrid className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
+                                                        ) : (
+                                                            <Palette className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
+                                                        )}
+                                                    </div>
+                                                    <div className="hidden lg:flex items-center gap-1">
+                                                        <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
+                                                            Style
+                                                        </span>
+                                                    </div>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* LipSync Script Input */}
                                     {isLipSyncEnabled && (
-                                        <div className="border-t border-n-dark px-3 py-2">
+                                        <div className="border-t border-n-dark/50 px-3 py-2">
                                             <textarea
                                                 value={script}
                                                 onChange={(e) => setScript(e.target.value)}
-                                                className="w-full min-h-[100px] bg-transparent border-none focus:ring-0 text-theme-text placeholder:text-n-light font-raleway text-base px-0 py-0 resize-none focus:outline-none"
+                                                className="w-full min-h-[60px] bg-transparent border-none focus:ring-0 text-theme-text placeholder:text-n-light font-raleway text-sm px-0 py-0 resize-none focus:outline-none"
                                                 placeholder="Enter script for LipSync..."
                                                 disabled={isLoading}
                                             />
                                         </div>
                                     )}
-
-                                    {/* Middle Row: Voice, Avatar, Product, Style */}
-                                    <div className="flex flex-wrap items-center gap-2 border-t border-n-dark px-3 py-2">
-                                        {/* Voice Button */}
-                                        <div className="relative">
-                                            <button
-                                                type="button"
-                                                ref={voiceButtonRef}
-                                                onClick={() => setIsVoiceDropdownOpen(!isVoiceDropdownOpen)}
-                                                className={`${glass.promptBorderless} hover:bg-n-text/20 border border-theme-dark/10 ${selectedVoiceId ? 'hover:border-theme-mid' : ''} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
-                                                onPointerMove={onPointerMove}
-                                                onPointerEnter={onPointerEnter}
-                                                onPointerLeave={onPointerLeave}
-                                            >
-                                                <div className="flex-1 flex items-center justify-center lg:mt-3">
-                                                    <Mic className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
-                                                </div>
-                                                <div className="hidden lg:flex items-center gap-1">
-                                                    <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
-                                                        Voice
-                                                    </span>
-                                                </div>
-                                            </button>
-                                            {isVoiceDropdownOpen && createPortal(
-                                                <div
-                                                    ref={voiceDropdownRef}
-                                                    className="fixed rounded-xl border border-theme-mid p-4 min-w-[280px] shadow-xl overflow-visible bg-theme-black/90 backdrop-blur-xl"
-                                                    style={{
-                                                        top: voiceButtonRef.current ? `${voiceButtonRef.current.getBoundingClientRect().bottom + 8}px` : '0px',
-                                                        left: promptContainerRef.current ? `${promptContainerRef.current.getBoundingClientRect().left}px` : (voiceButtonRef.current ? `${voiceButtonRef.current.getBoundingClientRect().left}px` : '0px'),
-                                                        zIndex: 10000,
-                                                    }}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                >
-                                                    <VoiceSelector
-                                                        value={selectedVoiceId}
-                                                        onChange={(voiceId) => {
-                                                            setSelectedVoiceId(voiceId);
-                                                            setIsVoiceDropdownOpen(false);
-                                                        }}
-                                                        className="w-full"
-                                                        defaultOpen={true}
-                                                    />
-                                                </div>,
-                                                document.body
-                                            )}
-                                            {selectedVoiceId && (
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setSelectedVoiceId("");
-                                                    }}
-                                                    className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
-                                                    title="Remove voice"
-                                                    aria-label="Remove voice"
-                                                >
-                                                    <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        {/* Avatar Button */}
-                                        <div className="relative">
-                                            <button
-                                                type="button"
-                                                ref={avatarButtonRef}
-                                                onClick={() => {
-                                                    setIsProductPickerOpen(false);
-                                                    if (avatarHandlers.storedAvatars.length === 0) {
-                                                        avatarHandlers.setAvatarUploadError(null);
-                                                        avatarHandlers.avatarQuickUploadInputRef.current?.click();
-                                                    } else {
-                                                        setIsAvatarPickerOpen(!isAvatarPickerOpen);
-                                                    }
-                                                }}
-                                                onDragOver={handleAvatarButtonDragOver}
-                                                onDragLeave={handleAvatarButtonDragLeave}
-                                                onDrop={handleAvatarButtonDrop}
-                                                onMouseEnter={() => setIsAvatarButtonHovered(true)}
-                                                onMouseLeave={() => setIsAvatarButtonHovered(false)}
-                                                className={`${glass.promptBorderless} ${isDraggingOverAvatarButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : `hover:bg-n-text/20 border border-theme-dark/10 ${selectedAvatars.length > 0 ? 'hover:border-theme-mid' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
-                                                onPointerMove={onPointerMove}
-                                                onPointerEnter={onPointerEnter}
-                                                onPointerLeave={onPointerLeave}
-                                            >
-                                                {selectedAvatars.length === 0 && (
-                                                    <>
-                                                        <div className="flex-1 flex items-center justify-center lg:mt-3">
-                                                            {isAvatarButtonHovered ? (
-                                                                <Plus className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
-                                                            ) : (
-                                                                <User className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
-                                                            )}
-                                                        </div>
-                                                        <div className="hidden lg:flex items-center gap-1">
-                                                            <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
-                                                                Avatar
-                                                            </span>
-                                                        </div>
-                                                    </>
-                                                )}
-                                                {/* Single Avatar */}
-                                                {selectedAvatars.length === 1 && (
-                                                    <>
-                                                        <img
-                                                            src={selectedAvatars[0].imageUrl}
-                                                            alt={selectedAvatars[0].name}
-                                                            loading="lazy"
-                                                            className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover"
-                                                            title={selectedAvatars[0].name}
-                                                        />
-                                                        <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
-                                                            <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
-                                                                {selectedAvatars[0].name}
-                                                            </span>
-                                                        </div>
-                                                    </>
-                                                )}
-                                                {/* Multiple Avatars (2-4) */}
-                                                {selectedAvatars.length >= 2 && selectedAvatars.length <= 4 && (
-                                                    <>
-                                                        <div className={`absolute inset-0 grid gap-0.5 ${selectedAvatars.length === 2 ? 'grid-cols-2' : 'grid-cols-2 grid-rows-2'}`}>
-                                                            {selectedAvatars.slice(0, 4).map((avatar, index) => (
-                                                                <img
-                                                                    key={avatar.id}
-                                                                    src={avatar.imageUrl}
-                                                                    alt={avatar.name}
-                                                                    loading="lazy"
-                                                                    className={`w-full h-full object-cover ${selectedAvatars.length === 2 ? 'rounded-full lg:rounded-lg' : 'rounded-sm lg:rounded-md'} ${selectedAvatars.length === 3 && index === 2 ? 'col-span-2' : ''}`}
-                                                                    title={avatar.name}
-                                                                />
-                                                            ))}
-                                                        </div>
-                                                        <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-10">
-                                                            <span className="text-xs font-raleway text-n-text text-center">
-                                                                {selectedAvatars.length} Avatars
-                                                            </span>
-                                                        </div>
-                                                    </>
-                                                )}
-                                                {/* 5+ Avatars */}
-                                                {selectedAvatars.length > 4 && (
-                                                    <>
-                                                        <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-0.5">
-                                                            {selectedAvatars.slice(0, 4).map((avatar) => (
-                                                                <img
-                                                                    key={avatar.id}
-                                                                    src={avatar.imageUrl}
-                                                                    alt={avatar.name}
-                                                                    loading="lazy"
-                                                                    className="w-full h-full object-cover rounded-sm lg:rounded-md"
-                                                                    title={avatar.name}
-                                                                />
-                                                            ))}
-                                                        </div>
-                                                        {/* Badge with count */}
-                                                        <div
-                                                            className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-10 cursor-pointer hover:from-black/95"
-                                                        >
-                                                            <span className="text-xs font-raleway text-white/90 hover:text-white">
-                                                                +{selectedAvatars.length - 4} more
-                                                            </span>
-                                                        </div>
-                                                        {/* Mobile badge */}
-                                                        <div
-                                                            className="lg:hidden absolute bottom-0.5 right-0.5 bg-theme-black/80 rounded-full px-1 py-0.5 z-10"
-                                                        >
-                                                            <span className="text-[10px] font-raleway text-white">+{selectedAvatars.length - 4}</span>
-                                                        </div>
-                                                    </>
-                                                )}
-                                            </button>
-                                            {selectedAvatars.length > 0 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        // Assuming handleAvatarSelect(null) works for clearing all or we need a clearer function.
-                                                        // PromptForm uses clearAllAvatars() but here we have access to handler directly.
-                                                        // Let's use removeSelectedAvatar for now or clear logic if exposed.
-                                                        // Actually, looking at imports, we don't have clearAll exposed from useAvatarHandlers in this file's usage?
-                                                        // Checking useAvatarHandlers usage above: we are destructuring properties.
-                                                        // We might need to iterate or check if the hook exposes a clear function.
-                                                        // For now, let's assume we can remove them one by one or we need to add clearAll to the hook if not present.
-                                                        // Wait, PromptForm had `clearAllAvatars`. Let's assume it's available or we can loop.
-                                                        // But safely, let's just use the logic to clear. 
-                                                        // Wait, the original code used `avatarHandlers.handleAvatarSelect(null)`. 
-                                                        // Let's see if we can perform a clear.
-                                                        // Ideally we should use `clearAllAvatars` if available.
-                                                        // If not, we can manually set selectedAvatars to empty if we had the setter, 
-                                                        // but `useAvatarHandlers` usually exposes handlers.
-                                                        // Let's check `useAvatarHandlers` import again or usage in PromptForm.
-                                                        // PromptForm: `clearAllAvatars`.
-                                                        // I'll assume it exists on `avatarHandlers` and I should have destructured it.
-                                                        // I'll add `clearAllAvatars` to destructuring in the earlier chunk if possible, or just call `avatarHandlers.clearAllAvatars()`
-                                                        // But I didn't verify it's returned by the hook in this file.
-                                                        // Let's trust PromptForm usage. I will modify the destructuring chunk to include it.
-                                                        // Ah, I can't modify previous chunk now. 
-                                                        // I'll use `avatarHandlers.clearAllAvatars?.()` with safety check or just assume it is there.
-                                                        // If not, I'll fix it in a subsequent step.
-                                                        if ('clearAllAvatars' in avatarHandlers) {
-                                                            (avatarHandlers as { clearAllAvatars: () => void }).clearAllAvatars();
-                                                        } else {
-                                                            // Fallback
-                                                            (avatarHandlers as { handleAvatarSelect: (v: null) => void }).handleAvatarSelect(null);
-                                                        }
-                                                    }}
-                                                    className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove z-20"
-                                                    title="Remove all avatars"
-                                                    aria-label="Remove all avatars"
-                                                >
-                                                    <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        {/* Product Button */}
-                                        <div className="relative">
-                                            <button
-                                                type="button"
-                                                ref={productButtonRef}
-                                                onClick={() => {
-                                                    setIsAvatarPickerOpen(false);
-                                                    if (productHandlers.storedProducts.length === 0) {
-                                                        productHandlers.setProductUploadError(null);
-                                                        productHandlers.productQuickUploadInputRef.current?.click();
-                                                    } else {
-                                                        setIsProductPickerOpen(!isProductPickerOpen);
-                                                    }
-                                                }}
-                                                onDragOver={handleProductButtonDragOver}
-                                                onDragLeave={handleProductButtonDragLeave}
-                                                onDrop={handleProductButtonDrop}
-                                                onMouseEnter={() => setIsProductButtonHovered(true)}
-                                                onMouseLeave={() => setIsProductButtonHovered(false)}
-                                                className={`${glass.promptBorderless} ${isDraggingOverProductButton ? 'bg-theme-text/30 border-theme-text border-2 border-dashed' : `hover:bg-n-text/20 border border-theme-dark/10 ${selectedProducts.length > 0 ? 'hover:border-theme-mid' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
-                                                onPointerMove={onPointerMove}
-                                                onPointerEnter={onPointerEnter}
-                                                onPointerLeave={onPointerLeave}
-                                            >
-                                                {selectedProducts.length === 0 && (
-                                                    <>
-                                                        <div className="flex-1 flex items-center justify-center lg:mt-3">
-                                                            {isProductButtonHovered ? (
-                                                                <Plus className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
-                                                            ) : (
-                                                                <Package className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
-                                                            )}
-                                                        </div>
-                                                        <div className="hidden lg:flex items-center gap-1">
-                                                            <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
-                                                                Product
-                                                            </span>
-                                                        </div>
-                                                    </>
-                                                )}
-                                                {/* Single Product */}
-                                                {selectedProducts.length === 1 && (
-                                                    <>
-                                                        <img
-                                                            src={selectedProducts[0].imageUrl}
-                                                            alt={selectedProducts[0].name}
-                                                            loading="lazy"
-                                                            className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover"
-                                                            title={selectedProducts[0].name}
-                                                        />
-                                                        <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
-                                                            <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
-                                                                {selectedProducts[0].name}
-                                                            </span>
-                                                        </div>
-                                                    </>
-                                                )}
-                                                {/* Multiple Products (2-4) */}
-                                                {selectedProducts.length >= 2 && selectedProducts.length <= 4 && (
-                                                    <>
-                                                        <div className={`absolute inset-0 grid gap-0.5 ${selectedProducts.length === 2 ? 'grid-cols-2' : 'grid-cols-2 grid-rows-2'}`}>
-                                                            {selectedProducts.slice(0, 4).map((product, index) => (
-                                                                <img
-                                                                    key={product.id}
-                                                                    src={product.imageUrl}
-                                                                    alt={product.name}
-                                                                    loading="lazy"
-                                                                    className={`w-full h-full object-cover ${selectedProducts.length === 2 ? 'rounded-full lg:rounded-lg' : 'rounded-sm lg:rounded-md'} ${selectedProducts.length === 3 && index === 2 ? 'col-span-2' : ''}`}
-                                                                    title={product.name}
-                                                                />
-                                                            ))}
-                                                        </div>
-                                                        <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-10">
-                                                            <span className="text-xs font-raleway text-n-text text-center">
-                                                                {selectedProducts.length} Products
-                                                            </span>
-                                                        </div>
-                                                    </>
-                                                )}
-                                                {/* 5+ Products */}
-                                                {selectedProducts.length > 4 && (
-                                                    <>
-                                                        <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-0.5">
-                                                            {selectedProducts.slice(0, 4).map((product) => (
-                                                                <img
-                                                                    key={product.id}
-                                                                    src={product.imageUrl}
-                                                                    alt={product.name}
-                                                                    loading="lazy"
-                                                                    className="w-full h-full object-cover rounded-sm lg:rounded-md"
-                                                                    title={product.name}
-                                                                />
-                                                            ))}
-                                                        </div>
-                                                        {/* Badge with count */}
-                                                        <div
-                                                            className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-10 cursor-pointer hover:from-black/95"
-                                                        >
-                                                            <span className="text-xs font-raleway text-white/90 hover:text-white">
-                                                                +{selectedProducts.length - 4} more
-                                                            </span>
-                                                        </div>
-                                                        {/* Mobile badge */}
-                                                        <div
-                                                            className="lg:hidden absolute bottom-0.5 right-0.5 bg-theme-black/80 rounded-full px-1 py-0.5 z-10"
-                                                        >
-                                                            <span className="text-[10px] font-raleway text-white">+{selectedProducts.length - 4}</span>
-                                                        </div>
-                                                    </>
-                                                )}
-                                            </button>
-                                            {selectedProducts.length > 0 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        if ('clearAllProducts' in productHandlers) {
-                                                            (productHandlers as { clearAllProducts: () => void }).clearAllProducts();
-                                                        } else {
-                                                            (productHandlers as { handleProductSelect: (v: null) => void }).handleProductSelect(null);
-                                                        }
-                                                    }}
-                                                    className="absolute -top-1 -right-1 bg-n-black hover:bg-n-dark rounded-full p-0.5 transition-all duration-200 group/remove"
-                                                    title="Remove all products"
-                                                    aria-label="Remove all products"
-                                                >
-                                                    <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        {/* Style Button */}
-                                        <div className="relative">
-                                            <button
-                                                type="button"
-                                                ref={styleButtonRef}
-                                                onMouseEnter={() => setIsStyleButtonHovered(true)}
-                                                onMouseLeave={() => setIsStyleButtonHovered(false)}
-                                                onClick={styleHandlers.handleStyleModalOpen}
-                                                className={`${glass.promptBorderless} hover:bg-n-text/20 border border-theme-dark/10 text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
-                                                onPointerMove={onPointerMove}
-                                                onPointerEnter={onPointerEnter}
-                                                onPointerLeave={onPointerLeave}
-                                            >
-                                                <div className="flex-1 flex items-center justify-center lg:mt-3">
-                                                    {isStyleButtonHovered ? (
-                                                        <LayoutGrid className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
-                                                    ) : (
-                                                        <Palette className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 text-theme-text lg:text-theme-text transition-colors duration-100" />
-                                                    )}
-                                                </div>
-                                                <div className="hidden lg:flex items-center gap-1">
-                                                    <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text">
-                                                        Style
-                                                    </span>
-                                                </div>
-                                            </button>
-                                        </div>
-                                    </div>
 
                                     {/* Bottom Controls Bar */}
                                     <div className="flex flex-wrap items-center justify-between gap-2 border-t border-n-dark px-3 py-2">
@@ -1332,7 +1409,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                             </div>
 
                                             {referencePreviews.length > 0 && (
-                                                <div className="flex items-center gap-1.5">
+                                                <div className="flex items-center gap-1.5 mr-1">
                                                     {referencePreviews.map((preview, index) => (
                                                         <div
                                                             key={`${preview}-${index}`}
@@ -1361,7 +1438,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                 </div>
                                             )}
 
-                                            {/* Model Selector (Restricted to Veo 3.1 and Sora 2) */}
+                                            {/* Model Selector */}
                                             <div className="relative">
                                                 <Suspense fallback={null}>
                                                     <ModelSelector
@@ -1431,7 +1508,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                 </Suspense>
                                             </div>
 
-                                            {/* Batch Size (Visible on larger screens) */}
+                                            {/* Batch Size */}
                                             <div
                                                 className="relative hidden lg:flex items-center"
                                                 onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'make-video-batch-size-tooltip')}
@@ -1503,12 +1580,12 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                     Your Prompts
                                                 </TooltipPortal>
                                             </div>
-                                        </div>
 
+                                        </div>
                                         <button
                                             type="submit"
                                             disabled={isLoading || !prompt.trim()}
-                                            className={`${buttons.primary} px-6 rounded-xl flex items-center gap-2 font-raleway`}
+                                            className={`${buttons.primary} px-6 rounded-xl flex items-center gap-2 font-raleway text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 shadow-lg glow-sm h-10`}
                                         >
                                             {isLoading ? (
                                                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -1517,6 +1594,8 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                             )}
                                             Generate
                                         </button>
+
+
                                     </div>
                                 </div>
                             </div>

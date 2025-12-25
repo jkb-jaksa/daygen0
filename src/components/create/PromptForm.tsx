@@ -331,10 +331,11 @@ const PromptForm = memo<PromptFormProps>(
       removeSelectedProduct,
     } = productHandlers;
 
-    // @ mention suggestions hook (avatars and products)
+    // @ mention suggestions hook (avatars and products) and / for saved prompts
     const mentionSuggestions = useMentionSuggestions({
       storedAvatars,
       storedProducts,
+      savedPrompts: savedPromptsList,
       prompt,
       cursorPosition,
       onSelectAvatar: handleAvatarToggle,
@@ -343,6 +344,9 @@ const PromptForm = memo<PromptFormProps>(
       onSelectProduct: handleProductToggle,
       onDeselectProduct: removeSelectedProduct,
       selectedProducts,
+      onSelectSavedPrompt: () => {
+        // Saved prompt selection is handled via selectSuggestion which updates the prompt directly
+      },
     });
 
     const handleAvatarButtonClick = useCallback(() => {

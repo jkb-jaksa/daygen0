@@ -754,10 +754,11 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         setCreationsModalProduct,
     } = productHandlers;
 
-    // @ mention suggestions hook (avatars and products)
+    // @ mention suggestions hook (avatars and products) and / for saved prompts
     const mentionSuggestions = useMentionSuggestions({
         storedAvatars: avatarHandlers.storedAvatars,
         storedProducts: productHandlers.storedProducts,
+        savedPrompts,
         prompt,
         cursorPosition,
         onSelectAvatar: avatarHandlers.handleAvatarToggle,
@@ -766,11 +767,14 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
         onSelectProduct: productHandlers.handleProductToggle,
         onDeselectProduct: productHandlers.removeSelectedProduct,
         selectedProducts: productHandlers.selectedProducts,
+        onSelectSavedPrompt: () => {
+            // Saved prompt selection is handled via selectSuggestion which updates the prompt directly
+        },
     });
 
     // Handle mention selection from dropdown
-    const handleMentionSelect = useCallback((item: { id: string; name: string; type: 'avatar' | 'product' }) => {
-        const result = mentionSuggestions.selectSuggestion(item as Parameters<typeof mentionSuggestions.selectSuggestion>[0]);
+    const handleMentionSelect = useCallback((item: Parameters<typeof mentionSuggestions.selectSuggestion>[0]) => {
+        const result = mentionSuggestions.selectSuggestion(item);
         if (result) {
             setPrompt(result.newPrompt);
             setCursorPosition(result.newCursorPos);
@@ -1961,7 +1965,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
 
                     {/* Right Column - Form */}
                     <div className={`flex flex-col ${isResizeMode ? 'w-full' : 'flex-1 w-full md:min-w-[720px]'}`}>
-                        <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center justify-between mb-1">
                             <h2 className="text-lg font-raleway text-theme-text flex items-center gap-2">
                                 <Edit className="w-5 h-5 text-theme-text" />
                                 Edit

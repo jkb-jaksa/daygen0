@@ -365,18 +365,23 @@ export function useProductHandlers() {
 
   // Handle product save
   const handleProductSave = useCallback(
-    async (name: string, selection: ProductSelection): Promise<{ success: boolean; error?: string }> => {
+    async (name: string, selection: ProductSelection, avatarNames?: string[]): Promise<{ success: boolean; error?: string }> => {
       if (!user?.id) return { success: false, error: 'You must be logged in to create a product.' };
 
       const trimmed = name.trim();
       if (!trimmed || !selection?.imageUrl) return { success: false, error: 'Name and image are required.' };
 
-      // Check for duplicate name (case-insensitive)
+      // Check for duplicate name (case-insensitive) among products
       const duplicateProduct = storedProducts.find(
         (p) => p.name.toLowerCase() === trimmed.toLowerCase()
       );
       if (duplicateProduct) {
         return { success: false, error: 'A product with this name already exists.' };
+      }
+
+      // Check for name conflict with avatars (both use @ mention now)
+      if (avatarNames && avatarNames.some(n => n.toLowerCase() === trimmed.toLowerCase())) {
+        return { success: false, error: 'An avatar with this name already exists. Avatar and product names must be unique.' };
       }
 
       try {

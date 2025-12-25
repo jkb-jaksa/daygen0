@@ -1,19 +1,22 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import type { StoredAvatar } from '../../avatars/types';
 import type { StoredProduct } from '../../products/types';
+import type { SavedPrompt } from '../../../lib/savedPrompts';
 
-export type MentionType = 'avatar' | 'product';
+export type MentionType = 'avatar' | 'product' | 'savedPrompt';
 
 export interface MentionItem {
     id: string;
     name: string;
     imageUrl: string;
     type: MentionType;
+    // For saved prompts, this contains the full prompt text
+    promptText?: string;
 }
 
 export interface ParsedMention {
     name: string;
-    type: MentionType;
+    type: 'avatar' | 'product'; // savedPrompts don't stay as parsed mentions
     startIndex: number;
     endIndex: number;
 }
@@ -21,6 +24,7 @@ export interface ParsedMention {
 interface UseMentionSuggestionsOptions {
     storedAvatars: StoredAvatar[];
     storedProducts: StoredProduct[];
+    savedPrompts?: SavedPrompt[];
     prompt: string;
     cursorPosition: number;
     onSelectAvatar: (avatar: StoredAvatar) => void;
@@ -29,6 +33,7 @@ interface UseMentionSuggestionsOptions {
     onSelectProduct: (product: StoredProduct) => void;
     onDeselectProduct: (productId: string) => void;
     selectedProducts: StoredProduct[];
+    onSelectSavedPrompt?: (savedPrompt: SavedPrompt) => void;
 }
 
 // Helper to escape special regex characters in names
@@ -38,6 +43,7 @@ const escapeRegex = (str: string): string =>
 export function useMentionSuggestions({
     storedAvatars,
     storedProducts,
+    savedPrompts = [],
     prompt,
     cursorPosition,
     onSelectAvatar,
@@ -46,6 +52,7 @@ export function useMentionSuggestions({
     onSelectProduct,
     onDeselectProduct,
     selectedProducts,
+    onSelectSavedPrompt,
 }: UseMentionSuggestionsOptions) {
     const [isOpen, setIsOpen] = useState(false);
     const [activeTrigger, setActiveTrigger] = useState<'@' | '/' | null>(null);
@@ -57,10 +64,11 @@ export function useMentionSuggestions({
     const previousMentionsRef = useRef<ParsedMention[]>([]);
 
     // Parse all mentions from prompt by matching against known avatar/product names
+    // Now both avatars AND products use @ prefix
     const parsedMentions = useMemo((): ParsedMention[] => {
         const mentions: ParsedMention[] = [];
 
-        // 1. Check Avatars (@)
+        // 1. Check Avatars (@) - UNCHANGED
         for (const avatar of storedAvatars) {
             const mentionPattern = new RegExp(
                 `@${escapeRegex(avatar.name)}(?=\\s|@|/|\\n|$)`,
@@ -78,21 +86,27 @@ export function useMentionSuggestions({
             }
         }
 
-        // 2. Check Products (/)
+        // 2. Check Products (@) - NOW ALSO USES @ PREFIX
         for (const product of storedProducts) {
             const mentionPattern = new RegExp(
-                `/${escapeRegex(product.name)}(?=\\s|@|/|\\n|$)`,
+                `@${escapeRegex(product.name)}(?=\\s|@|/|\\n|$)`,
                 'gi'
             );
 
             let match;
             while ((match = mentionPattern.exec(prompt)) !== null) {
-                mentions.push({
-                    name: product.name,
-                    type: 'product',
-                    startIndex: match.index,
-                    endIndex: match.index + match[0].length,
-                });
+                // Avoid duplicate if avatar has same name (shouldn't happen with validation)
+                const alreadyAdded = mentions.some(
+                    m => m.startIndex === match!.index && m.endIndex === match!.index + match![0].length
+                );
+                if (!alreadyAdded) {
+                    mentions.push({
+                        name: product.name,
+                        type: 'product',
+                        startIndex: match.index,
+                        endIndex: match.index + match[0].length,
+                    });
+                }
             }
         }
 
@@ -103,6 +117,8 @@ export function useMentionSuggestions({
     }, [prompt, storedAvatars, storedProducts]);
 
     // Get suggestions list based on active trigger (@ or /)
+    // @ shows BOTH avatars AND products (grouped)
+    // / shows saved prompts
     const suggestions = useMemo((): MentionItem[] => {
         if (!activeTrigger) return [];
 
@@ -110,7 +126,8 @@ export function useMentionSuggestions({
         const items: MentionItem[] = [];
 
         if (activeTrigger === '@') {
-            // Avatars
+            // Show BOTH Avatars AND Products with @ trigger
+            // Avatars first
             for (const avatar of storedAvatars) {
                 if (!lowerQuery || avatar.name.toLowerCase().includes(lowerQuery)) {
                     items.push({
@@ -121,8 +138,7 @@ export function useMentionSuggestions({
                     });
                 }
             }
-        } else if (activeTrigger === '/') {
-            // Products
+            // Then Products
             for (const product of storedProducts) {
                 if (!lowerQuery || product.name.toLowerCase().includes(lowerQuery)) {
                     items.push({
@@ -133,10 +149,28 @@ export function useMentionSuggestions({
                     });
                 }
             }
+        } else if (activeTrigger === '/') {
+            // Show Saved Prompts with / trigger
+            for (const savedPrompt of savedPrompts) {
+                // Search in prompt text
+                if (!lowerQuery || savedPrompt.text.toLowerCase().includes(lowerQuery)) {
+                    // Generate a display name from the prompt (first 30 chars)
+                    const displayName = savedPrompt.text.length > 40
+                        ? savedPrompt.text.slice(0, 40) + '...'
+                        : savedPrompt.text;
+                    items.push({
+                        id: savedPrompt.id,
+                        name: displayName,
+                        imageUrl: '', // Saved prompts don't have images
+                        type: 'savedPrompt',
+                        promptText: savedPrompt.text,
+                    });
+                }
+            }
         }
 
         return items;
-    }, [query, storedAvatars, storedProducts, activeTrigger]);
+    }, [query, storedAvatars, storedProducts, savedPrompts, activeTrigger]);
 
     // Check if user typed an exact match (optionally followed by space) - auto-select
     const checkForSpaceComplete = useCallback((): MentionItem | null => {
@@ -153,30 +187,32 @@ export function useMentionSuggestions({
         if (!queryLower) return null;
 
         if (activeTrigger === '@') {
-            const exactMatch = storedAvatars.find(
+            // Check avatars first
+            const exactAvatarMatch = storedAvatars.find(
                 a => a.name.toLowerCase() === queryLower
             );
-            if (exactMatch) {
+            if (exactAvatarMatch) {
                 return {
-                    id: exactMatch.id,
-                    name: exactMatch.name,
-                    imageUrl: exactMatch.imageUrl,
+                    id: exactAvatarMatch.id,
+                    name: exactAvatarMatch.name,
+                    imageUrl: exactAvatarMatch.imageUrl,
                     type: 'avatar',
                 };
             }
-        } else if (activeTrigger === '/') {
-            const exactMatch = storedProducts.find(
+            // Then check products
+            const exactProductMatch = storedProducts.find(
                 p => p.name.toLowerCase() === queryLower
             );
-            if (exactMatch) {
+            if (exactProductMatch) {
                 return {
-                    id: exactMatch.id,
-                    name: exactMatch.name,
-                    imageUrl: exactMatch.imageUrl,
+                    id: exactProductMatch.id,
+                    name: exactProductMatch.name,
+                    imageUrl: exactProductMatch.imageUrl,
                     type: 'product',
                 };
             }
         }
+        // No auto-complete for saved prompts on space
 
         return null;
     }, [query, mentionStartIndex, activeTrigger, storedAvatars, storedProducts]);
@@ -212,17 +248,19 @@ export function useMentionSuggestions({
             return;
         }
 
-        // Check if this trigger is part of an already completed mention
-        const isCompletedMention = parsedMentions.some(
-            m => m.startIndex === lastTriggerIndex && cursorPosition > m.endIndex
-        );
+        // Check if this trigger is part of an already completed mention (only for @, not /)
+        if (triggerChar === '@') {
+            const isCompletedMention = parsedMentions.some(
+                m => m.startIndex === lastTriggerIndex && cursorPosition > m.endIndex
+            );
 
-        if (isCompletedMention) {
-            setIsOpen(false);
-            setQuery('');
-            setMentionStartIndex(null);
-            setActiveTrigger(null);
-            return;
+            if (isCompletedMention) {
+                setIsOpen(false);
+                setQuery('');
+                setMentionStartIndex(null);
+                setActiveTrigger(null);
+                return;
+            }
         }
 
         // We're typing a mention
@@ -304,9 +342,36 @@ export function useMentionSuggestions({
     const selectSuggestion = useCallback((item: MentionItem): { newPrompt: string; newCursorPos: number } | null => {
         if (mentionStartIndex === null) return null;
 
-        const prefix = item.type === 'avatar' ? '@' : '/';
+        // Handle saved prompt selection differently
+        if (item.type === 'savedPrompt') {
+            // Replace entirety from mentionStartIndex to end with the saved prompt text
+            const beforeMention = prompt.slice(0, mentionStartIndex);
+            const savedPromptText = item.promptText || item.name;
+            const newPrompt = beforeMention + savedPromptText;
+            const newCursorPos = newPrompt.length;
 
-        // Insert name with correct prefix
+            // Call the callback if provided
+            if (onSelectSavedPrompt && item.promptText) {
+                const savedPrompt: SavedPrompt = {
+                    id: item.id,
+                    text: item.promptText,
+                    savedAt: Date.now(),
+                };
+                onSelectSavedPrompt(savedPrompt);
+            }
+
+            setIsOpen(false);
+            setQuery('');
+            setMentionStartIndex(null);
+            setActiveTrigger(null);
+
+            return { newPrompt, newCursorPos };
+        }
+
+        // For avatars and products, both now use @ prefix
+        const prefix = '@';
+
+        // Insert name with @ prefix
         const beforeMention = prompt.slice(0, mentionStartIndex);
         const afterCursor = prompt.slice(cursorPosition);
         const mentionText = `${prefix}${item.name} `;
@@ -317,7 +382,7 @@ export function useMentionSuggestions({
         if (item.type === 'avatar') {
             const avatar = storedAvatars.find(a => a.id === item.id);
             if (avatar) onSelectAvatar(avatar);
-        } else {
+        } else if (item.type === 'product') {
             const product = storedProducts.find(p => p.id === item.id);
             if (product) onSelectProduct(product);
         }
@@ -328,7 +393,7 @@ export function useMentionSuggestions({
         setActiveTrigger(null);
 
         return { newPrompt, newCursorPos };
-    }, [mentionStartIndex, prompt, cursorPosition, storedAvatars, storedProducts, onSelectAvatar, onSelectProduct]);
+    }, [mentionStartIndex, prompt, cursorPosition, storedAvatars, storedProducts, onSelectAvatar, onSelectProduct, onSelectSavedPrompt]);
 
     // Handle keyboard navigation
     const handleKeyDown = useCallback((event: React.KeyboardEvent): boolean => {
@@ -366,6 +431,19 @@ export function useMentionSuggestions({
         setActiveTrigger(null);
     }, []);
 
+    // Determine current mention type for UI display
+    // @ can be avatar or product, / is savedPrompt
+    const currentMentionType = useMemo((): MentionType | null => {
+        if (activeTrigger === '@') {
+            // For @ trigger, we return null to indicate mixed type (avatars + products)
+            // The UI will handle showing section headers
+            return null;
+        } else if (activeTrigger === '/') {
+            return 'savedPrompt';
+        }
+        return null;
+    }, [activeTrigger]);
+
     return {
         isOpen,
         suggestions,
@@ -374,7 +452,7 @@ export function useMentionSuggestions({
         mentionStartIndex,
         activeTrigger,
         parsedMentions,
-        currentMentionType: activeTrigger === '@' ? 'avatar' : activeTrigger === '/' ? 'product' : null,
+        currentMentionType,
         selectSuggestion,
         handleKeyDown,
         closeSuggestions,
