@@ -3,7 +3,7 @@ import { generateImage as recraftGenerateImage, imageToImage as recraftImageToIm
 import { debugError } from '../utils/debug';
 import { urlToFile, detectImageSize } from '../utils/imageUtils';
 import { normalizeAssetUrl, getApiUrl } from '../utils/api';
-import type { RecraftSize } from '../lib/recraft';
+import type { RecraftSize, RecraftStyle, RecraftModel } from '../lib/recraft';
 
 export interface RecraftGeneratedImage {
   url: string;
@@ -49,10 +49,10 @@ export function useRecraftImageGeneration() {
     try {
       const result = await recraftGenerateImage({
         prompt: options.prompt,
-        style: (options.style || 'realistic_image') as any,
-        model: (options.model || 'recraftv3') as any,
+        style: (options.style || 'realistic_image') as RecraftStyle,
+        model: (options.model || 'recraftv3') as RecraftModel,
         n: options.n || 1,
-        size: (options.size || '1024x1024') as any,
+        size: (options.size || '1024x1024') as RecraftSize,
         response_format: options.response_format || 'url',
         negative_prompt: options.negative_prompt,
       });
@@ -110,8 +110,8 @@ export function useRecraftImageGeneration() {
       const result = await recraftImageToImage(options.image, {
         prompt: options.prompt,
         strength: options.strength || 0.8,
-        style: (options.style || 'realistic_image') as any,
-        model: (options.model || 'recraftv3') as any,
+        style: (options.style || 'realistic_image') as RecraftStyle,
+        model: (options.model || 'recraftv3') as RecraftModel,
         n: options.n || 1,
         response_format: 'url',
       });
@@ -169,8 +169,8 @@ export function useRecraftImageGeneration() {
     try {
       const result = await recraftInpaint(options.image, options.mask, {
         prompt: options.prompt,
-        style: (options.style || 'realistic_image') as any,
-        model: (options.model || 'recraftv3') as any,
+        style: (options.style || 'realistic_image') as RecraftStyle,
+        model: (options.model || 'recraftv3') as RecraftModel,
         n: options.n || 1,
         response_format: 'url',
       });
