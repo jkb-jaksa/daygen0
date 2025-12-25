@@ -37,7 +37,6 @@ import {
   ChevronRight,
   Trash2,
   X,
-  RefreshCw,
 } from "lucide-react";
 import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
 import { normalizeAssetUrl } from "../utils/api";
@@ -59,6 +58,7 @@ import AspectRatioBadge from './shared/AspectRatioBadge';
 import CreatorBadge from './CreatorBadge';
 import CreatorProfileModal from './CreatorProfileModal';
 import { CountryFlag } from './shared/CountryFlag';
+
 
 type GalleryItem = {
   id: string;
@@ -1150,12 +1150,6 @@ const Explore: React.FC = () => {
     item: GalleryItem;
   } | null>(null);
 
-  const [recreateActionMenu, setRecreateActionMenu] = useState<{
-    id: string;
-    anchor: HTMLElement;
-    item: GalleryItem;
-  } | null>(null);
-
   // Full-size view state
   const [isFullSizeOpen, setIsFullSizeOpen] = useState(false);
   const [selectedFullImage, setSelectedFullImage] = useState<GalleryItem | null>(null);
@@ -1383,51 +1377,23 @@ const Explore: React.FC = () => {
   const closeMoreActionMenu = () => {
     setMoreActionMenu(null);
   };
-
-  const toggleRecreateActionMenu = (itemId: string, anchor: HTMLElement, item: GalleryItem) => {
-    setMoreActionMenu(null);
-    setRecreateActionMenu(prev =>
-      prev?.id === itemId ? null : { id: itemId, anchor, item }
-    );
-  };
-
-  const closeRecreateActionMenu = () => {
-    setRecreateActionMenu(null);
-  };
-
-  const handleRecreateEdit = (item: GalleryItem) => {
-    closeRecreateActionMenu();
-    navigate("/edit", {
+  // Handle Recreate - navigate to app/image with image data to trigger QuickEditModal there
+  const openQuickEditModal = (item: GalleryItem) => {
+    // Navigate to app/image with state that will trigger the QuickEditModal
+    navigate("/app/image", {
       state: {
-        imageToEdit: {
+        openQuickEdit: true,
+        quickEditItem: {
           url: item.imageUrl,
           prompt: item.prompt,
           model: item.modelId,
           timestamp: new Date().toISOString(),
           isPublic: true,
+          // Store the public job ID for reference tracking
+          sourcePublicJobId: item.id,
         },
-      },
-    });
-  };
-
-  const handleRecreateUseAsReference = (item: GalleryItem) => {
-    closeRecreateActionMenu();
-    navigate("/app/image", {
-      state: {
         referenceImageUrl: item.imageUrl,
         selectedModel: item.modelId,
-        focusPromptBar: true,
-      },
-    });
-  };
-
-  const handleRecreateRunPrompt = (item: GalleryItem) => {
-    closeRecreateActionMenu();
-    navigate("/app/image", {
-      state: {
-        promptToPrefill: item.prompt,
-        selectedModel: item.modelId,
-        focusPromptBar: true,
       },
     });
   };
@@ -1958,68 +1924,19 @@ const Explore: React.FC = () => {
                       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/70" aria-hidden="true" />
 
                       <div className="image-gallery-actions absolute left-4 top-4 flex items-center gap-2 transition-opacity duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto z-10">
-                        <div className="relative">
-                          <button
-                            type="button"
-                            className="image-action-btn image-action-btn--labelled parallax-large"
-                            aria-haspopup="menu"
-                            aria-expanded={recreateActionMenu?.id === item.id}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              toggleRecreateActionMenu(item.id, event.currentTarget, item);
-                            }}
-                          >
-                            <Edit className="w-4 h-4" />
-                            <span className="text-sm font-medium">Recreate</span>
-                          </button>
-                          <ImageActionMenuPortal
-                            anchorEl={recreateActionMenu?.id === item.id ? recreateActionMenu?.anchor ?? null : null}
-                            open={recreateActionMenu?.id === item.id && !isFullSizeOpen}
-                            onClose={closeRecreateActionMenu}
-                            isRecreateMenu={false}
-                          >
-                            <button
-                              type="button"
-                              className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                              onClick={(event) => {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                handleRecreateEdit(item);
-                              }}
-                            >
-                              <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-                              <Edit className="h-4 w-4 relative z-10" />
-                              <span className="relative z-10">Edit image</span>
-                            </button>
-                            <button
-                              type="button"
-                              className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                              onClick={(event) => {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                handleRecreateUseAsReference(item);
-                              }}
-                            >
-                              <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-                              <Copy className="h-4 w-4 relative z-10" />
-                              <span className="relative z-10">Use as reference</span>
-                            </button>
-                            <button
-                              type="button"
-                              className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                              onClick={(event) => {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                handleRecreateRunPrompt(item);
-                              }}
-                            >
-                              <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-                              <RefreshCw className="h-4 w-4 relative z-10" />
-                              <span className="relative z-10">Run the same prompt</span>
-                            </button>
-                          </ImageActionMenuPortal>
-                        </div>
+                        <button
+                          type="button"
+                          className="image-action-btn image-action-btn--labelled parallax-large"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            openQuickEditModal(item);
+                          }}
+                        >
+                          <Edit className="w-4 h-4" />
+                          <span className="text-sm font-medium">Recreate</span>
+                        </button>
                       </div>
+
 
                       <div
                         className="image-gallery-actions absolute right-4 top-4 flex items-center gap-1 transition-opacity duration-100 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto z-10"
@@ -2415,72 +2332,26 @@ const Explore: React.FC = () => {
                 {/* Action buttons */}
                 <div className={`image-gallery-actions absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-2 ${isMobile ? 'px-2 pt-2' : 'px-4 pt-4'} pointer-events-none`}>
                   {/* Left side - Recreate button */}
-                  <div className="relative">
-                    <button
-                      type="button"
-                      className={`image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 ${isMobile || recreateActionMenu?.id === selectedFullImage.id
-                        ? 'opacity-100 pointer-events-auto'
-                        : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
-                        }`}
-                      aria-haspopup="menu"
-                      aria-expanded={recreateActionMenu?.id === selectedFullImage.id}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        toggleRecreateActionMenu(selectedFullImage.id, event.currentTarget, selectedFullImage);
-                      }}
-                    >
-                      <Edit className="w-4 h-4" />
-                      <span className="text-sm font-medium">Recreate</span>
-                    </button>
-                    <ImageActionMenuPortal
-                      anchorEl={recreateActionMenu?.id === selectedFullImage.id ? recreateActionMenu?.anchor ?? null : null}
-                      open={recreateActionMenu?.id === selectedFullImage.id}
-                      onClose={closeRecreateActionMenu}
-                      isRecreateMenu={false}
-                    >
-                      <button
-                        type="button"
-                        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                        onClick={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          handleRecreateEdit(selectedFullImage);
-                        }}
-                      >
-                        <Edit className="h-4 w-4" />
-                        Edit image
-                      </button>
-                      <button
-                        type="button"
-                        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                        onClick={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          handleRecreateUseAsReference(selectedFullImage);
-                        }}
-                      >
-                        <Copy className="h-4 w-4" />
-                        Use as reference
-                      </button>
-                      <button
-                        type="button"
-                        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                        onClick={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          handleRecreateRunPrompt(selectedFullImage);
-                        }}
-                      >
-                        <RefreshCw className="h-4 w-4" />
-                        Run the same prompt
-                      </button>
-                    </ImageActionMenuPortal>
-                  </div>
+                  <button
+                    type="button"
+                    className={`image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 ${isMobile
+                      ? 'opacity-100 pointer-events-auto'
+                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
+                      }`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      openQuickEditModal(selectedFullImage);
+                    }}
+                  >
+                    <Edit className="w-4 h-4" />
+                    <span className="text-sm font-medium">Recreate</span>
+                  </button>
+
 
                   {/* Right side - Save, Heart, More, and Close buttons */}
                   <div className="flex items-center gap-2">
                     <div
-                      className={`flex items-center gap-1 transition-opacity duration-100 ${isMobile || moreActionMenu?.id === selectedFullImage.id || recreateActionMenu?.id === selectedFullImage.id
+                      className={`flex items-center gap-1 transition-opacity duration-100 ${isMobile || moreActionMenu?.id === selectedFullImage.id
                         ? 'opacity-100 pointer-events-auto'
                         : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
                         }`}
@@ -2587,7 +2458,7 @@ const Explore: React.FC = () => {
 
                 {/* Image info overlay */}
                 <div
-                  className={`PromptDescriptionBar absolute ${isMobile ? 'bottom-2 left-2 right-2 p-3' : 'bottom-4 left-4 right-4 p-4'} rounded-2xl text-theme-text transition-opacity duration-100 z-30 ${isMobile || recreateActionMenu?.id === selectedFullImage.id
+                  className={`PromptDescriptionBar absolute ${isMobile ? 'bottom-2 left-2 right-2 p-3' : 'bottom-4 left-4 right-4 p-4'} rounded-2xl text-theme-text transition-opacity duration-100 z-30 ${isMobile
                     ? 'opacity-100'
                     : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
                     }`}

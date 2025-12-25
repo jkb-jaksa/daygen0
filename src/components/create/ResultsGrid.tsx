@@ -7,7 +7,7 @@ import { useGeneration } from './contexts/GenerationContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
 import { useBadgeNavigation } from './hooks/useBadgeNavigation';
 import { glass, buttons, tooltips } from '../../styles/designSystem';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { debugError } from '../../utils/debug';
 import { createCardImageStyle } from '../../utils/cardImageStyle';
 import { useSavedPrompts } from '../../hooks/useSavedPrompts';
@@ -205,6 +205,30 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const [creationsModalAvatar, setCreationsModalAvatar] = useState<StoredAvatar | null>(null);
   const [creationsModalProduct, setCreationsModalProduct] = useState<StoredProduct | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Handle navigation state from Explore's Recreate button
+  const hasHandledNavStateRef = useRef(false);
+  useEffect(() => {
+    const navState = location.state as {
+      openQuickEdit?: boolean;
+      quickEditItem?: GalleryImageLike;
+      referenceImageUrl?: string;
+      selectedModel?: string;
+    } | null;
+
+    if (navState?.openQuickEdit && navState?.quickEditItem && !hasHandledNavStateRef.current) {
+      hasHandledNavStateRef.current = true;
+      // Open QuickEditModal with the item from Explore
+      setQuickEditModalState({
+        isOpen: true,
+        initialPrompt: '',
+        item: navState.quickEditItem,
+      });
+      // Clear the navigation state to prevent re-opening on component re-render
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location.state, location.pathname, navigate]);
 
   const {
     goToPublicGallery,
