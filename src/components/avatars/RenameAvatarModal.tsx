@@ -46,7 +46,18 @@ function RenameAvatarModalComponent({
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newValue = e.target.value;
         setName(newValue);
-        if (error) setError(null);
+
+        if (!newValue.trim()) {
+            setError(null);
+            return;
+        }
+
+        if (onValidate) {
+            const validationError = onValidate(newValue.trim());
+            setError(validationError);
+        } else {
+            setError(null);
+        }
     };
 
     const handleSubmit = (e: React.FormEvent) => {
