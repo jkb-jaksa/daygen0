@@ -115,6 +115,7 @@ interface GridVideoItemProps {
   videoRefs: React.MutableRefObject<{ [key: string]: HTMLVideoElement }>;
   isFullSizeOpen: boolean;
   baseActionTooltipId: string;
+  galleryColumns: number;
 }
 
 const GridVideoItem = memo<GridVideoItemProps>(({
@@ -127,7 +128,8 @@ const GridVideoItem = memo<GridVideoItemProps>(({
   isPromptExpanded,
   videoRefs,
   isFullSizeOpen,
-  baseActionTooltipId
+  baseActionTooltipId,
+  galleryColumns,
 }) => {
   const ref = useMemo(() => ({
     get current() {
@@ -163,6 +165,7 @@ const GridVideoItem = memo<GridVideoItemProps>(({
       isInfoActive={isPromptExpanded}
       externalRef={ref as React.RefObject<HTMLVideoElement>}
       forcePause={isFullSizeOpen}
+      playButtonSize={galleryColumns >= 8 ? 'tiny' : galleryColumns >= 6 ? 'small' : 'default'}
     />
   );
 });
@@ -1395,11 +1398,12 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                       handleItemClick={handleItemClick}
                       toggleVideoPrompt={toggleVideoPrompt}
                       setExpandedVideoPrompts={setExpandedVideoPrompts}
-                      shouldShowPromptDetails={shouldShowPromptDetails}
+                      shouldShowPromptDetails={shouldShowPromptDetails && activeCategory !== 'gallery'}
                       isPromptExpanded={isPromptExpanded}
                       videoRefs={videoRefs}
                       isFullSizeOpen={isFullSizeOpen}
                       baseActionTooltipId={baseActionTooltipId}
+                      galleryColumns={galleryColumns}
                     />
                   ) : (
                     <LazyImage

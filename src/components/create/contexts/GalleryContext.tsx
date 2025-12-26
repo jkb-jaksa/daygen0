@@ -1126,7 +1126,7 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
         for (const filterType of state.filters.jobTypes) {
           if (filterType === 'generations') {
             // Generations: items without jobType OR with IMAGE_GENERATION
-            if (!itemJobType || itemJobType === 'IMAGE_GENERATION') {
+            if (!itemJobType || itemJobType === 'IMAGE_GENERATION' || itemJobType === 'VIDEO_GENERATION') {
               matchesJobTypeFilter = true;
               break;
             }

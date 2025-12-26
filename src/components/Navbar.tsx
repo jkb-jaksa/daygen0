@@ -1,4 +1,4 @@
-import { Search, Edit, Image as ImageIcon, Video as VideoIcon, User, Volume2, CreditCard, Zap, FileText, GraduationCap, Menu, X, SunMedium, Moon, Package, LayoutGrid } from "lucide-react";
+import { Search, Edit, Image as ImageIcon, Video as VideoIcon, User, Volume2, CreditCard, Zap, FileText, GraduationCap, Menu, X, SunMedium, Moon, Package, LayoutGrid, Folder } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useLocation, useNavigate, NavLink, Link } from "react-router-dom";
 import { useLayoutEffect, useRef, useState, useEffect, useCallback } from "react";
@@ -56,6 +56,7 @@ const MY_WORKS_MENU_LINKS: ReadonlyArray<{ to: string; label: string; Icon: Luci
   { to: "/gallery", label: "gallery", Icon: LayoutGrid },
   { to: "/app/avatars", label: "avatars", Icon: User },
   { to: "/app/products", label: "products", Icon: Package },
+  { to: "/app/folders", label: "folders", Icon: Folder },
 ];
 
 export default function Navbar() {

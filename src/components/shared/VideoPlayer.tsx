@@ -18,9 +18,8 @@ interface VideoPlayerProps {
     objectFit?: 'cover' | 'contain';
     layout?: 'fill' | 'intrinsic';
     initialTime?: number;
-    externalRef?: React.RefObject<HTMLVideoElement>;
-    forcePause?: boolean;
     onClick?: () => void;
+    playButtonSize?: 'default' | 'small' | 'tiny';
 }
 
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({
@@ -42,6 +41,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     initialTime = 0,
     externalRef,
     forcePause = false,
+    playButtonSize = 'default',
 }) => {
     const internalVideoRef = useRef<HTMLVideoElement>(null);
     const videoRef = externalRef || internalVideoRef;
@@ -434,10 +434,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 z-20 ${isCenterVisible ? 'opacity-100' : 'opacity-0'} pointer-events-none`}>
                 <button
                     onClick={togglePlay}
-                    className={`w-16 h-16 rounded-full ${glass.promptDark} border border-[rgb(var(--theme-dark-rgb)/0.10)] flex items-center justify-center parallax-large hover:scale-105 transition-all duration-200 group/playbutton pointer-events-auto outline-none`}
+                    className={`${playButtonSize === 'tiny' ? 'w-8 h-8' : playButtonSize === 'small' ? 'w-10 h-10' : 'w-16 h-16'} rounded-full ${glass.promptDark} border border-[rgb(var(--theme-dark-rgb)/0.10)] flex items-center justify-center parallax-large hover:scale-105 transition-all duration-200 group/playbutton pointer-events-auto outline-none`}
                 >
                     {CenterIcon && (
-                        <CenterIcon className={`w-6 h-6 text-theme-white fill-theme-white transition-colors duration-200 group-hover/playbutton:text-theme-text group-hover/playbutton:fill-theme-text ${CenterIcon === Play ? 'ml-1' : ''}`} />
+                        <CenterIcon className={`${playButtonSize === 'tiny' ? 'w-3 h-3' : playButtonSize === 'small' ? 'w-4 h-4' : 'w-6 h-6'} text-theme-white fill-theme-white transition-colors duration-200 group-hover/playbutton:text-theme-text group-hover/playbutton:fill-theme-text ${CenterIcon === Play ? 'ml-0.5' : ''}`} />
                     )}
                 </button>
             </div>

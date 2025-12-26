@@ -114,7 +114,8 @@ export const useGalleryImages = () => {
         mimeType.startsWith('video/') ||
         /\.(mp4|mov|webm|m4v|mkv|avi|wmv)(\?|$)/i.test(fileName) ||
         /\.(mp4|mov|webm|m4v|mkv|avi|wmv)(\?|$)/i.test(fileUrl) ||
-        isVideoModelId(r2File.model);
+        isVideoModelId(r2File.model) ||
+        r2File.jobType === 'VIDEO_GENERATION';
 
       if (looksLikeVideo) {
         const videoItem: GalleryVideoLike = {

@@ -12,7 +12,7 @@ const isBrowserEnvironment = typeof window !== "undefined";
 const ALLOWED_DESTINATIONS = [
   STUDIO_BASE_PATH,
   "/job",
-  "/edit", 
+  "/edit",
   "/gallery",
   "/learn",
   "/upgrade",
@@ -83,32 +83,32 @@ export function normalizeLegacyStudioPath(path: string): string {
 export function safeNext(path?: string | null): string {
   const trimmed = path?.trim();
   if (!trimmed) return DEFAULT_DESTINATION;
-  
+
   // Security checks for open-redirect prevention
-  
+
   // 1. Check for protocol indicators anywhere in the string
   if (trimmed.includes("://")) {
     authMetrics.increment('next_protocol_rejected');
     return DEFAULT_DESTINATION;
   }
-  
+
   // 2. Check for protocol-relative URLs (double slash anywhere)
   if (trimmed.includes("//")) {
     authMetrics.increment('next_protocol_rejected');
     return DEFAULT_DESTINATION;
   }
-  
+
   // 3. Check for credential injection attempts
   if (trimmed.includes("@")) {
     authMetrics.increment('next_credential_rejected');
     return DEFAULT_DESTINATION;
   }
-  
+
   // 4. Must start with forward slash
   if (!trimmed.startsWith("/")) {
     return DEFAULT_DESTINATION;
   }
-  
+
   // 5. Try to parse as URL to strip any origin that might be present
   let cleanPath = trimmed;
   try {
@@ -122,10 +122,10 @@ export function safeNext(path?: string | null): string {
 
   // Normalize legacy /create paths to the new studio base
   const normalizedPath = normalizeLegacyStudioPath(cleanPath);
-  
+
   // 6. Extract just the pathname (ignore query params and hash for validation)
   const [pathname] = normalizedPath.split(/[?#]/);
-  
+
   // 7. Validate against allowed destinations
   const isAllowed = ALLOWED_DESTINATIONS.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
@@ -193,39 +193,39 @@ type SafeResolveNextOptions = {
  * Consolidates logic across RequireAuth, Account, and Navbar components.
  */
 export function safeResolveNext(
-  location: Location | string, 
+  location: Location | string,
   options: SafeResolveNextOptions = {}
 ): string {
   // If location is a string (from query param), decode and sanitize it
   if (typeof location === 'string') {
     const trimmed = location.trim();
     if (!trimmed) return DEFAULT_DESTINATION;
-    
+
     try {
       const decoded = decodeURIComponent(trimmed);
       const sanitized = safeNext(decoded);
-      
+
       // Track sanitization events
       if (decoded !== sanitized) {
         authMetrics.increment('next_sanitized');
         debugLog("safeResolveNext - Redirect path sanitized:", { original: decoded, sanitized });
       }
-      
+
       return sanitized;
     } catch {
       authMetrics.increment('next_decode_failure');
       return safeNext(trimmed);
     }
   }
-  
+
   // If location is a Location object, determine the appropriate redirect path
   const { isEditProtected = false } = options;
   const isEditRoute = location.pathname.startsWith("/edit");
-  
+
   if (isEditRoute && isEditProtected) {
     return `${STUDIO_BASE_PATH}/image`;
   }
-  
+
   const fullPath = location.pathname + location.search;
   return safeNext(fullPath);
 }
