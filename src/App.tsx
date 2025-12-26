@@ -403,7 +403,7 @@ function Home() {
               >
                 <div className="flex items-start justify-between gap-4 w-full">
                   <div className="flex flex-col gap-2 lg:max-w-xl">
-                    <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-left bg-gradient-to-r from-theme-text via-theme-text/80 to-theme-text/60 bg-clip-text text-transparent pb-1`}>
+                    <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-left pb-1`}>
                       Create your Digital Copy.
                     </h1>
                     <motion.p
@@ -419,7 +419,7 @@ function Home() {
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.5, duration: 0.8 }}
-                    className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-right flex-shrink-0 hidden lg:block font-normal opacity-50`}
+                    className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-right flex-shrink-0 hidden lg:block font-normal`}
                   >
                     daygen
                   </motion.div>
@@ -507,7 +507,7 @@ function Home() {
               >
                 <div className="flex items-start justify-between gap-4 w-full">
                   <div className="flex flex-col gap-2 lg:max-w-xl">
-                    <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-left bg-gradient-to-r from-theme-text via-theme-text/80 to-theme-text/50 bg-clip-text text-transparent pb-1`}>
+                    <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-left pb-1`}>
                       Create your Digital Copy.
                     </h1>
                     <p className={`${headings.tripleHeading.description} text-theme-text text-left mt-0 mb-1`}>
@@ -531,7 +531,7 @@ function Home() {
                       </Link>
                     </motion.div>
                   </div>
-                  <div className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-right flex-shrink-0 hidden lg:block font-normal opacity-50`}>
+                  <div className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text home-hero-title text-right flex-shrink-0 hidden lg:block font-normal`}>
                     daygen
                   </div>
                 </div>
