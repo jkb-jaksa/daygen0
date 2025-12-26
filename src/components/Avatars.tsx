@@ -62,7 +62,7 @@ const AspectRatioBadge = lazy(() => import("./shared/AspectRatioBadge"));
 const AvatarCreationModal = lazy(() => import("./avatars/AvatarCreationModal"));
 const AvatarCreationOptions = lazy(() => import("./avatars/AvatarCreationOptions"));
 const MasterAvatarCreationOptions = lazy(() => import("./avatars/MasterAvatarCreationOptions"));
-const RenameAvatarModal = lazy(() => import("./avatars/RenameAvatarModal"));
+
 const MasterSidebar = lazy(() => import("./master/MasterSidebar"));
 
 type AvatarNavigationState = {
@@ -387,28 +387,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   );
 
   const [avatars, setAvatars] = useState<StoredAvatar[]>([]);
-  const [storedProducts, setStoredProducts] = useState<StoredAvatar[]>([]);
 
-  useEffect(() => {
-    let isMounted = true;
-    const loadProducts = async () => {
-      if (!user?.id) {
-        if (isMounted) setStoredProducts([]);
-        return;
-      }
-
-      const prefix = `daygen-store-${user.id}`;
-      try {
-        const stored = await getPersistedValue<StoredAvatar[]>(prefix, "products");
-        if (!isMounted) return;
-        setStoredProducts(normalizeStoredAvatars(stored ?? [], { ownerId: user.id }));
-      } catch {
-        if (isMounted) setStoredProducts([]);
-      }
-    };
-    void loadProducts();
-    return () => { isMounted = false; };
-  }, [user?.id]);
 
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [avatarName, setAvatarName] = useState("");
@@ -419,8 +398,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const [isAddMeFlow, setIsAddMeFlow] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [draggingOverSlot, setDraggingOverSlot] = useState<number | null>(null);
-  const [renameModalOpen, setRenameModalOpen] = useState(false);
-  const [avatarToRename, setAvatarToRename] = useState<StoredAvatar | null>(null);
+
 
   const [avatarToDelete, setAvatarToDelete] = useState<StoredAvatar | null>(null);
   const [avatarToPublish, setAvatarToPublish] = useState<StoredAvatar | null>(null);
@@ -482,7 +460,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     }
     return false;
   });
-  const [isAddMeFlow, setIsAddMeFlow] = useState(false);
+
   const { images: galleryImages } = useGalleryImages();
 
 
@@ -1846,49 +1824,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   /* 
    * RENAMING LOGIC 
    */
-  const startRenaming = useCallback((avatar: StoredAvatar) => {
-    setAvatarToRename(avatar);
-    setRenameModalOpen(true);
-    // Close any open menus
-    setAvatarEditMenu(null);
-    setModalAvatarEditMenu(null);
-  }, []);
 
-  const handleRenameSubmit = useCallback(async (newName: string) => {
-    if (!avatarToRename) return;
-
-    // We need to update the top-level avatar record
-    setAvatars(prev => {
-      const updated = prev.map(record => {
-        if (record.id === avatarToRename.id) {
-          return { ...record, name: newName };
-        }
-        return record;
-      });
-      void persistAvatars(updated);
-      return updated;
-    });
-
-    setRenameModalOpen(false);
-    setAvatarToRename(null);
-  }, [avatarToRename, persistAvatars]);
-
-  const handleValidateName = useCallback((name: string) => {
-    if (!name.trim()) return "Name cannot be empty";
-    if (!avatarToRename) return null;
-
-    const normalizedName = name.trim().toLowerCase();
-
-    // Check avatars (exclude current)
-    const existingAvatar = avatars.find(a => a.name.toLowerCase() === normalizedName && a.id !== avatarToRename.id);
-    if (existingAvatar) return "An avatar with this name already exists";
-
-    // Check products
-    const existingProduct = storedProducts.find(p => p.name.toLowerCase() === normalizedName);
-    if (existingProduct) return "A product with this name already exists";
-
-    return null;
-  }, [avatars, storedProducts, avatarToRename]);
 
   const confirmUnpublish = useCallback(() => {
     if (unpublishConfirmation.imageUrl) {
@@ -5249,19 +5185,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
           {copyNotification}
         </div>
       )}
-      {/* Rename Modal */}
-      <Suspense fallback={null}>
-        <RenameAvatarModal
-          open={renameModalOpen}
-          onClose={() => {
-            setRenameModalOpen(false);
-            setAvatarToRename(null);
-          }}
-          avatarName={avatarToRename?.name ?? ""}
-          onRename={handleRenameSubmit}
-          onValidate={handleValidateName}
-        />
-      </Suspense>
+
     </div>
   );
 }
