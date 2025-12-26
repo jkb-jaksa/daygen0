@@ -8,6 +8,7 @@ import {
   useRef,
   type ChangeEvent,
   type DragEvent,
+  type FormEvent,
 } from "react";
 import { useLocation, useNavigate, useParams, Link } from "react-router-dom";
 import { Reorder } from "framer-motion";
@@ -56,6 +57,8 @@ import { VerticalGalleryNav } from "./shared/VerticalGalleryNav";
 import { useStyleModal } from "../contexts/useStyleModal";
 import useParallaxHover from "../hooks/useParallaxHover";
 import { VoiceUploader } from "./shared/VoiceUploader";
+import { dispatchStorageChange } from "../utils/storageEvents";
+import { uploadBase64ToR2 } from "../utils/uploadToR2";
 
 const ModelBadge = lazy(() => import("./ModelBadge"));
 const AspectRatioBadge = lazy(() => import("./shared/AspectRatioBadge"));
@@ -423,6 +426,8 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     anchor: HTMLElement;
   } | null>(null);
   const [imageToDelete, setImageToDelete] = useState<GalleryImageLike | null>(null);
+  const [editingAvatarId, setEditingAvatarId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
   const [publishConfirmation, setPublishConfirmation] = useState<{ show: boolean, count: number, imageUrl?: string }>({ show: false, count: 0 });
   const [unpublishConfirmation, setUnpublishConfirmation] = useState<{ show: boolean, count: number, imageUrl?: string }>({ show: false, count: 0 });
