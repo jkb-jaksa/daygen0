@@ -144,7 +144,7 @@ function MasterAvatarCreationOptionsComponent({
     <div className={`flex flex-col items-center gap-6 ${className ?? ""}`}>
       <div className="w-full max-w-4xl mx-auto">
         {selection ? (
-          <div className="relative w-full mx-auto max-w-[20rem]">
+          <div className="relative w-full mx-auto max-w-[24rem]">
             <div
               className="card-media-frame relative aspect-square w-full min-w-[10rem] min-h-[10rem] overflow-hidden rounded-2xl border border-theme-dark/60 bg-theme-black/60"
               data-has-image={Boolean(selection?.imageUrl)}
@@ -222,7 +222,7 @@ function MasterAvatarCreationOptionsComponent({
           <div className="flex flex-col sm:flex-row gap-6 w-full">
             <div className="flex-1">
               <div
-                className={`relative overflow-hidden border-2 border-dashed rounded-2xl p-12 text-center transition-colors duration-200 cursor-pointer ${isDragging
+                className={`relative overflow-hidden border-2 border-dashed rounded-2xl p-16 text-center transition-colors duration-200 cursor-pointer ${isDragging
                   ? "border-theme-text drag-active"
                   : "border-theme-white/30 hover:border-theme-text/50"
                   }`}
@@ -249,9 +249,9 @@ function MasterAvatarCreationOptionsComponent({
               >
                 <div className="pointer-events-none absolute -top-24 right-0 h-48 w-48 rounded-full opacity-60 blur-3xl bg-gradient-to-br from-red-400 via-red-500 to-red-600" />
                 <div className="relative z-10">
-                  <ImageIcon className="mx-auto mb-4 text-red-500 w-12 h-12" />
-                  <p className="mb-2 text-xl font-raleway text-theme-text">Upload your image</p>
-                  <p className="mb-6 text-base font-raleway text-theme-white">
+                  <ImageIcon className="mx-auto mb-4 text-red-500 w-14 h-14" />
+                  <p className="mb-2 text-2xl font-raleway text-theme-text">Upload your image</p>
+                  <p className="mb-6 text-lg font-raleway text-theme-white">
                     Click anywhere, drag and drop, or paste your image to get started
                   </p>
                   <div className={`${buttons.primary} inline-flex items-center gap-2`}>
@@ -276,7 +276,7 @@ function MasterAvatarCreationOptionsComponent({
             </div>
             <div className="flex-1">
               <div
-                className={`relative overflow-hidden border-2 border-dashed rounded-2xl p-12 text-center transition-colors duration-200 cursor-pointer ${"border-theme-white/30 hover:border-theme-text/50"
+                className={`relative overflow-hidden border-2 border-dashed rounded-2xl p-16 text-center transition-colors duration-200 cursor-pointer ${"border-theme-white/30 hover:border-theme-text/50"
                   }`}
                 role="button"
                 tabIndex={0}
@@ -290,9 +290,9 @@ function MasterAvatarCreationOptionsComponent({
               >
                 <div className="pointer-events-none absolute -top-24 right-0 h-48 w-48 rounded-full opacity-60 blur-3xl bg-gradient-to-br from-cyan-300 via-cyan-400 to-cyan-500" />
                 <div className="relative z-10">
-                  <Mic className="mx-auto mb-4 text-cyan-400 w-12 h-12" />
-                  <p className="mb-2 text-xl font-raleway text-theme-text">Add your voice</p>
-                  <p className="mb-6 text-base font-raleway text-theme-white">
+                  <Mic className="mx-auto mb-4 text-cyan-400 w-14 h-14" />
+                  <p className="mb-2 text-2xl font-raleway text-theme-text">Add your voice</p>
+                  <p className="mb-6 text-lg font-raleway text-theme-white">
                     Click anywhere, drag and drop, or paste your audio to get started
                   </p>
                   <button

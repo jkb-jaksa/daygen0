@@ -10,6 +10,7 @@ import {
   type DragEvent,
 } from "react";
 import { useLocation, useNavigate, useParams, Link } from "react-router-dom";
+import { Reorder } from "framer-motion";
 import AvatarBadge from "./avatars/AvatarBadge";
 import { createPortal } from "react-dom";
 import {
@@ -37,6 +38,8 @@ import {
   RefreshCw,
   Fingerprint,
   Mic,
+  Star,
+  Expand,
 } from "lucide-react";
 import { layout, text, buttons, glass, headings, iconButtons, tooltips } from "../styles/designSystem";
 import { useAuth as useAuthHook } from "../auth/useAuth";
@@ -114,7 +117,20 @@ const readCachedAvatars = (): StoredAvatar[] | null => {
 const writeCachedAvatars = (records: StoredAvatar[]) => {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(LOCAL_AVATAR_STORAGE_KEY, JSON.stringify(records));
+    // Filter out base64 data URLs from images to prevent localStorage quota issues
+    // Only cache metadata and remote URLs - data URLs will be re-fetched from backend
+    const cacheableRecords = records.map(avatar => ({
+      ...avatar,
+      // Keep imageUrl only if it's not a data URL
+      imageUrl: avatar.imageUrl?.startsWith('data:') ? '' : avatar.imageUrl,
+      // Filter images to exclude data URLs
+      images: avatar.images.map(img => ({
+        ...img,
+        url: img.url?.startsWith('data:') ? '' : img.url,
+      })).filter(img => img.url), // Remove images with empty URLs
+    }));
+
+    window.localStorage.setItem(LOCAL_AVATAR_STORAGE_KEY, JSON.stringify(cacheableRecords));
   } catch (error) {
     if (error instanceof DOMException && error.name === 'QuotaExceededError') {
       // Clear the cache if quota is exceeded to allow the app to continue
@@ -455,6 +471,8 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const avatarsRef = useRef<StoredAvatar[]>(avatars);
   const pendingUploadsRef = useRef<Map<string, File[]>>(new Map());
   const hasAvatars = avatars.length > 0;
+  // Check if we're loading the "me" section (when avatarSlug is 'me' but avatar data isn't loaded yet)
+  const isLoadingMeSection = avatarSlug === 'me' && !creationsModalAvatar && avatars.length === 0;
   const [draggedImageId, setDraggedImageId] = useState<string | null>(null);
   const [dragOverSlotIndex, setDragOverSlotIndex] = useState<number | null>(null);
   const [isVoiceUploadModalOpen, setIsVoiceUploadModalOpen] = useState(false);
@@ -562,6 +580,20 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     let match: StoredAvatar | undefined;
     if (avatarSlug === 'me') {
       match = avatars.find(a => a.isMe);
+      // For 'me' slug, if no isMe avatar is found yet, don't immediately show missing or clear
+      // the current avatar - wait for backend data to load with correct isMe flag
+      if (!match) {
+        // Only show missing message if avatars have loaded AND none have isMe flag
+        // Don't clear creationsModalAvatar yet - it might already show the correct avatar
+        if (avatars.length > 0) {
+          // Check if we might still be loading - if the current avatar is the isMe one, keep showing it
+          if (!creationsModalAvatar?.isMe) {
+            setMissingAvatarSlug(avatarSlug);
+            setCreationsModalAvatar(null);
+          }
+        }
+        return;
+      }
     } else {
       match = findAvatarBySlug(avatars, avatarSlug);
     }
@@ -975,12 +1007,22 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
         setAvatarImageUploadError("We couldn't find that avatar.");
         return;
       }
-      if (!targetAvatar.images.some(image => image.id === imageId)) {
+      const selectedImage = targetAvatar.images.find(image => image.id === imageId);
+      if (!selectedImage) {
         setAvatarImageUploadError("We couldn't find that image.");
         return;
       }
       setAvatarImageUploadError(null);
-      commitAvatarUpdate(avatarId, images => images, imageId);
+
+      // Reorder images: move the selected image to index 0, shift others down
+      commitAvatarUpdate(
+        avatarId,
+        images => {
+          const filtered = images.filter(img => img.id !== imageId);
+          return [selectedImage, ...filtered];
+        },
+        imageId,
+      );
     },
     [commitAvatarUpdate],
   );
@@ -1043,58 +1085,63 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     [avatarImageUploadTarget, creationsModalAvatar, handleAddAvatarImages],
   );
 
-  const processImageFile = useCallback((file: File) => {
-    if (!isSupportedAvatarFile(file)) {
-      setUploadError("Please choose a JPEG, PNG, or WebP image file.");
-      return;
-    }
-
-    setUploadError(null);
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result;
-      if (typeof result === "string") {
-        const id = crypto.randomUUID();
-        const now = new Date().toISOString();
-        const newImage = {
-          id,
-          url: result,
-          createdAt: now,
-          source: "upload" as const
-        };
-
-        setSelection(prev => {
-          // If there's an existing selection with images, append to it
-          if (prev && prev.images && prev.images.length > 0) {
-            const updatedImages = [...prev.images, newImage];
-            return {
-              ...prev,
-              images: updatedImages,
-              // Keep the primary image URL (first image)
-              imageUrl: prev.imageUrl
-            };
-          }
-          // Otherwise create a new selection with this as the primary image
-          return {
-            imageUrl: result,
-            source: "upload",
-            images: [newImage]
-          };
-        });
-        setAvatarName(prev => (prev.trim() ? prev : deriveSuggestedName()));
+  const processImageFile = useCallback((file: File): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if (!isSupportedAvatarFile(file)) {
+        setUploadError("Please choose a JPEG, PNG, or WebP image file.");
+        resolve(); // Resolve even on validation error to not break the flow
+        return;
       }
-    };
-    reader.onerror = () => {
-      setUploadError("We couldn't read that image. Re-upload or use a different format.");
-    };
-    reader.readAsDataURL(file);
+
+      setUploadError(null);
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result;
+        if (typeof result === "string") {
+          const id = crypto.randomUUID();
+          const now = new Date().toISOString();
+          const newImage = {
+            id,
+            url: result,
+            createdAt: now,
+            source: "upload" as const
+          };
+
+          setSelection(prev => {
+            // If there's an existing selection with images, append to it
+            if (prev && prev.images && prev.images.length > 0) {
+              const updatedImages = [...prev.images, newImage];
+              return {
+                ...prev,
+                images: updatedImages,
+                // Keep the primary image URL (first image)
+                imageUrl: prev.imageUrl
+              };
+            }
+            // Otherwise create a new selection with this as the primary image
+            return {
+              imageUrl: result,
+              source: "upload",
+              images: [newImage]
+            };
+          });
+          setAvatarName(prev => (prev.trim() ? prev : deriveSuggestedName()));
+        }
+        resolve();
+      };
+      reader.onerror = () => {
+        setUploadError("We couldn't read that image. Re-upload or use a different format.");
+        resolve(); // Resolve even on error to not break the flow
+      };
+      reader.readAsDataURL(file);
+    });
   }, []);
 
-  const handleAddMeFileChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+  const handleAddMeFileChange = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       setIsAddMeFlow(true);
-      processImageFile(file);
+      await processImageFile(file);
       setIsPanelOpen(true);
     }
     event.target.value = "";
@@ -1112,14 +1159,14 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     setIsDraggingOverAddMe(false);
   }, []);
 
-  const handleAddMeDrop = useCallback((event: DragEvent) => {
+  const handleAddMeDrop = useCallback(async (event: DragEvent) => {
     event.preventDefault();
     event.stopPropagation();
     setIsDraggingOverAddMe(false);
     const file = event.dataTransfer.files?.[0];
     if (file) {
       setIsAddMeFlow(true);
-      processImageFile(file);
+      await processImageFile(file);
       setIsPanelOpen(true);
     }
   }, [processImageFile]);
@@ -1154,6 +1201,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
         ownerId: user?.id ?? undefined,
         existingAvatars: avatars,
         isMe: isAddMeFlow,
+        images: selection.images,
       });
 
       // Sync to backend if authenticated
@@ -2601,13 +2649,13 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     if (meAvatar) {
       // Render the isMe avatar in place of the Add Yourself card
       return renderAvatarCard(meAvatar, {
-        widthClass: isMasterSection ? ' max-w-[170px] w-full' : '',
+        widthClass: isMasterSection ? ' max-w-[200px] w-full' : '',
         isCompact: isMasterSection
       });
     }
     return (
       <div
-        className={`group flex flex-col rounded-[28px] border-2 border-dashed ${isDraggingOverAddMe ? 'border-theme-text bg-theme-text/30 shadow-[0_0_32px_rgba(255,255,255,0.25)]' : 'border-red-500/40 hover:border-red-400/60 bg-theme-black/40'} shadow-lg transition-all duration-200 parallax-small cursor-pointer${isMasterSection ? ' max-w-[170px] w-full' : ''} relative`}
+        className={`group flex flex-col rounded-[28px] border-2 border-dashed ${isDraggingOverAddMe ? 'border-theme-text bg-theme-text/30 shadow-[0_0_32px_rgba(255,255,255,0.25)]' : 'border-red-500/40 hover:border-red-400/60 bg-theme-black/40'} shadow-lg transition-all duration-200 parallax-small cursor-pointer${isMasterSection ? ' max-w-[200px] w-full' : ''} relative`}
         role="button"
         tabIndex={0}
         aria-label="Add your avatar as Me"
@@ -2767,7 +2815,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     if (!isMasterSection) return null;
     return (
       <div
-        className={`group flex flex-col overflow-hidden rounded-[28px] border-2 border-dashed ${hasVoiceReady ? 'border-green-500/50 bg-black' : 'border-cyan-500/40 hover:border-cyan-400/60 bg-theme-black/40'} shadow-lg transition-all duration-200 parallax-small max-w-[170px] w-full ${hasVoiceReady ? '' : 'cursor-pointer'} relative`}
+        className={`group flex flex-col overflow-hidden rounded-[28px] border-2 border-dashed ${hasVoiceReady ? 'border-green-500/50 bg-black' : 'border-cyan-500/40 hover:border-cyan-400/60 bg-theme-black/40'} shadow-lg transition-all duration-200 parallax-small max-w-[200px] w-full ${hasVoiceReady ? '' : 'cursor-pointer'} relative`}
         role={hasVoiceReady ? undefined : "button"}
         tabIndex={hasVoiceReady ? undefined : 0}
         aria-label={hasVoiceReady ? "Voice ready" : "Add your voice"}
@@ -2870,7 +2918,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 {avatars.filter(a => !a.isMe).length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {avatars.filter(a => !a.isMe).map(avatar => renderAvatarCard(avatar, {
-                      widthClass: " max-w-[150px] w-full",
+                      widthClass: " max-w-[140px] w-full",
                       isCompact: true
                     }))}
                   </div>
@@ -3038,12 +3086,77 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   );
 
   const renderProfileView = () => {
+    // Show loading skeleton while loading the me section
+    if (isLoadingMeSection) {
+      return (
+        <div className="flex flex-col gap-8">
+          <header className="max-w-3xl text-left">
+            <button
+              type="button"
+              className="text-sm text-theme-white text-left transition-colors duration-200 hover:text-theme-text"
+              onClick={closeCreationsModal}
+            >
+              ← Back
+            </button>
+            <div className={`${headings.tripleHeading.container} text-left`}>
+              <div className={`${headings.tripleHeading.eyebrow} justify-start invisible`} aria-hidden="true" />
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}>
+                  harina
+                </h1>
+                <div className="flex items-center gap-2">
+                  <div className="text-theme-white/80 h-12 flex items-center">
+                    <Pencil className="h-4 w-4" />
+                  </div>
+                  <div className="image-action-btn parallax-large">
+                    <Edit className="w-3 h-3" />
+                  </div>
+                  <div className="image-action-btn parallax-large">
+                    <MoreHorizontal className="w-3 h-3" />
+                  </div>
+                </div>
+              </div>
+
+              <p className={`${headings.tripleHeading.description} -mb-4`}>
+                Manage creations with harina.
+              </p>
+            </div>
+          </header >
+
+          <div className="w-full max-w-6xl space-y-5">
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-normal font-raleway text-theme-text">Avatar Images</h2>
+              <span className="text-xs font-raleway text-theme-white">
+                0/5 images
+              </span>
+            </div>
+
+            <div className="flex flex-wrap gap-4">
+              <div className="aspect-square w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-52 lg:h-52 rounded-2xl border-2 border-dashed border-theme-white/30 flex items-center justify-center">
+                <Plus className="h-6 w-6 text-theme-white/60" />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h2 className="text-2xl font-raleway text-theme-text">
+              Creations with harina
+            </h2>
+            <div className="rounded-2xl border border-theme-dark bg-theme-black/70 p-4 text-center">
+              <p className="text-sm font-raleway text-theme-light">
+                Generate a new image with this avatar to see it appear here.
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     if (!creationsModalAvatar) return null;
     const avatarImages = creationsModalAvatar.images;
     const creationImages = creationModalItems
       .filter(item => item.kind === "image")
       .map(item => item.image);
-    const imageSlots = Array.from({ length: MAX_AVATAR_IMAGES });
     const firstEmptySlotIndex = avatarImages.length < MAX_AVATAR_IMAGES ? avatarImages.length : null;
 
     const extractFilesFromDataTransfer = (dataTransfer: DataTransfer | null): File[] => {
@@ -3064,17 +3177,6 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       if (firstEmptySlotIndex !== null) {
         setDraggingOverSlot(firstEmptySlotIndex);
       } else {
-        setDraggingOverSlot(null);
-      }
-    };
-
-    const maybeClearDraggingState = (event: DragEvent<HTMLDivElement>) => {
-      event.preventDefault();
-      event.stopPropagation();
-      const rect = event.currentTarget.getBoundingClientRect();
-      const x = event.clientX;
-      const y = event.clientY;
-      if (x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom) {
         setDraggingOverSlot(null);
       }
     };
@@ -3244,160 +3346,190 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               {avatarImages.length}/{MAX_AVATAR_IMAGES} images
             </span>
           </div>
-          <div className="flex gap-4">
-            {imageSlots.map((_, index) => {
-              const image = avatarImages[index];
-              if (!image) {
-                return (
-                  <div
-                    key={`placeholder-${index}`}
-                    className={`flex aspect-square w-60 h-60 items-center justify-center rounded-2xl border-2 border-dashed bg-theme-black/40 text-theme-white/70 transition-colors duration-200 cursor-pointer ${draggingOverSlot === index
-                      ? "border-theme-text drag-active"
-                      : "border-theme-white/30 hover:border-theme-text/60 hover:text-theme-text"
-                      }`}
-                    onClick={openAvatarImageUploader}
-                    onDragEnter={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      focusFirstEmptySlot();
-                    }}
-                    onDragLeave={maybeClearDraggingState}
-                    onDragOver={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                    }}
-                    onDrop={handleSlotDrop}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        openAvatarImageUploader();
-                      }
-                    }}
-                    aria-label="Upload avatar image"
-                  >
-                    {uploadingAvatarIds.has(creationsModalAvatar.id) ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      <Upload className="h-5 w-5" />
-                    )}
-                  </div>
-                );
-              }
 
-              const isPrimary = creationsModalAvatar.primaryImageId === image.id;
+          {/* Framer Motion Reorder Grid for drag-and-drop reordering */}
+          <Reorder.Group
+            as="div"
+            axis="x"
+            values={avatarImages}
+            onReorder={(newOrder) => {
+              if (!creationsModalAvatar) return;
+              // Update the avatar with the new image order
+              const reorderedImages = newOrder;
+              const updatedAvatar = {
+                ...creationsModalAvatar,
+                images: reorderedImages,
+                imageUrl: reorderedImages[0]?.url || creationsModalAvatar.imageUrl,
+                primaryImageId: reorderedImages[0]?.id || creationsModalAvatar.primaryImageId,
+              };
+
+              // Update creationsModalAvatar first for immediate UI feedback
+              setCreationsModalAvatar(updatedAvatar);
+
+              // Then update the avatars array and persist
+              setAvatars(prev => {
+                const updated = prev.map(avatar => {
+                  if (avatar.id !== creationsModalAvatar.id) return avatar;
+                  return updatedAvatar;
+                });
+                void persistAvatars(updated);
+                return updated;
+              });
+            }}
+            className="flex flex-wrap gap-4"
+          >
+            {avatarImages.map((image, index) => {
+              const isPrimary = creationsModalAvatar.primaryImageId === image.id || index === 0;
+              const viewTooltipId = `view-avatar-${image.id}`;
+              const deleteTooltipId = `delete-avatar-${image.id}`;
 
               return (
-                <div key={image.id} className="flex flex-col items-center gap-2">
-                  <div
-                    className={`relative aspect-square w-60 h-60 overflow-hidden rounded-2xl border transition-colors duration-200 ${dragOverSlotIndex === index && draggedImageId !== image.id
-                      ? "border-theme-text bg-theme-text/10"
-                      : "border-theme-dark bg-theme-black/60"
-                      }`}
-                    draggable={true}
-                    onDragStart={(event) => {
-                      event.stopPropagation();
-                      setDraggedImageId(image.id);
-                      event.dataTransfer.effectAllowed = "move";
-                      event.dataTransfer.setData("text/plain", image.id);
-                    }}
-                    onDragEnd={() => {
-                      setDraggedImageId(null);
-                      setDragOverSlotIndex(null);
-                    }}
-                    onDragEnter={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      if (draggedImageId !== image.id) {
-                        setDragOverSlotIndex(index);
-                      }
-                    }}
-                    onDragLeave={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      // Only clear if we're leaving the container entirely
-                      const rect = event.currentTarget.getBoundingClientRect();
-                      const x = event.clientX;
-                      const y = event.clientY;
-                      if (x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom) {
-                        setDragOverSlotIndex(null);
-                      }
-                    }}
-                    onDragOver={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      event.dataTransfer.dropEffect = "move";
-                    }}
-                    onDrop={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
+                <Reorder.Item
+                  key={image.id}
+                  value={image}
+                  className="relative aspect-square w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-52 lg:h-52 rounded-2xl overflow-hidden border border-theme-dark/60 bg-theme-black/60 group cursor-grab active:cursor-grabbing"
+                  whileHover={{ scale: 1.02 }}
+                  whileDrag={{ scale: 1.1, zIndex: 50, cursor: 'grabbing' }}
+                >
+                  <img
+                    src={image.url}
+                    alt={`${creationsModalAvatar.name} variation ${index + 1}`}
+                    className="w-full h-full object-cover pointer-events-none"
+                    draggable={false}
+                  />
 
-                      // Check if files are being dropped (new upload)
-                      const droppedFiles = event.dataTransfer?.files;
-                      if (droppedFiles && droppedFiles.length > 0) {
-                        // Handle new file upload
-                        const files = Array.from(droppedFiles);
-                        void handleAddAvatarImages(creationsModalAvatar.id, files);
-                        setDraggedImageId(null);
-                        setDragOverSlotIndex(null);
-                        return;
-                      }
+                  {/* Primary indicator (first in list) */}
+                  {isPrimary && (
+                    <div className="image-action-btn image-action-btn--no-transform absolute top-2 left-2 z-10 cursor-default hover:!border-theme-dark/10" title="Primary image">
+                      <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                    </div>
+                  )}
 
-                      // Otherwise, check if reordering existing image
-                      const droppedImageId = event.dataTransfer.getData("text/plain");
-                      if (droppedImageId && droppedImageId !== image.id) {
-                        handleReorderAvatarImages(creationsModalAvatar.id, droppedImageId, index);
-                      }
+                  {/* Action buttons overlay */}
+                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
+                    {/* View full size */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openAvatarFullSizeView(image.id);
+                      }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      className="image-action-btn parallax-large"
+                      aria-label="View full size"
+                      onMouseEnter={(e) => {
+                        showHoverTooltip(
+                          e.currentTarget,
+                          viewTooltipId,
+                          { placement: 'above', offset: 26 },
+                        );
+                      }}
+                      onMouseLeave={() => {
+                        hideHoverTooltip(viewTooltipId);
+                      }}
+                    >
+                      <Expand className="w-3 h-3 text-theme-white" />
+                    </button>
 
-                      setDraggedImageId(null);
-                      setDragOverSlotIndex(null);
-                    }}
-                  >
-                    <img
-                      src={image.url}
-                      alt={`${creationsModalAvatar.name} variation ${index + 1}`}
-                      className="h-full w-full object-cover cursor-pointer"
-                      onClick={() => openAvatarFullSizeView(image.id)}
-                      draggable={false}
-                    />
-                    {isPrimary && (
-                      <span className={`${glass.promptDark} absolute left-2 top-2 rounded-full px-2 py-1 text-[10px] font-raleway text-theme-text`}>
-                        Primary
-                      </span>
-                    )}
-                    {draggedImageId === image.id && (
-                      <div className="absolute inset-0 bg-theme-black/50 flex items-center justify-center">
-                        <div className="bg-theme-text/20 rounded-lg px-3 py-1 text-xs font-raleway text-theme-white">
-                          Moving...
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-raleway text-theme-white/80">
-                    {!isPrimary && (
-                      <button
-                        type="button"
-                        className="rounded-full border border-theme-mid px-2 py-1 transition-colors duration-200 hover:border-theme-text hover:text-theme-text"
-                        onClick={() => handleSetPrimaryAvatarImage(creationsModalAvatar.id, image.id)}
-                      >
-                        Set primary
-                      </button>
-                    )}
+                    {/* Remove button (only if more than 1 image) */}
                     {avatarImages.length > 1 && (
                       <button
                         type="button"
-                        className="rounded-full border border-theme-mid px-2 py-1 text-rose-200 transition-colors duration-200 hover:border-rose-300 hover:text-rose-100"
-                        onClick={() => handleRemoveAvatarImage(creationsModalAvatar.id, image.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveAvatarImage(creationsModalAvatar.id, image.id);
+                        }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        className="image-action-btn parallax-large"
+                        aria-label="Remove image"
+                        onMouseEnter={(e) => {
+                          showHoverTooltip(
+                            e.currentTarget,
+                            deleteTooltipId,
+                            { placement: 'above', offset: 26 },
+                          );
+                        }}
+                        onMouseLeave={() => {
+                          hideHoverTooltip(deleteTooltipId);
+                        }}
                       >
-                        Remove
+                        <X className="w-3 h-3 text-theme-white" />
                       </button>
                     )}
                   </div>
-                </div>
+
+                  {/* Set as primary button (if not already primary) */}
+                  {!isPrimary && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSetPrimaryAvatarImage(creationsModalAvatar.id, image.id);
+                      }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      className="image-action-btn image-action-btn--labelled parallax-large absolute bottom-2 left-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10 !w-auto !py-1.5 !text-[12px] !font-normal"
+                    >
+                      Set as primary
+                    </button>
+                  )}
+                  {createPortal(
+                    <div
+                      data-tooltip-for={viewTooltipId}
+                      className={`${tooltips.base} fixed`}
+                      style={{ zIndex: 9999 }}
+                    >
+                      View
+                    </div>,
+                    document.body,
+                  )}
+                  {createPortal(
+                    <div
+                      data-tooltip-for={deleteTooltipId}
+                      className={`${tooltips.base} fixed`}
+                      style={{ zIndex: 9999 }}
+                    >
+                      Delete Avatar Image
+                    </div>,
+                    document.body,
+                  )}
+                </Reorder.Item>
               );
             })}
-          </div>
+
+            {/* Add more images slot (if under max) */}
+            {avatarImages.length < MAX_AVATAR_IMAGES && (
+              <button
+                type="button"
+                onClick={openAvatarImageUploader}
+                onDragEnter={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  focusFirstEmptySlot();
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setDraggingOverSlot(null);
+                }}
+                onDrop={handleSlotDrop}
+                className={`aspect-square w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-52 lg:h-52 rounded-2xl border-2 border-dashed transition-all duration-200 flex items-center justify-center ${draggingOverSlot !== null
+                  ? 'border-theme-text bg-theme-text/30 shadow-[0_0_32px_rgba(255,255,255,0.25)]'
+                  : 'border-theme-white/30 hover:border-theme-text/60 hover:bg-theme-text/5'
+                  }`}
+              >
+                {uploadingAvatarIds.has(creationsModalAvatar.id) ? (
+                  <Loader2 className="h-6 w-6 text-theme-white/60 animate-spin" />
+                ) : (
+                  <Plus className="h-6 w-6 text-theme-white/60" />
+                )}
+              </button>
+            )}
+          </Reorder.Group>
+
           {avatarImageUploadError && (
             <p className="text-sm font-raleway text-rose-300">{avatarImageUploadError}</p>
           )}
@@ -3469,7 +3601,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const contentLayoutClass = shouldShowSidebar
     ? "mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 lg:gap-4 lg:grid-cols-[160px_minmax(0,1fr)]"
     : "mt-4 md:mt-0 w-full";
-  const showProfileView = !isMasterSection && Boolean(creationsModalAvatar);
+  const showProfileView = !isMasterSection && (Boolean(creationsModalAvatar) || isLoadingMeSection);
 
   return (
     <div className={layout.page}>

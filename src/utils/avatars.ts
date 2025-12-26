@@ -90,6 +90,7 @@ type CreateAvatarRecordArgs = {
   ownerId?: string;
   existingAvatars?: StoredAvatar[];
   isMe?: boolean;
+  images?: AvatarImage[];
 };
 
 export const createAvatarRecord = ({
@@ -100,11 +101,20 @@ export const createAvatarRecord = ({
   ownerId,
   existingAvatars = [],
   isMe = false,
+  images,
 }: CreateAvatarRecordArgs): StoredAvatar => {
   const id = `avatar-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const existingSlugs = new Set(existingAvatars.map(avatar => avatar.slug).filter(Boolean));
   const fallbackSuffix = id.replace(/[^a-z0-9]+/gi, "").slice(-6) || Math.random().toString(36).slice(-6);
   const slug = deriveAvatarSlug(name, { existingSlugs, fallbackSuffix });
+
+  // Use provided images or create single image from imageUrl
+  const avatarImages = images?.length
+    ? images
+    : createAvatarImagesState(imageUrl, source, sourceId).images;
+
+  const primaryImageId = avatarImages[0]?.id ?? "";
+  const primaryImageUrl = avatarImages[0]?.url ?? imageUrl;
 
   return {
     id,
@@ -116,9 +126,12 @@ export const createAvatarRecord = ({
     published: false,
     ownerId,
     isMe,
-    ...createAvatarImagesState(imageUrl, source, sourceId),
+    imageUrl: primaryImageUrl,
+    primaryImageId,
+    images: avatarImages,
   };
 };
+
 
 export const findAvatarBySlug = (
   avatars: StoredAvatar[],
