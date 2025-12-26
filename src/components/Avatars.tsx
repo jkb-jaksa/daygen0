@@ -482,7 +482,11 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     }
     return false;
   });
+  const [isAddMeFlow, setIsAddMeFlow] = useState(false);
   const { images: galleryImages } = useGalleryImages();
+
+  // Find the Me avatar for dedicated "Add yourself" feature
+  const meAvatar = useMemo(() => avatars.find(a => a.isMe), [avatars]);
 
   // Compute if any menu is open to keep all icons visible
   const anyMenuOpen = useMemo(() => {
@@ -620,6 +624,8 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       if (!storagePrefix) return;
       try {
         await setPersistedValue(storagePrefix, "avatars", records);
+        // Dispatch storage change event so other components (like useAvatarHandlers) can sync
+        dispatchStorageChange('avatars');
       } catch (error) {
         debugError("Failed to persist avatars to remote storage", error);
       }
@@ -729,7 +735,8 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
           ]);
           if (!isMounted) return;
 
-          if (storedAvatars) {
+          // Only use local avatars if we didn't already load from backend
+          if (storedAvatars && !token) {
             const normalized = normalizeStoredAvatars(storedAvatars, { ownerId: user?.id ?? undefined });
             setAvatars(normalized);
             writeCachedAvatars(normalized);
@@ -746,7 +753,6 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               debugLog('[Avatars] Loaded avatars from cache:', normalized.length);
             }
           }
-
 
           if (storedFolders) {
             setFolders(storedFolders.map(folder => ({
@@ -879,21 +885,63 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       setAvatarImageUploadError(null);
 
       try {
-        const newImages: AvatarImage[] = await Promise.all(
-          validFiles.map(async (file, index) => ({
-            id: `avatar-img-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 8)}`,
-            url: await readFileAsDataUrl(file),
-            createdAt: new Date().toISOString(),
-            source,
-            sourceId,
-          })),
+        // Read files as data URLs first
+        const dataUrls = await Promise.all(validFiles.map(readFileAsDataUrl));
+
+        // Upload to R2 if authenticated, otherwise use data URLs
+        const uploadedUrls: (string | null)[] = await Promise.all(
+          dataUrls.map(async (dataUrl) => {
+            if (token) {
+              const uploadResult = await uploadBase64ToR2(dataUrl, { folder: 'avatar-images' });
+              if (uploadResult.success && uploadResult.url) {
+                return uploadResult.url;
+              }
+              debugError('[Avatars] Failed to upload image to R2:', uploadResult.error);
+            }
+            return null; // Will fall back to data URL
+          })
         );
+
+        const newImages: AvatarImage[] = dataUrls.map((dataUrl, index) => ({
+          id: `avatar-img-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 8)}`,
+          url: uploadedUrls[index] ?? dataUrl, // Use R2 URL if available, otherwise data URL
+          createdAt: new Date().toISOString(),
+          source,
+          sourceId,
+        }));
 
         // Use commitAvatarUpdate which now properly synchronizes all state
         const result = commitAvatarUpdate(avatarId, images => [...images, ...newImages]);
 
         if (!result) {
           throw new Error("Failed to update avatar");
+        }
+
+        // Sync new images to backend if authenticated
+        if (token) {
+          for (const image of newImages) {
+            // Only sync R2 URLs (not data URLs) to backend
+            if (!image.url.startsWith('data:')) {
+              try {
+                await fetch(getApiUrl(`/api/avatars/${avatarId}/images`), {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    url: image.url,
+                    source: image.source,
+                    sourceId: image.sourceId,
+                    isPrimary: false,
+                  }),
+                });
+                debugLog('[Avatars] Image synced to backend:', image.id);
+              } catch (error) {
+                debugError('[Avatars] Failed to sync image to backend:', error);
+              }
+            }
+          }
         }
 
         let statusMessage: string | null = null;
@@ -917,7 +965,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
         // On error, we don't need to rollback since commitAvatarUpdate only runs if file processing succeeds
       }
     },
-    [commitAvatarUpdate],
+    [commitAvatarUpdate, token],
   );
 
   const handleAddAvatarImages = useCallback(
@@ -979,7 +1027,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   );
 
   const handleRemoveAvatarImage = useCallback(
-    (avatarId: string, imageId: string) => {
+    async (avatarId: string, imageId: string) => {
       const targetAvatar = avatarsRef.current.find(avatar => avatar.id === avatarId);
       if (!targetAvatar) {
         setAvatarImageUploadError("We couldn't find that avatar.");
@@ -990,17 +1038,38 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
         return;
       }
       setAvatarImageUploadError(null);
+
+      // Update local state first
       commitAvatarUpdate(
         avatarId,
         images => images.filter(image => image.id !== imageId),
         targetAvatar.primaryImageId === imageId ? undefined : targetAvatar.primaryImageId,
       );
+
+      // Sync to backend if authenticated
+      if (token) {
+        try {
+          const response = await fetch(getApiUrl(`/api/avatars/${avatarId}/images/${imageId}`), {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+          if (response.ok) {
+            debugLog('[Avatars] Image removed from backend:', imageId);
+          } else {
+            debugError('[Avatars] Failed to remove image from backend:', response.status);
+          }
+        } catch (error) {
+          debugError('[Avatars] Error removing image from backend:', error);
+        }
+      }
     },
-    [commitAvatarUpdate],
+    [commitAvatarUpdate, token],
   );
 
   const handleSetPrimaryAvatarImage = useCallback(
-    (avatarId: string, imageId: string) => {
+    async (avatarId: string, imageId: string) => {
       const targetAvatar = avatarsRef.current.find(avatar => avatar.id === avatarId);
       if (!targetAvatar) {
         setAvatarImageUploadError("We couldn't find that avatar.");
@@ -1013,17 +1082,30 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       }
       setAvatarImageUploadError(null);
 
-      // Reorder images: move the selected image to index 0, shift others down
-      commitAvatarUpdate(
-        avatarId,
-        images => {
-          const filtered = images.filter(img => img.id !== imageId);
-          return [selectedImage, ...filtered];
-        },
-        imageId,
-      );
+      // Update local state first
+      commitAvatarUpdate(avatarId, images => images, imageId);
+
+      // Sync to backend if authenticated
+      if (token) {
+        try {
+          const response = await fetch(getApiUrl(`/api/avatars/${avatarId}/images/${imageId}/set-primary`), {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+          if (response.ok) {
+            debugLog('[Avatars] Primary image synced to backend:', imageId);
+          } else {
+            debugError('[Avatars] Failed to sync primary image to backend:', response.status);
+          }
+        } catch (error) {
+          debugError('[Avatars] Error syncing primary image to backend:', error);
+        }
+      }
     },
-    [commitAvatarUpdate],
+    [commitAvatarUpdate, token],
   );
 
 
@@ -1147,6 +1229,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     if (!selection) return;
 
     const normalizedName = avatarName.trim() || "New Avatar";
+    const shouldSetAsMe = options?.isMe ?? false;
 
     // Check for duplicate avatar names (case-insensitive)
     const isDuplicate = avatars.some(
@@ -1283,6 +1366,83 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       };
     });
   }, []);
+
+  // Set an avatar as the "Me" avatar (user's own avatar)
+  const handleSetMeAvatar = useCallback(
+    async (avatarId: string) => {
+      // Update local state first: unset isMe for all, set for this one
+      setAvatars(prev => {
+        const updated = prev.map(avatar => ({
+          ...avatar,
+          isMe: avatar.id === avatarId,
+        }));
+        void persistAvatars(updated);
+        return updated;
+      });
+
+      // Update modal avatar if it matches
+      if (creationsModalAvatar?.id === avatarId) {
+        setCreationsModalAvatar(prev => prev ? { ...prev, isMe: true } : null);
+      }
+
+      // Sync to backend if authenticated
+      if (token) {
+        try {
+          const response = await fetch(getApiUrl(`/api/avatars/${avatarId}/set-me`), {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+          if (response.ok) {
+            debugLog('[Avatars] Avatar set as Me on backend:', avatarId);
+          } else {
+            debugError('[Avatars] Failed to set Me avatar on backend:', response.status);
+          }
+        } catch (error) {
+          debugError('[Avatars] Error setting Me avatar on backend:', error);
+        }
+      }
+    },
+    [creationsModalAvatar, persistAvatars, token],
+  );
+
+  const startRenaming = useCallback((avatar: StoredAvatar) => {
+    setEditingAvatarId(avatar.id);
+    setEditingName(avatar.name);
+  }, []);
+
+  const cancelRenaming = useCallback(() => {
+    setEditingAvatarId(null);
+    setEditingName("");
+  }, []);
+
+  const submitRename = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (!editingAvatarId) return;
+      const trimmed = editingName.trim();
+      const normalizedName = trimmed || "New Avatar";
+
+      setAvatars(prev => {
+        const updated = prev.map(record =>
+          record.id === editingAvatarId ? { ...record, name: normalizedName } : record,
+        );
+        void persistAvatars(updated);
+        return updated;
+      });
+
+      // Update the modal avatar if it's currently open and matches the renamed avatar
+      if (creationsModalAvatar && creationsModalAvatar.id === editingAvatarId) {
+        setCreationsModalAvatar(prev => prev ? { ...prev, name: normalizedName } : null);
+      }
+
+      setEditingAvatarId(null);
+      setEditingName("");
+    },
+    [editingAvatarId, editingName, persistAvatars, creationsModalAvatar],
+  );
 
   const handleReorderSelectionImages = useCallback((reorderedImages: AvatarImage[]) => {
     setSelection(prev => {
@@ -1787,7 +1947,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       return;
     }
     openCreationsModal(avatar);
-  }, [isMasterSection, navigate, openCreationsModal, openMasterFullSizeView]);
+  }, [isMasterSection, openCreationsModal, openMasterFullSizeView, navigate, studioBasePath]);
 
   const closeCreationsModal = useCallback(() => {
     setCreationsModalAvatar(null);
@@ -2100,6 +2260,21 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 <Globe className="h-4 w-4 text-theme-text relative z-10" />
                 <span className="relative z-10">{avatar.published ? 'Unpublish' : 'Publish'}</span>
               </button>
+              {!avatar.isMe && (
+                <button
+                  type="button"
+                  className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    void handleSetMeAvatar(avatar.id);
+                    closeAvatarMoreMenu();
+                  }}
+                >
+                  <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                  <Fingerprint className="h-4 w-4 text-theme-text relative z-10" />
+                  <span className="relative z-10">Set as Me</span>
+                </button>
+              )}
             </ImageActionMenuPortal>
           </div>
           <img
@@ -2187,6 +2362,12 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                         <Pencil className="w-3 h-3" />
                       </button>
                     )}
+                    {avatar.isMe && (
+                      <div className={`${glass.promptDark} inline-flex h-full items-center gap-1 rounded-full px-3 text-xs font-raleway text-theme-white`}>
+                        <Fingerprint className="w-3 h-3 text-theme-text" />
+                        <span className="leading-none">Me</span>
+                      </div>
+                    )}
                     {avatar.published && (
                       <div className={isCompact ? "flex h-4 items-center gap-1 rounded-full px-1.5 text-[8px] font-raleway text-theme-white bg-theme-text/20" : `${glass.promptDark} inline-flex h-full items-center gap-1 rounded-full px-3 text-xs font-raleway text-theme-white`}>
                         <Globe className={isCompact ? "w-2 h-2 text-theme-text" : "w-3 h-3 text-theme-text"} />
@@ -2240,6 +2421,12 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 >
                   <Pencil className="w-3 h-3" />
                 </button>
+              )}
+              {avatar.isMe && (
+                <div className={`${glass.promptDark} inline-flex h-full items-center gap-1 rounded-full px-3 text-xs font-raleway text-theme-white`}>
+                  <Fingerprint className="w-3 h-3 text-theme-text" />
+                  <span className="leading-none">Me</span>
+                </div>
               )}
               {avatar.published && (
                 <div className={isCompact ? "flex h-4 items-center gap-1 rounded-full px-1.5 text-[8px] font-raleway text-theme-white bg-theme-text/20" : `${glass.promptDark} inline-flex h-full items-center gap-1 rounded-full px-3 text-xs font-raleway text-theme-white`}>
@@ -2876,291 +3063,194 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               onChange={handleAddMeFileChange}
             />
 
-            {isMasterSection ? (
-              <div className="flex flex-col gap-8 mb-0">
-                {/* Top Section - Creation Tools */}
-                <div className="flex flex-wrap gap-2">
-                  {renderAddMeCard()}
-                  {renderHybridCard()}
-                  {renderVoiceCard()}
-                </div>
+    { isMasterSection ? (
+      <div className="flex flex-col gap-8 mb-0">
+        {/* Top Section - Creation Tools */}
+        <div className="flex flex-wrap gap-2">
+          {renderAddMeCard()}
+          {renderHybridCard()}
+          {renderVoiceCard()}
+            </div>
 
                 {/* Bottom Section - Avatars */}
-                {avatars.filter(a => !a.isMe).length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {avatars.filter(a => !a.isMe).map(avatar => renderAvatarCard(avatar, {
-                      widthClass: " max-w-[140px] w-full",
-                      isCompact: true
-                    }))}
-                  </div>
-                )}
-              </div>
+          {avatars.filter(a => !a.isMe).length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {avatars.filter(a => !a.isMe).map(avatar => renderAvatarCard(avatar, {
+                widthClass: " max-w-[140px] w-full",
+                isCompact: true
+              }))}
+            </div>
+          )}
+        </div>
+        ) : (
+        <div className="grid grid-cols-1 gap-0.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-items-start">
+          {renderAddMeCard()}
+          {avatars.filter(a => !a.isMe).map(avatar => renderAvatarCard(avatar))}
+        </div>
+            )}
+      </div>
+          {
+    isMasterSection && (
+      <>
+        <div className="w-full">
+          <h2 className="text-xl font-normal font-raleway text-theme-text mb-2">
+            What do you want to do?
+          </h2>
+          <div className="flex gap-2 mb-1">
+            <button
+              type="button"
+              onClick={() => setActiveUseCaseSection('create')}
+              className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-raleway font-medium transition-colors duration-200 ${activeUseCaseSection === 'create'
+                ? 'bg-theme-white/10 border border-theme-mid text-theme-text'
+                : 'bg-theme-black/50 border border-theme-dark text-theme-white/80 hover:border-theme-mid hover:text-theme-text'
+                }`}
+            >
+              create
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveUseCaseSection('edit')}
+              className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-raleway font-medium transition-colors duration-200 ${activeUseCaseSection === 'edit'
+                ? 'bg-theme-white/10 border border-theme-mid text-theme-text'
+                : 'bg-theme-black/50 border border-theme-dark text-theme-white/80 hover:border-theme-mid hover:text-theme-text'
+                }`}
+            >
+              edit
+            </button>
+          </div>
+        </div>
+        <div className="w-full">
+          <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {activeUseCaseSection === 'create' ? (
+              <>
+                <UseCaseCard
+                  title="lifestyle images"
+                  imageUrl="https://assets.daygen.ai/website-assets/lifestyle images.png"
+                  imageAlt="Lifestyle images example"
+                  onClick={openStyleModal}
+                  imageHeight="h-32 sm:h-36 md:h-40"
+                />
+                <UseCaseCard
+                  title="business headshot"
+                  imageUrl="https://assets.daygen.ai/website-assets/3b632ef0-3d13-4359-a2ba-5dec11fc3eab.png"
+                  imageAlt="Business headshot example"
+                  onClick={openStyleModal}
+                  imageHeight="h-32 sm:h-36 md:h-40"
+                />
+                <UseCaseCard
+                  title="artistic images"
+                  imageUrl="https://assets.daygen.ai/website-assets/artistic images.png"
+                  imageAlt="Artistic images example"
+                  onClick={openStyleModal}
+                  imageHeight="h-32 sm:h-36 md:h-40"
+                />
+                <UseCaseCard
+                  title="add object/product"
+                  imageUrl="https://assets.daygen.ai/website-assets/product visualizations.png"
+                  imageAlt="Add object/product example"
+                  onClick={openStyleModal}
+                  imageHeight="h-32 sm:h-36 md:h-40"
+                />
+                <UseCaseCard
+                  title="create brand assets"
+                  imageUrl="https://assets.daygen.ai/website-assets/brand identity.png"
+                  imageAlt="Create brand assets example"
+                  onClick={openStyleModal}
+                  imageHeight="h-32 sm:h-36 md:h-40"
+                />
+                <UseCaseCard
+                  title="you as a meme"
+                  imageUrl="/person swap.png"
+                  imageAlt="You as a meme example"
+                  onClick={openStyleModal}
+                  imageHeight="h-32 sm:h-36 md:h-40"
+                />
+                <UseCaseCard
+                  title="short-form video"
+                  imageUrl="https://assets.daygen.ai/website-assets/virtual try-on.png"
+                  imageAlt="Short-form video example"
+                  onClick={openStyleModal}
+                  imageHeight="h-32 sm:h-36 md:h-40"
+                />
+              </>
             ) : (
-              <div className="grid grid-cols-1 gap-0.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-items-start">
-                {renderAddMeCard()}
-                {avatars.filter(a => !a.isMe).map(avatar => renderAvatarCard(avatar))}
-              </div>
+              <>
+                <UseCaseCard
+                  title="edit image details"
+                  imageUrl="https://assets.daygen.ai/website-assets/3b632ef0-3d13-4359-a2ba-5dec11fc3eab.png"
+                  imageAlt="Edit image details example"
+                  onClick={openStyleModal}
+                  imageHeight="h-32 sm:h-36 md:h-40"
+                />
+                <UseCaseCard
+                  title="upscale image"
+                  imageUrl="https://assets.daygen.ai/website-assets/upscaling.png"
+                  imageAlt="Upscale image example"
+                  onClick={openStyleModal}
+                  imageHeight="h-32 sm:h-36 md:h-40"
+                />
+                <UseCaseCard
+                  title="change image style"
+                  imageUrl="https://assets.daygen.ai/website-assets/artistic images.png"
+                  imageAlt="Change image style example"
+                  onClick={openStyleModal}
+                  imageHeight="h-32 sm:h-36 md:h-40"
+                />
+                <UseCaseCard
+                  title="change outfit"
+                  imageUrl="https://assets.daygen.ai/website-assets/virtual try-on.png"
+                  imageAlt="Change outfit example"
+                  onClick={openStyleModal}
+                  imageHeight="h-32 sm:h-36 md:h-40"
+                />
+                <UseCaseCard
+                  title="person swap"
+                  imageUrl="/person swap.png"
+                  imageAlt="Person swap example"
+                  onClick={openStyleModal}
+                  imageHeight="h-32 sm:h-36 md:h-40"
+                />
+                <UseCaseCard
+                  title="remove background"
+                  imageUrl="https://assets.daygen.ai/website-assets/3b632ef0-3d13-4359-a2ba-5dec11fc3eab.png"
+                  imageAlt="Remove background example"
+                  onClick={openStyleModal}
+                  imageHeight="h-32 sm:h-36 md:h-40"
+                />
+              </>
             )}
           </div>
-          {isMasterSection && (
-            <>
-              <div className="w-full">
-                <h2 className="text-xl font-normal font-raleway text-theme-text mb-2">
-                  What do you want to do?
-                </h2>
-                <div className="flex gap-2 mb-1">
-                  <button
-                    type="button"
-                    onClick={() => setActiveUseCaseSection('create')}
-                    className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-raleway font-medium transition-colors duration-200 ${activeUseCaseSection === 'create'
-                      ? 'bg-theme-white/10 border border-theme-mid text-theme-text'
-                      : 'bg-theme-black/50 border border-theme-dark text-theme-white/80 hover:border-theme-mid hover:text-theme-text'
-                      }`}
-                  >
-                    create
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveUseCaseSection('edit')}
-                    className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-raleway font-medium transition-colors duration-200 ${activeUseCaseSection === 'edit'
-                      ? 'bg-theme-white/10 border border-theme-mid text-theme-text'
-                      : 'bg-theme-black/50 border border-theme-dark text-theme-white/80 hover:border-theme-mid hover:text-theme-text'
-                      }`}
-                  >
-                    edit
-                  </button>
-                </div>
-              </div>
-              <div className="w-full">
-                <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                  {activeUseCaseSection === 'create' ? (
-                    <>
-                      <UseCaseCard
-                        title="lifestyle images"
-                        imageUrl="https://assets.daygen.ai/website-assets/lifestyle images.png"
-                        imageAlt="Lifestyle images example"
-                        onClick={openStyleModal}
-                        imageHeight="h-32 sm:h-36 md:h-40"
-                      />
-                      <UseCaseCard
-                        title="business headshot"
-                        imageUrl="https://assets.daygen.ai/website-assets/3b632ef0-3d13-4359-a2ba-5dec11fc3eab.png"
-                        imageAlt="Business headshot example"
-                        onClick={openStyleModal}
-                        imageHeight="h-32 sm:h-36 md:h-40"
-                      />
-                      <UseCaseCard
-                        title="artistic images"
-                        imageUrl="https://assets.daygen.ai/website-assets/artistic images.png"
-                        imageAlt="Artistic images example"
-                        onClick={openStyleModal}
-                        imageHeight="h-32 sm:h-36 md:h-40"
-                      />
-                      <UseCaseCard
-                        title="add object/product"
-                        imageUrl="https://assets.daygen.ai/website-assets/product visualizations.png"
-                        imageAlt="Add object/product example"
-                        onClick={openStyleModal}
-                        imageHeight="h-32 sm:h-36 md:h-40"
-                      />
-                      <UseCaseCard
-                        title="create brand assets"
-                        imageUrl="https://assets.daygen.ai/website-assets/brand identity.png"
-                        imageAlt="Create brand assets example"
-                        onClick={openStyleModal}
-                        imageHeight="h-32 sm:h-36 md:h-40"
-                      />
-                      <UseCaseCard
-                        title="you as a meme"
-                        imageUrl="/person swap.png"
-                        imageAlt="You as a meme example"
-                        onClick={openStyleModal}
-                        imageHeight="h-32 sm:h-36 md:h-40"
-                      />
-                      <UseCaseCard
-                        title="short-form video"
-                        imageUrl="https://assets.daygen.ai/website-assets/virtual try-on.png"
-                        imageAlt="Short-form video example"
-                        onClick={openStyleModal}
-                        imageHeight="h-32 sm:h-36 md:h-40"
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <UseCaseCard
-                        title="edit image details"
-                        imageUrl="https://assets.daygen.ai/website-assets/3b632ef0-3d13-4359-a2ba-5dec11fc3eab.png"
-                        imageAlt="Edit image details example"
-                        onClick={openStyleModal}
-                        imageHeight="h-32 sm:h-36 md:h-40"
-                      />
-                      <UseCaseCard
-                        title="upscale image"
-                        imageUrl="https://assets.daygen.ai/website-assets/upscaling.png"
-                        imageAlt="Upscale image example"
-                        onClick={openStyleModal}
-                        imageHeight="h-32 sm:h-36 md:h-40"
-                      />
-                      <UseCaseCard
-                        title="change image style"
-                        imageUrl="https://assets.daygen.ai/website-assets/artistic images.png"
-                        imageAlt="Change image style example"
-                        onClick={openStyleModal}
-                        imageHeight="h-32 sm:h-36 md:h-40"
-                      />
-                      <UseCaseCard
-                        title="change outfit"
-                        imageUrl="https://assets.daygen.ai/website-assets/virtual try-on.png"
-                        imageAlt="Change outfit example"
-                        onClick={openStyleModal}
-                        imageHeight="h-32 sm:h-36 md:h-40"
-                      />
-                      <UseCaseCard
-                        title="person swap"
-                        imageUrl="/person swap.png"
-                        imageAlt="Person swap example"
-                        onClick={openStyleModal}
-                        imageHeight="h-32 sm:h-36 md:h-40"
-                      />
-                      <UseCaseCard
-                        title="remove background"
-                        imageUrl="https://assets.daygen.ai/website-assets/3b632ef0-3d13-4359-a2ba-5dec11fc3eab.png"
-                        imageAlt="Remove background example"
-                        onClick={openStyleModal}
-                        imageHeight="h-32 sm:h-36 md:h-40"
-                      />
-                    </>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
-        </>
-      )}
-
-      {missingAvatarSlug && (
-        <div className="w-full max-w-3xl rounded-2xl border border-theme-dark bg-theme-black/70 p-5 text-left shadow-lg">
-          <p className="text-sm font-raleway font-normal text-theme-white/80">
-            We couldn't find an avatar for <span className="font-medium text-theme-text">{missingAvatarSlug}</span>. It may have been renamed or deleted.
-          </p>
-          <button
-            type="button"
-            className={`mt-4 ${buttons.glassPrompt}`}
-            onClick={handleBack}
-          >
-            <User className="h-4 w-4" />
-            Back
-          </button>
         </div>
-      )}
+      </>
+    )
+  }
+        </>
+      )
+}
+
+{
+  missingAvatarSlug && (
+    <div className="w-full max-w-3xl rounded-2xl border border-theme-dark bg-theme-black/70 p-5 text-left shadow-lg">
+      <p className="text-sm font-raleway font-normal text-theme-white/80">
+        We couldn't find an avatar for <span className="font-medium text-theme-text">{missingAvatarSlug}</span>. It may have been renamed or deleted.
+      </p>
+      <button
+        type="button"
+        className={`mt-4 ${buttons.glassPrompt}`}
+        onClick={handleBack}
+      >
+        <User className="h-4 w-4" />
+        Back
+      </button>
+    </div>
+  )
+}
     </>
   );
 
-  const renderProfileView = () => {
-    // Show loading skeleton while loading the me section
-    if (isLoadingMeSection) {
-      return (
-        <div className="flex flex-col gap-8">
-          <header className="max-w-3xl text-left">
-            <button
-              type="button"
-              className="text-sm text-theme-white text-left transition-colors duration-200 hover:text-theme-text"
-              onClick={closeCreationsModal}
-            >
-              ← Back
-            </button>
-            <div className={`${headings.tripleHeading.container} text-left`}>
-              <div className={`${headings.tripleHeading.eyebrow} justify-start invisible`} aria-hidden="true" />
-              <div className="flex flex-wrap items-center gap-3">
-                <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}>
-                  harina
-                </h1>
-                <div className="flex items-center gap-2">
-                  <div className="text-theme-white/80 h-12 flex items-center">
-                    <Pencil className="h-4 w-4" />
-                  </div>
-                  <div className="image-action-btn parallax-large">
-                    <Edit className="w-3 h-3" />
-                  </div>
-                  <div className="image-action-btn parallax-large">
-                    <MoreHorizontal className="w-3 h-3" />
-                  </div>
-                </div>
-              </div>
-
-              <p className={`${headings.tripleHeading.description} -mb-4`}>
-                Manage creations with harina.
-              </p>
-            </div>
-          </header >
-
-          <div className="w-full max-w-6xl space-y-5">
-            <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-normal font-raleway text-theme-text">Avatar Images</h2>
-              <span className="text-xs font-raleway text-theme-white">
-                0/5 images
-              </span>
-            </div>
-
-            <div className="flex flex-wrap gap-4">
-              <div className="aspect-square w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-52 lg:h-52 rounded-2xl border-2 border-dashed border-theme-white/30 flex items-center justify-center">
-                <Plus className="h-6 w-6 text-theme-white/60" />
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <h2 className="text-2xl font-raleway text-theme-text">
-              Creations with harina
-            </h2>
-            <div className="rounded-2xl border border-theme-dark bg-theme-black/70 p-4 text-center">
-              <p className="text-sm font-raleway text-theme-light">
-                Generate a new image with this avatar to see it appear here.
-              </p>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    if (!creationsModalAvatar) return null;
-    const avatarImages = creationsModalAvatar.images;
-    const creationImages = creationModalItems
-      .filter(item => item.kind === "image")
-      .map(item => item.image);
-    const firstEmptySlotIndex = avatarImages.length < MAX_AVATAR_IMAGES ? avatarImages.length : null;
-
-    const extractFilesFromDataTransfer = (dataTransfer: DataTransfer | null): File[] => {
-      if (!dataTransfer) return [];
-      if (dataTransfer.items && dataTransfer.items.length > 0) {
-        const fromItems = Array.from(dataTransfer.items)
-          .filter(item => item.kind === "file")
-          .map(item => item.getAsFile())
-          .filter((file): file is File => Boolean(file));
-        if (fromItems.length > 0) {
-          return fromItems;
-        }
-      }
-      return Array.from(dataTransfer.files ?? []);
-    };
-
-    const focusFirstEmptySlot = () => {
-      if (firstEmptySlotIndex !== null) {
-        setDraggingOverSlot(firstEmptySlotIndex);
-      } else {
-        setDraggingOverSlot(null);
-      }
-    };
-
-    const handleSlotDrop = (event: DragEvent<HTMLDivElement>) => {
-      event.preventDefault();
-      event.stopPropagation();
-      setDraggingOverSlot(null);
-      if (!creationsModalAvatar) return;
-      const droppedFiles = extractFilesFromDataTransfer(event.dataTransfer ?? null);
-      void handleAddAvatarImages(creationsModalAvatar.id, droppedFiles);
-    };
-
+const renderProfileView = () => {
+  // Show loading skeleton while loading the me section
+  if (isLoadingMeSection) {
     return (
       <div className="flex flex-col gap-8">
         <header className="max-w-3xl text-left">
@@ -3175,8 +3265,152 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
             <div className={`${headings.tripleHeading.eyebrow} justify-start invisible`} aria-hidden="true" />
             <div className="flex flex-wrap items-center gap-3">
               <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}>
-                {creationsModalAvatar.name}
+                harina
               </h1>
+              <div className="flex items-center gap-2">
+                <div className="text-theme-white/80 h-12 flex items-center">
+                  <Pencil className="h-4 w-4" />
+                </div>
+                <div className="image-action-btn parallax-large">
+                  <Edit className="w-3 h-3" />
+                </div>
+                <div className="image-action-btn parallax-large">
+                  <MoreHorizontal className="w-3 h-3" />
+                </div>
+              </div>
+            </div>
+
+            <p className={`${headings.tripleHeading.description} -mb-4`}>
+              Manage creations with harina.
+            </p>
+          </div>
+        </header >
+
+        <div className="w-full max-w-6xl space-y-5">
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-normal font-raleway text-theme-text">Avatar Images</h2>
+            <span className="text-xs font-raleway text-theme-white">
+              0/5 images
+            </span>
+          </div>
+
+          <div className="flex flex-wrap gap-4">
+            <div className="aspect-square w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-52 lg:h-52 rounded-2xl border-2 border-dashed border-theme-white/30 flex items-center justify-center">
+              <Plus className="h-6 w-6 text-theme-white/60" />
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h2 className="text-2xl font-raleway text-theme-text">
+            Creations with harina
+          </h2>
+          <div className="rounded-2xl border border-theme-dark bg-theme-black/70 p-4 text-center">
+            <p className="text-sm font-raleway text-theme-light">
+              Generate a new image with this avatar to see it appear here.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!creationsModalAvatar) return null;
+  const avatarImages = creationsModalAvatar.images;
+  const creationImages = creationModalItems
+    .filter(item => item.kind === "image")
+    .map(item => item.image);
+  const firstEmptySlotIndex = avatarImages.length < MAX_AVATAR_IMAGES ? avatarImages.length : null;
+
+  const extractFilesFromDataTransfer = (dataTransfer: DataTransfer | null): File[] => {
+    if (!dataTransfer) return [];
+    if (dataTransfer.items && dataTransfer.items.length > 0) {
+      const fromItems = Array.from(dataTransfer.items)
+        .filter(item => item.kind === "file")
+        .map(item => item.getAsFile())
+        .filter((file): file is File => Boolean(file));
+      if (fromItems.length > 0) {
+        return fromItems;
+      }
+    }
+    return Array.from(dataTransfer.files ?? []);
+  };
+
+  const focusFirstEmptySlot = () => {
+    if (firstEmptySlotIndex !== null) {
+      setDraggingOverSlot(firstEmptySlotIndex);
+    } else {
+      setDraggingOverSlot(null);
+    }
+  };
+
+  const handleSlotDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setDraggingOverSlot(null);
+    if (!creationsModalAvatar) return;
+    const droppedFiles = extractFilesFromDataTransfer(event.dataTransfer ?? null);
+    void handleAddAvatarImages(creationsModalAvatar.id, droppedFiles);
+  };
+
+  return (
+    <div className="flex flex-col gap-8">
+      <header className="max-w-3xl text-left">
+        <button
+          type="button"
+          className="text-sm text-theme-white text-left transition-colors duration-200 hover:text-theme-text"
+          onClick={closeCreationsModal}
+        >
+          ← Back
+        </button>
+        <div className={`${headings.tripleHeading.container} text-left`}>
+          <div className={`${headings.tripleHeading.eyebrow} justify-start invisible`} aria-hidden="true" />
+
+          {editingAvatarId === creationsModalAvatar.id ? (
+            <form onSubmit={submitRename} className="flex items-center gap-2">
+              <input
+                type="text"
+                value={editingName}
+                onChange={(e) => setEditingName(e.target.value)}
+                className="bg-transparent text-xl md:text-2xl lg:text-3xl font-bold font-outfit text-theme-text border-b border-theme-text/20 focus:border-theme-text outline-none px-1 py-0.5 w-full max-w-[300px]"
+                autoFocus
+                onClick={(e) => e.stopPropagation()}
+              />
+              <button
+                type="submit"
+                className="p-1 text-theme-white hover:text-theme-text transition-colors"
+                title="Save name"
+              >
+                <Check className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={cancelRenaming}
+                className="p-1 text-theme-white hover:text-theme-text transition-colors"
+                title="Cancel"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </form>
+          ) : (
+            <>
+              <div className="flex items-center gap-3">
+                <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}>
+                  {creationsModalAvatar.name}
+                </h1>
+                {creationsModalAvatar.isMe && (
+                  <div className={`${glass.promptDark} inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-raleway text-theme-white`}>
+                    <Fingerprint className="w-3 h-3 text-theme-text" />
+                    <span className="leading-none">Me</span>
+                  </div>
+                )}
+                {creationsModalAvatar.published && (
+                  <div className={`${glass.promptDark} inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-raleway text-theme-white`}>
+                    <Globe className="w-3 h-3 text-theme-text" />
+                    <span className="leading-none">Public</span>
+                  </div>
+                )}
+              </div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -3288,6 +3522,20 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                     <Globe className="h-4 w-4" />
                     {creationsModalAvatar.published ? "Unpublish" : "Publish"}
                   </button>
+                  {!creationsModalAvatar.isMe && (
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void handleSetMeAvatar(creationsModalAvatar.id);
+                        closeAvatarMoreMenu();
+                      }}
+                    >
+                      <Fingerprint className="h-4 w-4" />
+                      Set as Me
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-rose-300 transition-colors duration-200 hover:text-rose-200"
@@ -3302,12 +3550,14 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                   </button>
                 </ImageActionMenuPortal>
               </div>
-            </div>
+            </>
+          )}
+        </div >
 
-            <p className={`${headings.tripleHeading.description} -mb-4`}>
-              Manage creations with {creationsModalAvatar?.name}.
-            </p>
-          </div>
+        <p className={`${headings.tripleHeading.description} -mb-4`}>
+          Manage creations with {creationsModalAvatar?.name}.
+        </p>
+    </div >
         </header >
 
         <div className="w-full max-w-6xl space-y-5">
@@ -3525,1494 +3775,1494 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     );
   };
 
-  useEffect(() => {
-    if (!creationsModalAvatar) return;
+useEffect(() => {
+  if (!creationsModalAvatar) return;
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        if (isFullSizeOpen) {
-          closeFullSizeView();
-        } else if (isAvatarFullSizeOpen) {
-          closeAvatarFullSizeView();
-        } else {
-          closeCreationsModal();
-        }
-      } else if (isFullSizeOpen && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
-        event.preventDefault();
-        navigateFullSizeImage(event.key === "ArrowLeft" ? 'prev' : 'next');
-      } else if (isAvatarFullSizeOpen && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
-        event.preventDefault();
-        navigateAvatarImage(event.key === "ArrowLeft" ? "prev" : "next");
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      if (isFullSizeOpen) {
+        closeFullSizeView();
+      } else if (isAvatarFullSizeOpen) {
+        closeAvatarFullSizeView();
+      } else {
+        closeCreationsModal();
       }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [creationsModalAvatar, closeCreationsModal, isFullSizeOpen, closeFullSizeView, navigateFullSizeImage, isAvatarFullSizeOpen, closeAvatarFullSizeView, navigateAvatarImage]);
-
-  // Derive active category from pathname when in master section
-  const masterActiveCategory = useMemo(() => {
-    if (!isMasterSection) return "avatars";
-    // When on the /app index route, don't mark any category as active
-    if (location.pathname === "/app") {
-      return "";
+    } else if (isFullSizeOpen && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+      event.preventDefault();
+      navigateFullSizeImage(event.key === "ArrowLeft" ? 'prev' : 'next');
+    } else if (isAvatarFullSizeOpen && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+      event.preventDefault();
+      navigateAvatarImage(event.key === "ArrowLeft" ? "prev" : "next");
     }
-    const category = deriveCategoryFromPath(location.pathname);
-    // For avatar slugs (when path is /app/:slug but slug is not a category), default to avatars
-    if (category === "image" && location.pathname.startsWith("/app/") && !["text", "video", "image", "audio", "avatars", "products"].includes(location.pathname.split("/")[2] || "")) {
-      return "avatars";
-    }
-    return category || "avatars";
-  }, [isMasterSection, location.pathname]);
+  };
 
-  const sectionLayoutClass = "pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20";
-  const shouldShowSidebar = showSidebar || isMasterSection;
-  const contentLayoutClass = shouldShowSidebar
-    ? "mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 lg:gap-4 lg:grid-cols-[160px_minmax(0,1fr)]"
-    : "mt-4 md:mt-0 w-full";
-  const showProfileView = !isMasterSection && (Boolean(creationsModalAvatar) || isLoadingMeSection);
+  document.addEventListener("keydown", handleKeyDown);
+  return () => {
+    document.removeEventListener("keydown", handleKeyDown);
+  };
+}, [creationsModalAvatar, closeCreationsModal, isFullSizeOpen, closeFullSizeView, navigateFullSizeImage, isAvatarFullSizeOpen, closeAvatarFullSizeView, navigateAvatarImage]);
 
-  return (
-    <div className={layout.page}>
-      <div className={layout.backdrop} aria-hidden />
-      <section className={`relative z-10 ${sectionLayoutClass}`}>
-        <div className={`${layout.container}`}>
-          <div className={contentLayoutClass}>
-            {isMasterSection ? (
-              <>
-                <Suspense fallback={null}>
-                  <MasterSidebar
-                    activeCategory={masterActiveCategory}
-                    onSelectCategory={(category) => {
-                      // Check if category is a library category
-                      const libraryCategories = ['gallery', 'avatars', 'products', 'inspirations', 'my-folders'];
-                      const isLibraryCategory = libraryCategories.includes(category);
+// Derive active category from pathname when in master section
+const masterActiveCategory = useMemo(() => {
+  if (!isMasterSection) return "avatars";
+  // When on the /app index route, don't mark any category as active
+  if (location.pathname === "/app") {
+    return "";
+  }
+  const category = deriveCategoryFromPath(location.pathname);
+  // For avatar slugs (when path is /app/:slug but slug is not a category), default to avatars
+  if (category === "image" && location.pathname.startsWith("/app/") && !["text", "video", "image", "audio", "avatars", "products"].includes(location.pathname.split("/")[2] || "")) {
+    return "avatars";
+  }
+  return category || "avatars";
+}, [isMasterSection, location.pathname]);
 
-                      if (isLibraryCategory) {
-                        const path = pathForCategory(category);
-                        if (path) {
-                          navigate(path);
-                          return;
-                        }
-                      }
+const sectionLayoutClass = "pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20";
+const shouldShowSidebar = showSidebar || isMasterSection;
+const contentLayoutClass = shouldShowSidebar
+  ? "mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 lg:gap-4 lg:grid-cols-[160px_minmax(0,1fr)]"
+  : "mt-4 md:mt-0 w-full";
+const showProfileView = !isMasterSection && (Boolean(creationsModalAvatar) || isLoadingMeSection);
 
-                      // For non-library categories, use /app/{category}
-                      navigate(`/app/${category}`);
-                    }}
-                    onOpenMyFolders={() => {
-                      const path = pathForCategory('my-folders');
-                      if (path) {
-                        navigate(path);
-                      }
-                    }}
-                  />
-                </Suspense>
-              </>
-            ) : showSidebar && (
+return (
+  <div className={layout.page}>
+    <div className={layout.backdrop} aria-hidden />
+    <section className={`relative z-10 ${sectionLayoutClass}`}>
+      <div className={`${layout.container}`}>
+        <div className={contentLayoutClass}>
+          {isMasterSection ? (
+            <>
               <Suspense fallback={null}>
                 <MasterSidebar
-                  activeCategory="avatars"
+                  activeCategory={masterActiveCategory}
                   onSelectCategory={(category) => {
-                    navigate(`${studioBasePath}/${category}`);
+                    // Check if category is a library category
+                    const libraryCategories = ['gallery', 'avatars', 'products', 'inspirations', 'my-folders'];
+                    const isLibraryCategory = libraryCategories.includes(category);
+
+                    if (isLibraryCategory) {
+                      const path = pathForCategory(category);
+                      if (path) {
+                        navigate(path);
+                        return;
+                      }
+                    }
+
+                    // For non-library categories, use /app/{category}
+                    navigate(`/app/${category}`);
                   }}
                   onOpenMyFolders={() => {
-                    navigate('/app/folders');
+                    const path = pathForCategory('my-folders');
+                    if (path) {
+                      navigate(path);
+                    }
                   }}
                 />
               </Suspense>
-            )}
-            <div className={`w-full mb-4 flex flex-col ${isMasterSection ? 'gap-4' : 'gap-10'}`}>
-              {showProfileView ? renderProfileView() : renderListView()}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <input
-        ref={avatarImageInputRef}
-        type="file"
-        accept="image/*"
-        multiple
-        className="hidden"
-        onChange={handleAvatarImageInputChange}
-      />
-
-      {isPanelOpen && (
-        <Suspense fallback={null}>
-          <AvatarCreationModal
-            open={isPanelOpen}
-            selection={selection}
-            uploadError={uploadError}
-            isDragging={isDragging}
-            avatarName={avatarName}
-            disableSave={disableSave}
-            onClose={resetPanel}
-            onAvatarNameChange={handleAvatarNameChange}
-            onSave={handleSaveAvatar}
-            onClearSelection={() => setSelection(null)}
-            onProcessFile={processImageFile}
-            onRemoveImage={handleRemoveSelectionImage}
-            onReorderImages={handleReorderSelectionImages}
-            onDragStateChange={setIsDragging}
-            onUploadError={setUploadError}
-          />
-        </Suspense>
-      )}
-      {/* Full-size avatar modal */}
-      <>
-        {isAvatarFullSizeOpen && creationsModalAvatar && activeAvatarImage && (
-          <div
-            className="fixed inset-0 z-[110] bg-theme-black/80 backdrop-blur-[16px] flex items-center justify-center p-4"
-            onClick={closeAvatarFullSizeView}
-          >
-            <div className="relative w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-              {/* Image container */}
-              <div className="relative group flex items-start justify-center mt-14" style={{ transform: 'translateX(-50px)' }}>
-                {/* Navigation arrows */}
-                {creationsModalAvatar.images.length > 1 && (
-                  <>
-                    <button
-                      onClick={() => navigateAvatarImage("prev")}
-                      className={`${glass.promptDark} hover:border-theme-mid absolute -left-14 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
-                      title="Previous image (←)"
-                      aria-label="Previous image"
-                    >
-                      <ChevronLeft className="w-5 h-5 text-current transition-colors duration-100" />
-                    </button>
-                    <button
-                      onClick={() => navigateAvatarImage("next")}
-                      className={`${glass.promptDark} hover:border-theme-mid absolute -right-14 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
-                      title="Next image (→)"
-                      aria-label="Next image"
-                    >
-                      <ChevronRight className="w-5 h-5 text-current transition-colors duration-100" />
-                    </button>
-                  </>
-                )}
-
-                <img
-                  src={activeAvatarImage.url}
-                  alt={`${creationsModalAvatar.name} avatar view`}
-                  loading="lazy"
-                  className="max-w-[calc(100vw-40rem)] max-h-[85vh] object-contain rounded-lg"
-                  style={{ objectPosition: 'top' }}
-                />
-
-                {/* Action buttons overlay - left side */}
-                <div className="image-gallery-actions absolute top-4 left-4 flex items-start gap-1 z-[40]">
-                  <div
-                    className={`flex items-center gap-1 ${anyMenuOpen
-                      ? 'opacity-100'
-                      : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
-                      } transition-opacity duration-100`}
-                  >
-                    {isMasterSection ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            handleNavigateToImage(creationsModalAvatar);
-                            closeAvatarFullSizeView();
-                          }}
-                          className={`group/master-action master-action-create-image image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 text-theme-white ${anyMenuOpen
-                            ? 'opacity-100 pointer-events-auto'
-                            : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                            }`}
-                          aria-label="Create image"
-                        >
-                          <ImageIcon className="w-4 h-4 text-theme-white transition-colors duration-100 group-hover/master-action:text-red-500" />
-                          <span className="text-sm font-normal">Create image</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            handleNavigateToVideo(creationsModalAvatar);
-                            closeAvatarFullSizeView();
-                          }}
-                          className={`group/master-action master-action-make-video image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 text-theme-white ${anyMenuOpen
-                            ? 'opacity-100 pointer-events-auto'
-                            : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                            }`}
-                          aria-label="Make video"
-                        >
-                          <Camera className="w-4 h-4 text-theme-white transition-colors duration-100 group-hover/master-action:text-blue-500" />
-                          <span className="text-sm font-normal">Make video</span>
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            toggleAvatarEditMenu(creationsModalAvatar.id, event.currentTarget);
-                          }}
-                          className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${anyMenuOpen || avatarEditMenu?.avatarId === creationsModalAvatar.id
-                            ? 'opacity-100 pointer-events-auto'
-                            : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                            }`}
-                          title="Edit"
-                          aria-haspopup="menu"
-                          aria-expanded={avatarEditMenu?.avatarId === creationsModalAvatar.id}
-                        >
-                          <Edit className="w-3 h-3" />
-                        </button>
-                        <ImageActionMenuPortal
-                          anchorEl={avatarEditMenu?.avatarId === creationsModalAvatar.id ? avatarEditMenu?.anchor ?? null : null}
-                          open={avatarEditMenu?.avatarId === creationsModalAvatar.id}
-                          onClose={closeAvatarEditMenu}
-                          zIndex={10700}
-                        >
-                          <button
-                            type="button"
-                            className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleNavigateToImage(creationsModalAvatar);
-                              closeAvatarEditMenu();
-                              closeAvatarFullSizeView();
-                            }}
-                          >
-                            <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-                            <ImageIcon className="h-4 w-4 text-red-500 relative z-10" />
-                            <span className="relative z-10">Create image</span>
-                          </button>
-                          <button
-                            type="button"
-                            className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleNavigateToVideo(creationsModalAvatar);
-                              closeAvatarEditMenu();
-                              closeAvatarFullSizeView();
-                            }}
-                          >
-                            <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-                            <Camera className="h-4 w-4 text-blue-500 relative z-10" />
-                            <span className="relative z-10">Make video</span>
-                          </button>
-                        </ImageActionMenuPortal>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Action buttons overlay - right side */}
-                <div className="image-gallery-actions absolute top-4 right-4 flex items-start gap-1 z-[40]">
-                  <div
-                    className={`flex items-center gap-1 ${anyMenuOpen || avatarMoreMenu?.avatarId === creationsModalAvatar.id
-                      ? 'opacity-100'
-                      : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
-                      } transition-opacity duration-100`}
-                  >
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setAvatarToDelete(creationsModalAvatar);
-                        closeAvatarFullSizeView();
-                      }}
-                      className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${anyMenuOpen
-                        ? 'opacity-100 pointer-events-auto'
-                        : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                        }`}
-                      onMouseEnter={(e) => {
-                        showHoverTooltip(
-                          e.currentTarget,
-                          `delete-avatar-fullsize-${creationsModalAvatar.id}`,
-                          { placement: 'below', offset: 2 },
-                        );
-                      }}
-                      onMouseLeave={() => {
-                        hideHoverTooltip(`delete-avatar-fullsize-${creationsModalAvatar.id}`);
-                      }}
-                      aria-label="Delete Avatar"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        toggleAvatarMoreMenu(creationsModalAvatar.id, event.currentTarget);
-                      }}
-                      className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${anyMenuOpen || avatarMoreMenu?.avatarId === creationsModalAvatar.id
-                        ? 'opacity-100 pointer-events-auto'
-                        : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                        }`}
-                      onMouseEnter={(e) => {
-                        showHoverTooltip(
-                          e.currentTarget,
-                          `more-avatar-fullsize-${creationsModalAvatar.id}`,
-                          { placement: 'below', offset: 2 },
-                        );
-                      }}
-                      onMouseLeave={() => {
-                        hideHoverTooltip(`more-avatar-fullsize-${creationsModalAvatar.id}`);
-                      }}
-                      aria-label="More options"
-                    >
-                      <MoreHorizontal className="w-3 h-3" />
-                    </button>
-                    <ImageActionMenuPortal
-                      anchorEl={avatarMoreMenu?.avatarId === creationsModalAvatar.id ? avatarMoreMenu?.anchor ?? null : null}
-                      open={avatarMoreMenu?.avatarId === creationsModalAvatar.id}
-                      onClose={closeAvatarMoreMenu}
-                      zIndex={10700}
-                    >
-                      <button
-                        type="button"
-                        className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleDownloadImage(activeAvatarImage.url);
-                          closeAvatarMoreMenu();
-                        }}
-                      >
-                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-                        <Download className="h-4 w-4 text-theme-text relative z-10" />
-                        <span className="relative z-10">Download</span>
-                      </button>
-                      <button
-                        type="button"
-                        className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleCopyLink(activeAvatarImage.url);
-                          closeAvatarMoreMenu();
-                        }}
-                      >
-                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-                        <Copy className="h-4 w-4 text-theme-text relative z-10" />
-                        <span className="relative z-10">Copy link</span>
-                      </button>
-                      <button
-                        type="button"
-                        className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleManageFolders(activeAvatarImage.url);
-                          closeAvatarMoreMenu();
-                        }}
-                      >
-                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-                        <FolderIcon className="h-4 w-4 text-theme-text relative z-10" />
-                        <span className="relative z-10">Manage folders</span>
-                      </button>
-                      <button
-                        type="button"
-                        className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setAvatarToPublish(creationsModalAvatar);
-                          closeAvatarMoreMenu();
-                        }}
-                      >
-                        <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-                        <Globe className="h-4 w-4 text-theme-text relative z-10" />
-                        <span className="relative z-10">{creationsModalAvatar.published ? 'Unpublish' : 'Publish'}</span>
-                      </button>
-                    </ImageActionMenuPortal>
-                  </div>
-                </div>
-
-                {/* Close button - positioned on right side of image */}
-                <button
-                  onClick={closeAvatarFullSizeView}
-                  className="absolute -top-3 -right-3 p-1.5 rounded-full bg-[color:var(--glass-dark-bg)] text-theme-white hover:text-theme-text backdrop-blur-sm transition-colors duration-200"
-                  aria-label="Close"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-
-                {/* Metadata info bar - only on hover, positioned at bottom of image */}
-                <div className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 opacity-0 group-hover:opacity-100`}>
-                  <div className="flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="text-sm font-raleway leading-relaxed">
-                        {creationsModalAvatar.name}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Right Sidebar - Sibling of modal */}
-        {isAvatarFullSizeOpen && creationsModalAvatar && activeAvatarImage && (
-          <>
-            <aside
-              className={`${glass.promptDark} w-[200px] rounded-2xl p-4 flex flex-col gap-0 overflow-y-auto fixed z-[115]`}
-              style={{ right: 'calc(var(--container-inline-padding, clamp(1rem,5vw,6rem)) + 80px)', top: 'calc(var(--nav-h) + 16px)', height: 'calc(100vh - var(--nav-h) - 32px)' }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Icon-only action bar at top */}
-              <div className="flex flex-row gap-0 justify-start pb-2 border-b border-theme-dark">
-                <a
-                  href={activeAvatarImage.url}
-                  download
-                  className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
-                  onClick={(e) => e.stopPropagation()}
-                  aria-label="Download"
-                  onMouseEnter={(e) => {
-                    const baseId = activeAvatarImage.id || activeAvatarImage.url;
-                    showHoverTooltip(
-                      e.currentTarget,
-                      `avatar-download-sidebar-${baseId}`,
-                      { placement: 'below', offset: 2 },
-                    );
-                  }}
-                  onMouseLeave={() => {
-                    const baseId = activeAvatarImage.id || activeAvatarImage.url;
-                    hideHoverTooltip(`avatar-download-sidebar-${baseId}`);
-                  }}
-                >
-                  <Download className="w-4 h-4" />
-                </a>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleManageFolders(activeAvatarImage.url);
-                  }}
-                  className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
-                  aria-label="Manage folders"
-                  onMouseEnter={(e) => {
-                    const baseId = activeAvatarImage.id || activeAvatarImage.url;
-                    showHoverTooltip(
-                      e.currentTarget,
-                      `avatar-folders-sidebar-${baseId}`,
-                      { placement: 'below', offset: 2 },
-                    );
-                  }}
-                  onMouseLeave={() => {
-                    const baseId = activeAvatarImage.id || activeAvatarImage.url;
-                    hideHoverTooltip(`avatar-folders-sidebar-${baseId}`);
-                  }}
-                >
-                  <FolderPlus className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setAvatarToPublish(creationsModalAvatar);
-                  }}
-                  className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
-                  aria-label={creationsModalAvatar.published ? "Unpublish avatar" : "Publish avatar"}
-                  onMouseEnter={(e) => {
-                    const baseId = activeAvatarImage.id || activeAvatarImage.url;
-                    showHoverTooltip(
-                      e.currentTarget,
-                      `avatar-publish-sidebar-${baseId}`,
-                      { placement: 'below', offset: 2 },
-                    );
-                  }}
-                  onMouseLeave={() => {
-                    const baseId = activeAvatarImage.id || activeAvatarImage.url;
-                    hideHoverTooltip(`avatar-publish-sidebar-${baseId}`);
-                  }}
-                >
-                  {creationsModalAvatar.published ? (
-                    <Lock className="w-4 h-4" />
-                  ) : (
-                    <Globe className="w-4 h-4" />
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // TODO: Add favorite/like functionality for avatar images
-                  }}
-                  className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
-                  aria-label="Like"
-                  onMouseEnter={(e) => {
-                    const baseId = activeAvatarImage.id || activeAvatarImage.url;
-                    showHoverTooltip(
-                      e.currentTarget,
-                      `avatar-like-sidebar-${baseId}`,
-                      { placement: 'below', offset: 2 },
-                    );
-                  }}
-                  onMouseLeave={() => {
-                    const baseId = activeAvatarImage.id || activeAvatarImage.url;
-                    hideHoverTooltip(`avatar-like-sidebar-${baseId}`);
-                  }}
-                >
-                  <Heart className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setAvatarToDelete(creationsModalAvatar);
-                  }}
-                  className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
-                  aria-label="Delete"
-                  onMouseEnter={(e) => {
-                    const baseId = activeAvatarImage.id || activeAvatarImage.url;
-                    showHoverTooltip(
-                      e.currentTarget,
-                      `avatar-delete-sidebar-${baseId}`,
-                      { placement: 'below', offset: 2 },
-                    );
-                  }}
-                  onMouseLeave={() => {
-                    const baseId = activeAvatarImage.id || activeAvatarImage.url;
-                    hideHoverTooltip(`avatar-delete-sidebar-${baseId}`);
-                  }}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Edit actions */}
-              <div className="flex flex-col gap-0 mt-2">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // Navigate to edit page with avatar image
-                    navigate(`${studioBasePath}/image`, {
-                      state: {
-                        avatarId: creationsModalAvatar.id,
-                        referenceImageUrl: activeAvatarImage.url,
-                        focusPromptBar: true,
-                      },
-                    });
-                    closeAvatarFullSizeView();
-                  }}
-                  className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
-                >
-                  <Edit className="w-4 h-4 flex-shrink-0 text-theme-text" />
-                  Edit image
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // Create new avatar from this image
-                    navigate("/avatars", {
-                      state: {
-                        openAvatarCreator: true,
-                        selectedImageUrl: activeAvatarImage.url,
-                      },
-                    });
-                    closeAvatarFullSizeView();
-                  }}
-                  className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
-                >
-                  <User className="w-4 h-4 flex-shrink-0 text-theme-text" />
-                  Create Avatar
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // Use as reference in create page
-                    navigate(`${studioBasePath}/image`, {
-                      state: {
-                        referenceImageUrl: activeAvatarImage.url,
-                        focusPromptBar: true,
-                      },
-                    });
-                    closeAvatarFullSizeView();
-                  }}
-                  className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
-                >
-                  <Copy className="w-4 h-4 flex-shrink-0 text-theme-text" />
-                  Use as reference
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // Navigate to create with avatar selected
-                    handleNavigateToImage(creationsModalAvatar);
-                    closeAvatarFullSizeView();
-                  }}
-                  className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
-                >
-                  <RefreshCw className="w-4 h-4 flex-shrink-0 text-theme-text" />
-                  Reuse prompt
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleNavigateToVideo(creationsModalAvatar);
-                    closeAvatarFullSizeView();
-                  }}
-                  className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
-                >
-                  <Camera className="w-4 h-4 flex-shrink-0 text-theme-text" />
-                  Make video
-                </button>
-              </div>
-            </aside>
-
-            {/* Portaled tooltips for avatar full-size sidebar actions */}
-            {(() => {
-              const baseId = activeAvatarImage.id || activeAvatarImage.url;
-              const downloadId = `avatar-download-sidebar-${baseId}`;
-              const foldersId = `avatar-folders-sidebar-${baseId}`;
-              const publishId = `avatar-publish-sidebar-${baseId}`;
-              const likeId = `avatar-like-sidebar-${baseId}`;
-              const deleteId = `avatar-delete-sidebar-${baseId}`;
-              return (
-                <>
-                  {createPortal(
-                    <div
-                      data-tooltip-for={downloadId}
-                      className={`${tooltips.base} fixed`}
-                      style={{ zIndex: 9999 }}
-                    >
-                      Download
-                    </div>,
-                    document.body,
-                  )}
-                  {createPortal(
-                    <div
-                      data-tooltip-for={foldersId}
-                      className={`${tooltips.base} fixed`}
-                      style={{ zIndex: 9999 }}
-                    >
-                      Manage folders
-                    </div>,
-                    document.body,
-                  )}
-                  {createPortal(
-                    <div
-                      data-tooltip-for={publishId}
-                      className={`${tooltips.base} fixed`}
-                      style={{ zIndex: 9999 }}
-                    >
-                      {creationsModalAvatar.published ? 'Unpublish avatar' : 'Publish avatar'}
-                    </div>,
-                    document.body,
-                  )}
-                  {createPortal(
-                    <div
-                      data-tooltip-for={likeId}
-                      className={`${tooltips.base} fixed`}
-                      style={{ zIndex: 9999 }}
-                    >
-                      Like
-                    </div>,
-                    document.body,
-                  )}
-                  {createPortal(
-                    <div
-                      data-tooltip-for={deleteId}
-                      className={`${tooltips.base} fixed`}
-                      style={{ zIndex: 9999 }}
-                    >
-                      Delete
-                    </div>,
-                    document.body,
-                  )}
-                </>
-              );
-            })()}
-
-            {/* Portaled tooltips for avatar full-size action buttons (Delete and More) */}
-            {(() => {
-              const deleteFullsizeTooltipId = `delete-avatar-fullsize-${creationsModalAvatar.id}`;
-              const moreFullsizeTooltipId = `more-avatar-fullsize-${creationsModalAvatar.id}`;
-              return (
-                <>
-                  {createPortal(
-                    <div
-                      data-tooltip-for={deleteFullsizeTooltipId}
-                      className={`${tooltips.base} fixed`}
-                      style={{ zIndex: 9999 }}
-                    >
-                      Delete
-                    </div>,
-                    document.body,
-                  )}
-                  {createPortal(
-                    <div
-                      data-tooltip-for={moreFullsizeTooltipId}
-                      className={`${tooltips.base} fixed`}
-                      style={{ zIndex: 9999 }}
-                    >
-                      More
-                    </div>,
-                    document.body,
-                  )}
-                </>
-              );
-            })()}
-          </>
-        )}
-
-        {/* Thumbnail Navigation - Right Sidebar (far edge) */}
-        {isAvatarFullSizeOpen && creationsModalAvatar && activeAvatarImage && (
-          <div className="fixed right-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] z-[130] flex flex-col pointer-events-auto" style={{ top: 'calc(var(--nav-h) + 16px)', height: 'calc(100vh - var(--nav-h) - 32px)' }} onClick={(e) => e.stopPropagation()}>
-            <div className={`${glass.promptDark} rounded-xl p-2 overflow-y-auto overflow-x-hidden h-full`}>
-              <div className="flex flex-col gap-2">
-                {creationsModalAvatar.images.map((img, index) => {
-                  const isActive = img.id === activeAvatarImage.id;
-                  return (
-                    <button
-                      key={img.id}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (index >= 0 && index < creationsModalAvatar.images.length) {
-                          setActiveAvatarImageId(creationsModalAvatar.images[index]?.id ?? null);
-                        }
-                      }}
-                      className={`relative overflow-hidden rounded-lg transition-none focus:outline-none ${isActive
-                        ? "ring-1 ring-theme-text scale-110"
-                        : "ring-1 ring-theme-mid/30 hover:ring-theme-mid/60 scale-100"
-                        }`}
-                      style={{ width: "48px", height: "48px", flexShrink: 0 }}
-                      aria-label={`View image ${index + 1}${isActive ? " (current)" : ""}`}
-                    >
-                      <img
-                        src={img.url}
-                        alt={`Thumbnail ${index + 1}`}
-                        loading="lazy"
-                        className="w-full h-full object-cover"
-                      />
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Left Navigation Sidebar */}
-        {isAvatarFullSizeOpen && creationsModalAvatar && activeAvatarImage && (
-          isMasterSection ? (
-            <MasterSidebar
-              activeCategory={masterActiveCategory}
-              onSelectCategory={(category) => {
-                // Check if category is a library category
-                const libraryCategories = ['gallery', 'avatars', 'products', 'inspirations', 'my-folders'];
-                const isLibraryCategory = libraryCategories.includes(category);
-
-                if (isLibraryCategory) {
-                  const path = pathForCategory(category);
-                  if (path) {
-                    navigate(path);
-                    closeAvatarFullSizeView();
-                    return;
-                  }
-                }
-
-                // For non-library categories, use /app/{category}
-                navigate(`/app/${category}`);
-                closeAvatarFullSizeView();
-              }}
-              onOpenMyFolders={() => {
-                const path = pathForCategory('my-folders');
-                if (path) {
-                  navigate(path);
-                  closeAvatarFullSizeView();
-                }
-              }}
-              isFullSizeOpen={true}
-            />
-          ) : (
-            showSidebar && (
+            </>
+          ) : showSidebar && (
+            <Suspense fallback={null}>
               <MasterSidebar
                 activeCategory="avatars"
                 onSelectCategory={(category) => {
                   navigate(`${studioBasePath}/${category}`);
-                  closeAvatarFullSizeView();
                 }}
                 onOpenMyFolders={() => {
-                  navigate('/gallery/folders');
-                  closeAvatarFullSizeView();
+                  navigate('/app/folders');
                 }}
-                isFullSizeOpen={true}
               />
-            )
-          )
-        )}
-      </>
+            </Suspense>
+          )}
+          <div className={`w-full mb-4 flex flex-col ${isMasterSection ? 'gap-4' : 'gap-10'}`}>
+            {showProfileView ? renderProfileView() : renderListView()}
+          </div>
+        </div>
+      </div>
+    </section>
 
-      {/* Full-size image modal */}
-      {isFullSizeOpen && selectedFullImage && creationsModalAvatar && (
+    <input
+      ref={avatarImageInputRef}
+      type="file"
+      accept="image/*"
+      multiple
+      className="hidden"
+      onChange={handleAvatarImageInputChange}
+    />
+
+    {isPanelOpen && (
+      <Suspense fallback={null}>
+        <AvatarCreationModal
+          open={isPanelOpen}
+          selection={selection}
+          uploadError={uploadError}
+          isDragging={isDragging}
+          avatarName={avatarName}
+          disableSave={disableSave}
+          onClose={resetPanel}
+          onAvatarNameChange={handleAvatarNameChange}
+          onSave={handleSaveAvatar}
+          onClearSelection={() => setSelection(null)}
+          onProcessFile={processImageFile}
+          onRemoveImage={handleRemoveSelectionImage}
+          onReorderImages={handleReorderSelectionImages}
+          onDragStateChange={setIsDragging}
+          onUploadError={setUploadError}
+        />
+      </Suspense>
+    )}
+    {/* Full-size avatar modal */}
+    <>
+      {isAvatarFullSizeOpen && creationsModalAvatar && activeAvatarImage && (
         <div
-          className="fixed inset-0 z-[10600] bg-theme-black/80 flex items-start justify-center p-4"
-          onClick={closeFullSizeView}
+          className="fixed inset-0 z-[110] bg-theme-black/80 backdrop-blur-[16px] flex items-center justify-center p-4"
+          onClick={closeAvatarFullSizeView}
         >
-          <div className="relative max-w-[95vw] max-h-[90vh] group flex items-start justify-center mt-14" style={{ transform: 'translateX(-50px)' }} onClick={(e) => e.stopPropagation()}>
-            {/* Navigation arrows */}
-            {(() => {
-              const avatarImages = galleryImages.filter(img => img.avatarId === creationsModalAvatar.id);
-              return avatarImages.length > 1 && (
+          <div className="relative w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            {/* Image container */}
+            <div className="relative group flex items-start justify-center mt-14" style={{ transform: 'translateX(-50px)' }}>
+              {/* Navigation arrows */}
+              {creationsModalAvatar.images.length > 1 && (
                 <>
                   <button
-                    onClick={() => navigateFullSizeImage('prev')}
-                    className={`${glass.promptDark} hover:border-theme-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
+                    onClick={() => navigateAvatarImage("prev")}
+                    className={`${glass.promptDark} hover:border-theme-mid absolute -left-14 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
                     title="Previous image (←)"
                     aria-label="Previous image"
                   >
                     <ChevronLeft className="w-5 h-5 text-current transition-colors duration-100" />
                   </button>
                   <button
-                    onClick={() => navigateFullSizeImage('next')}
-                    className={`${glass.promptDark} hover:border-theme-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
+                    onClick={() => navigateAvatarImage("next")}
+                    className={`${glass.promptDark} hover:border-theme-mid absolute -right-14 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
                     title="Next image (→)"
                     aria-label="Next image"
                   >
                     <ChevronRight className="w-5 h-5 text-current transition-colors duration-100" />
                   </button>
                 </>
-              );
-            })()}
+              )}
 
-            <img
-              key={selectedFullImage.url}
-              src={selectedFullImage.url}
-              alt={selectedFullImage.prompt || "Avatar creation"}
-              className="max-w-full max-h-[90vh] object-contain rounded-lg animate-fade-in-static"
-              style={{ objectPosition: 'top' }}
-            />
+              <img
+                src={activeAvatarImage.url}
+                alt={`${creationsModalAvatar.name} avatar view`}
+                loading="lazy"
+                className="max-w-[calc(100vw-40rem)] max-h-[85vh] object-contain rounded-lg"
+                style={{ objectPosition: 'top' }}
+              />
 
-            {/* Action buttons - only show on hover */}
-            <div className="absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-4 pointer-events-none">
-              <div className={`pointer-events-auto ${anyMenuOpen || galleryEditMenu?.imageUrl === selectedFullImage.url ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                } transition-opacity duration-100`}>
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    toggleGalleryEditMenu(selectedFullImage.url, event.currentTarget);
-                  }}
-                  className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${anyMenuOpen || galleryEditMenu?.imageUrl === selectedFullImage.url
-                    ? 'opacity-100 pointer-events-auto'
-                    : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                    }`}
-                  title="Edit image"
-                  aria-label="Edit image"
+              {/* Action buttons overlay - left side */}
+              <div className="image-gallery-actions absolute top-4 left-4 flex items-start gap-1 z-[40]">
+                <div
+                  className={`flex items-center gap-1 ${anyMenuOpen
+                    ? 'opacity-100'
+                    : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
+                    } transition-opacity duration-100`}
                 >
-                  <Edit className="w-3 h-3" />
-                </button>
-                <ImageActionMenuPortal
-                  anchorEl={galleryEditMenu?.imageUrl === selectedFullImage.url ? galleryEditMenu?.anchor ?? null : null}
-                  open={galleryEditMenu?.imageUrl === selectedFullImage.url}
-                  onClose={closeGalleryEditMenu}
-                  zIndex={10700}
-                >
-                  <button
-                    type="button"
-                    className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      handleEditCreation(selectedFullImage);
-                      closeGalleryEditMenu();
-                    }}
-                  >
-                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-                    <ImageIcon className="h-4 w-4 text-red-500 relative z-10" />
-                    <span className="relative z-10">Edit image</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      navigate(`${studioBasePath}/video`, {
-                        state: {
-                          avatarId: selectedFullImage.avatarId,
-                          focusPromptBar: true,
-                        },
-                      });
-                      closeGalleryEditMenu();
-                    }}
-                  >
-                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-                    <Camera className="h-4 w-4 text-blue-500 relative z-10" />
-                    <span className="relative z-10">Make video</span>
-                  </button>
-                </ImageActionMenuPortal>
+                  {isMasterSection ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleNavigateToImage(creationsModalAvatar);
+                          closeAvatarFullSizeView();
+                        }}
+                        className={`group/master-action master-action-create-image image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 text-theme-white ${anyMenuOpen
+                          ? 'opacity-100 pointer-events-auto'
+                          : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                          }`}
+                        aria-label="Create image"
+                      >
+                        <ImageIcon className="w-4 h-4 text-theme-white transition-colors duration-100 group-hover/master-action:text-red-500" />
+                        <span className="text-sm font-normal">Create image</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleNavigateToVideo(creationsModalAvatar);
+                          closeAvatarFullSizeView();
+                        }}
+                        className={`group/master-action master-action-make-video image-action-btn image-action-btn--labelled parallax-large transition-opacity duration-100 text-theme-white ${anyMenuOpen
+                          ? 'opacity-100 pointer-events-auto'
+                          : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                          }`}
+                        aria-label="Make video"
+                      >
+                        <Camera className="w-4 h-4 text-theme-white transition-colors duration-100 group-hover/master-action:text-blue-500" />
+                        <span className="text-sm font-normal">Make video</span>
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          toggleAvatarEditMenu(creationsModalAvatar.id, event.currentTarget);
+                        }}
+                        className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${anyMenuOpen || avatarEditMenu?.avatarId === creationsModalAvatar.id
+                          ? 'opacity-100 pointer-events-auto'
+                          : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                          }`}
+                        title="Edit"
+                        aria-haspopup="menu"
+                        aria-expanded={avatarEditMenu?.avatarId === creationsModalAvatar.id}
+                      >
+                        <Edit className="w-3 h-3" />
+                      </button>
+                      <ImageActionMenuPortal
+                        anchorEl={avatarEditMenu?.avatarId === creationsModalAvatar.id ? avatarEditMenu?.anchor ?? null : null}
+                        open={avatarEditMenu?.avatarId === creationsModalAvatar.id}
+                        onClose={closeAvatarEditMenu}
+                        zIndex={10700}
+                      >
+                        <button
+                          type="button"
+                          className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleNavigateToImage(creationsModalAvatar);
+                            closeAvatarEditMenu();
+                            closeAvatarFullSizeView();
+                          }}
+                        >
+                          <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                          <ImageIcon className="h-4 w-4 text-red-500 relative z-10" />
+                          <span className="relative z-10">Create image</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleNavigateToVideo(creationsModalAvatar);
+                            closeAvatarEditMenu();
+                            closeAvatarFullSizeView();
+                          }}
+                        >
+                          <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                          <Camera className="h-4 w-4 text-blue-500 relative z-10" />
+                          <span className="relative z-10">Make video</span>
+                        </button>
+                      </ImageActionMenuPortal>
+                    </>
+                  )}
+                </div>
               </div>
-              <div className={`flex items-center gap-0.5 pointer-events-auto ${anyMenuOpen || galleryEditMenu?.imageUrl === selectedFullImage.url || creationMoreMenu?.imageUrl === selectedFullImage.url ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                } transition-opacity duration-100`}>
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    confirmDeleteImage(selectedFullImage);
-                  }}
-                  className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${anyMenuOpen
-                    ? 'opacity-100 pointer-events-auto'
-                    : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                    }`}
-                  title="Delete image"
-                  aria-label="Delete image"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    toggleCreationMoreMenu(selectedFullImage.url, event.currentTarget);
-                  }}
-                  className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${anyMenuOpen || creationMoreMenu?.imageUrl === selectedFullImage.url
-                    ? 'opacity-100 pointer-events-auto'
-                    : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                    }`}
-                  title="More options"
-                  aria-label="More options"
-                >
-                  <MoreHorizontal className="w-3 h-3" />
-                </button>
-                <ImageActionMenuPortal
-                  anchorEl={creationMoreMenu?.imageUrl === selectedFullImage.url ? creationMoreMenu?.anchor ?? null : null}
-                  open={creationMoreMenu?.imageUrl === selectedFullImage.url}
-                  onClose={closeCreationMoreMenu}
-                  zIndex={10700}
+
+              {/* Action buttons overlay - right side */}
+              <div className="image-gallery-actions absolute top-4 right-4 flex items-start gap-1 z-[40]">
+                <div
+                  className={`flex items-center gap-1 ${anyMenuOpen || avatarMoreMenu?.avatarId === creationsModalAvatar.id
+                    ? 'opacity-100'
+                    : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
+                    } transition-opacity duration-100`}
                 >
                   <button
                     type="button"
-                    className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
-                      handleDownloadImage(selectedFullImage.url);
-                      closeCreationMoreMenu();
+                      setAvatarToDelete(creationsModalAvatar);
+                      closeAvatarFullSizeView();
                     }}
+                    className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${anyMenuOpen
+                      ? 'opacity-100 pointer-events-auto'
+                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                      }`}
+                    onMouseEnter={(e) => {
+                      showHoverTooltip(
+                        e.currentTarget,
+                        `delete-avatar-fullsize-${creationsModalAvatar.id}`,
+                        { placement: 'below', offset: 2 },
+                      );
+                    }}
+                    onMouseLeave={() => {
+                      hideHoverTooltip(`delete-avatar-fullsize-${creationsModalAvatar.id}`);
+                    }}
+                    aria-label="Delete Avatar"
                   >
-                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-                    <Download className="h-4 w-4 text-theme-text relative z-10" />
-                    <span className="relative z-10">Download</span>
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                   <button
                     type="button"
-                    className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
-                      handleCopyLink(selectedFullImage.url);
-                      closeCreationMoreMenu();
+                      toggleAvatarMoreMenu(creationsModalAvatar.id, event.currentTarget);
                     }}
-                  >
-                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-                    <Copy className="h-4 w-4 text-theme-text relative z-10" />
-                    <span className="relative z-10">Copy link</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      handleManageFolders(selectedFullImage.url);
-                      closeCreationMoreMenu();
+                    className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${anyMenuOpen || avatarMoreMenu?.avatarId === creationsModalAvatar.id
+                      ? 'opacity-100 pointer-events-auto'
+                      : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                      }`}
+                    onMouseEnter={(e) => {
+                      showHoverTooltip(
+                        e.currentTarget,
+                        `more-avatar-fullsize-${creationsModalAvatar.id}`,
+                        { placement: 'below', offset: 2 },
+                      );
                     }}
-                  >
-                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-                    <FolderIcon className="h-4 w-4 text-theme-text relative z-10" />
-                    <span className="relative z-10">Manage folders</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      toggleCreationPublish(selectedFullImage.url);
-                      closeCreationMoreMenu();
+                    onMouseLeave={() => {
+                      hideHoverTooltip(`more-avatar-fullsize-${creationsModalAvatar.id}`);
                     }}
+                    aria-label="More options"
                   >
-                    <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-                    <Globe className="h-4 w-4 text-theme-text relative z-10" />
-                    <span className="relative z-10">{selectedFullImage.isPublic ? "Unpublish" : "Publish"}</span>
+                    <MoreHorizontal className="w-3 h-3" />
                   </button>
-                </ImageActionMenuPortal>
+                  <ImageActionMenuPortal
+                    anchorEl={avatarMoreMenu?.avatarId === creationsModalAvatar.id ? avatarMoreMenu?.anchor ?? null : null}
+                    open={avatarMoreMenu?.avatarId === creationsModalAvatar.id}
+                    onClose={closeAvatarMoreMenu}
+                    zIndex={10700}
+                  >
+                    <button
+                      type="button"
+                      className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleDownloadImage(activeAvatarImage.url);
+                        closeAvatarMoreMenu();
+                      }}
+                    >
+                      <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                      <Download className="h-4 w-4 text-theme-text relative z-10" />
+                      <span className="relative z-10">Download</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleCopyLink(activeAvatarImage.url);
+                        closeAvatarMoreMenu();
+                      }}
+                    >
+                      <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                      <Copy className="h-4 w-4 text-theme-text relative z-10" />
+                      <span className="relative z-10">Copy link</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleManageFolders(activeAvatarImage.url);
+                        closeAvatarMoreMenu();
+                      }}
+                    >
+                      <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                      <FolderIcon className="h-4 w-4 text-theme-text relative z-10" />
+                      <span className="relative z-10">Manage folders</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setAvatarToPublish(creationsModalAvatar);
+                        closeAvatarMoreMenu();
+                      }}
+                    >
+                      <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                      <Globe className="h-4 w-4 text-theme-text relative z-10" />
+                      <span className="relative z-10">{creationsModalAvatar.published ? 'Unpublish' : 'Publish'}</span>
+                    </button>
+                  </ImageActionMenuPortal>
+                </div>
+              </div>
+
+              {/* Close button - positioned on right side of image */}
+              <button
+                onClick={closeAvatarFullSizeView}
+                className="absolute -top-3 -right-3 p-1.5 rounded-full bg-[color:var(--glass-dark-bg)] text-theme-white hover:text-theme-text backdrop-blur-sm transition-colors duration-200"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              {/* Metadata info bar - only on hover, positioned at bottom of image */}
+              <div className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 opacity-0 group-hover:opacity-100`}>
+                <div className="flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-sm font-raleway leading-relaxed">
+                      {creationsModalAvatar.name}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
 
-            {/* Prompt and metadata info - only on hover */}
-            <div className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 ${galleryEditMenu?.imageUrl === selectedFullImage.url || creationMoreMenu?.imageUrl === selectedFullImage.url ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-              }`}>
-              <div className="flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-sm font-raleway leading-relaxed">
-                    {selectedFullImage.prompt || 'Avatar creation'}
-                    {selectedFullImage.prompt && (
-                      <button
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          try {
-                            await navigator.clipboard.writeText(selectedFullImage.prompt);
-                            setCopyNotification('Prompt copied!');
-                            setTimeout(() => setCopyNotification(null), 2000);
-                          } catch (error) {
-                            debugError('Failed to copy prompt:', error);
-                          }
-                        }}
-                        className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-20 align-middle pointer-events-auto"
-                      >
-                        <Copy className="w-3 h-3" />
-                      </button>
-                    )}
-                  </div>
-                  <div className="mt-2 flex justify-center items-center gap-2">
-                    <div className="flex items-center gap-2">
-                      <Suspense fallback={null}>
-                        <ModelBadge
-                          model={selectedFullImage.model || 'unknown'}
-                          size="md"
-                        />
-                      </Suspense>
-                    </div>
-                    {selectedFullImage.isPublic && (
-                      <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
-                        <div className="flex items-center gap-1">
-                          <Globe className="w-3 h-3 text-theme-text" />
-                          <span className="leading-none">Public</span>
-                        </div>
-                      </div>
-                    )}
+      {/* Right Sidebar - Sibling of modal */}
+      {isAvatarFullSizeOpen && creationsModalAvatar && activeAvatarImage && (
+        <>
+          <aside
+            className={`${glass.promptDark} w-[200px] rounded-2xl p-4 flex flex-col gap-0 overflow-y-auto fixed z-[115]`}
+            style={{ right: 'calc(var(--container-inline-padding, clamp(1rem,5vw,6rem)) + 80px)', top: 'calc(var(--nav-h) + 16px)', height: 'calc(100vh - var(--nav-h) - 32px)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Icon-only action bar at top */}
+            <div className="flex flex-row gap-0 justify-start pb-2 border-b border-theme-dark">
+              <a
+                href={activeAvatarImage.url}
+                download
+                className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
+                onClick={(e) => e.stopPropagation()}
+                aria-label="Download"
+                onMouseEnter={(e) => {
+                  const baseId = activeAvatarImage.id || activeAvatarImage.url;
+                  showHoverTooltip(
+                    e.currentTarget,
+                    `avatar-download-sidebar-${baseId}`,
+                    { placement: 'below', offset: 2 },
+                  );
+                }}
+                onMouseLeave={() => {
+                  const baseId = activeAvatarImage.id || activeAvatarImage.url;
+                  hideHoverTooltip(`avatar-download-sidebar-${baseId}`);
+                }}
+              >
+                <Download className="w-4 h-4" />
+              </a>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleManageFolders(activeAvatarImage.url);
+                }}
+                className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
+                aria-label="Manage folders"
+                onMouseEnter={(e) => {
+                  const baseId = activeAvatarImage.id || activeAvatarImage.url;
+                  showHoverTooltip(
+                    e.currentTarget,
+                    `avatar-folders-sidebar-${baseId}`,
+                    { placement: 'below', offset: 2 },
+                  );
+                }}
+                onMouseLeave={() => {
+                  const baseId = activeAvatarImage.id || activeAvatarImage.url;
+                  hideHoverTooltip(`avatar-folders-sidebar-${baseId}`);
+                }}
+              >
+                <FolderPlus className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setAvatarToPublish(creationsModalAvatar);
+                }}
+                className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
+                aria-label={creationsModalAvatar.published ? "Unpublish avatar" : "Publish avatar"}
+                onMouseEnter={(e) => {
+                  const baseId = activeAvatarImage.id || activeAvatarImage.url;
+                  showHoverTooltip(
+                    e.currentTarget,
+                    `avatar-publish-sidebar-${baseId}`,
+                    { placement: 'below', offset: 2 },
+                  );
+                }}
+                onMouseLeave={() => {
+                  const baseId = activeAvatarImage.id || activeAvatarImage.url;
+                  hideHoverTooltip(`avatar-publish-sidebar-${baseId}`);
+                }}
+              >
+                {creationsModalAvatar.published ? (
+                  <Lock className="w-4 h-4" />
+                ) : (
+                  <Globe className="w-4 h-4" />
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // TODO: Add favorite/like functionality for avatar images
+                }}
+                className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
+                aria-label="Like"
+                onMouseEnter={(e) => {
+                  const baseId = activeAvatarImage.id || activeAvatarImage.url;
+                  showHoverTooltip(
+                    e.currentTarget,
+                    `avatar-like-sidebar-${baseId}`,
+                    { placement: 'below', offset: 2 },
+                  );
+                }}
+                onMouseLeave={() => {
+                  const baseId = activeAvatarImage.id || activeAvatarImage.url;
+                  hideHoverTooltip(`avatar-like-sidebar-${baseId}`);
+                }}
+              >
+                <Heart className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setAvatarToDelete(creationsModalAvatar);
+                }}
+                className="p-2 rounded-2xl text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0"
+                aria-label="Delete"
+                onMouseEnter={(e) => {
+                  const baseId = activeAvatarImage.id || activeAvatarImage.url;
+                  showHoverTooltip(
+                    e.currentTarget,
+                    `avatar-delete-sidebar-${baseId}`,
+                    { placement: 'below', offset: 2 },
+                  );
+                }}
+                onMouseLeave={() => {
+                  const baseId = activeAvatarImage.id || activeAvatarImage.url;
+                  hideHoverTooltip(`avatar-delete-sidebar-${baseId}`);
+                }}
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Edit actions */}
+            <div className="flex flex-col gap-0 mt-2">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Navigate to edit page with avatar image
+                  navigate(`${studioBasePath}/image`, {
+                    state: {
+                      avatarId: creationsModalAvatar.id,
+                      referenceImageUrl: activeAvatarImage.url,
+                      focusPromptBar: true,
+                    },
+                  });
+                  closeAvatarFullSizeView();
+                }}
+                className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
+              >
+                <Edit className="w-4 h-4 flex-shrink-0 text-theme-text" />
+                Edit image
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Create new avatar from this image
+                  navigate("/avatars", {
+                    state: {
+                      openAvatarCreator: true,
+                      selectedImageUrl: activeAvatarImage.url,
+                    },
+                  });
+                  closeAvatarFullSizeView();
+                }}
+                className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
+              >
+                <User className="w-4 h-4 flex-shrink-0 text-theme-text" />
+                Create Avatar
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Use as reference in create page
+                  navigate(`${studioBasePath}/image`, {
+                    state: {
+                      referenceImageUrl: activeAvatarImage.url,
+                      focusPromptBar: true,
+                    },
+                  });
+                  closeAvatarFullSizeView();
+                }}
+                className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
+              >
+                <Copy className="w-4 h-4 flex-shrink-0 text-theme-text" />
+                Use as reference
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Navigate to create with avatar selected
+                  handleNavigateToImage(creationsModalAvatar);
+                  closeAvatarFullSizeView();
+                }}
+                className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
+              >
+                <RefreshCw className="w-4 h-4 flex-shrink-0 text-theme-text" />
+                Reuse prompt
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNavigateToVideo(creationsModalAvatar);
+                  closeAvatarFullSizeView();
+                }}
+                className="flex items-center gap-2 w-full rounded-2xl px-4 py-2 text-sm font-raleway font-normal text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-0 whitespace-nowrap"
+              >
+                <Camera className="w-4 h-4 flex-shrink-0 text-theme-text" />
+                Make video
+              </button>
+            </div>
+          </aside>
+
+          {/* Portaled tooltips for avatar full-size sidebar actions */}
+          {(() => {
+            const baseId = activeAvatarImage.id || activeAvatarImage.url;
+            const downloadId = `avatar-download-sidebar-${baseId}`;
+            const foldersId = `avatar-folders-sidebar-${baseId}`;
+            const publishId = `avatar-publish-sidebar-${baseId}`;
+            const likeId = `avatar-like-sidebar-${baseId}`;
+            const deleteId = `avatar-delete-sidebar-${baseId}`;
+            return (
+              <>
+                {createPortal(
+                  <div
+                    data-tooltip-for={downloadId}
+                    className={`${tooltips.base} fixed`}
+                    style={{ zIndex: 9999 }}
+                  >
+                    Download
+                  </div>,
+                  document.body,
+                )}
+                {createPortal(
+                  <div
+                    data-tooltip-for={foldersId}
+                    className={`${tooltips.base} fixed`}
+                    style={{ zIndex: 9999 }}
+                  >
+                    Manage folders
+                  </div>,
+                  document.body,
+                )}
+                {createPortal(
+                  <div
+                    data-tooltip-for={publishId}
+                    className={`${tooltips.base} fixed`}
+                    style={{ zIndex: 9999 }}
+                  >
+                    {creationsModalAvatar.published ? 'Unpublish avatar' : 'Publish avatar'}
+                  </div>,
+                  document.body,
+                )}
+                {createPortal(
+                  <div
+                    data-tooltip-for={likeId}
+                    className={`${tooltips.base} fixed`}
+                    style={{ zIndex: 9999 }}
+                  >
+                    Like
+                  </div>,
+                  document.body,
+                )}
+                {createPortal(
+                  <div
+                    data-tooltip-for={deleteId}
+                    className={`${tooltips.base} fixed`}
+                    style={{ zIndex: 9999 }}
+                  >
+                    Delete
+                  </div>,
+                  document.body,
+                )}
+              </>
+            );
+          })()}
+
+          {/* Portaled tooltips for avatar full-size action buttons (Delete and More) */}
+          {(() => {
+            const deleteFullsizeTooltipId = `delete-avatar-fullsize-${creationsModalAvatar.id}`;
+            const moreFullsizeTooltipId = `more-avatar-fullsize-${creationsModalAvatar.id}`;
+            return (
+              <>
+                {createPortal(
+                  <div
+                    data-tooltip-for={deleteFullsizeTooltipId}
+                    className={`${tooltips.base} fixed`}
+                    style={{ zIndex: 9999 }}
+                  >
+                    Delete
+                  </div>,
+                  document.body,
+                )}
+                {createPortal(
+                  <div
+                    data-tooltip-for={moreFullsizeTooltipId}
+                    className={`${tooltips.base} fixed`}
+                    style={{ zIndex: 9999 }}
+                  >
+                    More
+                  </div>,
+                  document.body,
+                )}
+              </>
+            );
+          })()}
+        </>
+      )}
+
+      {/* Thumbnail Navigation - Right Sidebar (far edge) */}
+      {isAvatarFullSizeOpen && creationsModalAvatar && activeAvatarImage && (
+        <div className="fixed right-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] z-[130] flex flex-col pointer-events-auto" style={{ top: 'calc(var(--nav-h) + 16px)', height: 'calc(100vh - var(--nav-h) - 32px)' }} onClick={(e) => e.stopPropagation()}>
+          <div className={`${glass.promptDark} rounded-xl p-2 overflow-y-auto overflow-x-hidden h-full`}>
+            <div className="flex flex-col gap-2">
+              {creationsModalAvatar.images.map((img, index) => {
+                const isActive = img.id === activeAvatarImage.id;
+                return (
+                  <button
+                    key={img.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (index >= 0 && index < creationsModalAvatar.images.length) {
+                        setActiveAvatarImageId(creationsModalAvatar.images[index]?.id ?? null);
+                      }
+                    }}
+                    className={`relative overflow-hidden rounded-lg transition-none focus:outline-none ${isActive
+                      ? "ring-1 ring-theme-text scale-110"
+                      : "ring-1 ring-theme-mid/30 hover:ring-theme-mid/60 scale-100"
+                      }`}
+                    style={{ width: "48px", height: "48px", flexShrink: 0 }}
+                    aria-label={`View image ${index + 1}${isActive ? " (current)" : ""}`}
+                  >
+                    <img
+                      src={img.url}
+                      alt={`Thumbnail ${index + 1}`}
+                      loading="lazy"
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Left Navigation Sidebar */}
+      {isAvatarFullSizeOpen && creationsModalAvatar && activeAvatarImage && (
+        isMasterSection ? (
+          <MasterSidebar
+            activeCategory={masterActiveCategory}
+            onSelectCategory={(category) => {
+              // Check if category is a library category
+              const libraryCategories = ['gallery', 'avatars', 'products', 'inspirations', 'my-folders'];
+              const isLibraryCategory = libraryCategories.includes(category);
+
+              if (isLibraryCategory) {
+                const path = pathForCategory(category);
+                if (path) {
+                  navigate(path);
+                  closeAvatarFullSizeView();
+                  return;
+                }
+              }
+
+              // For non-library categories, use /app/{category}
+              navigate(`/app/${category}`);
+              closeAvatarFullSizeView();
+            }}
+            onOpenMyFolders={() => {
+              const path = pathForCategory('my-folders');
+              if (path) {
+                navigate(path);
+                closeAvatarFullSizeView();
+              }
+            }}
+            isFullSizeOpen={true}
+          />
+        ) : (
+          showSidebar && (
+            <MasterSidebar
+              activeCategory="avatars"
+              onSelectCategory={(category) => {
+                navigate(`${studioBasePath}/${category}`);
+                closeAvatarFullSizeView();
+              }}
+              onOpenMyFolders={() => {
+                navigate('/gallery/folders');
+                closeAvatarFullSizeView();
+              }}
+              isFullSizeOpen={true}
+            />
+          )
+        )
+      )}
+    </>
+
+    {/* Full-size image modal */}
+    {isFullSizeOpen && selectedFullImage && creationsModalAvatar && (
+      <div
+        className="fixed inset-0 z-[10600] bg-theme-black/80 flex items-start justify-center p-4"
+        onClick={closeFullSizeView}
+      >
+        <div className="relative max-w-[95vw] max-h-[90vh] group flex items-start justify-center mt-14" style={{ transform: 'translateX(-50px)' }} onClick={(e) => e.stopPropagation()}>
+          {/* Navigation arrows */}
+          {(() => {
+            const avatarImages = galleryImages.filter(img => img.avatarId === creationsModalAvatar.id);
+            return avatarImages.length > 1 && (
+              <>
+                <button
+                  onClick={() => navigateFullSizeImage('prev')}
+                  className={`${glass.promptDark} hover:border-theme-mid absolute left-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
+                  title="Previous image (←)"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="w-5 h-5 text-current transition-colors duration-100" />
+                </button>
+                <button
+                  onClick={() => navigateFullSizeImage('next')}
+                  className={`${glass.promptDark} hover:border-theme-mid absolute right-4 top-1/2 -translate-y-1/2 z-20 text-theme-white rounded-[40px] p-2.5 focus:outline-none focus:ring-0 hover:scale-105 transition-all duration-100 opacity-0 group-hover:opacity-100 hover:text-theme-text`}
+                  title="Next image (→)"
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="w-5 h-5 text-current transition-colors duration-100" />
+                </button>
+              </>
+            );
+          })()}
+
+          <img
+            key={selectedFullImage.url}
+            src={selectedFullImage.url}
+            alt={selectedFullImage.prompt || "Avatar creation"}
+            className="max-w-full max-h-[90vh] object-contain rounded-lg animate-fade-in-static"
+            style={{ objectPosition: 'top' }}
+          />
+
+          {/* Action buttons - only show on hover */}
+          <div className="absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-4 pointer-events-none">
+            <div className={`pointer-events-auto ${anyMenuOpen || galleryEditMenu?.imageUrl === selectedFullImage.url ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+              } transition-opacity duration-100`}>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  toggleGalleryEditMenu(selectedFullImage.url, event.currentTarget);
+                }}
+                className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${anyMenuOpen || galleryEditMenu?.imageUrl === selectedFullImage.url
+                  ? 'opacity-100 pointer-events-auto'
+                  : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                  }`}
+                title="Edit image"
+                aria-label="Edit image"
+              >
+                <Edit className="w-3 h-3" />
+              </button>
+              <ImageActionMenuPortal
+                anchorEl={galleryEditMenu?.imageUrl === selectedFullImage.url ? galleryEditMenu?.anchor ?? null : null}
+                open={galleryEditMenu?.imageUrl === selectedFullImage.url}
+                onClose={closeGalleryEditMenu}
+                zIndex={10700}
+              >
+                <button
+                  type="button"
+                  className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleEditCreation(selectedFullImage);
+                    closeGalleryEditMenu();
+                  }}
+                >
+                  <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                  <ImageIcon className="h-4 w-4 text-red-500 relative z-10" />
+                  <span className="relative z-10">Edit image</span>
+                </button>
+                <button
+                  type="button"
+                  className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    navigate(`${studioBasePath}/video`, {
+                      state: {
+                        avatarId: selectedFullImage.avatarId,
+                        focusPromptBar: true,
+                      },
+                    });
+                    closeGalleryEditMenu();
+                  }}
+                >
+                  <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                  <Camera className="h-4 w-4 text-blue-500 relative z-10" />
+                  <span className="relative z-10">Make video</span>
+                </button>
+              </ImageActionMenuPortal>
+            </div>
+            <div className={`flex items-center gap-0.5 pointer-events-auto ${anyMenuOpen || galleryEditMenu?.imageUrl === selectedFullImage.url || creationMoreMenu?.imageUrl === selectedFullImage.url ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+              } transition-opacity duration-100`}>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  confirmDeleteImage(selectedFullImage);
+                }}
+                className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${anyMenuOpen
+                  ? 'opacity-100 pointer-events-auto'
+                  : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                  }`}
+                title="Delete image"
+                aria-label="Delete image"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  toggleCreationMoreMenu(selectedFullImage.url, event.currentTarget);
+                }}
+                className={`image-action-btn image-action-btn--fullsize parallax-large transition-opacity duration-100 ${anyMenuOpen || creationMoreMenu?.imageUrl === selectedFullImage.url
+                  ? 'opacity-100 pointer-events-auto'
+                  : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                  }`}
+                title="More options"
+                aria-label="More options"
+              >
+                <MoreHorizontal className="w-3 h-3" />
+              </button>
+              <ImageActionMenuPortal
+                anchorEl={creationMoreMenu?.imageUrl === selectedFullImage.url ? creationMoreMenu?.anchor ?? null : null}
+                open={creationMoreMenu?.imageUrl === selectedFullImage.url}
+                onClose={closeCreationMoreMenu}
+                zIndex={10700}
+              >
+                <button
+                  type="button"
+                  className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleDownloadImage(selectedFullImage.url);
+                    closeCreationMoreMenu();
+                  }}
+                >
+                  <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                  <Download className="h-4 w-4 text-theme-text relative z-10" />
+                  <span className="relative z-10">Download</span>
+                </button>
+                <button
+                  type="button"
+                  className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleCopyLink(selectedFullImage.url);
+                    closeCreationMoreMenu();
+                  }}
+                >
+                  <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                  <Copy className="h-4 w-4 text-theme-text relative z-10" />
+                  <span className="relative z-10">Copy link</span>
+                </button>
+                <button
+                  type="button"
+                  className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleManageFolders(selectedFullImage.url);
+                    closeCreationMoreMenu();
+                  }}
+                >
+                  <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                  <FolderIcon className="h-4 w-4 text-theme-text relative z-10" />
+                  <span className="relative z-10">Manage folders</span>
+                </button>
+                <button
+                  type="button"
+                  className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    toggleCreationPublish(selectedFullImage.url);
+                    closeCreationMoreMenu();
+                  }}
+                >
+                  <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                  <Globe className="h-4 w-4 text-theme-text relative z-10" />
+                  <span className="relative z-10">{selectedFullImage.isPublic ? "Unpublish" : "Publish"}</span>
+                </button>
+              </ImageActionMenuPortal>
+            </div>
+          </div>
+
+          {/* Prompt and metadata info - only on hover */}
+          <div className={`PromptDescriptionBar absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-theme-text transition-opacity duration-100 ${galleryEditMenu?.imageUrl === selectedFullImage.url || creationMoreMenu?.imageUrl === selectedFullImage.url ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+            }`}>
+            <div className="flex items-center justify-center">
+              <div className="text-center">
+                <div className="text-sm font-raleway leading-relaxed">
+                  {selectedFullImage.prompt || 'Avatar creation'}
+                  {selectedFullImage.prompt && (
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        try {
+                          await navigator.clipboard.writeText(selectedFullImage.prompt);
+                          setCopyNotification('Prompt copied!');
+                          setTimeout(() => setCopyNotification(null), 2000);
+                        } catch (error) {
+                          debugError('Failed to copy prompt:', error);
+                        }
+                      }}
+                      className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-20 align-middle pointer-events-auto"
+                    >
+                      <Copy className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+                <div className="mt-2 flex justify-center items-center gap-2">
+                  <div className="flex items-center gap-2">
                     <Suspense fallback={null}>
-                      <AspectRatioBadge
-                        aspectRatio={selectedFullImage.aspectRatio || '1:1'}
+                      <ModelBadge
+                        model={selectedFullImage.model || 'unknown'}
                         size="md"
                       />
                     </Suspense>
                   </div>
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={closeFullSizeView}
-              className="absolute -top-3 -right-3 bg-[color:var(--glass-dark-bg)] text-theme-white hover:text-theme-text rounded-full p-1.5 backdrop-strong transition-colors duration-200"
-              aria-label="Close full size view"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Vertical Gallery Navigation */}
-          {(() => {
-            const avatarImages = galleryImages.filter(img => img.avatarId === creationsModalAvatar.id);
-            const currentIdx = avatarImages.findIndex(img => img.url === selectedFullImage.url);
-
-            return (
-              <VerticalGalleryNav
-                images={avatarImages}
-                currentIndex={currentIdx}
-                onNavigate={(index) => {
-                  if (index >= 0 && index < avatarImages.length) {
-                    const nextImage = avatarImages[index];
-                    setCurrentImageIndex(index);
-                    setSelectedFullImage(nextImage);
-                    syncJobUrlForImage(nextImage);
-                  }
-                }}
-              />
-            );
-          })()}
-        </div>
-      )}
-
-      {/* Publish confirmation dialog */}
-      {publishConfirmation.show && (
-        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 py-12">
-          <div className={`${glass.promptDark} rounded-[28px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
-            <div className="text-center space-y-4">
-              <div className="space-y-3">
-                <Globe className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-theme-text">
-                  Publish Image
-                </h3>
-                <p className="text-base font-raleway font-normal text-theme-white">
-                  Are you sure you want to publish this image? It will be visible to other users.
-                </p>
-              </div>
-              <div className="flex justify-center gap-3">
-                <button
-                  onClick={cancelPublish}
-                  className={buttons.ghost}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmPublish}
-                  className={buttons.primary}
-                >
-                  Publish
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Unpublish confirmation dialog */}
-      {unpublishConfirmation.show && (
-        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 py-12">
-          <div className={`${glass.promptDark} rounded-[28px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
-            <div className="text-center space-y-4">
-              <div className="space-y-3">
-                <Lock className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-theme-text">
-                  Unpublish Image
-                </h3>
-                <p className="text-base font-raleway font-normal text-theme-white">
-                  Are you sure you want to unpublish this image? It will no longer be visible to other users.
-                </p>
-              </div>
-              <div className="flex justify-center gap-3">
-                <button
-                  onClick={cancelUnpublish}
-                  className={buttons.ghost}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmUnpublish}
-                  className={buttons.primary}
-                >
-                  Unpublish
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add to folder dialog */}
-      {addToFolderDialog && selectedImageForFolder && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/80 py-12">
-          <div className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
-            <div className="text-center space-y-4">
-              <div className="space-y-3">
-                <FolderPlus className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-theme-text">Manage Folders</h3>
-                <p className="text-base font-raleway font-normal text-theme-white">
-                  Check folders to add or remove this item from.
-                </p>
-              </div>
-
-              <div className="max-h-64 overflow-y-auto space-y-4 custom-scrollbar">
-                {folders.length === 0 ? (
-                  <div className="text-center py-4">
-                    <FolderIcon className="w-8 h-8 text-theme-white/30 mx-auto mb-2" />
-                    <p className="text-base text-theme-white/50 mb-4">No folders available</p>
-                    <div className="flex justify-start">
-                      <button
-                        onClick={() => {
-                          navigate(`${studioBasePath}/image`);
-                        }}
-                        className="inline-flex items-center gap-1 text-sm text-theme-white hover:text-theme-text transition-colors duration-200"
-                        title="Create new folder"
-                        aria-label="Create new folder"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Add folder
-                      </button>
+                  {selectedFullImage.isPublic && (
+                    <div className={`${glass.promptDark} text-theme-white px-2 py-2 text-xs rounded-full font-medium font-raleway`}>
+                      <div className="flex items-center gap-1">
+                        <Globe className="w-3 h-3 text-theme-text" />
+                        <span className="leading-none">Public</span>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {folders.map((folder) => {
-                      const isInFolder = pendingFolderSelections.has(folder.id);
-                      return (
-                        <div
-                          key={folder.id}
-                          className={`w-full p-2 rounded-lg border transition-all duration-200 text-left flex items-center gap-3 ${isInFolder
-                            ? "bg-theme-white/10 border-theme-white shadow-lg shadow-theme-white/20"
-                            : "bg-transparent border-theme-dark hover:bg-theme-dark/40 hover:border-theme-mid"
-                            }`}
-                        >
-                          <label className="flex items-center gap-3 cursor-pointer flex-1 min-w-0">
-                            <input
-                              type="checkbox"
-                              checked={isInFolder}
-                              onChange={() => handleToggleImageInFolder(selectedImageForFolder, folder.id)}
-                              className="sr-only"
-                            />
-                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${isInFolder
-                              ? "border-theme-white bg-theme-white"
-                              : "border-theme-mid hover:border-theme-text/50"
-                              }`}>
-                              {isInFolder ? (
-                                <svg className="w-3 h-3 text-theme-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                </svg>
-                              ) : (
-                                <div className="w-2 h-2 bg-transparent rounded"></div>
-                              )}
-                            </div>
-                            <div className="flex-shrink-0">
-                              {folder.customThumbnail ? (
-                                <div className="w-5 h-5 rounded-lg overflow-hidden">
-                                  <img
-                                    src={folder.customThumbnail}
-                                    alt={`${folder.name} thumbnail`}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                              ) : isInFolder ? (
-                                <div className="w-5 h-5 bg-theme-white/20 rounded-lg flex items-center justify-center">
-                                  <FolderIcon className="w-3 h-3 text-theme-text" />
-                                </div>
-                              ) : (
-                                <FolderIcon className="w-5 h-5 text-theme-white/60" />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className={`text-sm font-raleway truncate ${isInFolder ? 'text-theme-text' : 'text-theme-text/80'
-                                }`}>
-                                {folder.name}
-                              </div>
-                              <div className={`text-xs ${isInFolder ? 'text-theme-text/70' : 'text-theme-white/50'
-                                }`}>
-                                {folder.imageIds.length} images
-                                {isInFolder && " (added)"}
-                              </div>
-                            </div>
-                          </label>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteFolderClick(folder.id);
-                            }}
-                            className="flex-shrink-0 p-1 rounded-lg hover:bg-theme-white/10 text-theme-white/60 hover:text-theme-text transition-colors duration-200"
-                            aria-label={`Delete folder ${folder.name}`}
-                            title="Delete folder"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {folders.length > 0 && (
-                <div className="flex justify-start">
-                  <button
-                    onClick={() => {
-                      navigate(`${studioBasePath}/image`);
-                    }}
-                    className="inline-flex items-center gap-1 text-sm text-theme-white hover:text-theme-text transition-colors duration-200"
-                    aria-label="Create new folder"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add folder
-                  </button>
+                  )}
+                  <Suspense fallback={null}>
+                    <AspectRatioBadge
+                      aspectRatio={selectedFullImage.aspectRatio || '1:1'}
+                      size="md"
+                    />
+                  </Suspense>
                 </div>
-              )}
-
-              <div className="flex justify-center gap-3">
-                <button
-                  onClick={handleAddToFolderCancel}
-                  className={buttons.ghost}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleAddToFolderConfirm}
-                  className={buttons.primary}
-                >
-                  Done
-                </button>
               </div>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Delete folder confirmation dialog */}
-      {deleteFolderConfirmation.show && deleteFolderConfirmation.folderId && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/80 py-12">
-          <div className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
-            <div className="text-center space-y-4">
-              <div className="space-y-3">
-                <Trash2 className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-theme-text">Delete Folder</h3>
-                <p className="text-base font-raleway font-normal text-theme-white">
-                  Are you sure you want to delete this folder? This action cannot be undone. The images will remain in your gallery.
-                </p>
-              </div>
-              <div className="flex justify-center gap-3">
-                <button
-                  onClick={handleCancelDeleteFolder}
-                  className={buttons.ghost}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleConfirmDeleteFolder}
-                  className={buttons.primary}
-                >
-                  Delete Folder
-                </button>
-              </div>
-            </div>
-          </div>
+          <button
+            onClick={closeFullSizeView}
+            className="absolute -top-3 -right-3 bg-[color:var(--glass-dark-bg)] text-theme-white hover:text-theme-text rounded-full p-1.5 backdrop-strong transition-colors duration-200"
+            aria-label="Close full size view"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
-      )}
 
-      {avatarToDelete && (
-        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 px-4 py-10">
-          <div className={`${glass.promptDark} w-full max-w-sm min-w-[20rem] rounded-[28px] px-6 py-10 transition-colors duration-200`}>
-            <div className="space-y-4 text-center">
-              <div className="space-y-3">
-                <Trash2 className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-theme-text">Delete Avatar</h3>
-                <p className="text-base font-raleway font-normal text-theme-white">
-                  Are you sure you want to delete "{avatarToDelete.name}"? This action cannot be undone.
-                </p>
-              </div>
-              <div className="flex justify-center gap-3">
-                <button
-                  type="button"
-                  className={buttons.ghost}
-                  onClick={() => setAvatarToDelete(null)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className={buttons.primary}
-                  onClick={confirmDelete}
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+        {/* Vertical Gallery Navigation */}
+        {(() => {
+          const avatarImages = galleryImages.filter(img => img.avatarId === creationsModalAvatar.id);
+          const currentIdx = avatarImages.findIndex(img => img.url === selectedFullImage.url);
 
-      {avatarToPublish && (
-        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 px-4 py-10">
-          <div className={`${glass.promptDark} w-full max-w-sm min-w-[20rem] rounded-[28px] px-6 py-10 transition-colors duration-200`}>
-            <div className="space-y-4 text-center">
-              <div className="space-y-3">
-                <Globe className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-theme-text">
-                  {avatarToPublish.published ? 'Unpublish avatar' : 'Publish avatar'}
-                </h3>
-                <p className="text-base font-raleway font-normal text-theme-white">
-                  {avatarToPublish.published
-                    ? `Are you sure you want to unpublish "${avatarToPublish.name}"? It will no longer be visible to other users.`
-                    : `Are you sure you want to publish "${avatarToPublish.name}"? It will be visible to other users.`
-                  }
-                </p>
-              </div>
-              <div className="flex justify-center gap-3">
-                <button
-                  type="button"
-                  className={buttons.ghost}
-                  onClick={() => setAvatarToPublish(null)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className={buttons.primary}
-                  onClick={confirmPublish}
-                >
-                  {avatarToPublish.published ? 'Unpublish' : 'Publish'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete image confirmation dialog */}
-      {imageToDelete && (
-        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 px-4 py-10">
-          <div className={`${glass.promptDark} w-full max-w-sm min-w-[20rem] rounded-[24px] px-6 py-10 transition-colors duration-200`}>
-            <div className="space-y-4 text-center">
-              <div className="space-y-3">
-                <Trash2 className="default-orange-icon mx-auto" />
-                <h3 className="text-xl font-raleway font-normal text-theme-text">Delete image</h3>
-                <p className="text-base font-raleway font-normal text-theme-white">
-                  Are you sure you want to delete this image? This action cannot be undone.
-                </p>
-              </div>
-              <div className="flex justify-center gap-3">
-                <button
-                  type="button"
-                  className={buttons.ghost}
-                  onClick={handleDeleteImageCancelled}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className={buttons.primary}
-                  onClick={handleDeleteImageConfirmed}
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Voice Upload Modal */}
-      {isVoiceUploadModalOpen && (
-        <div
-          className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 backdrop-blur-md px-4 py-10 overflow-y-auto"
-          onClick={(e) => {
-            // Close modal when clicking the backdrop
-            if (e.target === e.currentTarget) {
-              setIsVoiceUploadModalOpen(false);
-            }
-          }}
-        >
-          <style>{`body { overflow: hidden !important; }`}</style>
-          <div className="w-full max-w-2xl relative">
-            <button
-              onClick={() => setIsVoiceUploadModalOpen(false)}
-              className="absolute -top-12 right-0 p-2 rounded-full bg-theme-black/40 text-theme-white/60 hover:text-theme-text hover:bg-theme-black/60 transition-colors backdrop-blur-sm"
-              aria-label="Close modal"
-            >
-              <X className="w-6 h-6" />
-            </button>
-            <VoiceUploader
-              onSuccess={() => {
-                setIsVoiceUploadModalOpen(false);
-                setHasVoiceReady(true);
-                localStorage.setItem('daygen.voice-ready', 'true');
+          return (
+            <VerticalGalleryNav
+              images={avatarImages}
+              currentIndex={currentIdx}
+              onNavigate={(index) => {
+                if (index >= 0 && index < avatarImages.length) {
+                  const nextImage = avatarImages[index];
+                  setCurrentImageIndex(index);
+                  setSelectedFullImage(nextImage);
+                  syncJobUrlForImage(nextImage);
+                }
               }}
             />
+          );
+        })()}
+      </div>
+    )}
+
+    {/* Publish confirmation dialog */}
+    {publishConfirmation.show && (
+      <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 py-12">
+        <div className={`${glass.promptDark} rounded-[28px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+          <div className="text-center space-y-4">
+            <div className="space-y-3">
+              <Globe className="default-orange-icon mx-auto" />
+              <h3 className="text-xl font-raleway font-normal text-theme-text">
+                Publish Image
+              </h3>
+              <p className="text-base font-raleway font-normal text-theme-white">
+                Are you sure you want to publish this image? It will be visible to other users.
+              </p>
+            </div>
+            <div className="flex justify-center gap-3">
+              <button
+                onClick={cancelPublish}
+                className={buttons.ghost}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmPublish}
+                className={buttons.primary}
+              >
+                Publish
+              </button>
+            </div>
           </div>
         </div>
-      )}
+      </div>
+    )}
 
-      {/* Copy notification */}
-      {copyNotification && (
-        <div className={`fixed top-1/2 left-1/2 ${creationsModalAvatar ? 'z-[12000]' : 'z-[100]'} -translate-x-1/2 -translate-y-1/2 transform px-4 py-2 text-sm text-theme-white font-raleway transition-all duration-200 ${glass.promptDark} rounded-[28px]`}>
-          {copyNotification}
+    {/* Unpublish confirmation dialog */}
+    {unpublishConfirmation.show && (
+      <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 py-12">
+        <div className={`${glass.promptDark} rounded-[28px] w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+          <div className="text-center space-y-4">
+            <div className="space-y-3">
+              <Lock className="default-orange-icon mx-auto" />
+              <h3 className="text-xl font-raleway font-normal text-theme-text">
+                Unpublish Image
+              </h3>
+              <p className="text-base font-raleway font-normal text-theme-white">
+                Are you sure you want to unpublish this image? It will no longer be visible to other users.
+              </p>
+            </div>
+            <div className="flex justify-center gap-3">
+              <button
+                onClick={cancelUnpublish}
+                className={buttons.ghost}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmUnpublish}
+                className={buttons.primary}
+              >
+                Unpublish
+              </button>
+            </div>
+          </div>
         </div>
-      )}
-      {/* Rename Modal */}
-      <Suspense fallback={null}>
-        <RenameAvatarModal
-          open={renameModalOpen}
-          onClose={() => {
-            setRenameModalOpen(false);
-            setAvatarToRename(null);
-          }}
-          avatarName={avatarToRename?.name ?? ""}
-          onRename={handleRenameSubmit}
-          onValidate={handleValidateName}
-        />
-      </Suspense>
-    </div>
-  );
+      </div>
+    )}
+
+    {/* Add to folder dialog */}
+    {addToFolderDialog && selectedImageForFolder && (
+      <div className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/80 py-12">
+        <div className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+          <div className="text-center space-y-4">
+            <div className="space-y-3">
+              <FolderPlus className="default-orange-icon mx-auto" />
+              <h3 className="text-xl font-raleway font-normal text-theme-text">Manage Folders</h3>
+              <p className="text-base font-raleway font-normal text-theme-white">
+                Check folders to add or remove this item from.
+              </p>
+            </div>
+
+            <div className="max-h-64 overflow-y-auto space-y-4 custom-scrollbar">
+              {folders.length === 0 ? (
+                <div className="text-center py-4">
+                  <FolderIcon className="w-8 h-8 text-theme-white/30 mx-auto mb-2" />
+                  <p className="text-base text-theme-white/50 mb-4">No folders available</p>
+                  <div className="flex justify-start">
+                    <button
+                      onClick={() => {
+                        navigate(`${studioBasePath}/image`);
+                      }}
+                      className="inline-flex items-center gap-1 text-sm text-theme-white hover:text-theme-text transition-colors duration-200"
+                      title="Create new folder"
+                      aria-label="Create new folder"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add folder
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {folders.map((folder) => {
+                    const isInFolder = pendingFolderSelections.has(folder.id);
+                    return (
+                      <div
+                        key={folder.id}
+                        className={`w-full p-2 rounded-lg border transition-all duration-200 text-left flex items-center gap-3 ${isInFolder
+                          ? "bg-theme-white/10 border-theme-white shadow-lg shadow-theme-white/20"
+                          : "bg-transparent border-theme-dark hover:bg-theme-dark/40 hover:border-theme-mid"
+                          }`}
+                      >
+                        <label className="flex items-center gap-3 cursor-pointer flex-1 min-w-0">
+                          <input
+                            type="checkbox"
+                            checked={isInFolder}
+                            onChange={() => handleToggleImageInFolder(selectedImageForFolder, folder.id)}
+                            className="sr-only"
+                          />
+                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${isInFolder
+                            ? "border-theme-white bg-theme-white"
+                            : "border-theme-mid hover:border-theme-text/50"
+                            }`}>
+                            {isInFolder ? (
+                              <svg className="w-3 h-3 text-theme-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            ) : (
+                              <div className="w-2 h-2 bg-transparent rounded"></div>
+                            )}
+                          </div>
+                          <div className="flex-shrink-0">
+                            {folder.customThumbnail ? (
+                              <div className="w-5 h-5 rounded-lg overflow-hidden">
+                                <img
+                                  src={folder.customThumbnail}
+                                  alt={`${folder.name} thumbnail`}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            ) : isInFolder ? (
+                              <div className="w-5 h-5 bg-theme-white/20 rounded-lg flex items-center justify-center">
+                                <FolderIcon className="w-3 h-3 text-theme-text" />
+                              </div>
+                            ) : (
+                              <FolderIcon className="w-5 h-5 text-theme-white/60" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className={`text-sm font-raleway truncate ${isInFolder ? 'text-theme-text' : 'text-theme-text/80'
+                              }`}>
+                              {folder.name}
+                            </div>
+                            <div className={`text-xs ${isInFolder ? 'text-theme-text/70' : 'text-theme-white/50'
+                              }`}>
+                              {folder.imageIds.length} images
+                              {isInFolder && " (added)"}
+                            </div>
+                          </div>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteFolderClick(folder.id);
+                          }}
+                          className="flex-shrink-0 p-1 rounded-lg hover:bg-theme-white/10 text-theme-white/60 hover:text-theme-text transition-colors duration-200"
+                          aria-label={`Delete folder ${folder.name}`}
+                          title="Delete folder"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {folders.length > 0 && (
+              <div className="flex justify-start">
+                <button
+                  onClick={() => {
+                    navigate(`${studioBasePath}/image`);
+                  }}
+                  className="inline-flex items-center gap-1 text-sm text-theme-white hover:text-theme-text transition-colors duration-200"
+                  aria-label="Create new folder"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add folder
+                </button>
+              </div>
+            )}
+
+            <div className="flex justify-center gap-3">
+              <button
+                onClick={handleAddToFolderCancel}
+                className={buttons.ghost}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddToFolderConfirm}
+                className={buttons.primary}
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Delete folder confirmation dialog */}
+    {deleteFolderConfirmation.show && deleteFolderConfirmation.folderId && (
+      <div className="fixed inset-0 z-[120] flex items-center justify-center bg-theme-black/80 py-12">
+        <div className={`${glass.promptDark} rounded-2xl w-full max-w-sm min-w-[28rem] py-12 px-6 transition-colors duration-200`}>
+          <div className="text-center space-y-4">
+            <div className="space-y-3">
+              <Trash2 className="default-orange-icon mx-auto" />
+              <h3 className="text-xl font-raleway font-normal text-theme-text">Delete Folder</h3>
+              <p className="text-base font-raleway font-normal text-theme-white">
+                Are you sure you want to delete this folder? This action cannot be undone. The images will remain in your gallery.
+              </p>
+            </div>
+            <div className="flex justify-center gap-3">
+              <button
+                onClick={handleCancelDeleteFolder}
+                className={buttons.ghost}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDeleteFolder}
+                className={buttons.primary}
+              >
+                Delete Folder
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {avatarToDelete && (
+      <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 px-4 py-10">
+        <div className={`${glass.promptDark} w-full max-w-sm min-w-[20rem] rounded-[28px] px-6 py-10 transition-colors duration-200`}>
+          <div className="space-y-4 text-center">
+            <div className="space-y-3">
+              <Trash2 className="default-orange-icon mx-auto" />
+              <h3 className="text-xl font-raleway font-normal text-theme-text">Delete Avatar</h3>
+              <p className="text-base font-raleway font-normal text-theme-white">
+                Are you sure you want to delete "{avatarToDelete.name}"? This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex justify-center gap-3">
+              <button
+                type="button"
+                className={buttons.ghost}
+                onClick={() => setAvatarToDelete(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={buttons.primary}
+                onClick={confirmDelete}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {avatarToPublish && (
+      <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 px-4 py-10">
+        <div className={`${glass.promptDark} w-full max-w-sm min-w-[20rem] rounded-[28px] px-6 py-10 transition-colors duration-200`}>
+          <div className="space-y-4 text-center">
+            <div className="space-y-3">
+              <Globe className="default-orange-icon mx-auto" />
+              <h3 className="text-xl font-raleway font-normal text-theme-text">
+                {avatarToPublish.published ? 'Unpublish avatar' : 'Publish avatar'}
+              </h3>
+              <p className="text-base font-raleway font-normal text-theme-white">
+                {avatarToPublish.published
+                  ? `Are you sure you want to unpublish "${avatarToPublish.name}"? It will no longer be visible to other users.`
+                  : `Are you sure you want to publish "${avatarToPublish.name}"? It will be visible to other users.`
+                }
+              </p>
+            </div>
+            <div className="flex justify-center gap-3">
+              <button
+                type="button"
+                className={buttons.ghost}
+                onClick={() => setAvatarToPublish(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={buttons.primary}
+                onClick={confirmPublish}
+              >
+                {avatarToPublish.published ? 'Unpublish' : 'Publish'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Delete image confirmation dialog */}
+    {imageToDelete && (
+      <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 px-4 py-10">
+        <div className={`${glass.promptDark} w-full max-w-sm min-w-[20rem] rounded-[24px] px-6 py-10 transition-colors duration-200`}>
+          <div className="space-y-4 text-center">
+            <div className="space-y-3">
+              <Trash2 className="default-orange-icon mx-auto" />
+              <h3 className="text-xl font-raleway font-normal text-theme-text">Delete image</h3>
+              <p className="text-base font-raleway font-normal text-theme-white">
+                Are you sure you want to delete this image? This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex justify-center gap-3">
+              <button
+                type="button"
+                className={buttons.ghost}
+                onClick={handleDeleteImageCancelled}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={buttons.primary}
+                onClick={handleDeleteImageConfirmed}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Voice Upload Modal */}
+    {isVoiceUploadModalOpen && (
+      <div
+        className="fixed inset-0 z-[11000] flex items-center justify-center bg-theme-black/80 backdrop-blur-md px-4 py-10 overflow-y-auto"
+        onClick={(e) => {
+          // Close modal when clicking the backdrop
+          if (e.target === e.currentTarget) {
+            setIsVoiceUploadModalOpen(false);
+          }
+        }}
+      >
+        <style>{`body { overflow: hidden !important; }`}</style>
+        <div className="w-full max-w-2xl relative">
+          <button
+            onClick={() => setIsVoiceUploadModalOpen(false)}
+            className="absolute -top-12 right-0 p-2 rounded-full bg-theme-black/40 text-theme-white/60 hover:text-theme-text hover:bg-theme-black/60 transition-colors backdrop-blur-sm"
+            aria-label="Close modal"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <VoiceUploader
+            onSuccess={() => {
+              setIsVoiceUploadModalOpen(false);
+              setHasVoiceReady(true);
+              localStorage.setItem('daygen.voice-ready', 'true');
+            }}
+          />
+        </div>
+      </div>
+    )}
+
+    {/* Copy notification */}
+    {copyNotification && (
+      <div className={`fixed top-1/2 left-1/2 ${creationsModalAvatar ? 'z-[12000]' : 'z-[100]'} -translate-x-1/2 -translate-y-1/2 transform px-4 py-2 text-sm text-theme-white font-raleway transition-all duration-200 ${glass.promptDark} rounded-[28px]`}>
+        {copyNotification}
+      </div>
+    )}
+    {/* Rename Modal */}
+    <Suspense fallback={null}>
+      <RenameAvatarModal
+        open={renameModalOpen}
+        onClose={() => {
+          setRenameModalOpen(false);
+          setAvatarToRename(null);
+        }}
+        avatarName={avatarToRename?.name ?? ""}
+        onRename={handleRenameSubmit}
+        onValidate={handleValidateName}
+      />
+    </Suspense>
+  </div>
+);
 }
