@@ -485,8 +485,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const [isAddMeFlow, setIsAddMeFlow] = useState(false);
   const { images: galleryImages } = useGalleryImages();
 
-  // Find the Me avatar for dedicated "Add yourself" feature
-  const meAvatar = useMemo(() => avatars.find(a => a.isMe), [avatars]);
+
 
   // Compute if any menu is open to keep all icons visible
   const anyMenuOpen = useMemo(() => {
@@ -1197,7 +1196,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       setIsPanelOpen(true);
     }
     event.target.value = "";
-  }, [processImageFile]);
+  }, [processImageFile, setIsAddMeFlow]);
 
   const handleAddMeDragEnter = useCallback((event: DragEvent) => {
     event.preventDefault();
@@ -1221,7 +1220,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       await processImageFile(file);
       setIsPanelOpen(true);
     }
-  }, [processImageFile]);
+  }, [processImageFile, setIsAddMeFlow]);
 
   const handleSaveAvatar = useCallback(async () => {
     // Prevent duplicate saves from multiple rapid clicks
@@ -1229,7 +1228,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     if (!selection) return;
 
     const normalizedName = avatarName.trim() || "New Avatar";
-    const shouldSetAsMe = options?.isMe ?? false;
+
 
     // Check for duplicate avatar names (case-insensitive)
     const isDuplicate = avatars.some(
@@ -1329,7 +1328,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     } finally {
       setIsSaving(false);
     }
-  }, [avatarName, avatars, isAddMeFlow, isSaving, persistAvatars, selection, user?.id, token]);
+  }, [avatarName, avatars, isAddMeFlow, isSaving, persistAvatars, selection, user?.id, token, setIsAddMeFlow]);
 
   const resetPanel = useCallback(() => {
     setIsPanelOpen(false);
@@ -1339,7 +1338,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     setIsDragging(false);
     setIsAddMeFlow(false);
     setIsSaving(false);
-  }, []);
+  }, [setIsAddMeFlow]);
 
   const handleAvatarNameChange = useCallback((name: string) => {
     setAvatarName(name);
