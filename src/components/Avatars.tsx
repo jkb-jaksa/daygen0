@@ -1096,22 +1096,9 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     });
   }, []);
 
-  const handleReorderSelectionImages = useCallback((draggedImageId: string, targetIndex: number) => {
+  const handleReorderSelectionImages = useCallback((reorderedImages: AvatarImage[]) => {
     setSelection(prev => {
-      if (!prev || !prev.images) return prev;
-
-      const draggedImage = prev.images.find(img => img.id === draggedImageId);
-      if (!draggedImage) return prev;
-
-      // Remove the dragged image from its current position
-      const filteredImages = prev.images.filter(img => img.id !== draggedImageId);
-
-      // Insert at the target position
-      const reorderedImages = [
-        ...filteredImages.slice(0, targetIndex),
-        draggedImage,
-        ...filteredImages.slice(targetIndex),
-      ];
+      if (!prev) return prev;
 
       // Update the primary image URL (first image is always primary)
       const newPrimaryUrl = reorderedImages[0]?.url ?? prev.imageUrl;

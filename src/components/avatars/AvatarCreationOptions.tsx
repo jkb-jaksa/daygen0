@@ -1,8 +1,9 @@
 import { memo, useRef, useEffect, useState, useCallback } from "react";
 import { Upload, X, Check, Pencil, Mic, Image as ImageIcon, Plus, Star } from "lucide-react";
+import { Reorder, useDragControls, AnimatePresence } from "framer-motion";
 import { buttons } from "../../styles/designSystem";
 import { createCardImageStyle } from "../../utils/cardImageStyle";
-import type { AvatarSelection } from "./types";
+import type { AvatarSelection, AvatarImage } from "./types";
 
 const MAX_AVATAR_IMAGES = 5;
 
@@ -17,7 +18,7 @@ export interface AvatarCreationOptionsProps {
   onClearSelection: () => void;
   onProcessFiles: (files: File[]) => void;
   onRemoveImage?: (imageId: string) => void;
-  onReorderImages?: (draggedImageId: string, targetIndex: number) => void;
+  onReorderImages?: (images: AvatarImage[]) => void;
   onDragStateChange: (dragging: boolean) => void;
   onUploadError: (message: string | null) => void;
   onVoiceClick?: (voiceId: string) => void;
@@ -46,8 +47,6 @@ function AvatarCreationOptionsComponent({
   const [isEditingName, setIsEditingName] = useState(true);
   const dragCounterRef = useRef(0);
   const [draggingOverSlot, setDraggingOverSlot] = useState<number | null>(null);
-  const [draggedImageId, setDraggedImageId] = useState<string | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   // Auto-focus the name input when an avatar is selected
   useEffect(() => {
@@ -176,156 +175,99 @@ function AvatarCreationOptionsComponent({
       <div className="w-full max-w-4xl mx-auto">
         {hasImages ? (
           <div className="flex flex-col gap-4">
-            {/* Image Grid */}
-            <div className="grid grid-cols-5 gap-3 w-full max-w-[28rem] mx-auto">
-              {Array.from({ length: MAX_AVATAR_IMAGES }).map((_, index) => {
-                const image = images[index];
-                const isEmptySlot = !image;
-                const isPrimary = index === 0;
+            {/* Image Grid with Framer Motion Reorder */}
+            <Reorder.Group
+              as="div"
+              axis="x"
+              values={images}
+              onReorder={(newOrder) => onReorderImages?.(newOrder)}
+              className="grid grid-cols-5 gap-3 w-full max-w-[28rem] mx-auto"
+            >
+              {images.map((image, i) => (
+                <Reorder.Item
+                  key={image.id}
+                  value={image}
+                  className="relative aspect-square rounded-xl overflow-hidden border border-theme-dark/60 bg-theme-black/60 group cursor-grab active:cursor-grabbing"
+                  style={createCardImageStyle(image.url)}
+                  whileHover={{ scale: 1.02 }}
+                  whileDrag={{ scale: 1.1, zIndex: 50, cursor: 'grabbing' }}
+                >
+                  <img
+                    src={image.url}
+                    alt={`Avatar image ${i + 1}`}
+                    className="w-full h-full object-cover pointer-events-none"
+                    draggable={false}
+                  />
+                  {/* Primary indicator (first in list) */}
+                  {i === 0 && (
+                    <div className="absolute top-1 left-1 bg-theme-black/80 rounded-full p-1 z-10" title="Primary image">
+                      <Star className="w-2.5 h-2.5 text-yellow-400 fill-yellow-400" />
+                    </div>
+                  )}
+                  {/* Remove button */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemoveImage?.(image.id);
+                    }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className="absolute top-1 right-1 bg-theme-black/80 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-theme-black z-10"
+                    aria-label="Remove image"
+                  >
+                    <X className="w-3 h-3 text-theme-white hover:text-theme-text" />
+                  </button>
+                </Reorder.Item>
+              ))}
 
-                if (isEmptySlot && canAddMore) {
-                  // Only the first empty slot (next available) should be interactive
-                  const isNextAvailable = index === images.length;
-                  const isSlotDragActive = draggingOverSlot === index;
+              {/* Render Empty Slots */}
+              {Array.from({ length: MAX_AVATAR_IMAGES - images.length }).map((_, index) => {
+                const isNextAvailable = index === 0 && canAddMore;
+                const slotIndex = images.length + index;
+                const isSlotDragActive = draggingOverSlot === slotIndex;
 
-                  if (isNextAvailable) {
-                    // This is the next slot to be filled - make it interactive
-                    return (
-                      <button
-                        key={`empty-${index}`}
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        onDragEnter={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setDraggingOverSlot(index);
-                        }}
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                        }}
-                        onDragLeave={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setDraggingOverSlot(null);
-                        }}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setDraggingOverSlot(null);
-                          handleFiles(Array.from(e.dataTransfer?.files ?? []));
-                        }}
-                        className={`aspect-square rounded-xl border-2 border-dashed transition-all duration-200 flex items-center justify-center ${isSlotDragActive ? 'border-theme-text bg-theme-text/30 shadow-[0_0_32px_rgba(255,255,255,0.25)]' : 'border-theme-white/20 hover:border-theme-text/50 hover:bg-theme-text/5'
-                          }`}
-                      >
-                        <Plus className="w-5 h-5 text-theme-white/40" />
-                      </button>
-                    );
-                  } else {
-                    // Future empty slots - not yet available for interaction
-                    return (
-                      <div
-                        key={`empty-${index}`}
-                        className="aspect-square rounded-xl border border-dashed border-theme-white/10 bg-theme-black/20"
-                      />
-                    );
-                  }
-                } else if (isEmptySlot) {
-                  // Empty slot - max reached
+                if (isNextAvailable) {
+                  return (
+                    <button
+                      key={`empty-${slotIndex}`}
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      onDragEnter={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setDraggingOverSlot(slotIndex);
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      onDragLeave={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setDraggingOverSlot(null);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setDraggingOverSlot(null);
+                        handleFiles(Array.from(e.dataTransfer?.files ?? []));
+                      }}
+                      className={`aspect-square rounded-xl border-2 border-dashed transition-all duration-200 flex items-center justify-center ${isSlotDragActive ? 'border-theme-text bg-theme-text/30 shadow-[0_0_32px_rgba(255,255,255,0.25)]' : 'border-theme-white/20 hover:border-theme-text/50 hover:bg-theme-text/5'
+                        }`}
+                    >
+                      <Plus className="w-5 h-5 text-theme-white/40" />
+                    </button>
+                  );
+                } else {
                   return (
                     <div
-                      key={`empty-${index}`}
-                      className="aspect-square rounded-xl border border-theme-white/10 bg-theme-black/20"
+                      key={`empty-${slotIndex}`}
+                      className="aspect-square rounded-xl border border-dashed border-theme-white/10 bg-theme-black/20"
                     />
                   );
                 }
-
-                // Image slot
-                const isDraggedOver = dragOverIndex === index && draggedImageId !== image.id;
-                const isBeingDragged = draggedImageId === image.id;
-
-                return (
-                  <div
-                    key={image.id}
-                    draggable
-                    onDragStart={(e) => {
-                      setDraggedImageId(image.id);
-                      e.dataTransfer.effectAllowed = 'move';
-                      e.dataTransfer.setData('text/plain', image.id);
-                    }}
-                    onDragEnd={() => {
-                      setDraggedImageId(null);
-                      setDragOverIndex(null);
-                    }}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (draggedImageId && draggedImageId !== image.id) {
-                        setDragOverIndex(index);
-                      }
-                    }}
-                    onDragEnter={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (draggedImageId && draggedImageId !== image.id) {
-                        setDragOverIndex(index);
-                      }
-                    }}
-                    onDragLeave={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      // Only clear if leaving to outside the grid
-                      const relatedTarget = e.relatedTarget as HTMLElement;
-                      if (!relatedTarget?.closest?.('[data-image-slot]')) {
-                        setDragOverIndex(null);
-                      }
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (draggedImageId && draggedImageId !== image.id) {
-                        onReorderImages?.(draggedImageId, index);
-                      }
-                      setDraggedImageId(null);
-                      setDragOverIndex(null);
-                    }}
-                    data-image-slot
-                    className={`relative aspect-square rounded-xl overflow-hidden border bg-theme-black/60 group cursor-grab active:cursor-grabbing transition-all duration-200 ${isDraggedOver
-                        ? 'border-theme-text border-2 scale-105 shadow-[0_0_24px_rgba(255,255,255,0.3)]'
-                        : isBeingDragged
-                          ? 'opacity-50 border-theme-dark/60'
-                          : 'border-theme-dark/60 hover:border-theme-mid'
-                      }`}
-                    style={createCardImageStyle(image.url)}
-                  >
-                    <img
-                      src={image.url}
-                      alt={`Avatar image ${index + 1}`}
-                      className="w-full h-full object-cover pointer-events-none"
-                      draggable={false}
-                    />
-                    {/* Primary indicator */}
-                    {isPrimary && (
-                      <div className="absolute top-1 left-1 bg-theme-black/80 rounded-full p-1" title="Primary image">
-                        <Star className="w-2.5 h-2.5 text-yellow-400 fill-yellow-400" />
-                      </div>
-                    )}
-                    {/* Remove button */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onRemoveImage?.(image.id);
-                      }}
-                      className="absolute top-1 right-1 bg-theme-black/80 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-theme-black"
-                      aria-label="Remove image"
-                    >
-                      <X className="w-3 h-3 text-theme-white hover:text-theme-text" />
-                    </button>
-                  </div>
-                );
               })}
-            </div>
+            </Reorder.Group>
 
             {/* Avatar Name Input */}
             <div className="w-full max-w-[28rem] mx-auto">
@@ -357,7 +299,7 @@ function AvatarCreationOptionsComponent({
                 ) : (
                   <>
                     <p
-                      className="flex-1 text-base font-raleway font-normal text-theme-text break-words line-clamp-1"
+                      className="flex-1 h-[32px] flex items-center text-base font-raleway font-normal text-theme-text break-words line-clamp-1"
                       title={avatarName}
                     >
                       {avatarName || "Enter name..."}

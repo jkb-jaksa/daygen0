@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { X, User } from "lucide-react";
-import type { AvatarSelection } from "./types";
+import type { AvatarSelection, AvatarImage } from "./types";
 import AvatarCreationOptions from "./AvatarCreationOptions";
 import { glass } from "../../styles/designSystem";
 
@@ -17,7 +17,7 @@ interface AvatarCreationModalProps {
   onClearSelection: () => void;
   onProcessFile: (file: File) => void;
   onRemoveImage?: (imageId: string) => void;
-  onReorderImages?: (draggedImageId: string, targetIndex: number) => void;
+  onReorderImages?: (reorderedImages: AvatarImage[]) => void;
   onDragStateChange: (dragging: boolean) => void;
   onUploadError: (message: string | null) => void;
 }
