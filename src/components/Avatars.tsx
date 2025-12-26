@@ -473,8 +473,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const hasAvatars = avatars.length > 0;
   // Check if we're loading the "me" section (when avatarSlug is 'me' but avatar data isn't loaded yet)
   const isLoadingMeSection = avatarSlug === 'me' && !creationsModalAvatar && avatars.length === 0;
-  const [draggedImageId, setDraggedImageId] = useState<string | null>(null);
-  const [dragOverSlotIndex, setDragOverSlotIndex] = useState<number | null>(null);
+
   const [isVoiceUploadModalOpen, setIsVoiceUploadModalOpen] = useState(false);
   const [hasVoiceReady, setHasVoiceReady] = useState(() => {
     // Initialize from localStorage for persistence across page refreshes
@@ -1027,36 +1026,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     [commitAvatarUpdate],
   );
 
-  const handleReorderAvatarImages = useCallback(
-    (avatarId: string, draggedImageId: string, targetIndex: number) => {
-      const targetAvatar = avatarsRef.current.find(avatar => avatar.id === avatarId);
-      if (!targetAvatar) {
-        setAvatarImageUploadError("We couldn't find that avatar.");
-        return;
-      }
 
-      const currentImages = targetAvatar.images;
-      const draggedImage = currentImages.find(image => image.id === draggedImageId);
-      if (!draggedImage) {
-        setAvatarImageUploadError("We couldn't find the dragged image.");
-        return;
-      }
-
-      // Remove the dragged image from its current position
-      const filteredImages = currentImages.filter(image => image.id !== draggedImageId);
-
-      // Insert the dragged image at the target position
-      const reorderedImages = [
-        ...filteredImages.slice(0, targetIndex),
-        draggedImage,
-        ...filteredImages.slice(targetIndex),
-      ];
-
-      setAvatarImageUploadError(null);
-      commitAvatarUpdate(avatarId, () => reorderedImages);
-    },
-    [commitAvatarUpdate],
-  );
 
   const openAvatarImageUploader = useCallback(() => {
     if (!creationsModalAvatar) return;
@@ -1086,7 +1056,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   );
 
   const processImageFile = useCallback((file: File): Promise<void> => {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       if (!isSupportedAvatarFile(file)) {
         setUploadError("Please choose a JPEG, PNG, or WebP image file.");
         resolve(); // Resolve even on validation error to not break the flow
