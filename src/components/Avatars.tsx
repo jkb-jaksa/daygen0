@@ -2112,8 +2112,8 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
           {avatar.images.length > 1 && (
             <div className="absolute bottom-16 left-2 right-2 z-10 hidden lg:block">
               <div className="bg-theme-black/60 backdrop-blur-sm rounded-lg px-2 py-1.5">
-                <div className="flex flex-row gap-1 sm:gap-1.5 overflow-x-auto scrollbar-thin scrollbar-thumb-theme-mid/30 scrollbar-track-transparent">
-                  {avatar.images.map((image, index) => {
+                <div className="grid grid-cols-4 gap-1 sm:gap-1.5">
+                  {avatar.images.slice(0, 4).map((image, index) => {
                     const isPrimary = image.id === avatar.primaryImageId;
                     return (
                       <button
@@ -2121,9 +2121,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                         type="button"
                         onClick={(event) => {
                           event.stopPropagation();
+                          setCreationsModalAvatar(avatar);
                           openAvatarFullSizeView(image.id);
                         }}
-                        className={`flex-shrink-0 h-10 w-10 sm:h-12 sm:w-12 rounded-lg overflow-hidden border transition-colors duration-200 cursor-pointer ${isPrimary
+                        className={`aspect-square w-full rounded-lg overflow-hidden border transition-colors duration-200 cursor-pointer ${isPrimary
                           ? 'border-2 border-theme-text'
                           : 'border border-theme-mid hover:border-theme-text'
                           }`}
@@ -3385,7 +3386,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                         openAvatarFullSizeView(image.id);
                       }}
                       onPointerDown={(e) => e.stopPropagation()}
-                      className="image-action-btn parallax-large"
+                      className="image-action-btn parallax-large group"
                       aria-label="View full size"
                       onMouseEnter={(e) => {
                         showHoverTooltip(
@@ -3398,7 +3399,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                         hideHoverTooltip(viewTooltipId);
                       }}
                     >
-                      <Expand className="w-3 h-3 text-theme-white" />
+                      <Expand className="w-3 h-3 text-theme-white transition-colors group-hover:text-theme-text" />
                     </button>
 
                     {/* Remove button (only if more than 1 image) */}
@@ -3410,7 +3411,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                           handleRemoveAvatarImage(creationsModalAvatar.id, image.id);
                         }}
                         onPointerDown={(e) => e.stopPropagation()}
-                        className="image-action-btn parallax-large"
+                        className="image-action-btn parallax-large group"
                         aria-label="Remove image"
                         onMouseEnter={(e) => {
                           showHoverTooltip(
@@ -3423,7 +3424,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                           hideHoverTooltip(deleteTooltipId);
                         }}
                       >
-                        <X className="w-3 h-3 text-theme-white" />
+                        <X className="w-3 h-3 text-theme-white transition-colors group-hover:text-theme-text" />
                       </button>
                     )}
                   </div>
