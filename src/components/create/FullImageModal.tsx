@@ -1225,7 +1225,7 @@ const FullImageModal = memo(() => {
 
 
 
-            {/* Left side - Edit button for non-gallery and Variate button for all images */}
+            {/* Left side - Edit button (for both gallery and non-gallery) */}
             <div className={`image-gallery-actions absolute ${isMobile ? 'top-2 left-2' : 'top-4 left-4'} flex items-start gap-1 z-[40]`}>
               <div
                 className={`flex items-center gap-1 ${isMobile || editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || isImageActionMenuOpen
@@ -1233,8 +1233,8 @@ const FullImageModal = memo(() => {
                   : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
                   } transition-opacity duration-100`}
               >
-                {/* Edit button - Non-gallery only */}
-                {activeCategory !== 'gallery' && !isVideo && (
+                {/* Edit button - for all image categories (not videos) */}
+                {!isVideo && (
                   <div
                     className={`${editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}`
                       ? 'opacity-100'
@@ -1265,20 +1265,6 @@ const FullImageModal = memo(() => {
                   : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
                   } transition-opacity duration-100`}
               >
-                {/* Edit button - Gallery only */}
-                {activeCategory === 'gallery' && !isVideo && (
-                  <Suspense fallback={null}>
-                    <EditButtonMenu
-                      menuId={`fullsize-edit-${fullSizeImage.jobId}`}
-                      image={fullSizeImage}
-                      isFullSize={true}
-                      anyMenuOpen={editMenu?.id === `fullsize-edit-${fullSizeImage.jobId}` || state.imageActionMenu?.id === fullSizeImage.jobId}
-                      onMakeVideo={handleVideo}
-                      onChangeAngle={handleChangeAngle}
-                      onQuickEdit={handleQuickEdit}
-                    />
-                  </Suspense>
-                )}
 
                 {/* Delete, Like, More - hover-revealed (glass tooltip only, no native title) */}
                 <button

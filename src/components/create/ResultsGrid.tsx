@@ -170,7 +170,7 @@ const GridVideoItem = memo<GridVideoItemProps>(({
 const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, onFocusPrompt, filterIds }) => {
   const { user, storagePrefix } = useAuth();
   const { showToast } = useToast();
-  const { state, toggleItemSelection, isLoading, filteredItems: contextFilteredItems, addImage, openFullSize, loadMore, hasMore } = useGallery();
+  const { state, toggleItemSelection, setSelectedItems, isLoading, filteredItems: contextFilteredItems, addImage, openFullSize, loadMore, hasMore, galleryColumns, setBulkMode } = useGallery();
   const { isFullSizeOpen } = state;
 
   const { generateImage: generateGeminiImage } = useGeminiImageGeneration();
@@ -197,6 +197,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const [makeVideoModalState, setMakeVideoModalState] = useState<{ isOpen: boolean; initialPrompt: string; item: GalleryImageLike } | null>(null);
   const [isQuickEditLoading] = useState(false);
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement }>({});
+  // Track last selected index for shift-click range selection
+  const lastSelectedIndexRef = useRef<number | null>(null);
 
   // Reference modal state - track which item's references are being viewed
   const [referenceModalState, setReferenceModalState] = useState<{ isOpen: boolean; references: string[] } | null>(null);
@@ -609,17 +611,38 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     openFullSize(item, index, initialTime);
   }, [openFullSize]);
 
-  // Handle item click
-  const handleItemClick = useCallback((item: GalleryImageLike | GalleryVideoLike, index: number) => {
+  // Handle item click with shift-select support
+  const handleItemClick = useCallback((item: GalleryImageLike | GalleryVideoLike, index: number, event?: React.MouseEvent) => {
     if (isBulkMode) {
       const itemId = getItemIdentifier(item);
       if (itemId) {
-        toggleItemSelection(itemId);
+        // Handle shift-click for range selection
+        if (event?.shiftKey && lastSelectedIndexRef.current !== null && lastSelectedIndexRef.current !== index) {
+          const startIdx = Math.min(lastSelectedIndexRef.current, index);
+          const endIdx = Math.max(lastSelectedIndexRef.current, index);
+          const newSelection = new Set(selectedItems);
+
+          for (let i = startIdx; i <= endIdx; i++) {
+            const rangeItemId = getItemIdentifier(filteredItems[i]);
+            if (rangeItemId) {
+              newSelection.add(rangeItemId);
+            }
+          }
+
+          setSelectedItems(newSelection);
+        } else {
+          // If unselecting the last item, exit bulk mode
+          if (selectedItems.has(itemId) && selectedItems.size === 1) {
+            setBulkMode(false);
+          }
+          toggleItemSelection(itemId);
+        }
+        lastSelectedIndexRef.current = index;
       }
     } else {
       guardedOpenFullSize(item, index);
     }
-  }, [guardedOpenFullSize, isBulkMode, toggleItemSelection]);
+  }, [guardedOpenFullSize, isBulkMode, toggleItemSelection, selectedItems, setSelectedItems, filteredItems]);
 
   // Handle item right click
   const handleItemRightClick = useCallback((event: React.MouseEvent, item: GalleryImageLike | GalleryVideoLike) => {
@@ -985,8 +1008,29 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
 
   // Determine grid columns based on category
   const isGalleryView = activeCategory === 'gallery' || activeCategory === 'my-folders';
+
+  // Map galleryColumns (3-8) to responsive grid classes for gallery view
+  const getGalleryGridCols = (cols: number) => {
+    switch (cols) {
+      case 3:
+        return 'grid-cols-2 sm:grid-cols-3';
+      case 4:
+        return 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4';
+      case 5:
+        return 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5';
+      case 6:
+        return 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6';
+      case 7:
+        return 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7';
+      case 8:
+        return 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8';
+      default:
+        return 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5';
+    }
+  };
+
   const gridCols = isGalleryView
-    ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'
+    ? getGalleryGridCols(galleryColumns)
     : 'grid-cols-2 sm:grid-cols-3 xl:grid-cols-4';
 
   type ActiveJob = typeof generationState.activeJobs[number];
@@ -1107,7 +1151,10 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
       <div className={`space-y-4 ${className}`}>
         {statusBanner}
         {/* Grid */}
-        <div className={`grid ${gridCols} gap-2 w-full p-1`}>
+        <div
+          className={`grid gap-2 w-full p-1 ${!isGalleryView ? gridCols : ''} ${isBulkMode ? 'bulk-select-mode' : ''}`}
+          style={isGalleryView ? { gridTemplateColumns: `repeat(${galleryColumns}, minmax(0, 1fr))` } : undefined}
+        >
           {activeJobPlaceholders.map(renderActiveJobCard)}
           {filteredItems.map((item, index) => {
             const isSelected = isItemSelected(item);
@@ -1169,28 +1216,63 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
             return (
               <div
                 key={item.jobId || index}
-                className={`group flex flex-col overflow-hidden rounded-[24px] border transition-all duration-100 shadow-lg parallax-small cursor-pointer relative ${isSelected
+                className={`group flex flex-col overflow-hidden rounded-[24px] border transition-all duration-100 shadow-lg cursor-pointer relative ${!isBulkMode ? 'parallax-small' : ''} ${isSelected
                   ? 'border-theme-white bg-theme-black hover:bg-theme-dark'
                   : 'border-theme-dark bg-theme-black hover:bg-theme-dark hover:border-theme-mid'
-                  } ${isMenuActive ? 'parallax-active' : ''} ${shouldDim ? 'opacity-50' : ''} `}
-                onClick={() => {
+                  } ${isMenuActive && !isBulkMode ? 'parallax-active' : ''} ${shouldDim ? 'opacity-50' : ''} `}
+                onClick={(e) => {
                   console.log('[ResultsGrid] Card div onClick fired', { index, url: item.url });
-                  handleItemClick(item, index);
+                  handleItemClick(item, index, e);
                 }}
                 onContextMenu={(e) => handleItemRightClick(e, item)}
               >
-                {/* Selection indicator */}
-                {isBulkMode && (
-                  <div className="absolute top-2 left-2 z-[60]">
-                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${isItemSelected(item)
-                      ? 'bg-theme-accent border-theme-accent'
-                      : 'bg-theme-black/50 border-theme-white/50'
-                      }`}>
-                      {isItemSelected(item) && <Check className="w-4 h-4 text-theme-white" />}
-                    </div>
-                  </div>
-                )}
 
+                {/* Selection indicator - Consolidated Card-level Button */}
+                {(activeCategory === 'gallery' || activeCategory === 'my-folders' || isBulkMode) && (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      const itemId = getItemIdentifier(item);
+                      if (itemId) {
+                        if (!isBulkMode) {
+                          setBulkMode(true);
+                        }
+
+                        if (event.shiftKey && lastSelectedIndexRef.current !== null && lastSelectedIndexRef.current !== index) {
+                          const startIdx = Math.min(lastSelectedIndexRef.current, index);
+                          const endIdx = Math.max(lastSelectedIndexRef.current, index);
+                          const newSelection = new Set(selectedItems);
+                          for (let i = startIdx; i <= endIdx; i++) {
+                            const rangeItemId = getItemIdentifier(filteredItems[i]);
+                            if (rangeItemId) newSelection.add(rangeItemId);
+                          }
+                          setSelectedItems(newSelection);
+                        } else {
+                          // If unselecting the last item, exit bulk mode
+                          if (isSelected && selectedItems.size === 1) {
+                            setBulkMode(false);
+                          }
+                          toggleItemSelection(itemId);
+                        }
+                        lastSelectedIndexRef.current = index;
+                      }
+                    }}
+                    className={`absolute top-2 left-2 z-[60] image-action-btn image-action-btn--gallery transition-all duration-200 image-select-toggle ${isSelected
+                      ? '!bg-white/30 !border-theme-text !text-theme-text opacity-100 pointer-events-auto'
+                      : isBulkMode
+                        ? 'opacity-100 pointer-events-auto'
+                        : 'opacity-0 group-hover:opacity-100 pointer-events-auto'
+                      }`}
+                    aria-label={isSelected ? 'Unselect image' : 'Select image'}
+                  >
+                    {isSelected ? (
+                      <Check className="w-3.5 h-3.5 text-inherit" />
+                    ) : (
+                      <Square className="w-3.5 h-3.5 fill-none stroke-current" />
+                    )}
+                  </button>
+                )}
                 <div
                   className="relative aspect-square overflow-hidden card-media-frame"
                   data-has-image={Boolean(item.url)}
@@ -1201,31 +1283,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                   <div className="image-gallery-actions absolute top-2 left-2 right-2 flex items-start gap-2 z-[40]">
                     {/* Left side buttons */}
                     <div className="flex flex-col items-start gap-2">
-                      {/* Select checkbox - Gallery only */}
-                      {activeCategory === 'gallery' && (
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            const itemId = getItemIdentifier(item);
-                            if (itemId) {
-                              toggleItemSelection(itemId);
-                            }
-                          }}
-                          className={`image-action-btn image-action-btn--gallery parallax-large image-select-toggle ${isSelected
-                            ? 'image-select-toggle--active opacity-100 pointer-events-auto'
-                            : isBulkMode
-                              ? 'opacity-100 pointer-events-auto'
-                              : isMenuActive
-                                ? 'opacity-100 pointer-events-auto'
-                                : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                            }`}
-                          aria-pressed={isSelected}
-                          aria-label={isSelected ? 'Unselect image' : 'Select image'}
-                        >
-                          {isSelected ? <Check className="w-3 h-3" /> : <Square className="w-3 h-3" />}
-                        </button>
-                      )}
+
 
                       {/* Edit button - Create/Image only */}
                       {activeCategory !== 'gallery' && !isBulkMode && (
@@ -1254,19 +1312,6 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                         : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
                         }`}>
                         <div className="flex items-center gap-0.5">
-                          {/* Edit button - Gallery only */}
-                          {activeCategory === 'gallery' && (
-                            <Suspense fallback={null}>
-                              <EditButtonMenu
-                                menuId={`gallery-actions-${index}-${item.url}`}
-                                image={item}
-                                isGallery={true}
-                                anyMenuOpen={isMenuActive}
-                                onMakeVideo={() => handleVideo(item as GalleryImageLike)}
-                                onQuickEdit={() => handleQuickEdit(item as GalleryImageLike)}
-                              />
-                            </Suspense>
-                          )}
 
                           {/* Delete, Like, Info, More - Always shown (glass tooltip only, no native title) */}
                           <button
@@ -1783,135 +1828,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                       );
                     })()
                   }
-
-                  {/* Gallery Prompt Hover Button */}
-                  {
-                    shouldShowPromptDetails && isGalleryView && (
-                      <div className={`PromptDescriptionBar absolute bottom-0 left-0 right-0 transition-all duration-100 ease-in-out pointer-events-auto flex items-center justify-center z-10 ${isMenuActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                        }`}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {/* Button content */}
-                        <div className="relative z-10 w-full p-3 flex items-center justify-center">
-                          <button
-                            type="button"
-                            className="flex items-center gap-2 text-theme-white hover:text-theme-text transition-colors duration-200"
-                            aria-label="Show prompt"
-                            onMouseEnter={() => {
-                              const itemId = item.jobId || item.r2FileId || item.url;
-                              setHoveredPromptButton(itemId);
-                            }}
-                            onMouseLeave={() => {
-                              setHoveredPromptButton(null);
-                            }}
-                          >
-                            <FileText className="w-3.5 h-3.5" />
-                            <span className="text-xs font-raleway font-medium">Show prompt</span>
-                          </button>
-                        </div>
-                      </div>
-                    )
-                  }
-                </div >
-
-                {/* Gallery Prompt Popup - Outside card-media-frame to avoid clipping */}
-                {
-                  shouldShowPromptDetails && isGalleryView && (() => {
-                    const itemId = item.jobId || item.r2FileId || item.url;
-                    const isPopupVisible = hoveredPromptButton === itemId;
-                    return (
-                      <div
-                        className={`absolute bottom-0 left-0 right-0 transition-all duration-100 z-50 pointer-events-auto ${isPopupVisible ? 'opacity-100 visible' : 'opacity-0 invisible'
-                          }`}
-                        onMouseEnter={() => setHoveredPromptButton(itemId)}
-                        onMouseLeave={() => setHoveredPromptButton(null)}
-                      >
-                        <div className="PromptDescriptionBar rounded-lg text-theme-white px-4 py-3 mb-2 text-xs font-raleway shadow-xl">
-                          <div className="relative">
-                            <p className="leading-relaxed break-words whitespace-pre-wrap max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-theme-mid/40 scrollbar-track-transparent">
-                              {promptForDisplay}
-                              {promptForActions && (() => {
-                                const tooltipId = `copy-gallery-${item.jobId || item.r2FileId || index}`;
-                                return (
-                                  <>
-                                    <button
-                                      onClick={(e) => void handleCopyPrompt(promptForActions, e)}
-                                      onMouseDown={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                      }}
-                                      onMouseEnter={(e) => {
-                                        showHoverTooltip(e.currentTarget, tooltipId, { placement: 'above', offset: 2 });
-                                      }}
-                                      onMouseLeave={() => {
-                                        hideHoverTooltip(tooltipId);
-                                      }}
-                                      className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
-                                    >
-                                      <Copy className="w-3 h-3" />
-                                    </button>
-                                    <button
-                                      onClick={(e) => handleToggleSavePrompt(promptForActions, e)}
-                                      onMouseDown={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                      }}
-                                      onMouseEnter={(e) => {
-                                        showHoverTooltip(e.currentTarget, `save-${tooltipId}`, { placement: 'above', offset: 2 });
-                                      }}
-                                      onMouseLeave={() => {
-                                        hideHoverTooltip(`save-${tooltipId}`);
-                                      }}
-                                      className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle pointer-events-auto"
-                                    >
-                                      {isPromptSaved(promptForActions) ? (
-                                        <Bookmark className="w-3 h-3 fill-current" />
-                                      ) : (
-                                        <BookmarkPlus className="w-3 h-3" />
-                                      )}
-                                    </button>
-                                  </>
-                                );
-                              })()}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()
-                }
-
-                {/* Tooltips rendered via portal to avoid clipping - Gallery view */}
-                {
-                  promptForActions && shouldShowPromptDetails && isGalleryView && (() => {
-                    const tooltipId = `copy-gallery-${item.jobId || item.r2FileId || index}`;
-                    return (
-                      <>
-                        {createPortal(
-                          <div
-                            data-tooltip-for={tooltipId}
-                            className={`${tooltips.base} fixed`}
-                            style={{ zIndex: 9999 }}
-                          >
-                            Copy prompt
-                          </div>,
-                          document.body
-                        )}
-                        {createPortal(
-                          <div
-                            data-tooltip-for={`save-${tooltipId}`}
-                            className={`${tooltips.base} fixed`}
-                            style={{ zIndex: 9999 }}
-                          >
-                            {isPromptSaved(promptForActions) ? 'Prompt saved' : 'Save prompt'}
-                          </div>,
-                          document.body
-                        )}
-                      </>
-                    );
-                  })()
-                }
-              </div >
+                </div>
+              </div>
             );
           })}
           {/* Render remaining placeholder tiles to fill 8 slots for image/video categories */}
@@ -1925,24 +1843,27 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
               })
             );
           })()}
-        </div >
+        </div>
 
-        {hasMore && (
-          <div
-            ref={observerTarget}
-            className="flex justify-center pt-8 pb-12 w-full min-h-[60px]"
-          >
-            {isLoading && (
-              <div className="w-8 h-8 border-2 border-theme-white/30 border-t-theme-white rounded-full animate-spin"></div>
-            )}
-          </div>
-        )
+        {
+          hasMore && (
+            <div
+              ref={observerTarget}
+              className="flex justify-center pt-8 pb-12 w-full min-h-[60px]"
+            >
+              {isLoading && (
+                <div className="w-8 h-8 border-2 border-theme-white/30 border-t-theme-white rounded-full animate-spin"></div>
+              )}
+            </div>
+          )
         }
-        {!isGenerationCategory && (
-          <Suspense fallback={null}>
-            <GenerationProgress />
-          </Suspense>
-        )}
+        {
+          !isGenerationCategory && (
+            <Suspense fallback={null}>
+              <GenerationProgress />
+            </Suspense>
+          )
+        }
       </div >
       {/* Quick Edit Modal */}
       {

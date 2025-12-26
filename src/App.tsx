@@ -758,6 +758,29 @@ function RequireAuth({ children }: { children: ReactNode }) {
   return children;
 }
 
+/**
+ * Guard that requires the user to have a username set.
+ * Redirects to account page with requireUsername=true if username is missing.
+ * Must be used inside RequireAuth (user is guaranteed to exist).
+ */
+function RequireUsername({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  const location = useLocation();
+
+  // If user doesn't have a username, redirect to account page to set one
+  if (user && !user.username) {
+    // Don't redirect if already on account page (to avoid infinite loop)
+    if (location.pathname === '/account') {
+      return children;
+    }
+
+    console.log('[RequireUsername] User has no username, redirecting to /account');
+    return <Navigate to="/account?requireUsername=true" replace />;
+  }
+
+  return children;
+}
+
 function RouteFallback() {
   return (
     <div className="flex min-h-[50vh] items-center justify-center">
@@ -770,18 +793,21 @@ function RouteFallback() {
   );
 }
 
+
 function CreateProtectedLayout({ fallbackRoute = "/app" }: { fallbackRoute?: string } = {}) {
   return (
     <RequireAuth>
-      <GenerationProvider>
-        <GalleryProvider>
-          <Suspense fallback={<RouteFallback />}>
-            <AuthErrorBoundary fallbackRoute={fallbackRoute} context="creation">
-              <Outlet />
-            </AuthErrorBoundary>
-          </Suspense>
-        </GalleryProvider>
-      </GenerationProvider>
+      <RequireUsername>
+        <GenerationProvider>
+          <GalleryProvider>
+            <Suspense fallback={<RouteFallback />}>
+              <AuthErrorBoundary fallbackRoute={fallbackRoute} context="creation">
+                <Outlet />
+              </AuthErrorBoundary>
+            </Suspense>
+          </GalleryProvider>
+        </GenerationProvider>
+      </RequireUsername>
     </RequireAuth>
   );
 }
@@ -848,11 +874,13 @@ function AppContent() {
                 path="/gallery/*"
                 element={
                   <RequireAuth>
-                    <Suspense fallback={<RouteFallback />}>
-                      <AuthErrorBoundary fallbackRoute="/gallery" context="gallery">
-                        <GalleryRoutes />
-                      </AuthErrorBoundary>
-                    </Suspense>
+                    <RequireUsername>
+                      <Suspense fallback={<RouteFallback />}>
+                        <AuthErrorBoundary fallbackRoute="/gallery" context="gallery">
+                          <GalleryRoutes />
+                        </AuthErrorBoundary>
+                      </Suspense>
+                    </RequireUsername>
                   </RequireAuth>
                 }
               />
@@ -862,15 +890,17 @@ function AppContent() {
                 path="/edit"
                 element={(
                   <RequireAuth>
-                    <Suspense fallback={<RouteFallback />}>
-                      <AuthErrorBoundary fallbackRoute="/app" context="editing">
-                        <GenerationProvider>
-                          <GalleryProvider>
-                            <Edit />
-                          </GalleryProvider>
-                        </GenerationProvider>
-                      </AuthErrorBoundary>
-                    </Suspense>
+                    <RequireUsername>
+                      <Suspense fallback={<RouteFallback />}>
+                        <AuthErrorBoundary fallbackRoute="/app" context="editing">
+                          <GenerationProvider>
+                            <GalleryProvider>
+                              <Edit />
+                            </GalleryProvider>
+                          </GenerationProvider>
+                        </AuthErrorBoundary>
+                      </Suspense>
+                    </RequireUsername>
                   </RequireAuth>
                 )}
               />

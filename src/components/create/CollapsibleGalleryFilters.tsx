@@ -166,7 +166,7 @@ const CollapsibleGalleryFilters = memo<CollapsibleGalleryFiltersProps>(({ active
           </button>
 
           {/* Separator */}
-          <div className="w-px h-6 bg-theme-white/10 self-center" />
+          <div className="mx-2 w-px h-6 bg-theme-white/10 self-center" />
 
           <button
             onClick={handleToggleLiked}

@@ -78,6 +78,7 @@ export default function Account() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const rawNext = searchParams.get("next");
+  const requireUsernameParam = searchParams.get("requireUsername") === "true";
   const [storedNextPath, setStoredNextPath] = useState<string | null>(null);
 
   useEffect(() => {
@@ -411,12 +412,26 @@ export default function Account() {
     return <AccountAuthScreen nextPath={sanitizedNextPath ?? undefined} />;
   }
 
-  // Show return button when there's a next parameter
-  const showReturnButton = user && sanitizedNextPath && sanitizedNextPath !== "/app";
+  // Determine if username is required (user logged in without one, e.g., via Gmail OAuth)
+  const isUsernameRequired = requireUsernameParam && !user.username;
+
+  // Show return button when there's a next parameter and username is not required,
+  // OR username was required but user has now set a valid username
+  const showReturnButton = user && sanitizedNextPath && sanitizedNextPath !== "/app" && !isUsernameRequired;
 
   return (
     <main className="min-h-screen text-theme-text px-4 sm:px-6 lg:px-8 pt-[calc(var(--nav-h,4rem)+16px)] pb-8">
       <header className="max-w-5xl mx-auto mb-6 sm:mb-8">
+        {/* Warning banner when username is required */}
+        {isUsernameRequired && (
+          <div className="mb-4 p-4 bg-amber-500/20 border border-amber-500/50 rounded-lg">
+            <p className="text-amber-200 font-raleway text-sm text-center">
+              <strong>Please set your Profile URL (username) below to continue.</strong>
+              <br />
+              <span className="text-amber-200/80">This is required to access the app.</span>
+            </p>
+          </div>
+        )}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {showReturnButton && (
@@ -428,10 +443,12 @@ export default function Account() {
               </button>
             )}
           </div>
+          {/* Disable X button when username is required but not yet set */}
           <button
             onClick={handleBack}
-            className="p-2 hover:bg-theme-dark/50 rounded-lg transition-colors group"
-            title="Close account"
+            className={`p-2 rounded-lg transition-colors group ${isUsernameRequired ? 'opacity-30 cursor-not-allowed' : 'hover:bg-theme-dark/50'}`}
+            title={isUsernameRequired ? "Set your username first" : "Close account"}
+            disabled={isUsernameRequired}
           >
             <X className="w-5 h-5 text-theme-white group-hover:text-theme-text transition-colors rounded-full" />
           </button>

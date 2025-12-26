@@ -300,7 +300,8 @@ export default function Navbar() {
   }, [navigate, closeMenu, emitNavigateToCategory]);
 
   const currentUser = user;
-  const filteredNavItems = NAV_ITEMS.filter(item => item.label !== "my works" || currentUser);
+  const mobileNavItems = NAV_ITEMS.filter(item => item.label !== "my works" || currentUser);
+  const desktopNavItems = NAV_ITEMS.filter(item => item.label !== "my works");
 
   return (
     <div className="fixed top-0 left-0 right-0 z-[11000]" onMouseLeave={closeMenu}>
@@ -326,7 +327,7 @@ export default function Navbar() {
               className="parallax-large block h-5 w-5 m-0 p-0 object-contain object-left cursor-pointer"
             />
             <div className="hidden lg:flex h-full items-center gap-0 text-base font-raleway">
-              {filteredNavItems.map((item) => (
+              {desktopNavItems.map((item) => (
                 <NavLink
                   key={item.label}
                   to={item.path}
@@ -520,6 +521,37 @@ export default function Navbar() {
                   </button>
                 </Tooltip>
 
+                {/* My Works Button */}
+                <NavLink
+                  to="/gallery"
+                  className={({ isActive }) =>
+                    `relative overflow-hidden group parallax-small transition-colors duration-200 px-4 h-9 hidden lg:flex items-center rounded-full font-normal ${isActive ? "text-theme-text" : "text-theme-white hover:text-theme-text"}`
+                  }
+                  onMouseEnter={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setActiveItemPosition({
+                      top: rect.bottom + 8, // 8px gap
+                      left: rect.left + rect.width / 2 // Center alignment
+                    });
+                    setActiveMenu("my works");
+                  }}
+                  onFocus={() => {
+                    setActiveMenu("my works");
+                  }}
+                  onClick={() => {
+                    setActiveMenu(null);
+                    setMenuOpen(false);
+                  }}
+                >
+                  {({ isActive }) => (
+                    <>
+                      <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-full transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+                      <div className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-14 rounded-full blur-3xl bg-white transition-opacity duration-200 ${isActive ? 'opacity-0' : 'opacity-0 group-hover:opacity-10'}`} />
+                      <span className="relative z-10">my works</span>
+                    </>
+                  )}
+                </NavLink>
+
                 {/* Upgrade Button */}
                 <button
                   className="hidden lg:flex btn btn-white btn-compact items-center gap-1.5 font-raleway text-base font-medium parallax-large"
@@ -600,7 +632,7 @@ export default function Navbar() {
         <div
           className={`${glass.promptDark} rounded-2xl border border-theme-dark/50 shadow-2xl overflow-hidden min-w-[200px] backdrop-blur-xl`}
         >
-          <div className="p-2 flex flex-col gap-1">
+          <div className="flex flex-col gap-1">
             {activeMenu && (
               <div key={activeMenu} className="fade-in-200">
                 {activeMenu === "create" ? (
@@ -675,7 +707,7 @@ export default function Navbar() {
             <div className={`${glass.promptDark} border-t-0 px-4 sm:px-6 pb-4 sm:pb-6 pt-4 space-y-5 sm:space-y-6`}>
               <ThemeToggleButton showLabel={true} className="w-full justify-center gap-2" />
               <div className="space-y-1 sm:space-y-2">
-                {filteredNavItems.map((item) => (
+                {mobileNavItems.map((item) => (
                   <NavLink
                     key={`mobile-${item.label}`}
                     to={item.path}

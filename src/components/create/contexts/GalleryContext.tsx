@@ -6,6 +6,7 @@ import React, {
   useMemo,
   useEffect,
   useRef,
+  useState,
 } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useGalleryImages } from '../../../hooks/useGalleryImages';
@@ -412,12 +413,15 @@ type GalleryContextType = {
   loadMore: () => void;
   hasMore: boolean;
   currentContentType: 'image' | 'video' | undefined;
+  galleryColumns: number;
+  setGalleryColumns: (columns: number) => void;
 };
 
 const GalleryContext = createContext<GalleryContextType | null>(null);
 
 export function GalleryProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(galleryReducer, initialState);
+  const [galleryColumns, setGalleryColumns] = useState(5);
   const location = useLocation();
   const { storagePrefix, token: authToken } = useAuth();
   const {
@@ -1419,6 +1423,8 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     loadMore: wrappedLoadMore,
     hasMore,
     currentContentType,
+    galleryColumns,
+    setGalleryColumns,
   }), [
     state,
     setImages,
@@ -1473,6 +1479,7 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     hasMore,
     wrappedLoadMore,
     currentContentType,
+    galleryColumns,
   ]);
 
   return (

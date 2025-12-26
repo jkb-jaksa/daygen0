@@ -1733,6 +1733,45 @@ html[data-theme="day"] .card-media-frame::before {
   opacity: 0.35;
 }
 
+/* Disable card hover effects when in bulk select mode */
+.bulk-select-mode .card-media-frame:hover::before {
+  filter: blur(26px);
+  opacity: 0.45;
+}
+
+/* Disable ALL parallax effects inside bulk select mode */
+.bulk-select-mode .parallax-small,
+.bulk-select-mode .parallax-mid,
+.bulk-select-mode .parallax-large,
+.bulk-select-mode .parallax-small:hover,
+.bulk-select-mode .parallax-mid:hover,
+.bulk-select-mode .parallax-large:hover,
+.bulk-select-mode .parallax-small.parallax-active,
+.bulk-select-mode .parallax-mid.parallax-active,
+.bulk-select-mode .parallax-large.parallax-active {
+  transform: none !important;
+  transition: none !important;
+}
+
+/* Also disable mouse glow in bulk select mode */
+.bulk-select-mode .mouse-glow::after {
+  opacity: 0 !important;
+}
+
+/* Disable ALL hover visual effects on gallery cards in bulk select mode */
+.bulk-select-mode>.group {
+  transition: none !important;
+}
+
+.bulk-select-mode>.group:hover {
+  background-color: var(--theme-black) !important;
+  border-color: var(--theme-dark) !important;
+}
+
+.bulk-select-mode>.group.border-theme-white:hover {
+  border-color: var(--theme-white) !important;
+}
+
 /* Prompt bar hover/interaction styles */
 .promptbar {
   border-style: solid;

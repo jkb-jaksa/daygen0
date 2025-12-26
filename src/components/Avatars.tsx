@@ -1936,8 +1936,8 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                       className={`${isCompact ? 'text-[10px] md:text-sm text-center' : 'flex-1 text-base text-left px-3'} font-raleway font-normal text-theme-text break-words line-clamp-2`}
                       title={avatar.name}
                     >
-                      {avatar.isMe && <span className="text-cyan-400 mr-1.5">(me)</span>}
                       {avatar.name || (isMasterSection ? "Enter your name..." : "Enter name...")}
+                      {avatar.isMe && <span className="text-theme-white ml-1 font-light">(me)</span>}
                     </p>
                     {isCompact && !disableModalTrigger && (
                       <button
