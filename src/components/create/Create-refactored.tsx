@@ -18,8 +18,7 @@ const MasterSidebar = lazy(() => import('../master/MasterSidebar'));
 import { useGallery, GalleryProvider } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
-import { useAvatarHandlers } from './hooks/useAvatarHandlers';
-import { useProductHandlers } from './hooks/useProductHandlers';
+
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { layout, glass } from '../../styles/designSystem';
 import { CREATE_CATEGORIES, LIBRARY_CATEGORIES, FOLDERS_ENTRY } from './sidebarData';
@@ -100,8 +99,6 @@ function CreateRefactoredView() {
     state,
     setImageActionMenu,
     setBulkActionsMenu,
-    addImage,
-    addVideo,
     setNewFolderDialog,
     setAddToFolderDialog,
     setFolderThumbnailDialog,
@@ -126,8 +123,7 @@ function CreateRefactoredView() {
   const galleryActions = useGalleryActions();
   const promptsUserKey = user?.id || user?.email || 'anon';
   const { isPromptSaved } = useSavedPrompts(promptsUserKey);
-  const avatarHandlers = useAvatarHandlers();
-  const productHandlers = useProductHandlers();
+
 
   // Folder-specific local state
   const [newFolderName, setNewFolderName] = useState('');

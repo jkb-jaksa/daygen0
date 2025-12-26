@@ -1,6 +1,6 @@
 import { memo, useRef, useEffect, useState, useCallback } from "react";
 import { Upload, X, Check, Pencil, Mic, Image as ImageIcon, Plus, Star } from "lucide-react";
-import { Reorder, useDragControls, AnimatePresence } from "framer-motion";
+import { Reorder } from "framer-motion";
 import { buttons } from "../../styles/designSystem";
 import { createCardImageStyle } from "../../utils/cardImageStyle";
 import type { AvatarSelection, AvatarImage } from "./types";

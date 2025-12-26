@@ -1,7 +1,7 @@
 import React, { memo, useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
-import { Heart, MoreHorizontal, Check, Image as ImageIcon, Video as VideoIcon, Copy, BookmarkPlus, Bookmark, Square, Trash2, FileText, X } from 'lucide-react';
+import { Heart, MoreHorizontal, Check, Image as ImageIcon, Video as VideoIcon, Copy, BookmarkPlus, Bookmark, Square, Trash2, X } from 'lucide-react';
 import { useGallery } from './contexts/GalleryContext';
 import { useGeneration } from './contexts/GenerationContext';
 import { useGalleryActions } from './hooks/useGalleryActions';
@@ -188,7 +188,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
   const [editMenu] = useState<{ id: string; anchor: HTMLElement | null } | null>(null);
   const [storedAvatars, setStoredAvatars] = useState<StoredAvatar[]>([]);
   const [storedProducts, setStoredProducts] = useState<StoredProduct[]>([]);
-  const [hoveredPromptButton, setHoveredPromptButton] = useState<string | null>(null);
+
   const [savePromptModalState, setSavePromptModalState] = useState<{ prompt: string; originalPrompt: string } | null>(null);
   const savePromptModalRef = useRef<HTMLDivElement>(null);
   const lastOpenRef = useRef<{ id: string | null; ts: number }>({ id: null, ts: 0 });
@@ -642,7 +642,7 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
     } else {
       guardedOpenFullSize(item, index);
     }
-  }, [guardedOpenFullSize, isBulkMode, toggleItemSelection, selectedItems, setSelectedItems, filteredItems]);
+  }, [guardedOpenFullSize, isBulkMode, toggleItemSelection, selectedItems, setSelectedItems, filteredItems, setBulkMode]);
 
   // Handle item right click
   const handleItemRightClick = useCallback((event: React.MouseEvent, item: GalleryImageLike | GalleryVideoLike) => {
