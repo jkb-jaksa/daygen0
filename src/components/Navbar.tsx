@@ -318,14 +318,14 @@ export default function Navbar() {
         className="relative liquid-glass-navbar"
       >
         <div
-          className={`${layout.container} flex items-center justify-between text-base min-h-[var(--nav-h)]`}
+          className={`${layout.container} flex items-center justify-between text-base min-h-[var(--nav-h)] py-2`}
         >
           <div className="flex h-full items-center gap-6 md:gap-8">
             <img
               src="https://assets.daygen.ai/website-assets/daygen-color-nobg.png"
               alt="daygen logo"
               onClick={handleLogoClick}
-              className="parallax-large block h-5 w-5 m-0 p-0 object-contain object-left cursor-pointer"
+              className="parallax-large block h-4 w-4 m-0 p-0 object-contain object-left cursor-pointer"
             />
             <div className="hidden lg:flex h-full items-center gap-0 text-base font-raleway">
               {desktopNavItems.map((item) => (
