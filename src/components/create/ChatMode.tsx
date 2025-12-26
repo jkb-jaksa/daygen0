@@ -1370,12 +1370,15 @@ const ChatMode: React.FC = () => {
                             </div>
                             {storedAvatars.length > 0 ? (
                               <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
-                                {storedAvatars.map(avatar => {
+                                {[...storedAvatars].sort((a, b) => (b.isMe ? 1 : 0) - (a.isMe ? 1 : 0)).map(avatar => {
                                   const isActive = selectedAvatar?.id === avatar.id;
                                   return (
                                     <div
                                       key={avatar.id}
-                                      className="flex w-full items-center gap-3 rounded-2xl border border-theme-dark px-3 py-2 transition-colors duration-200 group hover:border-theme-dark hover:bg-theme-text/10"
+                                      className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-2 transition-colors duration-200 group ${avatar.isMe
+                                        ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5 hover:border-theme-text/40 hover:bg-theme-text/15'
+                                        : 'border-theme-dark hover:border-theme-dark hover:bg-theme-text/10'
+                                        }`}
                                     >
                                       <button
                                         type="button"
@@ -1390,7 +1393,9 @@ const ChatMode: React.FC = () => {
                                           className="h-10 w-10 rounded-lg object-cover"
                                         />
                                         <div className="min-w-0 flex-1 text-left">
-                                          <p className="truncate text-sm font-raleway text-theme-white">{avatar.name}</p>
+                                          <p className="truncate text-sm font-raleway text-theme-white">
+                                            {avatar.name}{avatar.isMe && <span className="text-theme-text/70 ml-1">(me)</span>}
+                                          </p>
                                         </div>
                                         {isActive && <Check className="h-4 w-4 text-theme-text" />}
                                       </button>

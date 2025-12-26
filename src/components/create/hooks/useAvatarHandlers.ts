@@ -24,6 +24,7 @@ interface BackendAvatar {
   source: string;
   sourceId?: string;
   published: boolean;
+  isMe?: boolean;
   primaryImageId?: string;
   images?: BackendImage[];
 }
@@ -130,6 +131,7 @@ export function useAvatarHandlers() {
               source: a.source as 'upload' | 'gallery',
               sourceId: a.sourceId,
               published: a.published,
+              isMe: a.isMe ?? false,
               ownerId: user?.id,
               primaryImageId: a.primaryImageId || a.images?.[0]?.id || '',
               images: (a.images || []).map((img) => ({
@@ -201,6 +203,7 @@ export function useAvatarHandlers() {
               source: avatar.source,
               sourceId: avatar.sourceId,
               published: avatar.published,
+              isMe: avatar.isMe,
               images: avatar.images.map(img => ({
                 url: img.url,
                 source: img.source,
@@ -221,6 +224,7 @@ export function useAvatarHandlers() {
               source: backendAvatar.source as 'upload' | 'gallery',
               sourceId: backendAvatar.sourceId,
               published: backendAvatar.published,
+              isMe: backendAvatar.isMe ?? false,
               ownerId: user?.id,
               primaryImageId: backendAvatar.primaryImageId || backendAvatar.images?.[0]?.id || '',
               images: (backendAvatar.images || []).map((img) => ({

@@ -45,7 +45,8 @@ import { getPersistedValue, setPersistedValue } from "../lib/clientStorage";
 import { normalizeStoredAvatars, createAvatarRecord, findAvatarBySlug, withUpdatedAvatarImages } from "../utils/avatars";
 import type { GalleryImageLike, StoredGalleryImage, Folder, SerializedFolder } from "./create/types";
 import type { AvatarImage, AvatarSelection, StoredAvatar } from "./avatars/types";
-import { debugError } from "../utils/debug";
+import { debugError, debugLog } from "../utils/debug";
+import { getApiUrl } from "../utils/api";
 import { createCardImageStyle } from "../utils/cardImageStyle";
 import { STUDIO_BASE_PATH, deriveCategoryFromPath, pathForCategory } from "../utils/navigation";
 import { VerticalGalleryNav } from "./shared/VerticalGalleryNav";
@@ -315,12 +316,13 @@ function UseCaseCard({
 }
 
 export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
-  const { storagePrefix, user } = useAuthHook();
+  const { storagePrefix, user, token } = useAuthHook();
   const navigate = useNavigate();
   const location = useLocation();
   const { avatarSlug } = useParams<{ avatarSlug?: string }>();
   const { openStyleModal } = useStyleModal();
-  const isMasterSection = location.pathname.startsWith("/app");
+  // isMasterSection is true for /app (dashboard) but false when viewing a specific avatar profile
+  const isMasterSection = location.pathname.startsWith("/app") && !avatarSlug;
   const studioBasePath = STUDIO_BASE_PATH;
   const previousNonJobPathRef = useRef<string | null>(null);
   const rememberNonJobPath = useCallback(() => {
@@ -399,6 +401,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const [isDragging, setIsDragging] = useState(false);
   const [isDraggingOverAddMe, setIsDraggingOverAddMe] = useState(false);
   const [isAddMeFlow, setIsAddMeFlow] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [draggingOverSlot, setDraggingOverSlot] = useState<number | null>(null);
   const [renameModalOpen, setRenameModalOpen] = useState(false);
   const [avatarToRename, setAvatarToRename] = useState<StoredAvatar | null>(null);
@@ -555,7 +558,14 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       return;
     }
 
-    const match = findAvatarBySlug(avatars, avatarSlug);
+    // Special case: "me" slug should find the avatar with isMe: true
+    let match: StoredAvatar | undefined;
+    if (avatarSlug === 'me') {
+      match = avatars.find(a => a.isMe);
+    } else {
+      match = findAvatarBySlug(avatars, avatarSlug);
+    }
+
     if (match) {
       if (!creationsModalAvatar || creationsModalAvatar.id !== match.id) {
         setCreationsModalAvatar(match);
@@ -589,8 +599,97 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
 
   useEffect(() => {
     let isMounted = true;
+
+    // Define BackendImage and BackendAvatar types inline for mapping
+    interface BackendImage {
+      id: string;
+      url: string;
+      createdAt: string;
+      source: string;
+      sourceId?: string;
+    }
+    interface BackendAvatar {
+      id: string;
+      slug: string;
+      name: string;
+      imageUrl: string;
+      createdAt: string;
+      source: string;
+      sourceId?: string;
+      published: boolean;
+      isMe?: boolean;
+      primaryImageId?: string;
+      images?: BackendImage[];
+    }
+
     const load = async () => {
       try {
+        // Try to fetch from backend first if authenticated
+        if (token) {
+          try {
+            debugLog('[Avatars] Fetching avatars from backend...');
+            const response = await fetch(getApiUrl('/api/avatars'), {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+            });
+
+            if (response.ok) {
+              const backendAvatars: BackendAvatar[] = await response.json();
+              if (!isMounted) return;
+
+              // Convert backend format to StoredAvatar format
+              const normalized: StoredAvatar[] = backendAvatars.map((a) => ({
+                id: a.id,
+                slug: a.slug,
+                name: a.name,
+                imageUrl: a.imageUrl,
+                createdAt: a.createdAt,
+                source: a.source as 'upload' | 'gallery',
+                sourceId: a.sourceId,
+                published: a.published,
+                isMe: a.isMe ?? false,
+                ownerId: user?.id,
+                primaryImageId: a.primaryImageId || a.images?.[0]?.id || '',
+                images: (a.images || []).map((img) => ({
+                  id: img.id,
+                  url: img.url,
+                  createdAt: img.createdAt,
+                  source: img.source as 'upload' | 'gallery',
+                  sourceId: img.sourceId,
+                })),
+              }));
+
+              setAvatars(normalized);
+              writeCachedAvatars(normalized);
+              // Also update local storage to keep it in sync
+              if (storagePrefix) {
+                void setPersistedValue(storagePrefix, 'avatars', normalized);
+              }
+              debugLog('[Avatars] Loaded avatars from backend:', normalized.length, 'isMe count:', normalized.filter(a => a.isMe).length);
+
+              // Load folders from local storage (not stored in backend yet)
+              if (storagePrefix) {
+                const storedFolders = await getPersistedValue<SerializedFolder[]>(storagePrefix, 'folders');
+                if (storedFolders && isMounted) {
+                  setFolders(storedFolders.map(folder => ({
+                    ...folder,
+                    createdAt: new Date(folder.createdAt),
+                    videoIds: folder.videoIds || [],
+                  })));
+                }
+              }
+              return; // Successfully loaded from backend
+            } else {
+              debugError('[Avatars] Backend fetch failed with status:', response.status);
+            }
+          } catch (backendError) {
+            debugError('[Avatars] Backend fetch error, falling back to local storage:', backendError);
+          }
+        }
+
+        // Fallback to local storage
         if (storagePrefix) {
           const [storedAvatars, , storedFolders] = await Promise.all([
             getPersistedValue<StoredAvatar[]>(storagePrefix, "avatars"),
@@ -606,12 +705,14 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
             if (storedAvatars.some(avatar => !avatar.slug || (!avatar.ownerId && user?.id))) {
               void persistAvatars(normalized);
             }
+            debugLog('[Avatars] Loaded avatars from local storage:', normalized.length);
           } else {
             const cached = readCachedAvatars();
             if (cached) {
               const normalized = normalizeStoredAvatars(cached, { ownerId: user?.id ?? undefined });
               setAvatars(normalized);
               writeCachedAvatars(normalized);
+              debugLog('[Avatars] Loaded avatars from cache:', normalized.length);
             }
           }
 
@@ -647,7 +748,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     return () => {
       isMounted = false;
     };
-  }, [storagePrefix, user?.id, persistAvatars]);
+  }, [storagePrefix, user?.id, token, persistAvatars]);
 
 
   const commitAvatarUpdate = useCallback(
@@ -1023,8 +1124,11 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     }
   }, [processImageFile]);
 
-  const handleSaveAvatar = useCallback(() => {
+  const handleSaveAvatar = useCallback(async () => {
+    // Prevent duplicate saves from multiple rapid clicks
+    if (isSaving) return;
     if (!selection) return;
+
     const normalizedName = avatarName.trim() || "New Avatar";
 
     // Check for duplicate avatar names (case-insensitive)
@@ -1037,29 +1141,94 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       return;
     }
 
-    const record = createAvatarRecord({
-      name: normalizedName,
-      imageUrl: selection.imageUrl,
-      source: selection.source,
-      sourceId: selection.sourceId,
-      ownerId: user?.id ?? undefined,
-      existingAvatars: avatars,
-      isMe: isAddMeFlow,
-    });
+    // Set saving state to prevent duplicate clicks
+    setIsSaving(true);
 
-    setAvatars(prev => {
-      const updated = [record, ...prev];
-      void persistAvatars(updated);
-      return updated;
-    });
+    try {
+      // Create local record first
+      const record = createAvatarRecord({
+        name: normalizedName,
+        imageUrl: selection.imageUrl,
+        source: selection.source,
+        sourceId: selection.sourceId,
+        ownerId: user?.id ?? undefined,
+        existingAvatars: avatars,
+        isMe: isAddMeFlow,
+      });
 
-    setIsPanelOpen(false);
-    setAvatarName("");
-    setSelection(null);
-    setUploadError(null);
-    setIsDragging(false);
-    setIsAddMeFlow(false);
-  }, [avatarName, avatars, isAddMeFlow, persistAvatars, selection, user?.id]);
+      // Sync to backend if authenticated
+      let savedRecord = record;
+      if (token) {
+        try {
+          const response = await fetch(getApiUrl('/api/avatars'), {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              name: record.name,
+              imageUrl: record.imageUrl,
+              source: record.source,
+              sourceId: record.sourceId,
+              published: record.published,
+              isMe: record.isMe,
+              images: record.images.map(img => ({
+                url: img.url,
+                source: img.source,
+                sourceId: img.sourceId,
+              })),
+            }),
+          });
+
+          if (response.ok) {
+            const backendAvatar = await response.json();
+            // Use backend-generated ID and data
+            savedRecord = {
+              id: backendAvatar.id,
+              slug: backendAvatar.slug,
+              name: backendAvatar.name,
+              imageUrl: backendAvatar.imageUrl,
+              createdAt: backendAvatar.createdAt,
+              source: backendAvatar.source as 'upload' | 'gallery',
+              sourceId: backendAvatar.sourceId,
+              published: backendAvatar.published,
+              isMe: backendAvatar.isMe ?? false,
+              ownerId: user?.id,
+              primaryImageId: backendAvatar.primaryImageId || backendAvatar.images?.[0]?.id || '',
+              images: (backendAvatar.images || []).map((img: { id: string; url: string; createdAt: string; source: string; sourceId?: string }) => ({
+                id: img.id,
+                url: img.url,
+                createdAt: img.createdAt,
+                source: img.source as 'upload' | 'gallery',
+                sourceId: img.sourceId,
+              })),
+            };
+            debugLog('[Avatars] Avatar saved to backend with isMe:', savedRecord.isMe);
+          } else {
+            debugError('[Avatars] Backend save failed:', response.status);
+          }
+        } catch (backendError) {
+          debugError('[Avatars] Backend save error:', backendError);
+        }
+      }
+
+      setAvatars(prev => {
+        const updated = [savedRecord, ...prev];
+        void persistAvatars(updated);
+        return updated;
+      });
+
+      setIsPanelOpen(false);
+      setAvatarName("");
+      setSelection(null);
+      setUploadError(null);
+      setIsDragging(false);
+      setIsAddMeFlow(false);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [avatarName, avatars, isAddMeFlow, isSaving, persistAvatars, selection, user?.id, token]);
 
   const resetPanel = useCallback(() => {
     setIsPanelOpen(false);
@@ -1068,6 +1237,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     setUploadError(null);
     setIsDragging(false);
     setIsAddMeFlow(false);
+    setIsSaving(false);
   }, []);
 
   const handleAvatarNameChange = useCallback((name: string) => {
@@ -1112,8 +1282,30 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   }, []);
 
 
-  const confirmDelete = useCallback(() => {
+  const confirmDelete = useCallback(async () => {
     if (!avatarToDelete) return;
+
+    // Delete from backend if authenticated
+    if (token) {
+      try {
+        const response = await fetch(getApiUrl(`/api/avatars/${avatarToDelete.id}`), {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          debugLog('[Avatars] Avatar deleted from backend:', avatarToDelete.id);
+        } else {
+          debugError('[Avatars] Backend delete failed:', response.status);
+        }
+      } catch (backendError) {
+        debugError('[Avatars] Backend delete error:', backendError);
+      }
+    }
+
+    // Update local state
     setAvatars(prev => {
       const updated = prev.filter(record => record.id !== avatarToDelete.id);
       void persistAvatars(updated);
@@ -1131,7 +1323,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
 
 
     setAvatarToDelete(null);
-  }, [avatarSlug, avatarToDelete, creationsModalAvatar, navigate, persistAvatars, studioBasePath]);
+  }, [avatarSlug, avatarToDelete, creationsModalAvatar, navigate, persistAvatars, studioBasePath, token]);
 
   const confirmPublish = useCallback(() => {
     if (publishConfirmation.imageUrl) {
@@ -1567,12 +1759,17 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   }, []);
 
   const handleAvatarCardClick = useCallback((avatar: StoredAvatar) => {
+    // If this is the "Me" avatar, navigate to the /app/me section
+    if (avatar.isMe) {
+      navigate('/app/me');
+      return;
+    }
     if (isMasterSection) {
       openMasterFullSizeView(avatar);
       return;
     }
     openCreationsModal(avatar);
-  }, [isMasterSection, openCreationsModal, openMasterFullSizeView]);
+  }, [isMasterSection, navigate, openCreationsModal, openMasterFullSizeView]);
 
   const closeCreationsModal = useCallback(() => {
     setCreationsModalAvatar(null);
@@ -1607,7 +1804,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     [navigate],
   );
 
-  const disableSave = !selection;
+  const disableSave = !selection || isSaving;
   const subtitle = useMemo(() => defaultSubtitle, []);
 
   const renderAvatarCard = (
@@ -2410,7 +2607,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     }
     return (
       <div
-        className={`group flex flex-col rounded-[28px] border-2 border-dashed ${isDraggingOverAddMe ? 'border-theme-text bg-theme-text/30 shadow-[0_0_32px_rgba(255,255,255,0.25)]' : 'border-red-500/40 hover:border-red-400/60 bg-theme-black/40'} shadow-lg transition-all duration-200 cursor-pointer${isMasterSection ? ' max-w-[170px] w-full' : ''}`}
+        className={`group flex flex-col rounded-[28px] border-2 border-dashed ${isDraggingOverAddMe ? 'border-theme-text bg-theme-text/30 shadow-[0_0_32px_rgba(255,255,255,0.25)]' : 'border-red-500/40 hover:border-red-400/60 bg-theme-black/40'} shadow-lg transition-all duration-200 parallax-small cursor-pointer${isMasterSection ? ' max-w-[170px] w-full' : ''} relative`}
         role="button"
         tabIndex={0}
         aria-label="Add your avatar as Me"
@@ -2430,7 +2627,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
           <div className="absolute -top-4 -right-4 w-36 h-36 bg-red-500/20 blur-[50px] rounded-full pointer-events-none" />
           <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-tr from-transparent via-transparent to-red-500/5 pointer-events-none" />
           <div className="mb-2">
-            <User className="h-8 w-8 text-red-500" strokeWidth={1.5} />
+            <User className="h-6 w-6 text-red-500" strokeWidth={1.5} />
           </div>
           <h3 className="text-base font-raleway font-medium text-theme-text mb-2 tracking-tight">
             Add yourself
@@ -2448,7 +2645,8 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   };
 
   const renderHybridCard = () => {
-    if (!(isMasterSection && hasVoiceReady && !hasAvatars)) return null;
+    // Removed - no longer showing the hybrid upload card in empty state
+    return null;
     return (
       <>
         <input
@@ -2633,7 +2831,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
 
       {!isMasterSection && renderDragDropFields()}
 
-      {(hasAvatars || (isMasterSection && hasVoiceReady)) && (
+      {(hasAvatars || isMasterSection) && (
         <>
           <div className={`w-full max-w-6xl ${!isMasterSection ? 'space-y-5' : ''} ${isMasterSection ? 'mb-0' : ''}`}>
             {!isMasterSection && (
@@ -3308,17 +3506,6 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                     }}
                   />
                 </Suspense>
-                {/* Show centered header and drag-drop ONLY when no avatars AND no voice ready */}
-                {!hasAvatars && !hasVoiceReady && (
-                  <>
-                    <div className="col-span-full flex justify-center pb-8">
-                      {renderHeader()}
-                    </div>
-                    <div className="col-span-full flex justify-center">
-                      {renderDragDropFields()}
-                    </div>
-                  </>
-                )}
               </>
             ) : showSidebar && (
               <Suspense fallback={null}>

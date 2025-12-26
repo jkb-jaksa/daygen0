@@ -2337,13 +2337,16 @@ const PromptForm = memo<PromptFormProps>(
             )}
             {storedAvatars.length > 0 ? (
               <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
-                {storedAvatars.map(avatar => {
+                {[...storedAvatars].sort((a, b) => (b.isMe ? 1 : 0) - (a.isMe ? 1 : 0)).map(avatar => {
                   const isActive = isAvatarSelected(avatar.id);
                   const canSelect = remainingReferenceSlots > 0 || isActive;
                   return (
                     <div
                       key={avatar.id}
-                      className={`rounded-2xl border px-3 py-2 transition-colors duration-200 group ${isActive ? 'border-theme-text bg-theme-text/10' : 'border-theme-mid hover:border-theme-mid hover:bg-theme-text/10'} ${!canSelect && !isActive ? 'opacity-50' : ''}`}
+                      className={`rounded-2xl border px-3 py-2 transition-colors duration-200 group ${avatar.isMe
+                        ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5'
+                        : ''
+                        } ${isActive ? 'border-theme-text bg-theme-text/10' : !avatar.isMe ? 'border-theme-mid hover:border-theme-mid hover:bg-theme-text/10' : 'hover:border-theme-text/40 hover:bg-theme-text/15'} ${!canSelect && !isActive ? 'opacity-50' : ''}`}
                     >
                       <div className="flex items-center gap-3">
                         <button
@@ -2378,7 +2381,7 @@ const PromptForm = memo<PromptFormProps>(
                           </div>
                           <div className="min-w-0 flex-1 text-left">
                             <p className="truncate text-sm font-raleway text-theme-white group-hover:text-n-text">
-                              {avatar.name}
+                              {avatar.name}{avatar.isMe && <span className="text-theme-text/70 ml-1">(me)</span>}
                             </p>
                           </div>
                         </button>

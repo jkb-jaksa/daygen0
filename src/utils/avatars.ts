@@ -56,8 +56,18 @@ export const normalizeStoredAvatars = (
 ): StoredAvatar[] => {
   const list = Array.isArray(avatars) ? avatars.slice() : [];
   const existing = new Set<string>();
+  const seenIds = new Set<string>();
 
-  return list.map(rawAvatar => {
+  // Deduplicate by id - keep first occurrence of each avatar
+  const deduplicated = list.filter(avatar => {
+    if (!avatar.id || seenIds.has(avatar.id)) {
+      return false;
+    }
+    seenIds.add(avatar.id);
+    return true;
+  });
+
+  return deduplicated.map(rawAvatar => {
     const avatar = normaliseAvatarImages(rawAvatar);
     const fallbackSuffix = avatar.id.replace(/[^a-z0-9]+/gi, "").slice(-6) || Math.random().toString(36).slice(-6);
     const slug = avatar.slug

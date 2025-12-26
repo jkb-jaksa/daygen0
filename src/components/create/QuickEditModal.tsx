@@ -3346,12 +3346,15 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                         </div>
                         {avatarHandlers.storedAvatars.length > 0 ? (
                             <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
-                                {avatarHandlers.storedAvatars.map(avatar => {
+                                {[...avatarHandlers.storedAvatars].sort((a, b) => (b.isMe ? 1 : 0) - (a.isMe ? 1 : 0)).map(avatar => {
                                     const isActive = selectedAvatar?.id === avatar.id;
                                     return (
                                         <div
                                             key={avatar.id}
-                                            className="rounded-2xl border border-theme-mid px-3 py-2 transition-colors duration-200 group hover:border-theme-mid hover:bg-theme-text/10"
+                                            className={`rounded-2xl border px-3 py-2 transition-colors duration-200 group ${avatar.isMe
+                                                ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5 hover:border-theme-text/40 hover:bg-theme-text/15'
+                                                : 'border-theme-mid hover:border-theme-mid hover:bg-theme-text/10'
+                                                }`}
                                         >
                                             <div className="flex items-center gap-3">
                                                 <button
@@ -3370,7 +3373,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                     />
                                                     <div className="min-w-0 flex-1 text-left">
                                                         <p className="truncate text-sm font-raleway text-theme-white group-hover:text-n-text">
-                                                            {avatar.name}
+                                                            {avatar.name}{avatar.isMe && <span className="text-theme-text/70 ml-1">(me)</span>}
                                                         </p>
                                                     </div>
                                                 </button>
