@@ -451,6 +451,12 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const [avatarImageUploadTarget, setAvatarImageUploadTarget] = useState<string | null>(null);
   const [avatarImageUploadError, setAvatarImageUploadError] = useState<string | null>(null);
   const [uploadingAvatarIds, setUploadingAvatarIds] = useState<Set<string>>(new Set());
+  const [editingAvatarIdForModal, setEditingAvatarIdForModal] = useState<string | null>(null);
+
+  // Ref to track if a reorder drag is in progress, to prevent clicks from firing on drop
+  const dragStartPos = useRef<{ x: number, y: number } | null>(null);
+  const isReorderDragging = useRef(false);
+
   const uploadingAvatarIdsRef = useRef<Set<string>>(new Set()); // Ref for synchronous access
   const avatarsRef = useRef<StoredAvatar[]>(avatars);
   const pendingUploadsRef = useRef<Map<string, File[]>>(new Map());
@@ -1257,10 +1263,9 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
 
     const normalizedName = avatarName.trim() || "New Avatar";
 
-
-    // Check for duplicate avatar names (case-insensitive)
+    // Check for duplicate avatar names (case-insensitive) - skip if editing this avatar
     const isDuplicate = avatars.some(
-      avatar => avatar.name.toLowerCase() === normalizedName.toLowerCase()
+      avatar => avatar.name.toLowerCase() === normalizedName.toLowerCase() && avatar.id !== editingAvatarIdForModal
     );
 
     if (isDuplicate) {
@@ -1272,80 +1277,144 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     setIsSaving(true);
 
     try {
-      // Create local record first
-      const record = createAvatarRecord({
-        name: normalizedName,
-        imageUrl: selection.imageUrl,
-        source: selection.source,
-        sourceId: selection.sourceId,
-        ownerId: user?.id ?? undefined,
-        existingAvatars: avatars,
-        isMe: isAddMeFlow,
-        images: selection.images,
-      });
+      if (editingAvatarIdForModal) {
+        // UPDATE EXISTING AVATAR
+        const existingAvatar = avatars.find(a => a.id === editingAvatarIdForModal);
+        if (!existingAvatar) return;
 
-      // Sync to backend if authenticated
-      let savedRecord = record;
-      if (token) {
-        try {
-          const response = await fetch(getApiUrl('/api/avatars'), {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              name: record.name,
-              imageUrl: record.imageUrl,
-              source: record.source,
-              sourceId: record.sourceId,
-              published: record.published,
-              isMe: record.isMe,
-              images: record.images.map(img => ({
-                url: img.url,
-                source: img.source,
-                sourceId: img.sourceId,
-              })),
-            }),
-          });
+        const updatedAvatar = {
+          ...existingAvatar,
+          name: normalizedName,
+          // Update images and selection-based props
+          imageUrl: selection.imageUrl,
+          // Preserve source if not changed, or update from selection
+          source: selection.source === "upload" || selection.source === "gallery" ? selection.source : existingAvatar.source,
+          sourceId: selection.sourceId,
+          images: selection.images,
+          // Update primaryImageId only if the current one is gone
+          primaryImageId: selection.images.some(img => img.id === existingAvatar.primaryImageId)
+            ? existingAvatar.primaryImageId
+            : (selection.images[0]?.id || '')
+        };
 
-          if (response.ok) {
-            const backendAvatar = await response.json();
-            // Use backend-generated ID and data
-            savedRecord = {
-              id: backendAvatar.id,
-              slug: backendAvatar.slug,
-              name: backendAvatar.name,
-              imageUrl: backendAvatar.imageUrl,
-              createdAt: backendAvatar.createdAt,
-              source: backendAvatar.source as 'upload' | 'gallery',
-              sourceId: backendAvatar.sourceId,
-              published: backendAvatar.published,
-              isMe: backendAvatar.isMe ?? false,
-              ownerId: user?.id,
-              primaryImageId: backendAvatar.primaryImageId || backendAvatar.images?.[0]?.id || '',
-              images: (backendAvatar.images || []).map((img: { id: string; url: string; createdAt: string; source: string; sourceId?: string }) => ({
-                id: img.id,
-                url: img.url,
-                createdAt: img.createdAt,
-                source: img.source as 'upload' | 'gallery',
-                sourceId: img.sourceId,
-              })),
-            };
-            debugLog('[Avatars] Avatar saved to backend with isMe:', savedRecord.isMe);
-          } else {
-            debugError('[Avatars] Backend save failed:', response.status);
+        // Sync to backend if authenticated
+        if (token) {
+          try {
+            const response = await fetch(getApiUrl(`/api/avatars/${editingAvatarIdForModal}`), {
+              method: 'PATCH',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                name: updatedAvatar.name,
+                primaryImageId: updatedAvatar.primaryImageId,
+                // Note: We might need a separate endpoint for images if the backend doesn't handle them on PATCH
+                // For now assuming PATCH can update name and potentially images metadata
+              }),
+            });
+
+            // If images changed, we might need to sync them separately depending on backend API
+            // For now, relying on the fact that images are uploaded individually and we just update local state mostly
+            // unless there is a specific 'reorder' endpoint.
+
+            if (response.ok) {
+              debugLog('[Avatars] Avatar updated on backend:', updatedAvatar.id);
+            } else {
+              debugError('[Avatars] Backend update failed:', response.status);
+            }
+          } catch (error) {
+            debugError('[Avatars] Backend update error:', error);
           }
-        } catch (backendError) {
-          debugError('[Avatars] Backend save error:', backendError);
         }
-      }
 
-      setAvatars(prev => {
-        const updated = [savedRecord, ...prev];
-        void persistAvatars(updated);
-        return updated;
-      });
+        setAvatars(prev => {
+          const updated = prev.map(a => a.id === editingAvatarIdForModal ? updatedAvatar : a);
+          void persistAvatars(updated);
+          return updated;
+        });
+
+        // Update creationsModalAvatar if it's the one we just edited
+        if (creationsModalAvatar?.id === editingAvatarIdForModal) {
+          setCreationsModalAvatar(updatedAvatar);
+        }
+
+      } else {
+        // CREATE NEW AVATAR
+        const record = createAvatarRecord({
+          name: normalizedName,
+          imageUrl: selection.imageUrl,
+          source: selection.source,
+          sourceId: selection.sourceId,
+          ownerId: user?.id ?? undefined,
+          existingAvatars: avatars,
+          isMe: isAddMeFlow,
+          images: selection.images,
+        });
+
+        // Sync to backend if authenticated
+        let savedRecord = record;
+        if (token) {
+          try {
+            const response = await fetch(getApiUrl('/api/avatars'), {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                name: record.name,
+                imageUrl: record.imageUrl,
+                source: record.source,
+                sourceId: record.sourceId,
+                published: record.published,
+                isMe: record.isMe,
+                images: record.images.map(img => ({
+                  url: img.url,
+                  source: img.source,
+                  sourceId: img.sourceId,
+                })),
+              }),
+            });
+
+            if (response.ok) {
+              const backendAvatar = await response.json();
+              // Use backend-generated ID and data
+              savedRecord = {
+                id: backendAvatar.id,
+                slug: backendAvatar.slug,
+                name: backendAvatar.name,
+                imageUrl: backendAvatar.imageUrl,
+                createdAt: backendAvatar.createdAt,
+                source: backendAvatar.source as 'upload' | 'gallery',
+                sourceId: backendAvatar.sourceId,
+                published: backendAvatar.published,
+                isMe: backendAvatar.isMe ?? false,
+                ownerId: user?.id,
+                primaryImageId: backendAvatar.primaryImageId || backendAvatar.images?.[0]?.id || '',
+                images: (backendAvatar.images || []).map((img: { id: string; url: string; createdAt: string; source: string; sourceId?: string }) => ({
+                  id: img.id,
+                  url: img.url,
+                  createdAt: img.createdAt,
+                  source: img.source as 'upload' | 'gallery',
+                  sourceId: img.sourceId,
+                })),
+              };
+              debugLog('[Avatars] Avatar saved to backend with isMe:', savedRecord.isMe);
+            } else {
+              debugError('[Avatars] Backend save failed:', response.status);
+            }
+          } catch (backendError) {
+            debugError('[Avatars] Backend save error:', backendError);
+          }
+        }
+
+        setAvatars(prev => {
+          const updated = [savedRecord, ...prev];
+          void persistAvatars(updated);
+          return updated;
+        });
+      }
 
       setIsPanelOpen(false);
       setAvatarName("");
@@ -1353,10 +1422,11 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       setUploadError(null);
       setIsDragging(false);
       setIsAddMeFlow(false);
+      setEditingAvatarIdForModal(null);
     } finally {
       setIsSaving(false);
     }
-  }, [avatarName, avatars, isAddMeFlow, isSaving, persistAvatars, selection, user?.id, token, setIsAddMeFlow]);
+  }, [avatarName, avatars, isAddMeFlow, isSaving, persistAvatars, selection, user?.id, token, setIsAddMeFlow, editingAvatarIdForModal, creationsModalAvatar]);
 
   const resetPanel = useCallback(() => {
     setIsPanelOpen(false);
@@ -1366,7 +1436,21 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     setIsDragging(false);
     setIsAddMeFlow(false);
     setIsSaving(false);
+    setEditingAvatarIdForModal(null);
   }, [setIsAddMeFlow]);
+
+  const handleEditAvatarInModal = useCallback((avatar: StoredAvatar) => {
+    setEditingAvatarIdForModal(avatar.id);
+    setAvatarName(avatar.name);
+    setSelection({
+      imageUrl: avatar.imageUrl,
+      images: avatar.images,
+      source: avatar.source,
+      sourceId: avatar.sourceId
+    });
+    setIsAddMeFlow(avatar.isMe);
+    setIsPanelOpen(true);
+  }, []);
 
   const handleAvatarNameChange = useCallback((name: string) => {
     setAvatarName(name);
@@ -2367,71 +2451,93 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                   <Link
                     to="/app/me"
                     onClick={(event) => event.stopPropagation()}
-                    className={`${glass.promptDark} relative overflow-hidden group/mebadge inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-raleway text-theme-white shadow-lg transition-colors duration-200 hover:border-theme-mid hover:text-theme-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-text`}
+                    className={`${glass.promptDark} relative overflow-hidden group/mebadge inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-raleway font-medium text-theme-white shadow-lg transition-colors duration-200 hover:border-theme-mid hover:text-theme-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-text`}
                   >
                     <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full blur-3xl bg-white transition-opacity duration-100 opacity-0 group-hover/mebadge:opacity-20" />
-                    <Fingerprint className="w-2.5 h-2.5 text-theme-text relative z-10" />
+                    <Fingerprint className="w-3 h-3 text-theme-text relative z-10" />
                     <span className="leading-none relative z-10">Me</span>
                   </Link>
                 )}
                 {avatar.published && (
-                  <div className={`${glass.promptDark} inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-raleway text-theme-white`}>
-                    <Globe className="w-2.5 h-2.5 text-theme-text" />
+                  <div className={`${glass.promptDark} inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-raleway font-medium text-theme-white`}>
+                    <Globe className="w-3 h-3 text-theme-text" />
                     <span className="leading-none">Public</span>
                   </div>
                 )}
               </div>
-              {/* Image thumbnails grid */}
-              <div className="grid grid-cols-5 gap-1">
-                {Array.from({ length: MAX_AVATAR_IMAGES }).map((_, index) => {
-                  const image = avatar.images[index];
-                  const isPrimary = image?.id === avatar.primaryImageId;
-                  const isActive = image?.id === activeAvatarImageId;
+              {/* Image thumbnails grid with drag-and-drop reordering */}
+              <Reorder.Group
+                as="div"
+                axis="x"
+                values={avatar.images}
+                onReorder={(newOrder) => {
+                  // Update the avatar with the new image order
+                  const updatedAvatar = {
+                    ...avatar,
+                    images: newOrder,
+                    imageUrl: newOrder[0]?.url || avatar.imageUrl,
+                    primaryImageId: newOrder[0]?.id || avatar.primaryImageId,
+                  };
 
-                  if (image) {
-                    return (
-                      <button
-                        key={image.id}
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setCreationsModalAvatar(avatar);
-                          openAvatarFullSizeView(image.id);
-                        }}
-                        className={`aspect-square w-full rounded overflow-hidden transition-colors duration-200 cursor-pointer ${isActive || isPrimary
-                          ? 'border border-theme-text'
-                          : 'border border-theme-dark hover:border-theme-mid'
-                          }`}
-                        title={`Version ${index + 1}${isPrimary ? ' (Primary)' : ''}`}
-                      >
-                        <img
-                          src={image.url}
-                          alt={`${avatar.name} version ${index + 1}`}
-                          className="h-full w-full object-cover"
-                          loading="lazy"
-                        />
-                      </button>
-                    );
-                  }
+                  // Update avatars array and persist
+                  setAvatars(prev => {
+                    const updated = prev.map(a => {
+                      if (a.id !== avatar.id) return a;
+                      return updatedAvatar;
+                    });
+                    void persistAvatars(updated);
+                    return updated;
+                  });
+                }}
+                className="grid grid-cols-5 gap-1"
+              >
+                {avatar.images.map((image, index) => {
+                  const isPrimary = image.id === avatar.primaryImageId || index === 0;
+                  const isActive = image.id === activeAvatarImageId;
 
-                  // Empty slot - render as input field for adding more images
                   return (
-                    <button
-                      key={`empty-slot-${index}`}
-                      type="button"
+                    <Reorder.Item
+                      key={image.id}
+                      value={image}
+                      className={`aspect-square w-full rounded overflow-hidden transition-colors duration-200 cursor-grab active:cursor-grabbing ${isActive || isPrimary
+                        ? 'border border-theme-text'
+                        : 'border border-theme-dark hover:border-theme-mid'
+                        }`}
+                      whileHover={{ scale: 1.05 }}
+                      whileDrag={{ scale: 1.15, zIndex: 50 }}
                       onClick={(event) => {
                         event.stopPropagation();
-                        setAvatarImageUploadTarget(avatar.id);
-                        avatarImageInputRef.current?.click();
+                        setCreationsModalAvatar(avatar);
+                        openAvatarFullSizeView(image.id);
                       }}
-                      className="aspect-square w-full rounded overflow-hidden border border-dashed border-theme-dark hover:border-theme-mid transition-colors duration-200 cursor-pointer flex items-center justify-center bg-theme-black/40"
-                      title="Add image"
+                      title={`Version ${index + 1}${isPrimary ? ' (Primary)' : ''}`}
                     >
-                      <Plus className="w-2.5 h-2.5 text-theme-white/40" />
-                    </button>
+                      <img
+                        src={image.url}
+                        alt={`${avatar.name} version ${index + 1}`}
+                        className="h-full w-full object-cover pointer-events-none"
+                        draggable={false}
+                      />
+                    </Reorder.Item>
                   );
                 })}
-              </div>
+                {/* Empty slots for adding more images */}
+                {Array.from({ length: MAX_AVATAR_IMAGES - avatar.images.length }).map((_, index) => (
+                  <button
+                    key={`empty-slot-${index}`}
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setAvatarImageUploadTarget(avatar.id);
+                      avatarImageInputRef.current?.click();
+                    }}
+                    className="aspect-square w-full rounded overflow-hidden border border-dashed border-theme-dark hover:border-theme-mid transition-colors duration-200 cursor-pointer flex items-center justify-center bg-theme-black/40"
+                    title="Add image"
+                  >
+                    <Plus className="w-2.5 h-2.5 text-theme-white/40" />
+                  </button>
+                ))}
+              </Reorder.Group>
             </div>
           </div>
         )}
@@ -3435,192 +3541,165 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
           <div className={`${headings.tripleHeading.container} text-left`}>
             <div className={`${headings.tripleHeading.eyebrow} justify-start invisible`} aria-hidden="true" />
 
-            {editingAvatarId === creationsModalAvatar.id ? (
-              <form onSubmit={submitRename} className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={editingName}
-                  onChange={(e) => setEditingName(e.target.value)}
-                  className="bg-transparent text-xl md:text-2xl lg:text-3xl font-bold font-outfit text-theme-text border-b border-theme-text/20 focus:border-theme-text outline-none px-1 py-0.5 w-full max-w-[300px]"
-                  autoFocus
-                  onClick={(e) => e.stopPropagation()}
-                />
+            {/* Header with Title and Badges */}
+            <div className={`flex items-center gap-3`}>
+              <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}>
+                {creationsModalAvatar.name}
+              </h1>
+              {creationsModalAvatar.isMe && (
+                <div className={`${glass.promptDark} inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-raleway text-theme-white`}>
+                  <Fingerprint className="w-3 h-3 text-theme-text" />
+                  <span className="leading-none">Me</span>
+                </div>
+              )}
+              {creationsModalAvatar.published && (
+                <div className={`${glass.promptDark} inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-raleway text-theme-white`}>
+                  <Globe className="w-3 h-3 text-theme-text" />
+                  <span className="leading-none">Public</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="text-theme-white/80 transition-colors duration-200 hover:text-theme-text h-12 flex items-center"
+                onClick={() => handleEditAvatarInModal(creationsModalAvatar)}
+                title="Edit name and image"
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={(event) => toggleModalAvatarEditMenu(creationsModalAvatar.id, event.currentTarget)}
+                className="image-action-btn parallax-large"
+                title="Avatar actions"
+                aria-label="Avatar actions"
+              >
+                <Edit className="w-3 h-3" />
+              </button>
+              <ImageActionMenuPortal
+                anchorEl={modalAvatarEditMenu?.avatarId === creationsModalAvatar.id ? modalAvatarEditMenu?.anchor ?? null : null}
+                open={modalAvatarEditMenu?.avatarId === creationsModalAvatar.id}
+                onClose={closeModalAvatarEditMenu}
+                zIndex={1200}
+              >
                 <button
-                  type="submit"
-                  className="p-1 text-theme-white hover:text-theme-text transition-colors"
-                  title="Save name"
+                  type="button"
+                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleNavigateToImage(creationsModalAvatar);
+                    closeModalAvatarEditMenu();
+                  }}
                 >
-                  <Check className="w-5 h-5" />
+                  <ImageIcon className="h-4 w-4" />
+                  Create image
                 </button>
                 <button
                   type="button"
-                  onClick={cancelRenaming}
-                  className="p-1 text-theme-white hover:text-theme-text transition-colors"
-                  title="Cancel"
+                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleNavigateToVideo(creationsModalAvatar);
+                    closeModalAvatarEditMenu();
+                  }}
                 >
-                  <X className="w-5 h-5" />
+                  <Camera className="h-4 w-4" />
+                  Make video
                 </button>
-              </form>
-            ) : (
-              <>
-                <div className="flex items-center gap-3">
-                  <h1 className={`${text.sectionHeading} ${headings.tripleHeading.mainHeading} text-theme-text`}>
-                    {creationsModalAvatar.name}
-                  </h1>
-                  {creationsModalAvatar.isMe && (
-                    <div className={`${glass.promptDark} inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-raleway text-theme-white`}>
-                      <Fingerprint className="w-3 h-3 text-theme-text" />
-                      <span className="leading-none">Me</span>
-                    </div>
-                  )}
-                  {creationsModalAvatar.published && (
-                    <div className={`${glass.promptDark} inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-raleway text-theme-white`}>
-                      <Globe className="w-3 h-3 text-theme-text" />
-                      <span className="leading-none">Public</span>
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
+              </ImageActionMenuPortal>
+              <button
+                type="button"
+                onClick={(event) => toggleAvatarMoreMenu(creationsModalAvatar.id, event.currentTarget)}
+                className="image-action-btn parallax-large"
+                title="More options"
+                aria-label="More options"
+              >
+                <MoreHorizontal className="w-3 h-3" />
+              </button>
+              <ImageActionMenuPortal
+                anchorEl={avatarMoreMenu?.avatarId === creationsModalAvatar.id ? avatarMoreMenu?.anchor ?? null : null}
+                open={avatarMoreMenu?.avatarId === creationsModalAvatar.id}
+                onClose={closeAvatarMoreMenu}
+                zIndex={1200}
+              >
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleDownloadImage(creationsModalAvatar.imageUrl);
+                    closeAvatarMoreMenu();
+                  }}
+                >
+                  <Download className="h-4 w-4" />
+                  Download
+                </button>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleCopyLink(creationsModalAvatar.imageUrl);
+                    closeAvatarMoreMenu();
+                  }}
+                >
+                  <Copy className="h-4 w-4" />
+                  Copy link
+                </button>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleManageFolders(creationsModalAvatar.imageUrl);
+                    closeAvatarMoreMenu();
+                  }}
+                >
+                  <FolderIcon className="h-4 w-4" />
+                  Manage folders
+                </button>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setAvatarToPublish(creationsModalAvatar);
+                    closeAvatarMoreMenu();
+                  }}
+                >
+                  <Globe className="h-4 w-4" />
+                  {creationsModalAvatar.published ? "Unpublish" : "Publish"}
+                </button>
+                {!creationsModalAvatar.isMe && (
                   <button
                     type="button"
-                    className="text-theme-white/80 transition-colors duration-200 hover:text-theme-text h-12 flex items-center"
-                    onClick={() => startRenaming(creationsModalAvatar)}
+                    className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void handleSetMeAvatar(creationsModalAvatar.id);
+                      closeAvatarMoreMenu();
+                    }}
                   >
-                    <Pencil className="h-4 w-4" />
+                    <Fingerprint className="h-4 w-4" />
+                    Set as Me
                   </button>
-                  <button
-                    type="button"
-                    onClick={(event) => toggleModalAvatarEditMenu(creationsModalAvatar.id, event.currentTarget)}
-                    className="image-action-btn parallax-large"
-                    title="Avatar actions"
-                    aria-label="Avatar actions"
-                  >
-                    <Edit className="w-3 h-3" />
-                  </button>
-                  <ImageActionMenuPortal
-                    anchorEl={modalAvatarEditMenu?.avatarId === creationsModalAvatar.id ? modalAvatarEditMenu?.anchor ?? null : null}
-                    open={modalAvatarEditMenu?.avatarId === creationsModalAvatar.id}
-                    onClose={closeModalAvatarEditMenu}
-                    zIndex={1200}
-                  >
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleNavigateToImage(creationsModalAvatar);
-                        closeModalAvatarEditMenu();
-                      }}
-                    >
-                      <ImageIcon className="h-4 w-4" />
-                      Create image
-                    </button>
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleNavigateToVideo(creationsModalAvatar);
-                        closeModalAvatarEditMenu();
-                      }}
-                    >
-                      <Camera className="h-4 w-4" />
-                      Make video
-                    </button>
-                  </ImageActionMenuPortal>
-                  <button
-                    type="button"
-                    onClick={(event) => toggleAvatarMoreMenu(creationsModalAvatar.id, event.currentTarget)}
-                    className="image-action-btn parallax-large"
-                    title="More options"
-                    aria-label="More options"
-                  >
-                    <MoreHorizontal className="w-3 h-3" />
-                  </button>
-                  <ImageActionMenuPortal
-                    anchorEl={avatarMoreMenu?.avatarId === creationsModalAvatar.id ? avatarMoreMenu?.anchor ?? null : null}
-                    open={avatarMoreMenu?.avatarId === creationsModalAvatar.id}
-                    onClose={closeAvatarMoreMenu}
-                    zIndex={1200}
-                  >
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleDownloadImage(creationsModalAvatar.imageUrl);
-                        closeAvatarMoreMenu();
-                      }}
-                    >
-                      <Download className="h-4 w-4" />
-                      Download
-                    </button>
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleCopyLink(creationsModalAvatar.imageUrl);
-                        closeAvatarMoreMenu();
-                      }}
-                    >
-                      <Copy className="h-4 w-4" />
-                      Copy link
-                    </button>
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleManageFolders(creationsModalAvatar.imageUrl);
-                        closeAvatarMoreMenu();
-                      }}
-                    >
-                      <FolderIcon className="h-4 w-4" />
-                      Manage folders
-                    </button>
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setAvatarToPublish(creationsModalAvatar);
-                        closeAvatarMoreMenu();
-                      }}
-                    >
-                      <Globe className="h-4 w-4" />
-                      {creationsModalAvatar.published ? "Unpublish" : "Publish"}
-                    </button>
-                    {!creationsModalAvatar.isMe && (
-                      <button
-                        type="button"
-                        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          void handleSetMeAvatar(creationsModalAvatar.id);
-                          closeAvatarMoreMenu();
-                        }}
-                      >
-                        <Fingerprint className="h-4 w-4" />
-                        Set as Me
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-rose-300 transition-colors duration-200 hover:text-rose-200"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setAvatarToDelete(creationsModalAvatar);
-                        closeAvatarMoreMenu();
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      Delete avatar
-                    </button>
-                  </ImageActionMenuPortal>
-                </div>
-              </>
-            )}
+                )}
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-1.5 px-2 py-1.5 text-sm font-raleway text-rose-300 transition-colors duration-200 hover:text-rose-200"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setAvatarToDelete(creationsModalAvatar);
+                    closeAvatarMoreMenu();
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete avatar
+                </button>
+              </ImageActionMenuPortal>
+            </div>
           </div >
 
           <p className={`${headings.tripleHeading.description} -mb-4`}>
@@ -3677,10 +3756,28 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 <Reorder.Item
                   key={image.id}
                   value={image}
-                  className="relative aspect-square w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-52 lg:h-52 rounded-2xl overflow-hidden border border-theme-dark/60 bg-theme-black/60 group cursor-grab active:cursor-grabbing"
+                  className="relative aspect-square w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-52 lg:h-52 rounded-2xl overflow-hidden border border-theme-dark/60 bg-theme-black/60 group cursor-grab active:cursor-grabbing text-left"
                   whileHover={{ scale: 1.02 }}
                   whileDrag={{ scale: 1.1, zIndex: 50, cursor: 'grabbing' }}
                 >
+                  <div
+                    className="absolute inset-0 z-0"
+                    onPointerDown={(e) => {
+                      dragStartPos.current = { x: e.clientX, y: e.clientY };
+                    }}
+                    onPointerUp={(e) => {
+                      if (!dragStartPos.current) return;
+                      const dx = e.clientX - dragStartPos.current.x;
+                      const dy = e.clientY - dragStartPos.current.y;
+                      const distance = Math.sqrt(dx * dx + dy * dy);
+                      dragStartPos.current = null;
+
+                      // If relative movement is less than 5 pixels, treat as click
+                      if (distance < 5) {
+                        openAvatarFullSizeView(image.id);
+                      }
+                    }}
+                  />
                   <img
                     src={image.url}
                     alt={`${creationsModalAvatar.name} variation ${index + 1}`}
@@ -3705,7 +3802,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                         openAvatarFullSizeView(image.id);
                       }}
                       onPointerDown={(e) => e.stopPropagation()}
-                      className="image-action-btn parallax-large group"
+                      className="image-action-btn parallax-large group text-theme-white hover:text-theme-text"
                       aria-label="View full size"
                       onMouseEnter={(e) => {
                         showHoverTooltip(
@@ -3718,7 +3815,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                         hideHoverTooltip(viewTooltipId);
                       }}
                     >
-                      <Expand className="w-3 h-3 text-theme-white transition-colors group-hover:text-theme-text" />
+                      <Expand className="w-3 h-3 text-current transition-colors" />
                     </button>
 
                     {/* Remove button (only if more than 1 image) */}
@@ -3730,7 +3827,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                           handleRemoveAvatarImage(creationsModalAvatar.id, image.id);
                         }}
                         onPointerDown={(e) => e.stopPropagation()}
-                        className="image-action-btn parallax-large group"
+                        className="image-action-btn parallax-large group text-theme-white hover:text-theme-text"
                         aria-label="Remove image"
                         onMouseEnter={(e) => {
                           showHoverTooltip(
@@ -3743,7 +3840,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                           hideHoverTooltip(deleteTooltipId);
                         }}
                       >
-                        <X className="w-3 h-3 text-theme-white transition-colors group-hover:text-theme-text" />
+                        <X className="w-3 h-3 text-current transition-colors" />
                       </button>
                     )}
                   </div>
