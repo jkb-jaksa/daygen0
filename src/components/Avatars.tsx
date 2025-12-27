@@ -11,7 +11,7 @@ import {
 
 } from "react";
 import { useLocation, useNavigate, useParams, Link } from "react-router-dom";
-import { Reorder, motion, AnimatePresence } from "framer-motion";
+import { Reorder } from "framer-motion";
 import AvatarBadge from "./avatars/AvatarBadge";
 import { createPortal } from "react-dom";
 import {
