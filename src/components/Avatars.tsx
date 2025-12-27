@@ -399,6 +399,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const [isDraggingOverAddMe, setIsDraggingOverAddMe] = useState(false);
   const [isAddMeFlow, setIsAddMeFlow] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isProcessingNewAvatar, setIsProcessingNewAvatar] = useState(false);
   const [draggingOverSlot, setDraggingOverSlot] = useState<number | null>(null);
 
 
@@ -1203,14 +1204,19 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     const files = Array.from(event.target.files ?? []);
     if (files.length > 0) {
       setIsAddMeFlow(true);
-      // Process all files sequentially
-      for (const file of files) {
-        await processImageFile(file);
+      setIsProcessingNewAvatar(true);
+      try {
+        // Process all files sequentially
+        for (const file of files) {
+          await processImageFile(file);
+        }
+        setIsPanelOpen(true);
+      } finally {
+        setIsProcessingNewAvatar(false);
       }
-      setIsPanelOpen(true);
     }
     event.target.value = "";
-  }, [processImageFile, setIsAddMeFlow]);
+  }, [processImageFile, setIsAddMeFlow, setIsProcessingNewAvatar]);
 
   const handleAddMeDragEnter = useCallback((event: DragEvent) => {
     event.preventDefault();
@@ -1231,13 +1237,18 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     const files = Array.from(event.dataTransfer.files ?? []);
     if (files.length > 0) {
       setIsAddMeFlow(true);
-      // Process all files sequentially
-      for (const file of files) {
-        await processImageFile(file);
+      setIsProcessingNewAvatar(true);
+      try {
+        // Process all files sequentially
+        for (const file of files) {
+          await processImageFile(file);
+        }
+        setIsPanelOpen(true);
+      } finally {
+        setIsProcessingNewAvatar(false);
       }
-      setIsPanelOpen(true);
     }
-  }, [processImageFile, setIsAddMeFlow]);
+  }, [processImageFile, setIsAddMeFlow, setIsProcessingNewAvatar]);
 
   const handleSaveAvatar = useCallback(async () => {
     // Prevent duplicate saves from multiple rapid clicks
@@ -2257,43 +2268,11 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
             className="h-full w-full object-cover relative z-[1]"
             loading="lazy"
           />
-          {/* Avatar version thumbnails */}
-          {avatar.images.length > 1 && (
-            <div className="absolute bottom-16 left-2 right-2 z-10 hidden lg:block">
-              <div className="bg-theme-black/60 backdrop-blur-sm rounded-lg px-2 py-1.5">
-                <div className="grid grid-cols-4 gap-1 sm:gap-1.5">
-                  {avatar.images.slice(0, 4).map((image, index) => {
-                    const isPrimary = image.id === avatar.primaryImageId;
-                    return (
-                      <button
-                        key={image.id}
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setCreationsModalAvatar(avatar);
-                          openAvatarFullSizeView(image.id);
-                        }}
-                        className={`aspect-square w-full rounded-lg overflow-hidden border transition-colors duration-200 cursor-pointer ${isPrimary
-                          ? 'border-2 border-theme-text'
-                          : 'border border-theme-mid hover:border-theme-text'
-                          }`}
-                        title={`Version ${index + 1}${isPrimary ? ' (Primary)' : ''}`}
-                      >
-                        <img
-                          src={image.url}
-                          alt={`${avatar.name} version ${index + 1}`}
-                          className="h-full w-full object-cover"
-                          loading="lazy"
-                        />
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-          <div className="absolute bottom-0 left-0 right-0 z-10 hidden lg:block">
+
+          {/* Overlaying description bar - hidden for all avatars in isMasterSection on lg screens */}
+          <div className={`absolute bottom-0 left-0 right-0 z-10 hidden ${isMasterSection ? '' : 'lg:block'}`}>
             <div className={`PromptDescriptionBar rounded-b-2xl ${isCompact ? 'px-1 py-1 relative' : 'px-4 py-2.5'}`}>
+              {/* Avatar name and badges row */}
               <div className={isCompact ? "min-h-[32px] flex items-center" : "flex min-h-[32px] items-center gap-2"}>
                 <>
                   <div className={isCompact ? "w-full flex items-center justify-center px-6 gap-1" : "flex-1 flex items-center gap-2"}>
@@ -2302,7 +2281,6 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                       title={avatar.name}
                     >
                       {avatar.name || (isMasterSection ? "Enter your name..." : "Enter name...")}
-                      {avatar.isMe && <span className="text-theme-white ml-1 font-light">(me)</span>}
                     </p>
                     {isCompact && !disableModalTrigger && (
                       <button
@@ -2336,12 +2314,6 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                         <Pencil className="w-3 h-3" />
                       </button>
                     )}
-                    {avatar.isMe && (
-                      <div className={`${glass.promptDark} inline-flex h-full items-center gap-1 rounded-full px-3 text-xs font-raleway text-theme-white`}>
-                        <Fingerprint className="w-3 h-3 text-theme-text" />
-                        <span className="leading-none">Me</span>
-                      </div>
-                    )}
                     {avatar.published && (
                       <div className={isCompact ? "flex h-4 items-center gap-1 rounded-full px-1.5 text-[8px] font-raleway text-theme-white bg-theme-text/20" : `${glass.promptDark} inline-flex h-full items-center gap-1 rounded-full px-3 text-xs font-raleway text-theme-white`}>
                         <Globe className={isCompact ? "w-2 h-2 text-theme-text" : "w-3 h-3 text-theme-text"} />
@@ -2354,6 +2326,115 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
             </div>
           </div>
         </div>
+        {/* Description bar BELOW image - for all avatars in isMasterSection (lg screens) */}
+        {isMasterSection && (
+          <div className="hidden lg:block relative overflow-hidden rounded-b-2xl">
+            {/* Blurred avatar image as background */}
+            <div className="absolute inset-0 z-0">
+              <img
+                src={avatar.imageUrl}
+                alt=""
+                className="w-full h-full object-cover scale-150 blur-2xl opacity-70"
+                aria-hidden="true"
+              />
+            </div>
+            {/* Content with PromptDescriptionBar overlay */}
+            <div className="PromptDescriptionBar relative z-10 px-3 py-3 pb-4">
+              {/* Avatar name, badges, and thumbnails */}
+              <div className="flex items-center gap-2 mb-3">
+                <p
+                  className="flex-1 text-sm font-raleway font-normal text-theme-text truncate"
+                  title={avatar.name}
+                >
+                  {avatar.name || "Enter your name..."}
+                </p>
+                {!disableModalTrigger && (
+                  <button
+                    type="button"
+                    className={`relative z-10 flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-lg text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-100 pointer-events-auto ${isMasterSection
+                      ? 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
+                      : ''
+                      }`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      startRenaming(avatar);
+                    }}
+                  >
+                    <Pencil className="w-2.5 h-2.5" />
+                  </button>
+                )}
+                {avatar.isMe && (
+                  <Link
+                    to="/app/me"
+                    onClick={(event) => event.stopPropagation()}
+                    className={`${glass.promptDark} relative overflow-hidden group/mebadge inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-raleway text-theme-white shadow-lg transition-colors duration-200 hover:border-theme-mid hover:text-theme-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-text`}
+                  >
+                    <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full blur-3xl bg-white transition-opacity duration-100 opacity-0 group-hover/mebadge:opacity-20" />
+                    <Fingerprint className="w-2.5 h-2.5 text-theme-text relative z-10" />
+                    <span className="leading-none relative z-10">Me</span>
+                  </Link>
+                )}
+                {avatar.published && (
+                  <div className={`${glass.promptDark} inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-raleway text-theme-white`}>
+                    <Globe className="w-2.5 h-2.5 text-theme-text" />
+                    <span className="leading-none">Public</span>
+                  </div>
+                )}
+              </div>
+              {/* Image thumbnails grid */}
+              <div className="grid grid-cols-5 gap-1">
+                {Array.from({ length: MAX_AVATAR_IMAGES }).map((_, index) => {
+                  const image = avatar.images[index];
+                  const isPrimary = image?.id === avatar.primaryImageId;
+                  const isActive = image?.id === activeAvatarImageId;
+
+                  if (image) {
+                    return (
+                      <button
+                        key={image.id}
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setCreationsModalAvatar(avatar);
+                          openAvatarFullSizeView(image.id);
+                        }}
+                        className={`aspect-square w-full rounded overflow-hidden transition-colors duration-200 cursor-pointer ${isActive || isPrimary
+                          ? 'border border-theme-text'
+                          : 'border border-theme-dark hover:border-theme-mid'
+                          }`}
+                        title={`Version ${index + 1}${isPrimary ? ' (Primary)' : ''}`}
+                      >
+                        <img
+                          src={image.url}
+                          alt={`${avatar.name} version ${index + 1}`}
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                        />
+                      </button>
+                    );
+                  }
+
+                  // Empty slot - render as input field for adding more images
+                  return (
+                    <button
+                      key={`empty-slot-${index}`}
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setAvatarImageUploadTarget(avatar.id);
+                        avatarImageInputRef.current?.click();
+                      }}
+                      className="aspect-square w-full rounded overflow-hidden border border-dashed border-theme-dark hover:border-theme-mid transition-colors duration-200 cursor-pointer flex items-center justify-center bg-theme-black/40"
+                      title="Add image"
+                    >
+                      <Plus className="w-2.5 h-2.5 text-theme-white/40" />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
         {/* Mobile version of avatar name and publish status */}
         <div className="lg:hidden space-y-3 px-4 py-4">
           <div className={`PromptDescriptionBar mx-auto flex min-h-[32px] w-full max-w-xs items-center rounded-2xl ${isCompact ? 'px-1 py-1' : 'px-4 py-2.5'} relative`}>
@@ -2397,10 +2478,15 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 </button>
               )}
               {avatar.isMe && (
-                <div className={`${glass.promptDark} inline-flex h-full items-center gap-1 rounded-full px-3 text-xs font-raleway text-theme-white`}>
-                  <Fingerprint className="w-3 h-3 text-theme-text" />
-                  <span className="leading-none">Me</span>
-                </div>
+                <Link
+                  to="/app/me"
+                  onClick={(event) => event.stopPropagation()}
+                  className={`${glass.promptDark} relative overflow-hidden group/mebadge inline-flex h-full items-center gap-1 rounded-full px-3 text-xs font-raleway text-theme-white shadow-lg transition-colors duration-200 hover:border-theme-mid hover:text-theme-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-text`}
+                >
+                  <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full blur-3xl bg-white transition-opacity duration-100 opacity-0 group-hover/mebadge:opacity-20" />
+                  <Fingerprint className="w-3 h-3 text-theme-text relative z-10" />
+                  <span className="leading-none relative z-10">Me</span>
+                </Link>
               )}
               {avatar.published && (
                 <div className={isCompact ? "flex h-4 items-center gap-1 rounded-full px-1.5 text-[8px] font-raleway text-theme-white bg-theme-text/20" : `${glass.promptDark} inline-flex h-full items-center gap-1 rounded-full px-3 text-xs font-raleway text-theme-white`}>
@@ -2744,6 +2830,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               isDragging={isDragging}
               avatarName={avatarName}
               disableSave={disableSave}
+              isProcessing={isProcessingNewAvatar}
               onAvatarNameChange={handleAvatarNameChange}
               onSave={handleSaveAvatar}
               onClearSelection={() => setSelection(null)}
@@ -2759,6 +2846,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               isDragging={isDragging}
               avatarName={avatarName}
               disableSave={disableSave}
+              isProcessing={isProcessingNewAvatar}
               onAvatarNameChange={handleAvatarNameChange}
               onSave={handleSaveAvatar}
               onClearSelection={() => setSelection(null)}
@@ -2780,8 +2868,8 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     if (meAvatar) {
       // Render the isMe avatar in place of the Add Yourself card
       return renderAvatarCard(meAvatar, {
-        widthClass: isMasterSection ? ' max-w-[200px] w-full' : '',
-        isCompact: isMasterSection
+        widthClass: isMasterSection ? ' w-full' : '',
+        isCompact: false
       });
     }
     return (
@@ -2943,10 +3031,9 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   };
 
   const renderVoiceCard = () => {
-    if (!isMasterSection) return null;
     return (
       <div
-        className={`group flex flex-col overflow-hidden rounded-[28px] border-2 border-dashed ${hasVoiceReady ? 'border-green-500/50 bg-black' : 'border-cyan-500/40 hover:border-cyan-400/60 bg-theme-black/40'} shadow-lg transition-all duration-200 parallax-small max-w-[200px] w-full ${hasVoiceReady ? '' : 'cursor-pointer'} relative`}
+        className={`group flex flex-col overflow-hidden rounded-[20px] border-2 border-dashed ${hasVoiceReady ? 'border-green-500/50 bg-black' : 'border-cyan-500/40 hover:border-cyan-400/60 bg-theme-black/40'} shadow-lg transition-all duration-200 parallax-small w-full ${hasVoiceReady ? '' : 'cursor-pointer'} relative`}
         role={hasVoiceReady ? undefined : "button"}
         tabIndex={hasVoiceReady ? undefined : 0}
         aria-label={hasVoiceReady ? "Voice ready" : "Add your voice"}
@@ -2959,44 +3046,44 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
         }}
       >
         {/* Teal/Green Shade */}
-        <div className={`absolute -top-4 -right-4 w-36 h-36 ${hasVoiceReady ? 'bg-green-400/20' : 'bg-cyan-400/20'} blur-[50px] rounded-full pointer-events-none`} />
+        <div className={`absolute -top-2 -right-2 w-20 h-20 ${hasVoiceReady ? 'bg-green-400/20' : 'bg-cyan-400/20'} blur-[30px] rounded-full pointer-events-none`} />
         <div className={`absolute top-0 right-0 w-full h-full bg-gradient-to-tr from-transparent via-transparent ${hasVoiceReady ? 'to-green-500/5' : 'to-cyan-500/5'} pointer-events-none`} />
 
-        <div className="relative aspect-square overflow-hidden flex flex-col items-center justify-center p-4 text-center">
-          <div className="mb-2">
+        <div className="relative aspect-square overflow-hidden flex flex-col items-center justify-center p-2 text-center">
+          <div className="mb-1">
             {hasVoiceReady ? (
-              <Check className="h-6 w-6 text-green-400" strokeWidth={2} />
+              <Check className="h-5 w-5 text-green-400" strokeWidth={2} />
             ) : (
-              <Mic className="h-6 w-6 text-cyan-400" strokeWidth={1.5} />
+              <Mic className="h-5 w-5 text-cyan-400" strokeWidth={1.5} />
             )}
           </div>
 
-          <h3 className="text-base font-raleway font-medium text-theme-text mb-2 tracking-tight">
-            {hasVoiceReady ? 'Voice ready' : 'Add your voice'}
+          <h3 className="text-xs font-raleway font-medium text-theme-text mb-1 tracking-tight">
+            {hasVoiceReady ? 'Voice ready' : 'Your voice'}
           </h3>
 
-          <p className="text-[10px] leading-tight text-theme-white font-raleway mb-3 max-w-[140px]">
+          <p className="text-[8px] leading-tight text-theme-white font-raleway mb-2 max-w-[90px]">
             {hasVoiceReady
-              ? 'Your voice clone is ready to use'
-              : 'Click anywhere, drag and drop, or paste your audio to get started'
+              ? 'Ready to use'
+              : 'Add your voice clone'
             }
           </p>
 
           {hasVoiceReady ? (
             <button
-              className="flex items-center gap-2 bg-theme-white/10 text-theme-text px-4 py-1.5 rounded-full text-xs font-medium hover:bg-theme-white/20 transition-colors border border-theme-white/20"
+              className="flex items-center gap-1 bg-theme-white/10 text-theme-text px-2 py-1 rounded-full text-[10px] font-medium hover:bg-theme-white/20 transition-colors border border-theme-white/20"
               onClick={(e) => {
                 e.stopPropagation();
                 setIsVoiceUploadModalOpen(true);
               }}
             >
-              <Mic className="h-3 w-3 text-green-400" strokeWidth={2} />
-              Change voice
+              <Mic className="h-2.5 w-2.5 text-green-400" strokeWidth={2} />
+              Change
             </button>
           ) : (
-            <button className="flex items-center gap-2 bg-theme-text text-theme-black px-4 py-1.5 rounded-full text-xs font-medium font-raleway hover:bg-theme-text/90 transition-colors">
-              <Upload className="h-3 w-3 text-cyan-500" strokeWidth={2} />
-              Upload
+            <button className="flex items-center gap-1 bg-theme-text text-theme-black px-2 py-1 rounded-full text-[10px] font-medium font-raleway hover:bg-theme-text/90 transition-colors">
+              <Upload className="h-2.5 w-2.5 text-cyan-500" strokeWidth={2} />
+              Add
             </button>
           )}
         </div>
@@ -3038,24 +3125,32 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
             />
 
             {isMasterSection ? (
-              <div className="flex flex-col gap-8 mb-0">
-                {/* Top Section - Creation Tools */}
-                <div className="flex flex-wrap gap-2">
-                  {renderAddMeCard()}
+              <>
+                {/* Avatar Grid - uniform cards for all avatars */}
+                <div className="flex flex-wrap items-start gap-3 mb-4">
+                  {/* All avatars in uniform size - main avatar (isMe) rendered first via renderAddMeCard */}
+                  <div className="flex-shrink-0" style={{ width: 'clamp(180px, 22vw, 220px)' }}>
+                    {renderAddMeCard()}
+                  </div>
+
+                  {/* Other avatars with same size as main avatar */}
+                  {avatars.filter(a => !a.isMe).map(avatar => (
+                    <div key={avatar.id} className="flex-shrink-0" style={{ width: 'clamp(180px, 22vw, 220px)' }}>
+                      {renderAvatarCard(avatar, {
+                        widthClass: " w-full",
+                        isCompact: false
+                      })}
+                    </div>
+                  ))}
+
                   {renderHybridCard()}
-                  {renderVoiceCard()}
                 </div>
 
-                {/* Bottom Section - Avatars */}
-                {avatars.filter(a => !a.isMe).length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {avatars.filter(a => !a.isMe).map(avatar => renderAvatarCard(avatar, {
-                      widthClass: " max-w-[140px] w-full",
-                      isCompact: true
-                    }))}
-                  </div>
-                )}
-              </div>
+                {/* Voice Card - below the avatar grid, smaller size */}
+                <div className="mb-4" style={{ width: '100px' }}>
+                  {renderVoiceCard()}
+                </div>
+              </>
             ) : (
               <div className="grid grid-cols-1 gap-0.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-items-start">
                 {renderAddMeCard()}

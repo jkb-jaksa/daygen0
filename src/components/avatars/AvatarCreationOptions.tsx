@@ -1,5 +1,5 @@
 import { memo, useRef, useEffect, useState, useCallback } from "react";
-import { Upload, X, Check, Pencil, Mic, Image as ImageIcon, Plus, Star } from "lucide-react";
+import { Upload, X, Check, Pencil, Mic, Image as ImageIcon, Plus, Star, Loader2 } from "lucide-react";
 import { Reorder } from "framer-motion";
 import { buttons } from "../../styles/designSystem";
 import { createCardImageStyle } from "../../utils/cardImageStyle";
@@ -13,6 +13,7 @@ export interface AvatarCreationOptionsProps {
   isDragging: boolean;
   avatarName: string;
   disableSave: boolean;
+  isProcessing?: boolean;
   onAvatarNameChange: (value: string) => void;
   onSave: () => void;
   onClearSelection: () => void;
@@ -31,6 +32,7 @@ function AvatarCreationOptionsComponent({
   isDragging,
   avatarName,
   disableSave,
+  isProcessing,
   onAvatarNameChange,
   onSave,
   onClearSelection,
@@ -255,7 +257,11 @@ function AvatarCreationOptionsComponent({
                       className={`aspect-square rounded-xl border-2 border-dashed transition-all duration-200 flex items-center justify-center ${isSlotDragActive ? 'border-theme-text bg-theme-text/30 shadow-[0_0_32px_rgba(255,255,255,0.25)]' : 'border-theme-white/20 hover:border-theme-text/50 hover:bg-theme-text/5'
                         }`}
                     >
-                      <Plus className="w-5 h-5 text-theme-white/40" />
+                      {isProcessing ? (
+                        <Loader2 className="w-5 h-5 text-theme-white/40 animate-spin" />
+                      ) : (
+                        <Plus className="w-5 h-5 text-theme-white/40" />
+                      )}
                     </button>
                   );
                 } else {
@@ -371,7 +377,11 @@ function AvatarCreationOptionsComponent({
                     Add up to {MAX_AVATAR_IMAGES} images for this avatar
                   </p>
                   <div className={`${buttons.primary} inline-flex items-center gap-2`}>
-                    <Upload className="h-4 w-4 text-red-500" />
+                    {isProcessing ? (
+                      <Loader2 className="h-4 w-4 text-red-500 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4 text-red-500" />
+                    )}
                     Upload
                   </div>
                 </div>

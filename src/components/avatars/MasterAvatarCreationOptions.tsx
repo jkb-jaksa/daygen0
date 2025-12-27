@@ -1,5 +1,5 @@
 import { memo, useRef, useEffect, useState, useCallback } from "react";
-import { Upload, X, Check, Pencil, Mic, Image as ImageIcon } from "lucide-react";
+import { Upload, X, Check, Pencil, Mic, Image as ImageIcon, Loader2 } from "lucide-react";
 import { buttons } from "../../styles/designSystem";
 import { createCardImageStyle } from "../../utils/cardImageStyle";
 import type { AvatarSelection } from "./types";
@@ -10,6 +10,7 @@ export interface MasterAvatarCreationOptionsProps {
   isDragging: boolean;
   avatarName: string;
   disableSave: boolean;
+  isProcessing?: boolean;
   onAvatarNameChange: (value: string) => void;
   onSave: () => void;
   onClearSelection: () => void;
@@ -26,6 +27,7 @@ function MasterAvatarCreationOptionsComponent({
   isDragging,
   avatarName,
   disableSave,
+  isProcessing,
   onAvatarNameChange,
   onSave,
   onClearSelection,
@@ -251,11 +253,15 @@ function MasterAvatarCreationOptionsComponent({
                 <div className="relative z-10">
                   <ImageIcon className="mx-auto mb-4 text-red-500 w-14 h-14" />
                   <p className="mb-2 text-2xl font-raleway text-theme-text">Upload your image</p>
-                  <p className="mb-6 text-lg font-raleway text-theme-white">
+                  <p className="mb-6 text-base font-raleway text-theme-white">
                     Click anywhere, drag and drop, or paste your image to get started
                   </p>
                   <div className={`${buttons.primary} inline-flex items-center gap-2`}>
-                    <Upload className="h-4 w-4 text-red-500" />
+                    {isProcessing ? (
+                      <Loader2 className="h-4 w-4 text-red-500 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4 text-red-500" />
+                    )}
                     Upload
                   </div>
                 </div>
