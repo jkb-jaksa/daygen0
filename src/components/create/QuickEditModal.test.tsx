@@ -255,6 +255,7 @@ describe('QuickEditModal', () => {
             mask: undefined,
             geminiMask: undefined,
             model: 'gemini-3.0-pro-image',
+            jobType: 'IMAGE_EDIT',
         });
     });
 
