@@ -3606,6 +3606,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                 isDragging={avatarHandlers.isDraggingAvatar}
                                 avatarName={avatarHandlers.avatarName}
                                 disableSave={!avatarHandlers.avatarSelection || !avatarHandlers.avatarName.trim()}
+                                isSaving={avatarHandlers.isSavingAvatar}
                                 onClose={avatarHandlers.handleAvatarCreationModalClose}
                                 onAvatarNameChange={avatarHandlers.setAvatarName}
                                 onSave={async () => {

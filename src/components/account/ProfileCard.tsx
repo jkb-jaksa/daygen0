@@ -1,4 +1,4 @@
-import { Upload, X } from "lucide-react";
+import { Loader2, Upload, X } from "lucide-react";
 import type { ChangeEvent, RefObject } from "react";
 import { useEffect } from "react";
 import type { User } from "../../auth/context";
@@ -209,8 +209,15 @@ export function ProfileCard({
           <button type="button" className={buttons.ghost} onClick={onLogOut}>
             Log out
           </button>
-          <button type="submit" className={buttons.primary} disabled={!canSaveProfile}>
-            {isSavingProfile ? "Saving…" : "Save"}
+          <button type="submit" className={`${buttons.primary} flex items-center gap-2`} disabled={!canSaveProfile || isSavingProfile}>
+            {isSavingProfile ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Saving…
+              </>
+            ) : (
+              "Save"
+            )}
           </button>
         </div>
       </form>

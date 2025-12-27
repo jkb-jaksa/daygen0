@@ -11,7 +11,7 @@ import {
 
 } from "react";
 import { useLocation, useNavigate, useParams, Link } from "react-router-dom";
-import { Reorder } from "framer-motion";
+import { Reorder, motion, AnimatePresence } from "framer-motion";
 import AvatarBadge from "./avatars/AvatarBadge";
 import { createPortal } from "react-dom";
 import {
@@ -389,6 +389,8 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
 
   const [avatars, setAvatars] = useState<StoredAvatar[]>([]);
 
+  // Carousel state for master section avatar grid
+  const [carouselIndex, setCarouselIndex] = useState(0);
 
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [avatarName, setAvatarName] = useState("");
@@ -484,6 +486,53 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       modalAvatarEditMenu
     );
   }, [avatarEditMenu, avatarMoreMenu, galleryEditMenu, creationMoreMenu, modalAvatarEditMenu]);
+
+  // Carousel configuration for master section avatar grid
+  const carouselConfig = useMemo(() => {
+    const nonMeAvatars = avatars.filter(a => !a.isMe);
+    const meAvatar = avatars.find(a => a.isMe);
+    // Max visible slots for non-Me avatars: always 4 (5 total minus 1 for Me avatar or Add Me placeholder)
+    // The first slot is always reserved for either the Me avatar or the Add Me placeholder
+    const maxVisibleNonMe = 4;
+    // Carousel activates when there are more than 4 non-Me avatars (since we can only show 4 at a time)
+    const isCarouselActive = nonMeAvatars.length > maxVisibleNonMe;
+    // Calculate max index (ensures we can see all avatars by scrolling one at a time)
+    const maxIndex = isCarouselActive
+      ? Math.max(0, nonMeAvatars.length - maxVisibleNonMe)
+      : 0;
+    // Get visible non-Me avatars based on current index
+    const visibleNonMeAvatars = isCarouselActive
+      ? nonMeAvatars.slice(carouselIndex, carouselIndex + maxVisibleNonMe)
+      : nonMeAvatars;
+
+    return {
+      meAvatar,
+      visibleNonMeAvatars,
+      isCarouselActive,
+      maxIndex,
+      canGoPrev: carouselIndex > 0,
+      canGoNext: carouselIndex < maxIndex,
+      totalNonMe: nonMeAvatars.length,
+      currentStart: carouselIndex + 1,
+      currentEnd: Math.min(carouselIndex + maxVisibleNonMe, nonMeAvatars.length),
+    };
+  }, [avatars, carouselIndex]);
+
+  // Carousel navigation handlers
+  const handleCarouselPrev = useCallback(() => {
+    setCarouselIndex(prev => Math.max(0, prev - 1));
+  }, []);
+
+  const handleCarouselNext = useCallback(() => {
+    setCarouselIndex(prev => Math.min(carouselConfig.maxIndex, prev + 1));
+  }, [carouselConfig.maxIndex]);
+
+  // Reset carousel index when avatars change (e.g., avatar deleted)
+  useEffect(() => {
+    if (carouselIndex > carouselConfig.maxIndex) {
+      setCarouselIndex(carouselConfig.maxIndex);
+    }
+  }, [carouselIndex, carouselConfig.maxIndex]);
 
   // Tooltip helper functions (viewport-based positioning for portaled tooltips)
   const showHoverTooltip = useCallback((
@@ -2328,6 +2377,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               </div>
               {/* Image thumbnails grid with drag-and-drop reordering */}
               <Reorder.Group
+                initial={false}
                 as="div"
                 axis="x"
                 values={avatar.images}
@@ -2358,6 +2408,8 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
 
                   return (
                     <Reorder.Item
+                      initial={false}
+                      layout={false}
                       key={image.id}
                       value={image}
                       className={`aspect-square w-full rounded overflow-hidden transition-colors duration-200 cursor-grab active:cursor-grabbing ${isActive || isPrimary
@@ -2778,6 +2830,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               avatarName={avatarName}
               disableSave={disableSave}
               isProcessing={isProcessingNewAvatar}
+              isSaving={isSaving}
               onAvatarNameChange={handleAvatarNameChange}
               onSave={handleSaveAvatar}
               onClearSelection={() => setSelection(null)}
@@ -2880,15 +2933,47 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
             />
 
             {isMasterSection ? (
-              <div className="flex flex-col gap-6 mb-0 w-full">
-                {/* Top Section - Avatar Cards - Responsive Grid */}
+              <div className="flex flex-col gap-4 mb-0 w-full">
+                {/* Avatar Cards Grid with Carousel */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                  {/* Me avatar - always first */}
                   {renderAddMeCard()}
-                  {avatars.filter(a => !a.isMe).map(avatar => renderAvatarCard(avatar, {
-                    widthClass: " w-full",
-                    isCompact: true
-                  }))}
+                  {/* Non-Me avatars */}
+                  {carouselConfig.visibleNonMeAvatars.map(avatar =>
+                    renderAvatarCard(avatar, { widthClass: " w-full", isCompact: true })
+                  )}
                 </div>
+
+                {/* Carousel Navigation - Below Grid (lg+ only) */}
+                {carouselConfig.isCarouselActive && (
+                  <div className="hidden lg:flex items-center justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleCarouselPrev}
+                      disabled={!carouselConfig.canGoPrev}
+                      className={`${glass.promptDark} inline-flex items-center justify-center size-9 rounded-full transition-all duration-200 ${carouselConfig.canGoPrev
+                        ? 'text-theme-white hover:text-theme-text hover:border-theme-mid cursor-pointer'
+                        : 'text-theme-white/30 cursor-not-allowed'
+                        }`}
+                      aria-label="Previous avatars"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleCarouselNext}
+                      disabled={!carouselConfig.canGoNext}
+                      className={`${glass.promptDark} inline-flex items-center justify-center size-9 rounded-full transition-all duration-200 ${carouselConfig.canGoNext
+                        ? 'text-theme-white hover:text-theme-text hover:border-theme-mid cursor-pointer'
+                        : 'text-theme-white/30 cursor-not-allowed'
+                        }`}
+                      aria-label="Next avatars"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-0.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-items-start">
@@ -3378,7 +3463,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 return updated;
               });
             }}
-            className="flex flex-wrap gap-4"
+            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
           >
             {avatarImages.map((image, index) => {
               const isPrimary = creationsModalAvatar.primaryImageId === image.id || index === 0;
@@ -3389,7 +3474,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 <Reorder.Item
                   key={image.id}
                   value={image}
-                  className="relative aspect-square w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-52 lg:h-52 rounded-2xl overflow-hidden border border-theme-dark/60 bg-theme-black/60 group cursor-grab active:cursor-grabbing text-left"
+                  className="relative aspect-square w-full rounded-2xl overflow-hidden border border-theme-dark/60 bg-theme-black/60 group cursor-grab active:cursor-grabbing text-left"
                   whileHover={{ scale: 1.02 }}
                   whileDrag={{ scale: 1.1, zIndex: 50, cursor: 'grabbing' }}
                 >
@@ -3536,7 +3621,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                   setDraggingOverSlot(null);
                 }}
                 onDrop={handleSlotDrop}
-                className={`aspect-square w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-52 lg:h-52 rounded-2xl border-2 border-dashed transition-all duration-200 flex items-center justify-center ${draggingOverSlot !== null
+                className={`aspect-square w-full rounded-2xl border-2 border-dashed transition-all duration-200 flex items-center justify-center ${draggingOverSlot !== null
                   ? 'border-theme-text bg-theme-text/30 shadow-[0_0_32px_rgba(255,255,255,0.25)]'
                   : 'border-theme-white/30 hover:border-theme-text/60 hover:bg-theme-text/5'
                   }`}

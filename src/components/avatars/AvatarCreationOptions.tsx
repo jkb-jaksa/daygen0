@@ -14,6 +14,7 @@ export interface AvatarCreationOptionsProps {
   avatarName: string;
   disableSave: boolean;
   isProcessing?: boolean;
+  isSaving?: boolean;
   onAvatarNameChange: (value: string) => void;
   onSave: () => void;
   onClearSelection: () => void;
@@ -34,6 +35,7 @@ function AvatarCreationOptionsComponent({
   avatarName,
   disableSave,
   isProcessing,
+  isSaving = false,
   onAvatarNameChange,
   onSave,
   onClearSelection,
@@ -442,14 +444,21 @@ function AvatarCreationOptionsComponent({
         <div className="flex flex-col items-center gap-6">
           <button
             type="button"
-            className={`${buttons.primary} !w-fit ${disableSave ? "pointer-events-none opacity-50" : ""}`}
-            disabled={disableSave}
+            className={`${buttons.primary} !w-fit ${disableSave || isSaving ? "pointer-events-none opacity-50" : ""}`}
+            disabled={disableSave || isSaving}
             onClick={(e) => {
               e.stopPropagation();
               onSave();
             }}
           >
-            Save
+            {isSaving ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save"
+            )}
           </button>
         </div>
       )}

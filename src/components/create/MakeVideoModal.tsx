@@ -1792,6 +1792,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                             isDragging={avatarHandlers.isDraggingAvatar}
                             avatarName={avatarHandlers.avatarName}
                             disableSave={!avatarHandlers.avatarSelection || !avatarHandlers.avatarName.trim()}
+                            isSaving={avatarHandlers.isSavingAvatar}
                             onClose={avatarHandlers.handleAvatarCreationModalClose}
                             onAvatarNameChange={avatarHandlers.setAvatarName}
                             onSave={async () => {

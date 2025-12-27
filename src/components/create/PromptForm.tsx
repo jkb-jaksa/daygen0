@@ -298,6 +298,7 @@ const PromptForm = memo<PromptFormProps>(
       setAvatarToDelete,
       setSelectedAvatarImageId,
       removeSelectedAvatar,
+      isSavingAvatar,
     } = avatarHandlers;
     const {
       storedProducts,
@@ -2759,6 +2760,7 @@ const PromptForm = memo<PromptFormProps>(
               isDragging={isDraggingAvatar}
               avatarName={avatarName}
               disableSave={!avatarSelection || !avatarName.trim()}
+              isSaving={isSavingAvatar}
               onClose={resetAvatarCreationPanel}
               onAvatarNameChange={setAvatarName}
               onSave={handleSaveNewAvatar}

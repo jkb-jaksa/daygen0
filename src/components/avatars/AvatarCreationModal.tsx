@@ -11,6 +11,7 @@ interface AvatarCreationModalProps {
   isDragging: boolean;
   avatarName: string;
   disableSave: boolean;
+  isSaving?: boolean;
   onClose: () => void;
   onAvatarNameChange: (value: string) => void;
   onSave: () => void;
@@ -30,6 +31,7 @@ function AvatarCreationModalComponent({
   isDragging,
   avatarName,
   disableSave,
+  isSaving = false,
   onClose,
   onAvatarNameChange,
   onSave,
@@ -79,6 +81,7 @@ function AvatarCreationModalComponent({
             isDragging={isDragging}
             avatarName={avatarName}
             disableSave={disableSave}
+            isSaving={isSaving}
             onAvatarNameChange={onAvatarNameChange}
             onSave={onSave}
             onClearSelection={onClearSelection}

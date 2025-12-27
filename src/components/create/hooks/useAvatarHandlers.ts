@@ -52,6 +52,7 @@ export function useAvatarHandlers() {
   const [isDraggingOverAvatarButton, setIsDraggingOverAvatarButton] = useState(false);
   const [avatarGalleryOpenTrigger, setAvatarGalleryOpenTrigger] = useState(0);
   const [avatarName, setAvatarName] = useState("");
+  const [isSavingAvatar, setIsSavingAvatar] = useState(false);
 
   // Refs
   const avatarButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -451,6 +452,7 @@ export function useAvatarHandlers() {
         return { success: false, error: 'A product with this name already exists. Avatar and product names must be unique.' };
       }
 
+      setIsSavingAvatar(true);
       try {
         const avatar = createAvatarRecord({
           name: trimmed,
@@ -471,6 +473,8 @@ export function useAvatarHandlers() {
       } catch (error) {
         debugError('[useAvatarHandlers] Error creating avatar:', error);
         return { success: false, error: 'Failed to create avatar. Please try again.' };
+      } finally {
+        setIsSavingAvatar(false);
       }
     },
     [user?.id, storedAvatars, saveAvatar, handleAvatarCreationModalClose],
@@ -611,6 +615,7 @@ export function useAvatarHandlers() {
     activeAvatarImageId,
     avatarMap,
     selectedAvatarImages, // New: per-avatar image selection map
+    isSavingAvatar, // New: track if avatar creation is in progress
 
     // Refs
     avatarButtonRef,
