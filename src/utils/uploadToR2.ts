@@ -148,6 +148,14 @@ export interface UploadBase64Result {
 /**
  * Upload a base64/data URL image to R2 via the backend
  * Used for cropped images that don't need AI processing
+ *
+ * @param dataUrl - The base64 data URL to upload
+ * @param options - Optional configuration
+ * @param options.folder - Folder to upload to (default: 'cropped-images')
+ * @param options.prompt - Prompt associated with the image
+ * @param options.model - Model used to generate the image
+ * @param options.avatarId - If set, indicates this is an avatar image (won't create gallery R2File)
+ * @param options.productId - If set, indicates this is a product image (won't create gallery R2File)
  */
 export async function uploadBase64ToR2(
   dataUrl: string,
@@ -155,6 +163,8 @@ export async function uploadBase64ToR2(
     folder?: string;
     prompt?: string;
     model?: string;
+    avatarId?: string;
+    productId?: string;
   }
 ): Promise<UploadBase64Result> {
   try {
@@ -187,6 +197,8 @@ export async function uploadBase64ToR2(
         folder: options?.folder || 'cropped-images',
         prompt: options?.prompt,
         model: options?.model,
+        avatarId: options?.avatarId,
+        productId: options?.productId,
       }),
     });
 

@@ -1410,8 +1410,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
                       src={item.url}
                       alt={item.prompt || `Generated ${index + 1} `}
                       wrapperClassName="h-full w-full"
-                      className="relative z-[1] h-full w-full object-cover cursor-grab active:cursor-grabbing"
-                      draggable={true}
+                      className="relative z-[1] h-full w-full object-cover cursor-pointer"
+                      draggable={!isGalleryView}
                       onDragStart={(e) => {
                         e.dataTransfer.setData('text/plain', item.url);
                         e.dataTransfer.setData('text/uri-list', item.url);

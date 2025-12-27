@@ -889,10 +889,11 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
         const dataUrls = await Promise.all(validFiles.map(readFileAsDataUrl));
 
         // Upload to R2 if authenticated, otherwise use data URLs
+        // Pass avatarId to prevent creating duplicate R2File records in the gallery
         const uploadedUrls: (string | null)[] = await Promise.all(
           dataUrls.map(async (dataUrl) => {
             if (token) {
-              const uploadResult = await uploadBase64ToR2(dataUrl, { folder: 'avatar-images' });
+              const uploadResult = await uploadBase64ToR2(dataUrl, { folder: 'avatar-images', avatarId });
               if (uploadResult.success && uploadResult.url) {
                 return uploadResult.url;
               }
@@ -2319,6 +2320,33 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
             className="h-full w-full object-cover relative z-[1]"
             loading="lazy"
           />
+          {/* Voice button on me avatar in master section */}
+          {isMasterSection && avatar.isMe && (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                setIsVoiceUploadModalOpen(true);
+              }}
+              className={`voice-btn absolute bottom-2 right-2 z-10 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium font-raleway backdrop-blur-md shadow-lg transition-all duration-200 border ${hasVoiceReady
+                ? 'voice-btn--ready text-green-400'
+                : 'text-cyan-400'
+                }`}
+              aria-label={hasVoiceReady ? 'Voice ready - click to change' : 'Add your voice'}
+            >
+              {hasVoiceReady ? (
+                <>
+                  <Check className="w-3 h-3" strokeWidth={2} />
+                  <span>Voice</span>
+                </>
+              ) : (
+                <>
+                  <Mic className="w-3 h-3" strokeWidth={1.5} />
+                  <span>Add Voice</span>
+                </>
+              )}
+            </button>
+          )}
 
           {/* Overlaying description bar - hidden for all avatars in isMasterSection on lg screens */}
           <div className={`absolute bottom-0 left-0 right-0 z-10 hidden ${isMasterSection ? '' : 'lg:block'}`}>
@@ -2440,7 +2468,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                       <img
                         src={image.url}
                         alt={`${avatar.name} version ${index + 1}`}
-                        className="h-full w-full object-cover pointer-events-none"
+                        className="block h-full w-full object-cover pointer-events-none"
                         draggable={false}
                       />
                     </Reorder.Item>
@@ -2871,13 +2899,13 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     if (meAvatar) {
       // Render the isMe avatar in place of the Add Yourself card
       return renderAvatarCard(meAvatar, {
-        widthClass: isMasterSection ? ' w-full' : '',
-        isCompact: false
+        widthClass: ' w-full',
+        isCompact: isMasterSection
       });
     }
     return (
       <div
-        className={`group flex flex-col rounded-[28px] border-2 border-dashed ${isDraggingOverAddMe ? 'border-theme-text bg-theme-text/30 shadow-[0_0_32px_rgba(255,255,255,0.25)]' : 'border-red-500/40 hover:border-red-400/60 bg-theme-black/40'} shadow-lg transition-all duration-200 parallax-small cursor-pointer${isMasterSection ? ' max-w-[200px] w-full' : ''} relative`}
+        className={`group flex flex-col rounded-[28px] border-2 border-dashed ${isDraggingOverAddMe ? 'border-theme-text bg-theme-text/30 shadow-[0_0_32px_rgba(255,255,255,0.25)]' : 'border-red-500/40 hover:border-red-400/60 bg-theme-black/40'} shadow-lg transition-all duration-200 parallax-small cursor-pointer w-full relative`}
         role="button"
         tabIndex={0}
         aria-label="Add your avatar as Me"
@@ -2893,23 +2921,26 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
           }
         }}
       >
+        {/* Main content area - aspect-square to match avatar card image */}
         <div className="relative aspect-square overflow-hidden flex flex-col items-center justify-center p-4 text-center">
           <div className="absolute -top-4 -right-4 w-36 h-36 bg-red-500/20 blur-[50px] rounded-full pointer-events-none" />
           <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-tr from-transparent via-transparent to-red-500/5 pointer-events-none" />
           <div className="mb-2">
             <User className="h-6 w-6 text-red-500" strokeWidth={1.5} />
           </div>
-          <h3 className="text-base font-raleway font-medium text-theme-text mb-2 tracking-tight">
-            Add yourself
+          <h3 className="text-sm font-raleway font-medium text-theme-text mb-1 tracking-tight">
+            Your Image
           </h3>
-          <p className="text-[10px] leading-tight text-theme-white font-raleway mb-3 max-w-[140px]">
+          <p className="text-[9px] leading-tight text-theme-white/60 font-raleway mb-2 max-w-[100px]">
             Upload a photo to create your "me" avatar
           </p>
-          <div className="flex items-center gap-2 bg-theme-text text-theme-black px-4 py-1.5 rounded-full text-xs font-medium font-raleway">
-            <Plus className="h-3 w-3" strokeWidth={2} />
+          <div className="flex items-center gap-1.5 bg-theme-text text-theme-black px-3 py-1 rounded-full text-[10px] font-medium font-raleway">
+            <Plus className="h-2.5 w-2.5" strokeWidth={2} />
             Add Me
           </div>
         </div>
+        {/* Spacer to match avatar card description bar height - only on lg screens */}
+        <div className="hidden lg:block h-[88px]" />
       </div>
     );
   };
@@ -3034,9 +3065,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   };
 
   const renderVoiceCard = () => {
+    if (!isMasterSection) return null;
     return (
       <div
-        className={`group flex flex-col overflow-hidden rounded-[20px] border-2 border-dashed ${hasVoiceReady ? 'border-green-500/50 bg-black' : 'border-cyan-500/40 hover:border-cyan-400/60 bg-theme-black/40'} shadow-lg transition-all duration-200 parallax-small w-full ${hasVoiceReady ? '' : 'cursor-pointer'} relative`}
+        className={`group flex flex-col overflow-hidden rounded-[28px] border-2 border-dashed ${hasVoiceReady ? 'border-green-500/50 bg-black' : 'border-cyan-500/40 hover:border-cyan-400/60 bg-theme-black/40'} shadow-lg transition-all duration-200 parallax-small w-full ${hasVoiceReady ? '' : 'cursor-pointer'} relative`}
         role={hasVoiceReady ? undefined : "button"}
         tabIndex={hasVoiceReady ? undefined : 0}
         aria-label={hasVoiceReady ? "Voice ready" : "Add your voice"}
@@ -3048,33 +3080,33 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
           }
         }}
       >
-        {/* Teal/Green Shade */}
-        <div className={`absolute -top-2 -right-2 w-20 h-20 ${hasVoiceReady ? 'bg-green-400/20' : 'bg-cyan-400/20'} blur-[30px] rounded-full pointer-events-none`} />
-        <div className={`absolute top-0 right-0 w-full h-full bg-gradient-to-tr from-transparent via-transparent ${hasVoiceReady ? 'to-green-500/5' : 'to-cyan-500/5'} pointer-events-none`} />
-
-        <div className="relative aspect-square overflow-hidden flex flex-col items-center justify-center p-2 text-center">
-          <div className="mb-1">
+        {/* Main content area - aspect-square to match avatar card image */}
+        <div className="relative aspect-square overflow-hidden flex flex-col items-center justify-center p-4 text-center">
+          {/* Teal/Green Shade */}
+          <div className={`absolute -top-4 -right-4 w-36 h-36 ${hasVoiceReady ? 'bg-green-400/20' : 'bg-cyan-400/20'} blur-[50px] rounded-full pointer-events-none`} />
+          <div className={`absolute top-0 right-0 w-full h-full bg-gradient-to-tr from-transparent via-transparent ${hasVoiceReady ? 'to-green-500/5' : 'to-cyan-500/5'} pointer-events-none`} />
+          <div className="mb-2">
             {hasVoiceReady ? (
-              <Check className="h-5 w-5 text-green-400" strokeWidth={2} />
+              <Check className="h-6 w-6 text-green-400" strokeWidth={2} />
             ) : (
-              <Mic className="h-5 w-5 text-cyan-400" strokeWidth={1.5} />
+              <Mic className="h-6 w-6 text-cyan-400" strokeWidth={1.5} />
             )}
           </div>
 
-          <h3 className="text-xs font-raleway font-medium text-theme-text mb-1 tracking-tight">
-            {hasVoiceReady ? 'Voice ready' : 'Your voice'}
+          <h3 className="text-sm font-raleway font-medium text-theme-text mb-1 tracking-tight">
+            {hasVoiceReady ? 'Voice ready' : 'Your Voice'}
           </h3>
 
-          <p className="text-[8px] leading-tight text-theme-white font-raleway mb-2 max-w-[90px]">
+          <p className="text-[9px] leading-tight text-theme-white/60 font-raleway mb-2 max-w-[100px]">
             {hasVoiceReady
-              ? 'Ready to use'
+              ? 'Your voice clone is ready to use'
               : 'Add your voice clone'
             }
           </p>
 
           {hasVoiceReady ? (
             <button
-              className="flex items-center gap-1 bg-theme-white/10 text-theme-text px-2 py-1 rounded-full text-[10px] font-medium hover:bg-theme-white/20 transition-colors border border-theme-white/20"
+              className="flex items-center gap-1.5 bg-theme-white/10 text-theme-text px-3 py-1 rounded-full text-[10px] font-medium hover:bg-theme-white/20 transition-colors border border-theme-white/20"
               onClick={(e) => {
                 e.stopPropagation();
                 setIsVoiceUploadModalOpen(true);
@@ -3084,12 +3116,14 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               Change
             </button>
           ) : (
-            <button className="flex items-center gap-1 bg-theme-text text-theme-black px-2 py-1 rounded-full text-[10px] font-medium font-raleway hover:bg-theme-text/90 transition-colors">
+            <button className="flex items-center gap-1.5 bg-theme-text text-theme-black px-3 py-1 rounded-full text-[10px] font-medium font-raleway hover:bg-theme-text/90 transition-colors">
               <Upload className="h-2.5 w-2.5 text-cyan-500" strokeWidth={2} />
               Add
             </button>
           )}
         </div>
+        {/* Spacer to match avatar card description bar height - only on lg screens */}
+        <div className="hidden lg:block h-[88px]" />
       </div>
     );
   };
@@ -3128,32 +3162,16 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
             />
 
             {isMasterSection ? (
-              <>
-                {/* Avatar Grid - uniform cards for all avatars */}
-                <div className="flex flex-wrap items-start gap-3 mb-4">
-                  {/* All avatars in uniform size - main avatar (isMe) rendered first via renderAddMeCard */}
-                  <div className="flex-shrink-0" style={{ width: 'clamp(180px, 22vw, 220px)' }}>
-                    {renderAddMeCard()}
-                  </div>
-
-                  {/* Other avatars with same size as main avatar */}
-                  {avatars.filter(a => !a.isMe).map(avatar => (
-                    <div key={avatar.id} className="flex-shrink-0" style={{ width: 'clamp(180px, 22vw, 220px)' }}>
-                      {renderAvatarCard(avatar, {
-                        widthClass: " w-full",
-                        isCompact: false
-                      })}
-                    </div>
-                  ))}
-
-                  {renderHybridCard()}
+              <div className="flex flex-col gap-6 mb-0 w-full">
+                {/* Top Section - Avatar Cards - Responsive Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                  {renderAddMeCard()}
+                  {avatars.filter(a => !a.isMe).map(avatar => renderAvatarCard(avatar, {
+                    widthClass: " w-full",
+                    isCompact: true
+                  }))}
                 </div>
-
-                {/* Voice Card - below the avatar grid, smaller size */}
-                <div className="mb-4" style={{ width: '100px' }}>
-                  {renderVoiceCard()}
-                </div>
-              </>
+              </div>
             ) : (
               <div className="grid grid-cols-1 gap-0.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-items-start">
                 {renderAddMeCard()}
