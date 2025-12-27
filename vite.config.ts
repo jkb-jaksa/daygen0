@@ -12,14 +12,29 @@ type ViteConfigWithTest = import('vite').UserConfig & {
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  
+
   // Only use proxy if no VITE_API_BASE_URL is set (for local backend development)
   const useProxy = !env.VITE_API_BASE_URL && !env.VITE_BASE_URL;
-  
+
   const config: ViteConfigWithTest = {
     plugins: [react()],
     // Vite automatically exposes VITE_* environment variables
-    // No need for manual define configuration
+
+    build: {
+      sourcemap: false, // Disable source maps for production to speed up build
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            // Split large dependencies into separate chunks
+            vendor: ['react', 'react-dom', 'react-router-dom'],
+            framer: ['framer-motion'],
+            aws: ['@aws-sdk/client-s3'],
+            ui: ['lucide-react', 'clsx'],
+          },
+        },
+      },
+    },
+
     server: {
       proxy: useProxy ? {
         '/api': {
@@ -36,6 +51,6 @@ export default defineConfig(({ mode }) => {
       } : undefined,
     },
   }
-  
+
   return config;
 })
