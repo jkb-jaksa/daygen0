@@ -1,5 +1,5 @@
-import { memo, useRef, useEffect, useState, useCallback } from "react";
-import { Upload, X, Check, Pencil, Mic, Image as ImageIcon, Loader2 } from "lucide-react";
+import { memo, useRef, useEffect, useCallback, useMemo } from "react";
+import { Upload, X, Check, Mic, Image as ImageIcon, Loader2 } from "lucide-react";
 import { buttons } from "../../styles/designSystem";
 import { createCardImageStyle } from "../../utils/cardImageStyle";
 import type { AvatarSelection } from "./types";
@@ -18,6 +18,7 @@ export interface MasterAvatarCreationOptionsProps {
   onDragStateChange: (dragging: boolean) => void;
   onUploadError: (message: string | null) => void;
   onVoiceClick?: (voiceId: string) => void;
+  existingNames?: string[];
   className?: string;
 }
 
@@ -35,44 +36,29 @@ function MasterAvatarCreationOptionsComponent({
   onDragStateChange,
   onUploadError,
   onVoiceClick,
+  existingNames = [],
   className,
 }: MasterAvatarCreationOptionsProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
-  const [isEditingName, setIsEditingName] = useState(true);
-  const [showEditIcon, setShowEditIcon] = useState(false);
   const dragCounterRef = useRef(0);
+
+  // Check if the current avatar name is already used by another avatar/product
+  const isDuplicateName = useMemo(() => {
+    if (!avatarName.trim()) return false;
+    const normalizedName = avatarName.trim().toLowerCase();
+    return existingNames.some(name => name.toLowerCase() === normalizedName);
+  }, [avatarName, existingNames]);
 
   // Auto-focus the name input when an avatar is selected
   useEffect(() => {
-    if (selection && nameInputRef.current && isEditingName) {
+    if (selection && nameInputRef.current) {
       // Small delay to ensure the input is rendered
       setTimeout(() => {
         nameInputRef.current?.focus();
       }, 100);
     }
-  }, [selection, isEditingName]);
-
-  // Reset edit mode when selection changes
-  useEffect(() => {
-    if (selection) {
-      setIsEditingName(true);
-      setShowEditIcon(false);
-    }
   }, [selection]);
-
-  // Show edit icon with transition when not editing and selection exists
-  useEffect(() => {
-    if (selection && !isEditingName) {
-      // Small delay to ensure smooth transition
-      const timer = setTimeout(() => {
-        setShowEditIcon(true);
-      }, 10);
-      return () => clearTimeout(timer);
-    } else {
-      setShowEditIcon(false);
-    }
-  }, [selection, isEditingName]);
 
   const validateAvatarFile = (file: File): string | null => {
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
@@ -160,49 +146,26 @@ function MasterAvatarCreationOptionsComponent({
               {/* Avatar name overlay */}
               <div className="absolute bottom-0 left-0 right-0 z-10">
                 <div className="PromptDescriptionBar rounded-b-2xl px-4 py-2.5">
-                  <div className="flex items-center gap-2 min-h-[32px]">
-                    {isEditingName ? (
-                      <>
-                        <input
-                          ref={nameInputRef}
-                          className="flex-1 h-[32px] rounded-lg border border-theme-mid bg-theme-black/60 px-3 text-base font-raleway font-normal text-theme-text placeholder:text-theme-white focus:border-theme-text focus:outline-none"
-                          placeholder="Enter your name..."
-                          value={avatarName}
-                          onChange={(event) => onAvatarNameChange(event.target.value)}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter") {
-                              event.preventDefault();
-                              setIsEditingName(false);
-                            }
-                          }}
-                        />
-                        <button
-                          type="button"
-                          className="relative z-10 flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-lg text-theme-white/70 hover:text-theme-text hover:bg-theme-white/10 transition-all duration-100 pointer-events-auto"
-                          onClick={() => setIsEditingName(false)}
-                          aria-label="Save avatar name"
-                        >
-                          <Check className="w-4 h-4" />
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <p
-                          className="flex-1 text-base font-raleway font-normal text-theme-text px-3 break-words line-clamp-2"
-                          title={avatarName}
-                        >
-                          {avatarName || "Enter your name..."}
-                        </p>
-                        <button
-                          type="button"
-                          className={`relative z-10 flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-lg text-theme-white/70 hover:text-theme-text hover:bg-theme-white/10 transition-all duration-100 pointer-events-auto ${showEditIcon ? 'opacity-100' : 'opacity-0'
-                            }`}
-                          onClick={() => setIsEditingName(true)}
-                          aria-label="Edit avatar name"
-                        >
-                          <Pencil className="w-3 h-3" />
-                        </button>
-                      </>
+                  <div className="flex flex-col gap-1 min-h-[32px]">
+                    <div className="flex items-center gap-2">
+                      <input
+                        ref={nameInputRef}
+                        className={`flex-1 h-[32px] rounded-lg border bg-theme-black/60 px-3 text-base font-raleway font-normal text-theme-text placeholder:text-theme-white focus:border-theme-text focus:outline-none transition-colors duration-200 ${isDuplicateName ? 'border-red-500/70' : 'border-theme-mid'}`}
+                        placeholder="Enter your name..."
+                        value={avatarName}
+                        onChange={(event) => onAvatarNameChange(event.target.value)}
+                      />
+                      {/* Show red X when duplicate, green checkmark when valid */}
+                      {avatarName.trim() && (
+                        <div className={`flex-shrink-0 ${isDuplicateName ? 'text-red-500' : 'text-green-500'}`}>
+                          {isDuplicateName ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+                        </div>
+                      )}
+                    </div>
+                    {isDuplicateName && (
+                      <p className="text-xs font-raleway text-red-400">
+                        An avatar with this name already exists.
+                      </p>
                     )}
                   </div>
                 </div>

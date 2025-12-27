@@ -506,10 +506,18 @@ export function useAvatarHandlers() {
       if (imageFile) {
         const reader = new FileReader();
         reader.onload = () => {
+          const imageUrl = String(reader.result);
           setAvatarSelection({
-            imageUrl: String(reader.result),
+            imageUrl,
             source: 'upload',
             sourceId: imageFile.name,
+            images: [{
+              id: `avatar-img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+              url: imageUrl,
+              createdAt: new Date().toISOString(),
+              source: 'upload',
+              sourceId: imageFile.name,
+            }],
           });
           setIsAvatarCreationModalOpen(true);
         };
@@ -523,6 +531,13 @@ export function useAvatarHandlers() {
           imageUrl: url,
           source: 'upload',
           sourceId: 'gallery-drop',
+          images: [{
+            id: `avatar-img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            url,
+            createdAt: new Date().toISOString(),
+            source: 'upload',
+            sourceId: 'gallery-drop',
+          }],
         });
         setIsAvatarCreationModalOpen(true);
       }
@@ -530,22 +545,38 @@ export function useAvatarHandlers() {
   }, []);
 
   // Process avatar image file
-  const processAvatarImageFile = useCallback((file: File) => {
-    if (!file.type.startsWith('image/')) {
-      setAvatarUploadError('Please select an image file');
-      return;
-    }
+  const processAvatarImageFile = useCallback((file: File): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (!file.type.startsWith('image/')) {
+        setAvatarUploadError('Please select an image file');
+        resolve(false);
+        return;
+      }
 
-    setAvatarUploadError(null);
-    const reader = new FileReader();
-    reader.onload = () => {
-      setAvatarSelection({
-        imageUrl: String(reader.result),
-        source: 'upload',
-        sourceId: file.name,
-      });
-    };
-    reader.readAsDataURL(file);
+      setAvatarUploadError(null);
+      const reader = new FileReader();
+      reader.onload = () => {
+        const imageUrl = String(reader.result);
+        setAvatarSelection({
+          imageUrl,
+          source: 'upload',
+          sourceId: file.name,
+          images: [{
+            id: `avatar-img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            url: imageUrl,
+            createdAt: new Date().toISOString(),
+            source: 'upload',
+            sourceId: file.name,
+          }],
+        });
+        resolve(true);
+      };
+      reader.onerror = () => {
+        setAvatarUploadError('Failed to read the file');
+        resolve(false);
+      };
+      reader.readAsDataURL(file);
+    });
   }, []);
 
   // Reset avatar creation panel

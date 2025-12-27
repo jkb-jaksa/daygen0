@@ -384,15 +384,17 @@ const PromptForm = memo<PromptFormProps>(
     ]);
 
     const handleAvatarQuickUpload = useCallback(
-      (file: File | null) => {
+      async (file: File | null) => {
         if (!file) {
           return;
         }
         setIsAvatarPickerOpen(false);
         setIsDraggingAvatar(false);
         setAvatarUploadError(null);
-        processAvatarImageFile(file);
-        setIsAvatarCreationModalOpen(true);
+        const success = await processAvatarImageFile(file);
+        if (success) {
+          setIsAvatarCreationModalOpen(true);
+        }
       },
       [
         setIsAvatarPickerOpen,
@@ -2326,10 +2328,10 @@ const PromptForm = memo<PromptFormProps>(
                   setAvatarUploadError(null);
                   avatarQuickUploadInputRef.current?.click();
                 }}
-                className="rounded-lg p-1 text-theme-text transition-colors duration-200 hover:bg-theme-text/10"
+                className="inline-flex size-7 items-center justify-center rounded-full text-theme-white transition-colors duration-200 hover:bg-theme-text/10 hover:text-theme-text"
                 aria-label="Add new avatar"
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-3.5 w-3.5" />
               </button>
             </div>
             {remainingReferenceSlots === 0 && selectedAvatars.length > 0 && (
@@ -2757,6 +2759,7 @@ const PromptForm = memo<PromptFormProps>(
               onProcessFile={processAvatarImageFile}
               onDragStateChange={setIsDraggingAvatar}
               onUploadError={setAvatarUploadError}
+              existingNames={[...storedAvatars.map(a => a.name), ...storedProducts.map(p => p.name)]}
             />
           </Suspense>
         )}

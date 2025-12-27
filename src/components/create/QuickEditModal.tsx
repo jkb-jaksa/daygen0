@@ -910,12 +910,14 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
     }, [productHandlers, setIsProductPickerOpen, setIsAvatarPickerOpen]);
 
     // Handlers for file inputs
-    const handleAvatarQuickUploadInput = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleAvatarQuickUploadInput = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
+        event.target.value = ''; // Reset input early
         if (file) {
-            avatarHandlers.processAvatarImageFile(file);
-            // Reset input
-            event.target.value = '';
+            const success = await avatarHandlers.processAvatarImageFile(file);
+            if (success) {
+                avatarHandlers.setIsAvatarCreationModalOpen(true);
+            }
         }
     };
 
@@ -3343,6 +3345,18 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                             >
                                 Your Avatars
                             </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsAvatarPickerOpen(false);
+                                    avatarHandlers.setAvatarUploadError(null);
+                                    avatarHandlers.avatarQuickUploadInputRef.current?.click();
+                                }}
+                                className="inline-flex size-7 items-center justify-center rounded-full text-theme-white transition-colors duration-200 hover:bg-theme-text/10 hover:text-theme-text"
+                                aria-label="Add new avatar"
+                            >
+                                <Plus className="h-3.5 w-3.5" />
+                            </button>
                         </div>
                         {avatarHandlers.storedAvatars.length > 0 ? (
                             <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
@@ -3597,6 +3611,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                 onProcessFile={avatarHandlers.processAvatarImageFile}
                                 onDragStateChange={avatarHandlers.setIsDraggingAvatar}
                                 onUploadError={avatarHandlers.setAvatarUploadError}
+                                existingNames={[...avatarHandlers.storedAvatars.map(a => a.name), ...productHandlers.storedProducts.map(p => p.name)]}
                             />
                         </Suspense>
                     )

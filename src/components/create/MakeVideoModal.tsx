@@ -415,12 +415,14 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
     }, [productHandlers, setIsProductPickerOpen, setIsAvatarPickerOpen]);
 
     // Handlers for file inputs
-    const handleAvatarQuickUploadInput = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleAvatarQuickUploadInput = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
+        event.target.value = ''; // Reset input early
         if (file) {
-            avatarHandlers.processAvatarImageFile(file);
-            // Reset input
-            event.target.value = '';
+            const success = await avatarHandlers.processAvatarImageFile(file);
+            if (success) {
+                avatarHandlers.setIsAvatarCreationModalOpen(true);
+            }
         }
     };
 
@@ -1621,6 +1623,21 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                     onClose={() => setIsAvatarPickerOpen(false)}
                 >
                     <div className="min-w-[260px] space-y-2">
+                        <div className="flex items-center justify-between px-1">
+                            <div className="text-base font-raleway text-theme-text">Your Avatars</div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsAvatarPickerOpen(false);
+                                    avatarHandlers.setAvatarUploadError(null);
+                                    avatarHandlers.avatarQuickUploadInputRef.current?.click();
+                                }}
+                                className="inline-flex size-7 items-center justify-center rounded-full text-theme-white transition-colors duration-200 hover:bg-theme-text/10 hover:text-theme-text"
+                                aria-label="Add new avatar"
+                            >
+                                <Plus className="h-3.5 w-3.5" />
+                            </button>
+                        </div>
                         {avatarHandlers.storedAvatars.length > 0 && (
                             <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
                                 {[...avatarHandlers.storedAvatars].sort((a, b) => (b.isMe ? 1 : 0) - (a.isMe ? 1 : 0)).map(avatar => {
@@ -1664,19 +1681,6 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                 <p className="text-sm text-theme-light mb-2">No avatars yet</p>
                             </div>
                         )}
-                        {/* Create New Avatar Button */}
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setIsAvatarPickerOpen(false);
-                                avatarHandlers.setAvatarUploadError(null);
-                                avatarHandlers.avatarQuickUploadInputRef.current?.click();
-                            }}
-                            className="w-full rounded-2xl border border-dashed border-theme-mid px-3 py-2 text-sm font-raleway text-theme-white hover:border-theme-text hover:text-theme-text transition-colors duration-200 flex items-center justify-center gap-2"
-                        >
-                            <Plus className="w-4 h-4" />
-                            Create new avatar
-                        </button>
                     </div>
                 </AvatarPickerPortal>
 
@@ -1793,6 +1797,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                             onProcessFile={avatarHandlers.processAvatarImageFile}
                             onDragStateChange={avatarHandlers.setIsDraggingAvatar}
                             onUploadError={avatarHandlers.setAvatarUploadError}
+                            existingNames={[...avatarHandlers.storedAvatars.map(a => a.name), ...productHandlers.storedProducts.map(p => p.name)]}
                         />
                     </Suspense>
                 )}

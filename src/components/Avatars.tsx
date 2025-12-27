@@ -2020,6 +2020,13 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const disableSave = !selection || isSaving;
   const subtitle = useMemo(() => defaultSubtitle, []);
 
+  // Compute existing avatar names for duplicate detection (excluding the avatar being edited in modal)
+  const existingAvatarNames = useMemo(() => {
+    return avatars
+      .filter(a => !editingAvatarIdForModal || a.id !== editingAvatarIdForModal)
+      .map(a => a.name);
+  }, [avatars, editingAvatarIdForModal]);
+
   const renderAvatarCard = (
     avatar: StoredAvatar,
     options?: { disableModalTrigger?: boolean; keyPrefix?: string; widthClass?: string; isCompact?: boolean },
@@ -2213,104 +2220,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                toggleAvatarMoreMenu(avatar.id, event.currentTarget);
-              }}
-              className={`image-action-btn parallax-large transition-opacity duration-100 ${(avatarMoreMenu?.avatarId === avatar.id || avatarEditMenu?.avatarId === avatar.id)
-                ? 'opacity-100 pointer-events-auto'
-                : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                }`}
-              onMouseEnter={(e) => {
-                showHoverTooltip(
-                  e.currentTarget,
-                  `more-avatar-master-${avatar.id}`,
-                  { placement: 'below', offset: 2 },
-                );
-              }}
-              onMouseLeave={() => {
-                hideHoverTooltip(`more-avatar-master-${avatar.id}`);
-              }}
-              aria-label="More options"
-            >
-              <MoreHorizontal className="w-3 h-3" />
-            </button>
-            <ImageActionMenuPortal
-              anchorEl={avatarMoreMenu?.avatarId === avatar.id ? avatarMoreMenu?.anchor ?? null : null}
-              open={avatarMoreMenu?.avatarId === avatar.id}
-              onClose={closeAvatarMoreMenu}
-              zIndex={creationsModalAvatar ? 10600 : 1200}
-            >
-              <button
-                type="button"
-                className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  handleDownloadImage(avatar.imageUrl);
-                  closeAvatarMoreMenu();
-                }}
-              >
-                <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-                <Download className="h-4 w-4 text-theme-text relative z-10" />
-                <span className="relative z-10">Download</span>
-              </button>
-              <button
-                type="button"
-                className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  handleCopyLink(avatar.imageUrl);
-                  closeAvatarMoreMenu();
-                }}
-              >
-                <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-                <Copy className="h-4 w-4 text-theme-text relative z-10" />
-                <span className="relative z-10">Copy link</span>
-              </button>
-              <button
-                type="button"
-                className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  handleManageFolders(avatar.imageUrl);
-                  closeAvatarMoreMenu();
-                }}
-              >
-                <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-                <FolderIcon className="h-4 w-4 text-theme-text relative z-10" />
-                <span className="relative z-10">Manage folders</span>
-              </button>
-              <button
-                type="button"
-                className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setAvatarToPublish(avatar);
-                  closeAvatarMoreMenu();
-                }}
-              >
-                <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-                <Globe className="h-4 w-4 text-theme-text relative z-10" />
-                <span className="relative z-10">{avatar.published ? 'Unpublish' : 'Publish'}</span>
-              </button>
-              {!avatar.isMe && (
-                <button
-                  type="button"
-                  className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    void handleSetMeAvatar(avatar.id);
-                    closeAvatarMoreMenu();
-                  }}
-                >
-                  <div className="pointer-events-none absolute inset-0 bg-theme-white/10 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
-                  <Fingerprint className="h-4 w-4 text-theme-text relative z-10" />
-                  <span className="relative z-10">Set as Me</span>
-                </button>
-              )}
-            </ImageActionMenuPortal>
+
           </div>
           <img
             src={avatar.imageUrl}
@@ -2531,7 +2441,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
           const createImageTooltipId = `create-image-master-${avatar.id}`;
           const makeVideoTooltipId = `make-video-master-${avatar.id}`;
           const deleteTooltipId = `delete-avatar-master-${avatar.id}`;
-          const moreTooltipId = `more-avatar-master-${avatar.id}`;
+
           return (
             <>
               {createPortal(
@@ -2564,16 +2474,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 </div>,
                 document.body,
               )}
-              {createPortal(
-                <div
-                  data-tooltip-for={moreTooltipId}
-                  className={`${tooltips.base} fixed`}
-                  style={{ zIndex: 9999 }}
-                >
-                  More
-                </div>,
-                document.body,
-              )}
+
             </>
           );
         })()}
@@ -2867,6 +2768,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               onDragStateChange={setIsDragging}
               onUploadError={setUploadError}
               onVoiceClick={() => setIsVoiceUploadModalOpen(true)}
+              existingNames={existingAvatarNames}
             />
           ) : (
             <AvatarCreationOptions
@@ -2885,6 +2787,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               onDragStateChange={setIsDragging}
               onUploadError={setUploadError}
               onVoiceClick={() => setIsVoiceUploadModalOpen(true)}
+              existingNames={existingAvatarNames}
             />
           )}
         </Suspense>
@@ -3803,6 +3706,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
             onReorderImages={handleReorderSelectionImages}
             onDragStateChange={setIsDragging}
             onUploadError={setUploadError}
+            existingNames={existingAvatarNames}
           />
         </Suspense>
       )}

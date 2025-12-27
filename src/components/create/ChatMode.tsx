@@ -1357,7 +1357,7 @@ const ChatMode: React.FC = () => {
                               <div className="text-base font-raleway text-theme-text">Your Avatars</div>
                               <button
                                 type="button"
-                                className="inline-flex size-7 items-center justify-center rounded-full border border-theme-dark bg-theme-black text-theme-white transition-colors duration-200 hover:text-theme-text"
+                                className="inline-flex size-7 items-center justify-center rounded-full text-theme-white transition-colors duration-200 hover:bg-theme-text/10 hover:text-theme-text"
                                 onClick={() => {
                                   setIsAvatarPickerOpen(false);
                                   setIsAvatarCreationModalOpen(true);
@@ -1996,6 +1996,7 @@ const ChatMode: React.FC = () => {
           onProcessFile={processAvatarImageFile}
           onDragStateChange={setIsDraggingAvatar}
           onUploadError={setAvatarUploadError}
+          existingNames={[...storedAvatars.map(a => a.name), ...storedProducts.map(p => p.name)]}
         />
       </Suspense>
     </div>

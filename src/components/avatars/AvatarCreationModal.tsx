@@ -20,6 +20,7 @@ interface AvatarCreationModalProps {
   onReorderImages?: (reorderedImages: AvatarImage[]) => void;
   onDragStateChange: (dragging: boolean) => void;
   onUploadError: (message: string | null) => void;
+  existingNames?: string[];
 }
 
 function AvatarCreationModalComponent({
@@ -38,6 +39,7 @@ function AvatarCreationModalComponent({
   onReorderImages,
   onDragStateChange,
   onUploadError,
+  existingNames = [],
 }: AvatarCreationModalProps) {
   if (!open) {
     return null;
@@ -85,6 +87,7 @@ function AvatarCreationModalComponent({
             onReorderImages={onReorderImages}
             onDragStateChange={onDragStateChange}
             onUploadError={onUploadError}
+            existingNames={existingNames}
           />
         </div>
       </div>
