@@ -28,7 +28,6 @@ import {
   Download,
   Copy,
   Loader2,
-  Upload,
   Folder as FolderIcon,
   FolderPlus,
   Lock,
@@ -445,7 +444,6 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const [isAvatarFullSizeOpen, setIsAvatarFullSizeOpen] = useState<boolean>(false);
   const [activeAvatarImageId, setActiveAvatarImageId] = useState<string | null>(null);
   const avatarImageInputRef = useRef<HTMLInputElement | null>(null);
-  const hybridImageInputRef = useRef<HTMLInputElement | null>(null);
   const addMeFileInputRef = useRef<HTMLInputElement | null>(null);
   const [avatarImageUploadTarget, setAvatarImageUploadTarget] = useState<string | null>(null);
   const [avatarImageUploadError, setAvatarImageUploadError] = useState<string | null>(null);
@@ -2938,189 +2936,6 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
             <Plus className="h-2.5 w-2.5" strokeWidth={2} />
             Add Me
           </div>
-        </div>
-        {/* Spacer to match avatar card description bar height - only on lg screens */}
-        <div className="hidden lg:block h-[88px]" />
-      </div>
-    );
-  };
-
-  const renderHybridCard = () => {
-    // Removed - no longer showing the hybrid upload card in empty state
-    return null;
-    return (
-      <>
-        <input
-          ref={hybridImageInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) {
-              processImageFile(file);
-            }
-            // Reset input value so the same file can be selected again
-            e.target.value = '';
-          }}
-        />
-        <div
-          className={`group flex flex-col overflow-hidden rounded-[28px] border-2 ${selection ? 'border-theme-white/20' : 'border-dashed border-theme-white/30 hover:border-theme-text/50'} bg-black shadow-lg transition-all duration-200 parallax-small max-w-[200px] w-full ${!selection ? 'cursor-pointer' : ''} relative`}
-          role={selection ? undefined : "button"}
-          tabIndex={selection ? undefined : 0}
-          aria-label={selection ? "Selected image" : "Upload your image"}
-          onClick={selection ? undefined : () => hybridImageInputRef.current?.click()}
-          onKeyDown={selection ? undefined : event => {
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              hybridImageInputRef.current?.click();
-            }
-          }}
-        >
-          {selection ? (
-            /* Show selected image with overlay controls */
-            <div className="relative aspect-square w-full h-full group/card">
-              <img
-                src={selection.imageUrl}
-                alt="Selected avatar"
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-
-              {/* Top Actions Overlay */}
-              <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-0 group-hover/card:opacity-100 transition-opacity duration-200">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelection(null);
-                  }}
-                  className="flex items-center justify-center w-8 h-8 rounded-full bg-black/60 text-theme-white hover:bg-black/80 hover:text-red-400 transition-colors backdrop-blur-md border border-theme-white/10"
-                  title="Remove image"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Bottom Input Overlay */}
-              <div className="absolute bottom-0 left-0 right-0 p-3 z-10">
-                <div className="PromptDescriptionBar flex items-center gap-2 rounded-2xl px-3 py-2 bg-black/60 border border-theme-white/10 backdrop-blur-md shadow-lg">
-                  <input
-                    type="text"
-                    value={avatarName}
-                    onChange={(e) => setAvatarName(e.target.value)}
-                    onClick={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => {
-                      e.stopPropagation();
-                      if (e.key === "Enter") handleSaveAvatar();
-                    }}
-                    placeholder="Avatar name"
-                    className="flex-1 bg-transparent text-sm font-raleway text-theme-text placeholder:text-theme-white/50 focus:outline-none min-w-0"
-                    autoFocus
-                  />
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSaveAvatar();
-                    }}
-                    disabled={disableSave}
-                    className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full text-theme-white/70 hover:text-green-400 hover:bg-theme-white/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                    title="Save avatar"
-                  >
-                    <Check className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* Show upload prompt */
-            <>
-              {/* Red gradient glow for image upload */}
-              <div className="absolute -top-4 -right-4 w-36 h-36 bg-red-500/20 blur-[50px] rounded-full pointer-events-none" />
-              <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-tr from-transparent via-transparent to-red-500/5 pointer-events-none" />
-
-              <div className="relative aspect-square overflow-hidden flex flex-col items-center justify-center p-4 text-center">
-                <div className="mb-2">
-                  <ImageIcon className="h-8 w-8 text-red-500" strokeWidth={1.5} />
-                </div>
-
-                <h3 className="text-base font-raleway font-medium text-theme-text mb-1 tracking-tight">
-                  Upload your image
-                </h3>
-
-                <p className="text-[10px] leading-tight text-theme-white/40 font-raleway mb-4 max-w-[140px]">
-                  Click anywhere, drag and drop, or paste your image to get started
-                </p>
-
-                <button className="flex items-center gap-2 bg-theme-text text-theme-black px-4 py-1.5 rounded-full text-xs font-medium font-raleway hover:bg-theme-text/90 transition-colors">
-                  <Upload className="h-3 w-3 text-red-500" strokeWidth={2} />
-                  Upload
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </>
-    );
-  };
-
-  const renderVoiceCard = () => {
-    if (!isMasterSection) return null;
-    return (
-      <div
-        className={`group flex flex-col overflow-hidden rounded-[28px] border-2 border-dashed ${hasVoiceReady ? 'border-green-500/50 bg-black' : 'border-cyan-500/40 hover:border-cyan-400/60 bg-theme-black/40'} shadow-lg transition-all duration-200 parallax-small w-full ${hasVoiceReady ? '' : 'cursor-pointer'} relative`}
-        role={hasVoiceReady ? undefined : "button"}
-        tabIndex={hasVoiceReady ? undefined : 0}
-        aria-label={hasVoiceReady ? "Voice ready" : "Add your voice"}
-        onClick={hasVoiceReady ? undefined : () => setIsVoiceUploadModalOpen(true)}
-        onKeyDown={hasVoiceReady ? undefined : event => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            setIsVoiceUploadModalOpen(true);
-          }
-        }}
-      >
-        {/* Main content area - aspect-square to match avatar card image */}
-        <div className="relative aspect-square overflow-hidden flex flex-col items-center justify-center p-4 text-center">
-          {/* Teal/Green Shade */}
-          <div className={`absolute -top-4 -right-4 w-36 h-36 ${hasVoiceReady ? 'bg-green-400/20' : 'bg-cyan-400/20'} blur-[50px] rounded-full pointer-events-none`} />
-          <div className={`absolute top-0 right-0 w-full h-full bg-gradient-to-tr from-transparent via-transparent ${hasVoiceReady ? 'to-green-500/5' : 'to-cyan-500/5'} pointer-events-none`} />
-          <div className="mb-2">
-            {hasVoiceReady ? (
-              <Check className="h-6 w-6 text-green-400" strokeWidth={2} />
-            ) : (
-              <Mic className="h-6 w-6 text-cyan-400" strokeWidth={1.5} />
-            )}
-          </div>
-
-          <h3 className="text-sm font-raleway font-medium text-theme-text mb-1 tracking-tight">
-            {hasVoiceReady ? 'Voice ready' : 'Your Voice'}
-          </h3>
-
-          <p className="text-[9px] leading-tight text-theme-white/60 font-raleway mb-2 max-w-[100px]">
-            {hasVoiceReady
-              ? 'Your voice clone is ready to use'
-              : 'Add your voice clone'
-            }
-          </p>
-
-          {hasVoiceReady ? (
-            <button
-              className="flex items-center gap-1.5 bg-theme-white/10 text-theme-text px-3 py-1 rounded-full text-[10px] font-medium hover:bg-theme-white/20 transition-colors border border-theme-white/20"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsVoiceUploadModalOpen(true);
-              }}
-            >
-              <Mic className="h-2.5 w-2.5 text-green-400" strokeWidth={2} />
-              Change
-            </button>
-          ) : (
-            <button className="flex items-center gap-1.5 bg-theme-text text-theme-black px-3 py-1 rounded-full text-[10px] font-medium font-raleway hover:bg-theme-text/90 transition-colors">
-              <Upload className="h-2.5 w-2.5 text-cyan-500" strokeWidth={2} />
-              Add
-            </button>
-          )}
         </div>
         {/* Spacer to match avatar card description bar height - only on lg screens */}
         <div className="hidden lg:block h-[88px]" />
