@@ -2319,7 +2319,7 @@ export default function Products() {
       <div className={layout.backdrop} aria-hidden />
       <section className={`relative z-10 ${sectionLayoutClass}`}>
         <div className={`${layout.container}`}>
-          <div className="mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 lg:gap-4 lg:grid-cols-[160px_minmax(0,1fr)]">
+          <div className="mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 lg:gap-4 lg:grid-cols-[152px_minmax(0,1fr)]">
             <Suspense fallback={null}>
               <MasterSidebar
                 activeCategory="products"

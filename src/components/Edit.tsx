@@ -2232,7 +2232,7 @@ export default function Edit() {
         >
           <div className="flex flex-col items-center justify-center text-center">
             <div className="mt-6 md:mt-0 w-full text-left">
-              <div className={`mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 lg:gap-4 ${isCenteredLayout ? 'lg:grid-cols-[160px_1fr_160px]' : 'lg:grid-cols-[160px_minmax(0,1fr)]'}`}>
+              <div className={`mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 lg:gap-4 ${isCenteredLayout ? 'lg:grid-cols-[152px_1fr_160px]' : 'lg:grid-cols-[152px_minmax(0,1fr)]'}`}>
                 {/* Left Sidebar */}
                 <EditSidebar
                   activeMode={activeEditMode}

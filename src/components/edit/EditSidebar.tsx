@@ -49,8 +49,8 @@ function EditSidebarComponent({
 
     // Nav classes - switch between horizontal (mobile) and vertical (desktop)
     const navClasses = isFullSizeOpen
-        ? `${glass.promptDark} border-theme-dark rounded-2xl flex flex-col fixed left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] w-[160px] ${zIndex} px-3 py-4`
-        : `${glass.promptDark} border-theme-dark rounded-2xl flex flex-row lg:flex-col items-center lg:items-stretch overflow-x-auto lg:overflow-x-visible no-scrollbar lg:fixed lg:left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] w-full lg:w-[160px] ${zIndex} px-3 py-2 lg:py-4 gap-2 lg:gap-0 sticky top-[calc(var(--nav-h)+1rem)] lg:top-auto`;
+        ? `${glass.promptDark} border-theme-dark rounded-2xl flex flex-col fixed left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] w-[152px] ${zIndex} px-3 py-4`
+        : `${glass.promptDark} border-theme-dark rounded-2xl flex flex-row lg:flex-col items-center lg:items-stretch overflow-x-auto lg:overflow-x-visible no-scrollbar lg:fixed lg:left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] w-full lg:w-[152px] ${zIndex} px-3 py-2 lg:py-4 gap-2 lg:gap-0 sticky top-[calc(var(--nav-h)+1rem)] lg:top-auto`;
 
     // Dynamic styles for desktop fixed positioning vs mobile static/sticky
     const navStyles = isFullSizeOpen

@@ -421,7 +421,7 @@ const GalleryContext = createContext<GalleryContextType | null>(null);
 
 export function GalleryProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(galleryReducer, initialState);
-  const [galleryColumns, setGalleryColumns] = useState(5);
+  const [galleryColumns, setGalleryColumns] = useState(6);
   const location = useLocation();
   const { storagePrefix, token: authToken } = useAuth();
   const {

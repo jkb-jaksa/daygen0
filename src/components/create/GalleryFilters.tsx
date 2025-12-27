@@ -245,12 +245,12 @@ const GalleryFilters = memo(() => {
             <input
               type="range"
               min={3}
-              max={8}
+              max={9}
               value={galleryColumns}
               onChange={(e) => setGalleryColumns(Number(e.target.value))}
               className="w-20 h-1 appearance-none bg-theme-white/20 rounded-full cursor-pointer accent-theme-text"
               style={{
-                background: `linear-gradient(to right, var(--theme-text) 0%, var(--theme-text) ${((galleryColumns - 3) / 5) * 100}%, rgba(255,255,255,0.2) ${((galleryColumns - 3) / 5) * 100}%, rgba(255,255,255,0.2) 100%)`
+                background: `linear-gradient(to right, var(--theme-text) 0%, var(--theme-text) ${((galleryColumns - 3) / 6) * 100}%, rgba(255,255,255,0.2) ${((galleryColumns - 3) / 6) * 100}%, rgba(255,255,255,0.2) 100%)`
               }}
             />
           </div>

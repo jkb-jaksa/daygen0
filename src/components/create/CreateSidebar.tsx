@@ -35,8 +35,8 @@ function CreateSidebarComponent({
   // Hide on mobile when full-size view is open (md:block) to prevent covering the image
   const responsiveClass = isFullSizeOpen ? 'hidden md:block' : 'hidden lg:block';
   const navClasses = isFullSizeOpen
-    ? `${glass.promptDark} rounded-2xl flex flex-col fixed left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] w-[160px] ${zIndex} px-3 py-4`
-    : `${glass.promptDark} rounded-2xl lg:flex lg:flex-col lg:fixed lg:left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] lg:w-[160px] ${zIndex} px-3 py-4`;
+    ? `${glass.promptDark} rounded-2xl flex flex-col fixed left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] w-[152px] ${zIndex} px-3 py-4`
+    : `${glass.promptDark} rounded-2xl lg:flex lg:flex-col lg:fixed lg:left-[var(--container-inline-padding,clamp(1rem,5vw,6rem))] lg:w-[152px] ${zIndex} px-3 py-4`;
 
   return (
     <div className={responsiveClass} style={{ width: SIDEBAR_WIDTH }}>

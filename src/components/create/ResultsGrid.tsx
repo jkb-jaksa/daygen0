@@ -76,7 +76,7 @@ interface ResultsGridProps {
   filterIds?: string[];
 }
 
-const MAX_GALLERY_TILES = 8;
+const MAX_GALLERY_TILES = 9;
 
 type IconComponent = React.ComponentType<React.SVGProps<SVGSVGElement>>;
 
@@ -1027,6 +1027,8 @@ const ResultsGrid = memo<ResultsGridProps>(({ className = '', activeCategory, on
         return 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7';
       case 8:
         return 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8';
+      case 9:
+        return 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-9';
       default:
         return 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5';
     }

@@ -3619,7 +3619,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const sectionLayoutClass = "pt-[calc(var(--nav-h,4rem)+16px)] pb-12 sm:pb-16 lg:pb-20";
   const shouldShowSidebar = showSidebar || isMasterSection;
   const contentLayoutClass = shouldShowSidebar
-    ? "mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 lg:gap-4 lg:grid-cols-[160px_minmax(0,1fr)]"
+    ? "mt-4 md:mt-0 grid w-full grid-cols-1 gap-3 lg:gap-4 lg:grid-cols-[152px_minmax(0,1fr)]"
     : "mt-4 md:mt-0 w-full";
   const showProfileView = !isMasterSection && (Boolean(creationsModalAvatar) || isLoadingMeSection);
 

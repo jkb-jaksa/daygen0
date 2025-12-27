@@ -1008,7 +1008,7 @@ const ChatMode: React.FC = () => {
         </div>
       )}
       <div className={`${layout.container} pb-6`}>
-        <div className={`relative z-0 ${isMasterSection ? 'grid grid-cols-[160px_minmax(0,1fr)_224px]' : 'flex'} h-[calc(100dvh-6rem)] w-full gap-4`}>
+        <div className={`relative z-0 ${isMasterSection ? 'grid grid-cols-[152px_minmax(0,1fr)_224px]' : 'flex'} h-[calc(100dvh-6rem)] w-full gap-4`}>
           {isMasterSection && (
             <Suspense fallback={null}>
               <MasterSidebar
