@@ -342,7 +342,6 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const { openStyleModal } = useStyleModal();
   // isMasterSection is true for /app (dashboard) but false when viewing a specific avatar profile
   const isMasterSection = location.pathname.startsWith("/app") && !avatarSlug;
-  const studioBasePath = STUDIO_BASE_PATH;
   const previousNonJobPathRef = useRef<string | null>(null);
   const rememberNonJobPath = useCallback(() => {
     if (!location.pathname.startsWith("/job/")) {
@@ -376,9 +375,9 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     if (window.history.length > 1) {
       navigate(-1);
     } else {
-      navigate(`${studioBasePath}/avatars`);
+      navigate(`${STUDIO_BASE_PATH}/avatars`);
     }
-  }, [navigate, studioBasePath]);
+  }, [navigate]);
 
   const syncJobUrlForImage = useCallback(
     (image: GalleryImageLike | null | undefined) => {
@@ -1512,13 +1511,13 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     if (creationsModalAvatar?.id === avatarToDelete.id) {
       setCreationsModalAvatar(null);
       if (avatarSlug === avatarToDelete.slug) {
-        navigate(`${studioBasePath}/avatars`, { replace: true });
+        navigate(`${STUDIO_BASE_PATH}/avatars`, { replace: true });
       }
     }
 
 
     setAvatarToDelete(null);
-  }, [avatarSlug, avatarToDelete, creationsModalAvatar, navigate, persistAvatars, studioBasePath, token]);
+  }, [avatarSlug, avatarToDelete, creationsModalAvatar, navigate, persistAvatars, token]);
 
   const confirmPublish = useCallback(() => {
     if (publishConfirmation.imageUrl) {
@@ -1550,26 +1549,26 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
 
   const handleNavigateToImage = useCallback(
     (avatar: StoredAvatar) => {
-      navigate(`${studioBasePath}/image`, {
+      navigate(`${STUDIO_BASE_PATH}/image`, {
         state: {
           avatarId: avatar.id,
           focusPromptBar: true,
         },
       });
     },
-    [navigate, studioBasePath],
+    [navigate],
   );
 
   const handleNavigateToVideo = useCallback(
     (avatar: StoredAvatar) => {
-      navigate(`${studioBasePath}/video`, {
+      navigate(`${STUDIO_BASE_PATH}/video`, {
         state: {
           avatarId: avatar.id,
           focusPromptBar: true,
         },
       });
     },
-    [navigate, studioBasePath],
+    [navigate],
   );
 
   const toggleAvatarEditMenu = useCallback((avatarId: string, anchor: HTMLElement) => {
@@ -1894,10 +1893,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       setAvatarEditMenu(null);
       setAvatarMoreMenu(null);
       if (avatarSlug !== avatar.slug) {
-        navigate(`${studioBasePath}/avatars/${avatar.slug}`);
+        navigate(`${STUDIO_BASE_PATH}/avatars/${avatar.slug}`);
       }
     },
-    [avatarSlug, navigate, studioBasePath],
+    [avatarSlug, navigate],
   );
 
   const openMasterFullSizeView = useCallback((avatar: StoredAvatar) => {
@@ -1922,7 +1921,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       return;
     }
     openCreationsModal(avatar);
-  }, [isMasterSection, openCreationsModal, openMasterFullSizeView, navigate, studioBasePath]);
+  }, [isMasterSection, openCreationsModal, openMasterFullSizeView, navigate]);
 
   const closeCreationsModal = useCallback(() => {
     setCreationsModalAvatar(null);
@@ -1931,9 +1930,9 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     setAvatarImageUploadTarget(null);
     setActiveAvatarImageId(null);
     if (avatarSlug) {
-      navigate(`${studioBasePath}/avatars`, { replace: true });
+      navigate(`${STUDIO_BASE_PATH}/avatars`, { replace: true });
     }
-  }, [avatarSlug, navigate, studioBasePath]);
+  }, [avatarSlug, navigate]);
 
   const toggleCreationPublish = useCallback(
     (imageUrl: string) => {
@@ -2542,10 +2541,9 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                 onClick={(event) => {
                   event.stopPropagation();
-                  navigate(`${studioBasePath}/video`, {
+                  navigate(`${STUDIO_BASE_PATH}/video`, {
                     state: {
-                      avatarId: image.avatarId,
-                      focusPromptBar: true,
+                      avatarId: selection.images[0].sourceId, // Keep sourceId reference
                     },
                   });
                   closeGalleryEditMenu();
@@ -2675,7 +2673,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                     return (
                       <AvatarBadge
                         avatar={avatarForImage}
-                        onClick={() => navigate(`${studioBasePath}/avatars/${avatarForImage.slug}`)}
+                        onClick={() => navigate(`${STUDIO_BASE_PATH}/avatars/${avatarForImage.slug}`)}
                       />
                     );
                   })()}
@@ -3841,7 +3839,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 <MasterSidebar
                   activeCategory="avatars"
                   onSelectCategory={(category) => {
-                    navigate(`${studioBasePath}/${category}`);
+                    navigate(`${STUDIO_BASE_PATH}/${category}`);
                   }}
                   onOpenMyFolders={() => {
                     navigate('/app/folders');
@@ -4554,7 +4552,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               <MasterSidebar
                 activeCategory="avatars"
                 onSelectCategory={(category) => {
-                  navigate(`${studioBasePath}/${category}`);
+                  navigate(`${STUDIO_BASE_PATH}/${category}`);
                   closeAvatarFullSizeView();
                 }}
                 onOpenMyFolders={() => {
@@ -4651,7 +4649,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                     className="relative overflow-hidden group flex w-full items-center gap-1.5 px-2 py-1.5 h-9 text-sm font-raleway text-theme-white transition-colors duration-200 hover:text-theme-text"
                     onClick={(event) => {
                       event.stopPropagation();
-                      navigate(`${studioBasePath}/video`, {
+                      navigate(`${STUDIO_BASE_PATH}/video`, {
                         state: {
                           avatarId: selectedFullImage.avatarId,
                           focusPromptBar: true,
@@ -4932,7 +4930,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                     <div className="flex justify-start">
                       <button
                         onClick={() => {
-                          navigate(`${studioBasePath}/image`);
+                          navigate(`${STUDIO_BASE_PATH}/image`);
                         }}
                         className="inline-flex items-center gap-1 text-sm text-theme-white hover:text-theme-text transition-colors duration-200"
                         title="Create new folder"
@@ -5026,7 +5024,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 <div className="flex justify-start">
                   <button
                     onClick={() => {
-                      navigate(`${studioBasePath}/image`);
+                      navigate(`${STUDIO_BASE_PATH}/image`);
                     }}
                     className="inline-flex items-center gap-1 text-sm text-theme-white hover:text-theme-text transition-colors duration-200"
                     aria-label="Create new folder"

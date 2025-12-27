@@ -1,4 +1,4 @@
-import { Search, Edit, Image as ImageIcon, Video as VideoIcon, User, Volume2, CreditCard, Zap, FileText, GraduationCap, Menu, X, SunMedium, Moon, Package, LayoutGrid, Folder } from "lucide-react";
+import { Search, Edit, Image as ImageIcon, Video as VideoIcon, User, Volume2, CreditCard, Zap, Menu, X, SunMedium, Moon, Package, LayoutGrid, Folder } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useLocation, useNavigate, NavLink, Link } from "react-router-dom";
 import { useLayoutEffect, useRef, useState, useEffect, useCallback } from "react";
@@ -583,10 +583,10 @@ export default function Navbar() {
                       <span
                         className="inline-grid place-items-center size-5 rounded-full text-theme-text text-xs font-medium font-raleway border border-theme-dark bg-[conic-gradient(from_0deg,_rgba(245,158,11,0.6),_rgba(239,68,68,0.6),_rgba(59,130,246,0.6),_rgba(34,211,238,0.6),_rgba(245,158,11,0.6))] group-hover:border-theme-mid transition-colors duration-200"
                       >
-                        {(currentUser.username || currentUser.displayName || currentUser.email)[0]?.toUpperCase()}
+                        {(currentUser.username || currentUser.email)[0]?.toUpperCase()}
                       </span>
                     )}
-                    <span className="hidden xl:inline font-raleway text-base py-0.5 font-normal">{currentUser.username || currentUser.displayName || currentUser.email}</span>
+                    <span className="hidden xl:inline font-raleway text-base py-0.5 font-normal">{currentUser.username || currentUser.email}</span>
                   </button>
                 </div>
               </>
