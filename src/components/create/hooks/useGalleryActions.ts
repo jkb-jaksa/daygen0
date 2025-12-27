@@ -306,10 +306,10 @@ export function useGalleryActions() {
 
   // Confirm publish (actual action)
   const confirmPublish = useCallback(async () => {
-    const { publishConfirmation } = state;
+    const { publishConfirmation, selectedItems } = state;
     try {
       if (publishConfirmation.imageUrl) {
-        // Check if the item is a video
+        // Single item publish
         const items = getGalleryItemsByIds([publishConfirmation.imageUrl]);
         const item = items[0];
         const isVideo = item && 'type' in item && item.type === 'video';
@@ -320,6 +320,11 @@ export function useGalleryActions() {
           await updateImage(publishConfirmation.imageUrl, { isPublic: true });
         }
         debugLog('Published item:', publishConfirmation.imageUrl);
+      } else if (publishConfirmation.count > 0 && selectedItems.size > 0) {
+        // Bulk publish using selected items
+        const ids = Array.from(selectedItems);
+        await Promise.all(ids.map(id => updateImage(id, { isPublic: true })));
+        debugLog('Bulk published images:', ids);
       }
     } catch (error) {
       debugError('Error publishing item:', error);
@@ -335,10 +340,10 @@ export function useGalleryActions() {
 
   // Confirm unpublish (actual action)
   const confirmUnpublish = useCallback(async () => {
-    const { unpublishConfirmation } = state;
+    const { unpublishConfirmation, selectedItems } = state;
     try {
       if (unpublishConfirmation.imageUrl) {
-        // Check if the item is a video
+        // Single item unpublish
         const items = getGalleryItemsByIds([unpublishConfirmation.imageUrl]);
         const item = items[0];
         const isVideo = item && 'type' in item && item.type === 'video';
@@ -349,6 +354,11 @@ export function useGalleryActions() {
           await updateImage(unpublishConfirmation.imageUrl, { isPublic: false });
         }
         debugLog('Unpublished item:', unpublishConfirmation.imageUrl);
+      } else if (unpublishConfirmation.count > 0 && selectedItems.size > 0) {
+        // Bulk unpublish using selected items
+        const ids = Array.from(selectedItems);
+        await Promise.all(ids.map(id => updateImage(id, { isPublic: false })));
+        debugLog('Bulk unpublished images:', ids);
       }
     } catch (error) {
       debugError('Error unpublishing item:', error);
