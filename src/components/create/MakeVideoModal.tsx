@@ -15,6 +15,7 @@ import { useToast } from '../../hooks/useToast';
 import { getStyleThumbnailUrl } from './hooks/useStyleHandlers';
 import type { GalleryImageLike } from './types';
 import type { StoredStyle } from '../styles/types';
+import type { StoredAvatar } from '../avatars/types';
 import { useStyleHandlers } from './hooks/useStyleHandlers';
 import AvatarPickerPortal from './AvatarPickerPortal';
 import AvatarBadge from '../avatars/AvatarBadge';
@@ -69,6 +70,14 @@ interface MakeVideoModalProps {
     isLoading?: boolean;
     imageUrl: string;
     item?: GalleryImageLike;
+    /** Custom overlay to render on the image instead of the default prompt description bar */
+    customDescriptionOverlay?: React.ReactNode;
+    /** Custom title to display instead of 'Make Video' (e.g., 'Create with AvatarName') */
+    customTitle?: React.ReactNode;
+    /** Initial avatar to pre-select in the Avatar field */
+    initialAvatar?: StoredAvatar;
+    /** Locked avatar ID that cannot be removed (used for avatar-specific modals) */
+    lockedAvatarId?: string;
 }
 
 const TooltipPortal = ({ id, children }: { id: string, children: React.ReactNode }) => {
@@ -92,6 +101,10 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
     isLoading = false,
     imageUrl,
     item,
+    customDescriptionOverlay,
+    customTitle,
+    initialAvatar,
+    lockedAvatarId,
 }) => {
     const [prompt, setPrompt] = useState(initialPrompt);
     const [cursorPosition, setCursorPosition] = useState(0);
@@ -299,6 +312,13 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
         // setAvatarUploadError,
     } = avatarHandlers;
 
+    // Display avatars excludes the locked avatar (which is the starting image in avatar modals)
+    // This is used for visual display only - selectedAvatars still includes it for generation
+    const displayAvatars = useMemo(() =>
+        selectedAvatars.filter(a => a.id !== lockedAvatarId),
+        [selectedAvatars, lockedAvatarId]
+    );
+
     const {
         selectedProduct, // To be deprecated/removed in favor of selectedProducts
         selectedProducts, // Use this
@@ -502,6 +522,30 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen, avatarHandlers.loadStoredAvatars, productHandlers.loadStoredProducts]);
+
+    // Pre-select initial avatar when modal opens
+    useEffect(() => {
+        if (isOpen && initialAvatar) {
+            avatarHandlers.setSelectedAvatars([initialAvatar]);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen, initialAvatar]);
+
+    // Sync imageUrl changes with avatar image selection (when thumbnails are clicked in overlay)
+    useEffect(() => {
+        if (!isOpen || !initialAvatar || !imageUrl) return;
+
+        // Strip query params for comparison
+        const stripQueryParams = (url: string) => url.split('?')[0];
+        const normalizedImageUrl = stripQueryParams(imageUrl);
+
+        // Find the image in initialAvatar that matches current imageUrl
+        const matchingImage = initialAvatar.images.find(img => stripQueryParams(img.url) === normalizedImageUrl);
+        if (matchingImage) {
+            avatarHandlers.selectAvatarImage(initialAvatar.id, matchingImage.id);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen, imageUrl, initialAvatar]);
 
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
@@ -742,150 +786,154 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                 className="max-w-full max-h-[70vh] w-auto h-auto object-contain"
                             />
 
-                            {/* Prompt Description Bar */}
-                            {item && (
+                            {/* Prompt Description Bar - Show custom overlay if provided, otherwise show default item info */}
+                            {(customDescriptionOverlay || item) && (
                                 <div
                                     className="PromptDescriptionBar absolute left-4 right-4 rounded-2xl p-4 text-theme-text bottom-4 transition-all duration-150 z-10 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto"
                                     onClick={(e) => e.stopPropagation()}
                                 >
-                                    <div className="flex items-center justify-center">
-                                        <div className="text-center">
-                                            <div className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
-                                                {item.prompt}
-                                                {item.prompt && (
-                                                    <>
-                                                        <button
-                                                            onClick={(e) => void handleCopyPrompt(item.prompt!, e)}
-                                                            className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle"
-                                                            onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'make-video-copy-prompt')}
-                                                            onMouseLeave={() => hideHoverTooltip('make-video-copy-prompt')}
-                                                        >
-                                                            <Copy className="w-3 h-3" />
-                                                        </button>
-                                                        <TooltipPortal id="make-video-copy-prompt">
-                                                            Copy prompt
-                                                        </TooltipPortal>
-                                                        <button
-                                                            onClick={(e) => handleToggleSavePrompt(item.prompt!, e)}
-                                                            className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle"
-                                                            onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'make-video-save-prompt')}
-                                                            onMouseLeave={() => hideHoverTooltip('make-video-save-prompt')}
-                                                        >
-                                                            {isPromptSaved(item.prompt!) ? (
-                                                                <Bookmark className="w-3 h-3 fill-current" />
-                                                            ) : (
-                                                                <BookmarkPlus className="w-3 h-3" />
-                                                            )}
-                                                        </button>
-                                                        <TooltipPortal id="make-video-save-prompt">
-                                                            {isPromptSaved(item.prompt!) ? "Prompt saved" : "Save prompt"}
-                                                        </TooltipPortal>
-                                                    </>
-                                                )}
-                                            </div>
-                                            <div className="mt-1 flex flex-col justify-center items-center gap-2">
-                                                {/* Unified References and Badges Display */}
-                                                {(() => {
-                                                    // Determine Avatar/Product based on ID or URL matching
-                                                    let avatarForImage = item.avatarId ? avatarHandlers.storedAvatars.find(a => a.id === item.avatarId) : undefined;
-                                                    let productForImage = item.productId ? productHandlers.storedProducts.find(p => p.id === item.productId) : undefined;
+                                    {customDescriptionOverlay ? (
+                                        customDescriptionOverlay
+                                    ) : (
+                                        <div className="flex items-center justify-center">
+                                            <div className="text-center">
+                                                <div className="text-theme-text text-xs font-raleway leading-relaxed line-clamp-3 pl-1">
+                                                    {item.prompt}
+                                                    {item.prompt && (
+                                                        <>
+                                                            <button
+                                                                onClick={(e) => void handleCopyPrompt(item.prompt!, e)}
+                                                                className="ml-2 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle"
+                                                                onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'make-video-copy-prompt')}
+                                                                onMouseLeave={() => hideHoverTooltip('make-video-copy-prompt')}
+                                                            >
+                                                                <Copy className="w-3 h-3" />
+                                                            </button>
+                                                            <TooltipPortal id="make-video-copy-prompt">
+                                                                Copy prompt
+                                                            </TooltipPortal>
+                                                            <button
+                                                                onClick={(e) => handleToggleSavePrompt(item.prompt!, e)}
+                                                                className="ml-1.5 inline cursor-pointer text-theme-white transition-colors duration-200 hover:text-theme-text relative z-30 align-middle"
+                                                                onMouseEnter={(e) => showHoverTooltip(e.currentTarget, 'make-video-save-prompt')}
+                                                                onMouseLeave={() => hideHoverTooltip('make-video-save-prompt')}
+                                                            >
+                                                                {isPromptSaved(item.prompt!) ? (
+                                                                    <Bookmark className="w-3 h-3 fill-current" />
+                                                                ) : (
+                                                                    <BookmarkPlus className="w-3 h-3" />
+                                                                )}
+                                                            </button>
+                                                            <TooltipPortal id="make-video-save-prompt">
+                                                                {isPromptSaved(item.prompt!) ? "Prompt saved" : "Save prompt"}
+                                                            </TooltipPortal>
+                                                        </>
+                                                    )}
+                                                </div>
+                                                <div className="mt-1 flex flex-col justify-center items-center gap-2">
+                                                    {/* Unified References and Badges Display */}
+                                                    {(() => {
+                                                        // Determine Avatar/Product based on ID or URL matching
+                                                        let avatarForImage = item.avatarId ? avatarHandlers.storedAvatars.find(a => a.id === item.avatarId) : undefined;
+                                                        let productForImage = item.productId ? productHandlers.storedProducts.find(p => p.id === item.productId) : undefined;
 
-                                                    // 2. Filter References to exclude avatar/product images
-                                                    const displayReferences = (item.references || []).filter(ref => {
-                                                        const strippedRef = stripQuery(ref);
-                                                        const matchedAvatar = avatarUrlMap.get(strippedRef);
-                                                        const matchedProduct = productUrlMap.get(strippedRef);
+                                                        // 2. Filter References to exclude avatar/product images
+                                                        const displayReferences = (item.references || []).filter(ref => {
+                                                            const strippedRef = stripQuery(ref);
+                                                            const matchedAvatar = avatarUrlMap.get(strippedRef);
+                                                            const matchedProduct = productUrlMap.get(strippedRef);
 
-                                                        // If this reference matches an avatar, capture it and exclude from generic refs
-                                                        if (matchedAvatar && !avatarForImage) {
-                                                            avatarForImage = matchedAvatar;
-                                                            return false;
-                                                        }
-                                                        if (matchedProduct && !productForImage) {
-                                                            productForImage = matchedProduct;
-                                                            return false;
-                                                        }
-                                                        // If already identified as avatar/product, exclude
-                                                        if (matchedAvatar || matchedProduct) return false;
-                                                        return true;
-                                                    });
+                                                            // If this reference matches an avatar, capture it and exclude from generic refs
+                                                            if (matchedAvatar && !avatarForImage) {
+                                                                avatarForImage = matchedAvatar;
+                                                                return false;
+                                                            }
+                                                            if (matchedProduct && !productForImage) {
+                                                                productForImage = matchedProduct;
+                                                                return false;
+                                                            }
+                                                            // If already identified as avatar/product, exclude
+                                                            if (matchedAvatar || matchedProduct) return false;
+                                                            return true;
+                                                        });
 
-                                                    if (displayReferences.length === 0 && !avatarForImage && !productForImage) return null;
+                                                        if (displayReferences.length === 0 && !avatarForImage && !productForImage) return null;
 
-                                                    return (
-                                                        <div
-                                                            className="flex flex-wrap items-center justify-center gap-3 cursor-pointer"
-                                                            onClick={(e) => {
-                                                                if (displayReferences.length > 0) {
-                                                                    e.stopPropagation();
-                                                                    setReferenceModalReferences(displayReferences);
-                                                                }
-                                                            }}
-                                                        >
-                                                            {/* References Count */}
-                                                            {displayReferences.length > 0 && (
-                                                                <div className="flex items-center gap-1.5">
-                                                                    <div className="flex gap-1">
-                                                                        {displayReferences.map((ref, refIdx) => (
-                                                                            <div key={refIdx} className="relative parallax-small">
-                                                                                <img
-                                                                                    src={ref}
-                                                                                    alt={`Reference ${refIdx + 1}`}
-                                                                                    loading="lazy"
-                                                                                    className="w-6 h-6 rounded object-cover border border-theme-dark transition-colors duration-100"
-                                                                                />
-                                                                                <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
-                                                                                    {refIdx + 1}
+                                                        return (
+                                                            <div
+                                                                className="flex flex-wrap items-center justify-center gap-3 cursor-pointer"
+                                                                onClick={(e) => {
+                                                                    if (displayReferences.length > 0) {
+                                                                        e.stopPropagation();
+                                                                        setReferenceModalReferences(displayReferences);
+                                                                    }
+                                                                }}
+                                                            >
+                                                                {/* References Count */}
+                                                                {displayReferences.length > 0 && (
+                                                                    <div className="flex items-center gap-1.5">
+                                                                        <div className="flex gap-1">
+                                                                            {displayReferences.map((ref, refIdx) => (
+                                                                                <div key={refIdx} className="relative parallax-small">
+                                                                                    <img
+                                                                                        src={ref}
+                                                                                        alt={`Reference ${refIdx + 1}`}
+                                                                                        loading="lazy"
+                                                                                        className="w-6 h-6 rounded object-cover border border-theme-dark transition-colors duration-100"
+                                                                                    />
+                                                                                    <div className="absolute -top-1 -right-1 bg-theme-text text-theme-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium font-raleway">
+                                                                                        {refIdx + 1}
+                                                                                    </div>
                                                                                 </div>
-                                                                            </div>
-                                                                        ))}
+                                                                            ))}
+                                                                        </div>
+                                                                        <span className="text-xs font-raleway text-theme-white hover:text-theme-text transition-colors duration-100">
+                                                                            {displayReferences.length} Ref{displayReferences.length > 1 ? 's' : ''}
+                                                                        </span>
                                                                     </div>
-                                                                    <span className="text-xs font-raleway text-theme-white hover:text-theme-text transition-colors duration-100">
-                                                                        {displayReferences.length} Ref{displayReferences.length > 1 ? 's' : ''}
-                                                                    </span>
-                                                                </div>
-                                                            )}
+                                                                )}
 
-                                                            {/* Avatar/Product Badges */}
-                                                            {(avatarForImage || productForImage) && (
-                                                                <div className="flex items-center gap-1.5">
-                                                                    <ImageBadgeRow
-                                                                        align="center"
-                                                                        avatars={avatarForImage ? [{ data: avatarForImage, onClick: () => setCreationsModalAvatar(avatarForImage!) }] : []}
-                                                                        products={productForImage ? [{ data: productForImage, onClick: () => setCreationsModalProduct(productForImage!) }] : []}
-                                                                        styles={[]}
-                                                                    />
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })()}
+                                                                {/* Avatar/Product Badges */}
+                                                                {(avatarForImage || productForImage) && (
+                                                                    <div className="flex items-center gap-1.5">
+                                                                        <ImageBadgeRow
+                                                                            align="center"
+                                                                            avatars={avatarForImage ? [{ data: avatarForImage, onClick: () => setCreationsModalAvatar(avatarForImage!) }] : []}
+                                                                            products={productForImage ? [{ data: productForImage, onClick: () => setCreationsModalProduct(productForImage!) }] : []}
+                                                                            styles={[]}
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })()}
 
-                                                <ImageBadgeRow
-                                                    align="center"
-                                                    model={{
-                                                        name: item.model || 'unknown',
-                                                        size: 'md',
-                                                        onClick: () => { }
-                                                    }}
-                                                    avatars={[]}
-                                                    products={[]}
-                                                    styles={
-                                                        item.styleId
-                                                            ? (() => {
-                                                                const styleForImage = styleIdToStoredStyle(item.styleId!);
-                                                                return styleForImage ? [{ data: styleForImage }] : [];
-                                                            })()
-                                                            : []
-                                                    }
-                                                    aspectRatio={item.aspectRatio}
-                                                    isPublic={item.isPublic}
-                                                    onPublicClick={undefined}
-                                                    compact={false}
-                                                />
+                                                    <ImageBadgeRow
+                                                        align="center"
+                                                        model={{
+                                                            name: item.model || 'unknown',
+                                                            size: 'md',
+                                                            onClick: () => { }
+                                                        }}
+                                                        avatars={[]}
+                                                        products={[]}
+                                                        styles={
+                                                            item.styleId
+                                                                ? (() => {
+                                                                    const styleForImage = styleIdToStoredStyle(item.styleId!);
+                                                                    return styleForImage ? [{ data: styleForImage }] : [];
+                                                                })()
+                                                                : []
+                                                        }
+                                                        aspectRatio={item.aspectRatio}
+                                                        isPublic={item.isPublic}
+                                                        onPublicClick={undefined}
+                                                        compact={false}
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -896,7 +944,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                         <div className="flex items-center justify-between mb-1">
                             <h2 className="text-lg font-raleway text-theme-text flex items-center gap-2">
                                 <Video className="w-5 h-5 text-theme-text" />
-                                Make Video
+                                {customTitle || 'Make Video'}
                             </h2>
                             <button
                                 type="button"
@@ -910,9 +958,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
 
                         <form onSubmit={handleSubmit} className="flex flex-col gap-3 flex-1">
                             <div className="flex flex-col gap-2 flex-1">
-                                <label htmlFor="make-video-prompt" className="text-sm font-raleway text-theme-white">
-                                    Enter your prompt
-                                </label>
+
                                 <div
                                     ref={promptContainerRef}
                                     className={`flex flex-col rounded-xl transition-all duration-200 ${glass.prompt} border border-transparent focus-within:border-theme-text/50 focus-within:shadow-[0_0_15px_rgba(var(--theme-text-rgb),0.1)] ${isDragActive ? 'border-theme-text shadow-[0_0_32px_rgba(255,255,255,0.25)]' : ''}`}
@@ -971,7 +1017,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                     type="button"
                                                     ref={voiceButtonRef}
                                                     onClick={() => setIsVoiceDropdownOpen(!isVoiceDropdownOpen)}
-                                                    className={`${glass.promptBorderless} hover:bg-n-text/20 border border-theme-dark/10 ${selectedVoiceId ? 'hover:border-theme-mid' : ''} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
+                                                    className={`${glass.promptBorderless} hover:bg-n-text/20 border border-theme-dark/10 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${selectedVoiceId ? 'hover:border-theme-mid' : ''} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                                                     onPointerMove={onPointerMove}
                                                     onPointerEnter={onPointerEnter}
                                                     onPointerLeave={onPointerLeave}
@@ -1036,8 +1082,14 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                     onDragOver={handleAvatarButtonDragOver}
                                                     onDragLeave={handleAvatarButtonDragLeave}
                                                     onDrop={handleAvatarButtonDrop}
-                                                    onMouseEnter={() => setIsAvatarButtonHovered(true)}
-                                                    onMouseLeave={() => setIsAvatarButtonHovered(false)}
+                                                    onMouseEnter={(e) => {
+                                                        setIsAvatarButtonHovered(true);
+                                                        if (lockedAvatarId) showHoverTooltip(e.currentTarget, 'make-video-avatar-add-another-tooltip');
+                                                    }}
+                                                    onMouseLeave={() => {
+                                                        setIsAvatarButtonHovered(false);
+                                                        if (lockedAvatarId) hideHoverTooltip('make-video-avatar-add-another-tooltip');
+                                                    }}
                                                     className={`${glass.promptBorderless} ${isDraggingOverAvatarButton || avatarSelection ? 'bg-theme-text/30 border-theme-text border-2 border-dashed shadow-[0_0_32px_rgba(255,255,255,0.25)]' : `hover:bg-n-text/20 border border-theme-dark/10 shadow-[inset_0_-50px_40px_-15px_rgb(var(--n-light-rgb)/0.25)] ${selectedAvatars.length > 0 || avatarSelection ? 'hover:border-theme-mid' : ''}`} text-n-text hover:text-n-text flex flex-col items-center justify-center h-8 w-8 sm:h-8 sm:w-8 md:h-8 md:w-8 lg:h-20 lg:w-20 rounded-full lg:rounded-xl transition-all duration-200 group gap-0 lg:gap-1 lg:px-1.5 lg:pt-1.5 lg:pb-1 parallax-small relative overflow-hidden`}
                                                     onPointerMove={onPointerMove}
                                                     onPointerEnter={onPointerEnter}
@@ -1058,8 +1110,8 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                             </div>
                                                         </>
                                                     )}
-                                                    {/* Empty State */}
-                                                    {selectedAvatars.length === 0 && !avatarDragPreviewUrl && !avatarSelection && (
+                                                    {/* Empty State - use displayAvatars to hide locked avatar */}
+                                                    {displayAvatars.length === 0 && !avatarDragPreviewUrl && !avatarSelection && (
                                                         <>
                                                             <div className="flex-1 flex items-center justify-center lg:mt-3">
                                                                 {isAvatarButtonHovered ? (
@@ -1092,50 +1144,50 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                             </div>
                                                         </>
                                                     )}
-                                                    {/* Single Avatar */}
-                                                    {selectedAvatars.length === 1 && !avatarSelection && !avatarDragPreviewUrl && (
+                                                    {/* Single Avatar - use displayAvatars to hide locked avatar */}
+                                                    {displayAvatars.length === 1 && !avatarSelection && !avatarDragPreviewUrl && (
                                                         <>
                                                             <img
-                                                                src={selectedAvatars[0].imageUrl}
-                                                                alt={selectedAvatars[0].name}
+                                                                src={displayAvatars[0].imageUrl}
+                                                                alt={displayAvatars[0].name}
                                                                 loading="lazy"
                                                                 className="absolute inset-0 w-full h-full rounded-full lg:rounded-xl object-cover"
-                                                                title={selectedAvatars[0].name}
+                                                                title={displayAvatars[0].name}
                                                             />
                                                             <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3">
                                                                 <span className="text-xs sm:text-xs md:text-sm lg:text-sm font-raleway text-n-text text-center">
-                                                                    {selectedAvatars[0].name}
+                                                                    {displayAvatars[0].name}
                                                                 </span>
                                                             </div>
                                                         </>
                                                     )}
-                                                    {/* Multiple Avatars (2-4) */}
-                                                    {selectedAvatars.length >= 2 && selectedAvatars.length <= 4 && !avatarSelection && !avatarDragPreviewUrl && (
+                                                    {/* Multiple Avatars (2-4) - use displayAvatars to hide locked avatar */}
+                                                    {displayAvatars.length >= 2 && displayAvatars.length <= 4 && !avatarSelection && !avatarDragPreviewUrl && (
                                                         <>
-                                                            <div className={`absolute inset-0 grid gap-0.5 ${selectedAvatars.length === 2 ? 'grid-cols-2' : 'grid-cols-2 grid-rows-2'}`}>
-                                                                {selectedAvatars.slice(0, 4).map((avatar, index) => (
+                                                            <div className={`absolute inset-0 grid gap-0.5 ${displayAvatars.length === 2 ? 'grid-cols-2' : 'grid-cols-2 grid-rows-2'}`}>
+                                                                {displayAvatars.slice(0, 4).map((avatar, index) => (
                                                                     <img
                                                                         key={avatar.id}
                                                                         src={avatar.imageUrl}
                                                                         alt={avatar.name}
                                                                         loading="lazy"
-                                                                        className={`w-full h-full object-cover ${selectedAvatars.length === 2 ? 'rounded-full lg:rounded-lg' : 'rounded-sm lg:rounded-md'} ${selectedAvatars.length === 3 && index === 2 ? 'col-span-2' : ''}`}
+                                                                        className={`w-full h-full object-cover ${displayAvatars.length === 2 ? 'rounded-full lg:rounded-lg' : 'rounded-sm lg:rounded-md'} ${displayAvatars.length === 3 && index === 2 ? 'col-span-2' : ''}`}
                                                                         title={avatar.name}
                                                                     />
                                                                 ))}
                                                             </div>
                                                             <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-10">
                                                                 <span className="text-xs font-raleway text-n-text text-center">
-                                                                    {selectedAvatars.length} Avatars
+                                                                    {displayAvatars.length} Avatars
                                                                 </span>
                                                             </div>
                                                         </>
                                                     )}
-                                                    {/* 5+ Avatars */}
-                                                    {selectedAvatars.length > 4 && !avatarSelection && !avatarDragPreviewUrl && (
+                                                    {/* 5+ Avatars - use displayAvatars to hide locked avatar */}
+                                                    {displayAvatars.length > 4 && !avatarSelection && !avatarDragPreviewUrl && (
                                                         <>
                                                             <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-0.5">
-                                                                {selectedAvatars.slice(0, 4).map((avatar) => (
+                                                                {displayAvatars.slice(0, 4).map((avatar) => (
                                                                     <img
                                                                         key={avatar.id}
                                                                         src={avatar.imageUrl}
@@ -1148,16 +1200,16 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                             </div>
                                                             <div className="hidden lg:flex absolute bottom-0 left-0 right-0 items-center justify-center pb-1 bg-gradient-to-t from-black/90 to-transparent rounded-b-xl pt-3 z-10 cursor-pointer hover:from-black/95">
                                                                 <span className="text-xs font-raleway text-white/90 hover:text-white">
-                                                                    +{selectedAvatars.length - 4} more
+                                                                    +{displayAvatars.length - 4} more
                                                                 </span>
                                                             </div>
                                                             <div className="lg:hidden absolute bottom-0.5 right-0.5 bg-theme-black/80 rounded-full px-1 py-0.5 z-10">
-                                                                <span className="text-[10px] font-raleway text-white">+{selectedAvatars.length - 4}</span>
+                                                                <span className="text-[10px] font-raleway text-white">+{displayAvatars.length - 4}</span>
                                                             </div>
                                                         </>
                                                     )}
                                                 </button>
-                                                {selectedAvatars.length > 0 && !isDraggingOverAvatarButton && (
+                                                {displayAvatars.length > 0 && !isDraggingOverAvatarButton && (
                                                     <button
                                                         type="button"
                                                         onClick={(e) => {
@@ -1175,6 +1227,9 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                         <X className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-theme-white group-hover/remove:text-theme-text transition-colors duration-200" />
                                                     </button>
                                                 )}
+                                                <TooltipPortal id="make-video-avatar-add-another-tooltip">
+                                                    Add another Avatar
+                                                </TooltipPortal>
                                             </div>
                                             {/* Product Button */}
                                             <div className="relative">
@@ -1373,7 +1428,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                     )}
 
                                     {/* Bottom Controls Bar */}
-                                    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-n-dark px-3 py-2">
+                                    <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
                                         <div className="flex flex-wrap items-center gap-1">
                                             {/* Reference Image Controls */}
                                             <div className="relative">
@@ -1581,11 +1636,11 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
 
                                         </div>
 
-                                        {/* Selected Avatars - Image Selection Interface */}
-                                        {selectedAvatars.length > 0 && (
+                                        {/* Selected Avatars - Image Selection Interface (excluding locked avatar which is the starting image) */}
+                                        {displayAvatars.length > 0 && (
                                             <div className="flex flex-wrap items-center gap-1.5 mt-2 mb-2">
                                                 <span className="text-xs text-theme-white/60 font-raleway">Avatars:</span>
-                                                {selectedAvatars.map(avatar => (
+                                                {displayAvatars.map(avatar => (
                                                     <AvatarBadge
                                                         key={avatar.id}
                                                         avatar={avatar}
@@ -1641,46 +1696,55 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                         </div>
                         {avatarHandlers.storedAvatars.length > 0 && (
                             <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
-                                {[...avatarHandlers.storedAvatars].sort((a, b) => (b.isMe ? 1 : 0) - (a.isMe ? 1 : 0)).map(avatar => {
-                                    const isActive = selectedAvatar?.id === avatar.id;
-                                    return (
-                                        <div
-                                            key={avatar.id}
-                                            className={`rounded-2xl border px-3 py-2 transition-colors duration-200 group ${avatar.isMe
-                                                ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5 hover:border-theme-text/40 hover:bg-theme-text/15'
-                                                : 'border-theme-mid hover:border-theme-mid hover:bg-theme-text/10'
-                                                }`}
-                                        >
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    avatarHandlers.handleAvatarSelect(avatar);
-                                                    setIsAvatarPickerOpen(false);
-                                                }}
-                                                className={`flex w-full items-center gap-3 ${isActive ? 'text-theme-text' : 'text-white'}`}
+                                {[...avatarHandlers.storedAvatars]
+                                    // Filter out the locked avatar from the picker - it's already selected as start of flow
+                                    .filter(avatar => avatar.id !== lockedAvatarId)
+                                    .sort((a, b) => (b.isMe ? 1 : 0) - (a.isMe ? 1 : 0)).map(avatar => {
+                                        const isActive = selectedAvatar?.id === avatar.id;
+                                        return (
+                                            <div
+                                                key={avatar.id}
+                                                className={`rounded-2xl border px-3 py-2 transition-colors duration-200 group ${avatar.isMe
+                                                    ? 'bg-theme-text/10 border-theme-text/20 shadow-lg shadow-theme-text/5 hover:border-theme-text/40 hover:bg-theme-text/15'
+                                                    : 'border-theme-mid hover:border-theme-mid hover:bg-theme-text/10'
+                                                    }`}
                                             >
-                                                <img
-                                                    src={avatar.imageUrl}
-                                                    alt={avatar.name}
-                                                    loading="lazy"
-                                                    className="h-10 w-10 rounded-lg object-cover"
-                                                />
-                                                <div className="min-w-0 flex-1 text-left">
-                                                    <p className="truncate text-sm font-raleway text-theme-white group-hover:text-n-text flex items-center gap-1.5">
-                                                        {avatar.name}
-                                                        {avatar.isMe && (
-                                                            <span className="inline-flex items-center gap-1 rounded-full bg-theme-text/20 px-2 py-0.5 text-[10px] font-medium text-theme-text">
-                                                                <Fingerprint className="w-2.5 h-2.5" />
-                                                                Me
-                                                            </span>
-                                                        )}
-                                                    </p>
-                                                </div>
-                                                {isActive && <div className="h-2 w-2 rounded-full bg-theme-text" />}
-                                            </button>
-                                        </div>
-                                    );
-                                })}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        // If there's a locked avatar, use toggle to add/remove additional avatars
+                                                        // Otherwise use select for single-selection behavior
+                                                        if (lockedAvatarId) {
+                                                            avatarHandlers.handleAvatarToggle(avatar);
+                                                        } else {
+                                                            avatarHandlers.handleAvatarSelect(avatar);
+                                                            setIsAvatarPickerOpen(false);
+                                                        }
+                                                    }}
+                                                    className={`flex w-full items-center gap-3 ${isActive ? 'text-theme-text' : 'text-white'}`}
+                                                >
+                                                    <img
+                                                        src={avatar.imageUrl}
+                                                        alt={avatar.name}
+                                                        loading="lazy"
+                                                        className="h-10 w-10 rounded-lg object-cover"
+                                                    />
+                                                    <div className="min-w-0 flex-1 text-left">
+                                                        <p className="truncate text-sm font-raleway text-theme-white group-hover:text-n-text flex items-center gap-1.5">
+                                                            {avatar.name}
+                                                            {avatar.isMe && (
+                                                                <span className="inline-flex items-center gap-1 rounded-full bg-theme-text/20 px-2 py-0.5 text-[10px] font-medium text-theme-text">
+                                                                    <Fingerprint className="w-2.5 h-2.5" />
+                                                                    Me
+                                                                </span>
+                                                            )}
+                                                        </p>
+                                                    </div>
+                                                    {isActive && <div className="h-2 w-2 rounded-full bg-theme-text" />}
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
                             </div>
                         )}
                         {avatarHandlers.storedAvatars.length === 0 && (

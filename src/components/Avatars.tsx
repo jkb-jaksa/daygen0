@@ -64,6 +64,8 @@ const AspectRatioBadge = lazy(() => import("./shared/AspectRatioBadge"));
 const AvatarCreationModal = lazy(() => import("./avatars/AvatarCreationModal"));
 const AvatarCreationOptions = lazy(() => import("./avatars/AvatarCreationOptions"));
 const MasterAvatarCreationOptions = lazy(() => import("./avatars/MasterAvatarCreationOptions"));
+const CreateImageAvatarModal = lazy(() => import("./avatars/CreateImageAvatarModal"));
+const MakeVideoAvatarModal = lazy(() => import("./avatars/MakeVideoAvatarModal"));
 
 const MasterSidebar = lazy(() => import("./master/MasterSidebar"));
 
@@ -451,6 +453,8 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const [avatarImageUploadError, setAvatarImageUploadError] = useState<string | null>(null);
   const [uploadingAvatarIds, setUploadingAvatarIds] = useState<Set<string>>(new Set());
   const [editingAvatarIdForModal, setEditingAvatarIdForModal] = useState<string | null>(null);
+  const [createImageModalAvatar, setCreateImageModalAvatar] = useState<StoredAvatar | null>(null);
+  const [makeVideoModalAvatar, setMakeVideoModalAvatar] = useState<StoredAvatar | null>(null);
 
   // Ref to track if a reorder drag is in progress, to prevent clicks from firing on drop
   const dragStartPos = useRef<{ x: number, y: number } | null>(null);
@@ -1659,26 +1663,18 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
 
   const handleNavigateToImage = useCallback(
     (avatar: StoredAvatar) => {
-      navigate(`${STUDIO_BASE_PATH}/image`, {
-        state: {
-          avatarId: avatar.id,
-          focusPromptBar: true,
-        },
-      });
+      // Open the CreateImageAvatarModal instead of navigating
+      setCreateImageModalAvatar(avatar);
     },
-    [navigate],
+    [],
   );
 
   const handleNavigateToVideo = useCallback(
     (avatar: StoredAvatar) => {
-      navigate(`${STUDIO_BASE_PATH}/video`, {
-        state: {
-          avatarId: avatar.id,
-          focusPromptBar: true,
-        },
-      });
+      // Open the MakeVideoAvatarModal instead of navigating
+      setMakeVideoModalAvatar(avatar);
     },
-    [navigate],
+    [],
   );
 
   const toggleAvatarEditMenu = useCallback((avatarId: string, anchor: HTMLElement) => {
@@ -2361,7 +2357,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                   <Link
                     to="/app/me"
                     onClick={(event) => event.stopPropagation()}
-                    className={`${glass.promptDark} relative overflow-hidden group/mebadge inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-raleway font-medium text-theme-white shadow-lg transition-colors duration-200 hover:border-theme-mid hover:text-theme-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-text`}
+                    className={`bg-theme-text/20 relative overflow-hidden group/mebadge inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-raleway font-medium text-theme-white shadow-lg transition-colors duration-200 hover:border-theme-mid hover:text-theme-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-text`}
                   >
                     <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full blur-3xl bg-white transition-opacity duration-100 opacity-0 group-hover/mebadge:opacity-20" />
                     <Fingerprint className="w-3 h-3 text-theme-text relative z-10" />
@@ -2369,7 +2365,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                   </Link>
                 )}
                 {avatar.published && (
-                  <div className={`${glass.promptDark} inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-raleway font-medium text-theme-white`}>
+                  <div className={`bg-theme-text/20 inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-raleway font-medium text-theme-white`}>
                     <Globe className="w-3 h-3 text-theme-text" />
                     <span className="leading-none">Public</span>
                   </div>
@@ -2472,7 +2468,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 <Link
                   to="/app/me"
                   onClick={(event) => event.stopPropagation()}
-                  className={`${glass.promptDark} relative overflow-hidden group/mebadge inline-flex h-full items-center gap-1 rounded-full px-3 text-xs font-raleway text-theme-white shadow-lg transition-colors duration-200 hover:border-theme-mid hover:text-theme-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-text`}
+                  className={`bg-theme-text/20 relative overflow-hidden group/mebadge inline-flex h-full items-center gap-1 rounded-full px-3 text-xs font-raleway text-theme-white shadow-lg transition-colors duration-200 hover:border-theme-mid hover:text-theme-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-text`}
                 >
                   <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full blur-3xl bg-white transition-opacity duration-100 opacity-0 group-hover/mebadge:opacity-20" />
                   <Fingerprint className="w-3 h-3 text-theme-text relative z-10" />
@@ -2480,7 +2476,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 </Link>
               )}
               {avatar.published && (
-                <div className={isCompact ? "flex h-4 items-center gap-1 rounded-full px-1.5 text-[8px] font-raleway text-theme-white bg-theme-text/20" : `${glass.promptDark} inline-flex h-full items-center gap-1 rounded-full px-3 text-xs font-raleway text-theme-white`}>
+                <div className={isCompact ? "flex h-4 items-center gap-1 rounded-full px-1.5 text-[8px] font-raleway text-theme-white bg-theme-text/20" : `bg-theme-text/20 inline-flex h-full items-center gap-1 rounded-full px-3 text-xs font-raleway text-theme-white`}>
                   <Globe className={isCompact ? "w-2 h-2 text-theme-text" : "w-3 h-3 text-theme-text"} />
                   <span className="leading-none">{isCompact ? "Pub" : "Public"}</span>
                 </div>
@@ -5134,6 +5130,58 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
         <div className={`fixed top-1/2 left-1/2 ${creationsModalAvatar ? 'z-[12000]' : 'z-[100]'} -translate-x-1/2 -translate-y-1/2 transform px-4 py-2 text-sm text-theme-white font-raleway transition-all duration-200 ${glass.promptDark} rounded-[28px]`}>
           {copyNotification}
         </div>
+      )}
+
+      {/* Create Image Avatar Modal */}
+      {createImageModalAvatar && (
+        <Suspense fallback={null}>
+          <CreateImageAvatarModal
+            isOpen={!!createImageModalAvatar}
+            onClose={() => setCreateImageModalAvatar(null)}
+            avatar={createImageModalAvatar}
+            onSubmit={(options) => {
+              // Navigate to image creation page with avatar and options
+              navigate(`${STUDIO_BASE_PATH}/image`, {
+                state: {
+                  avatarId: options.avatarId,
+                  avatarImageUrl: options.avatarImageUrl,
+                  prompt: options.prompt,
+                  aspectRatio: options.aspectRatio,
+                  batchSize: options.batchSize,
+                  jobType: options.jobType,
+                  focusPromptBar: true,
+                  autoSubmit: true, // Trigger immediate generation
+                },
+              });
+              setCreateImageModalAvatar(null);
+            }}
+          />
+        </Suspense>
+      )}
+
+      {/* Make Video Avatar Modal */}
+      {makeVideoModalAvatar && (
+        <Suspense fallback={null}>
+          <MakeVideoAvatarModal
+            isOpen={!!makeVideoModalAvatar}
+            onClose={() => setMakeVideoModalAvatar(null)}
+            avatar={makeVideoModalAvatar}
+            onSubmit={(options) => {
+              // Navigate to video creation page with avatar and options
+              navigate(`${STUDIO_BASE_PATH}/video`, {
+                state: {
+                  avatarId: options.avatarId,
+                  avatarImageUrl: options.avatarImageUrl,
+                  prompt: options.prompt,
+                  aspectRatio: options.aspectRatio,
+                  focusPromptBar: true,
+                  autoSubmit: true, // Trigger immediate generation
+                },
+              });
+              setMakeVideoModalAvatar(null);
+            }}
+          />
+        </Suspense>
       )}
 
     </div>
