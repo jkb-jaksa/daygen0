@@ -8,7 +8,7 @@ import {
   useRef,
   type ChangeEvent,
   type DragEvent,
-  type FormEvent,
+
 } from "react";
 import { useLocation, useNavigate, useParams, Link } from "react-router-dom";
 import { Reorder } from "framer-motion";
@@ -426,8 +426,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     anchor: HTMLElement;
   } | null>(null);
   const [imageToDelete, setImageToDelete] = useState<GalleryImageLike | null>(null);
-  const [editingAvatarId, setEditingAvatarId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState("");
+
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
   const [publishConfirmation, setPublishConfirmation] = useState<{ show: boolean, count: number, imageUrl?: string }>({ show: false, count: 0 });
   const [unpublishConfirmation, setUnpublishConfirmation] = useState<{ show: boolean, count: number, imageUrl?: string }>({ show: false, count: 0 });
@@ -455,7 +454,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
 
   // Ref to track if a reorder drag is in progress, to prevent clicks from firing on drop
   const dragStartPos = useRef<{ x: number, y: number } | null>(null);
-  const isReorderDragging = useRef(false);
+
 
   const uploadingAvatarIdsRef = useRef<Set<string>>(new Set()); // Ref for synchronous access
   const avatarsRef = useRef<StoredAvatar[]>(avatars);
@@ -1519,41 +1518,9 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     [creationsModalAvatar, persistAvatars, token],
   );
 
-  const startRenaming = useCallback((avatar: StoredAvatar) => {
-    setEditingAvatarId(avatar.id);
-    setEditingName(avatar.name);
-  }, []);
 
-  const cancelRenaming = useCallback(() => {
-    setEditingAvatarId(null);
-    setEditingName("");
-  }, []);
 
-  const submitRename = useCallback(
-    (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      if (!editingAvatarId) return;
-      const trimmed = editingName.trim();
-      const normalizedName = trimmed || "New Avatar";
 
-      setAvatars(prev => {
-        const updated = prev.map(record =>
-          record.id === editingAvatarId ? { ...record, name: normalizedName } : record,
-        );
-        void persistAvatars(updated);
-        return updated;
-      });
-
-      // Update the modal avatar if it's currently open and matches the renamed avatar
-      if (creationsModalAvatar && creationsModalAvatar.id === editingAvatarId) {
-        setCreationsModalAvatar(prev => prev ? { ...prev, name: normalizedName } : null);
-      }
-
-      setEditingAvatarId(null);
-      setEditingName("");
-    },
-    [editingAvatarId, editingName, persistAvatars, creationsModalAvatar],
-  );
 
   const handleReorderSelectionImages = useCallback((reorderedImages: AvatarImage[]) => {
     setSelection(prev => {
@@ -2366,38 +2333,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                     >
                       {avatar.name || (isMasterSection ? "Enter your name..." : "Enter name...")}
                     </p>
-                    {isCompact && !disableModalTrigger && (
-                      <button
-                        type="button"
-                        className={`relative z-10 flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-lg text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-100 pointer-events-auto ${isMasterSection
-                          ? 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'
-                          : ''
-                          }`}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          startRenaming(avatar);
-                        }}
-                      >
-                        <Pencil className="w-3 h-3" />
-                      </button>
-                    )}
+
                   </div>
                   <div className={isCompact ? "absolute right-1 flex items-center gap-1" : "flex items-center gap-2"}>
-                    {!isCompact && !disableModalTrigger && (
-                      <button
-                        type="button"
-                        className={`relative z-10 flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-lg text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-100 pointer-events-auto ${isMasterSection
-                          ? 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                          : ''
-                          }`}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          startRenaming(avatar);
-                        }}
-                      >
-                        <Pencil className="w-3 h-3" />
-                      </button>
-                    )}
+
                     {avatar.published && (
                       <div className={isCompact ? "flex h-4 items-center gap-1 rounded-full px-1.5 text-[8px] font-raleway text-theme-white bg-theme-text/20" : `${glass.promptDark} inline-flex h-full items-center gap-1 rounded-full px-3 text-xs font-raleway text-theme-white`}>
                         <Globe className={isCompact ? "w-2 h-2 text-theme-text" : "w-3 h-3 text-theme-text"} />
@@ -2432,21 +2371,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
                 >
                   {avatar.name || "Enter your name..."}
                 </p>
-                {!disableModalTrigger && (
-                  <button
-                    type="button"
-                    className={`relative z-10 flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-lg text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-100 pointer-events-auto ${isMasterSection
-                      ? 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                      : ''
-                      }`}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      startRenaming(avatar);
-                    }}
-                  >
-                    <Pencil className="w-2.5 h-2.5" />
-                  </button>
-                )}
+
                 {avatar.isMe && (
                   <Link
                     to="/app/me"
@@ -2551,38 +2476,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               >
                 {avatar.name || (isMasterSection ? "Enter your name..." : "Enter name...")}
               </p>
-              {isCompact && !disableModalTrigger && (
-                <button
-                  type="button"
-                  className={`relative z-10 flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-lg text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-100 pointer-events-auto ${isMasterSection
-                    ? 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'
-                    : ''
-                    }`}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    startRenaming(avatar);
-                  }}
-                >
-                  <Pencil className="w-3 h-3" />
-                </button>
-              )}
+
             </div>
             <div className={isCompact ? "absolute right-1 flex items-center gap-1" : "flex items-center gap-2"}>
-              {!isCompact && !disableModalTrigger && (
-                <button
-                  type="button"
-                  className={`relative z-10 flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-lg text-theme-white hover:text-theme-text hover:bg-theme-white/10 transition-all duration-100 pointer-events-auto ${isMasterSection
-                    ? 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100'
-                    : ''
-                    }`}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    startRenaming(avatar);
-                  }}
-                >
-                  <Pencil className="w-3 h-3" />
-                </button>
-              )}
+
               {avatar.isMe && (
                 <Link
                   to="/app/me"
