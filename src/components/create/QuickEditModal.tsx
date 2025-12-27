@@ -2733,6 +2733,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
                                                 onClose={mentionSuggestions.closeSuggestions}
                                                 setSelectedIndex={mentionSuggestions.setSelectedIndex}
                                                 mentionType={mentionSuggestions.currentMentionType}
+                                                dropdownPosition="below"
                                             />
 
                                             {/* Second Row: Avatar, Voice, Product, Style */}

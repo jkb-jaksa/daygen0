@@ -960,6 +960,7 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                             onClose={mentionSuggestions.closeSuggestions}
                                             setSelectedIndex={mentionSuggestions.setSelectedIndex}
                                             mentionType={mentionSuggestions.currentMentionType}
+                                            dropdownPosition="below"
                                         />
 
                                         {/* Second Row: Avatar, Product, Style */}

@@ -13,6 +13,7 @@ interface MentionDropdownProps {
     onClose: () => void;
     setSelectedIndex: (index: number) => void;
     mentionType: MentionType | null;
+    dropdownPosition?: 'above' | 'below';
 }
 
 export const MentionDropdown: React.FC<MentionDropdownProps> = ({
@@ -24,6 +25,7 @@ export const MentionDropdown: React.FC<MentionDropdownProps> = ({
     onClose,
     setSelectedIndex,
     mentionType,
+    dropdownPosition = 'above',
 }) => {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const [position, setPosition] = React.useState({ top: 0, left: 0 });
@@ -37,11 +39,18 @@ export const MentionDropdown: React.FC<MentionDropdownProps> = ({
             if (!textarea) return;
 
             const rect = textarea.getBoundingClientRect();
-            // Position above the textarea
-            setPosition({
-                top: rect.top - 8, // 8px gap above
-                left: rect.left,
-            });
+            // Position above or below the textarea based on dropdownPosition prop
+            if (dropdownPosition === 'below') {
+                setPosition({
+                    top: rect.bottom + 8, // 8px gap below
+                    left: rect.left,
+                });
+            } else {
+                setPosition({
+                    top: rect.top - 8, // 8px gap above
+                    left: rect.left,
+                });
+            }
         };
 
         updatePosition();
@@ -52,7 +61,7 @@ export const MentionDropdown: React.FC<MentionDropdownProps> = ({
             window.removeEventListener('resize', updatePosition);
             window.removeEventListener('scroll', updatePosition, true);
         };
-    }, [isOpen, anchorRef]);
+    }, [isOpen, anchorRef, dropdownPosition]);
 
     // Close on click outside
     useEffect(() => {
@@ -73,13 +82,25 @@ export const MentionDropdown: React.FC<MentionDropdownProps> = ({
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [isOpen, onClose, anchorRef]);
 
+    // Disable body scroll when dropdown is open
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const originalOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+
+        return () => {
+            document.body.style.overflow = originalOverflow;
+        };
+    }, [isOpen]);
+
     // Scroll selected item into view
     useEffect(() => {
         if (!isOpen || !dropdownRef.current) return;
 
         const selectedElement = dropdownRef.current.querySelector(`[data-index="${selectedIndex}"]`);
         if (selectedElement) {
-            selectedElement.scrollIntoView({ block: 'nearest' });
+            selectedElement.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         }
     }, [isOpen, selectedIndex]);
 
@@ -157,11 +178,11 @@ export const MentionDropdown: React.FC<MentionDropdownProps> = ({
     return createPortal(
         <div
             ref={dropdownRef}
-            className={`${glass.promptDark} fixed z-[9999] min-w-[220px] max-w-[350px] max-h-[300px] overflow-y-auto rounded-xl shadow-lg border border-theme-mid/30`}
+            className={`${glass.promptDark} fixed z-[9999] min-w-[220px] max-w-[350px] max-h-[300px] overflow-y-auto overscroll-contain scroll-smooth rounded-xl shadow-lg border border-theme-mid/30`}
             style={{
                 top: position.top,
                 left: position.left,
-                transform: 'translateY(-100%)',
+                transform: dropdownPosition === 'below' ? 'none' : 'translateY(-100%)',
             }}
         >
             <div className="py-2 px-2">
@@ -182,7 +203,7 @@ export const MentionDropdown: React.FC<MentionDropdownProps> = ({
                     <>
                         {groupedSuggestions.avatars.length > 0 && (
                             <>
-                                <div className="px-2 py-1.5 text-sm font-raleway font-medium text-theme-text flex items-center gap-2">
+                                <div className="px-2 py-1.5 text-sm font-raleway font-normal text-theme-text flex items-center gap-2">
                                     <User className="w-3.5 h-3.5" />
                                     Avatars
                                 </div>
@@ -193,7 +214,7 @@ export const MentionDropdown: React.FC<MentionDropdownProps> = ({
                         )}
                         {groupedSuggestions.products.length > 0 && (
                             <>
-                                <div className={`px-2 py-1.5 text-sm font-raleway font-medium text-theme-text flex items-center gap-2 ${groupedSuggestions.avatars.length > 0 ? 'mt-2 pt-2 border-t border-theme-mid/20' : ''}`}>
+                                <div className={`px-2 py-1.5 text-sm font-raleway font-normal text-theme-text flex items-center gap-2 ${groupedSuggestions.avatars.length > 0 ? 'mt-2 pt-2 border-t border-theme-mid/20' : ''}`}>
                                     <Package className="w-3.5 h-3.5" />
                                     Products
                                 </div>

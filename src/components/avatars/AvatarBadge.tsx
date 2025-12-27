@@ -1,5 +1,6 @@
 import { useState, useRef, useMemo } from "react";
 import type { MouseEvent } from "react";
+import { Fingerprint } from "lucide-react";
 import type { StoredAvatar } from "./types";
 import { badgeBaseClasses, badgeInnerGlowClass } from "../shared/badgeStyles";
 import AvatarImagePopover from "./AvatarImagePopover";
@@ -81,6 +82,13 @@ export default function AvatarBadge({
           />
         </span>
         <span className="relative z-10 max-w-[8rem] truncate text-left">{avatar.name}</span>
+        {/* Show Me badge for isMe avatars */}
+        {avatar.isMe && (
+          <span className="relative z-10 ml-1 inline-flex items-center gap-0.5 rounded-full bg-theme-text/20 px-1.5 py-px text-[9px] font-medium text-theme-text">
+            <Fingerprint className="w-2 h-2" />
+            Me
+          </span>
+        )}
         {/* Show indicator if multiple images available and in popover mode */}
         {isPopoverMode && avatar.images.length > 1 && (
           <span className="relative z-10 ml-0.5 text-[10px] text-theme-white/60">
