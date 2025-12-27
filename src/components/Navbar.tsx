@@ -48,8 +48,6 @@ const CREATE_MENU_ITEMS: ReadonlyArray<MenuEntry> = [
 const LEARN_MENU_LINKS: ReadonlyArray<{ to: string; label: string; Icon: LucideIcon }> = [
   { to: "/learn/use-cases", label: "use cases", Icon: User },
   { to: "/learn/tools", label: "tools", Icon: Edit },
-  { to: "/learn/prompts", label: "prompts", Icon: FileText },
-  { to: "/learn/courses", label: "courses", Icon: GraduationCap },
 ];
 
 const MY_WORKS_MENU_LINKS: ReadonlyArray<{ to: string; label: string; Icon: LucideIcon }> = [

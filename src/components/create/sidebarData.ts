@@ -6,7 +6,6 @@ import {
   User,
   Video as VideoIcon,
   Volume2,
-  Sparkles,
   Folder,
   Package,
 } from "lucide-react";
@@ -30,7 +29,6 @@ export const LIBRARY_CATEGORIES: SidebarEntry[] = [
   { key: "gallery", label: "gallery", Icon: LayoutGrid },
   { key: "avatars", label: "avatars", Icon: User },
   { key: "products", label: "products", Icon: Package },
-  { key: "inspirations", label: "inspirations", Icon: Sparkles },
 ];
 
 export const FOLDERS_ENTRY: SidebarEntry = { key: "my-folders", label: "folders", Icon: Folder };

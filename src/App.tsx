@@ -18,7 +18,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const Understand = lazy(() => import("./components/Understand"));
 const AboutUs = lazy(() => import("./components/AboutUs"));
-const Prompts = lazy(() => import("./components/Prompts"));
+
 const Explore = lazy(() => import("./components/Explore"));
 const KnowledgeBase = lazy(() => import("./components/KnowledgeBase"));
 const LearnToolPage = lazy(() => import("./components/LearnToolPage"));
@@ -29,7 +29,7 @@ const Account = lazy(() => import("./components/Account"));
 const AuthErrorBoundary = lazy(() => import("./components/AuthErrorBoundary"));
 const Upgrade = lazy(() => import("./components/Upgrade"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
-const Courses = lazy(() => import("./components/Courses"));
+
 const GalleryRoutes = lazy(() => import("./routes/GalleryRoutes"));
 const LearnLayout = lazy(() => import("./routes/LearnLayout"));
 const Navbar = lazy(() => import("./components/Navbar"));
@@ -852,14 +852,12 @@ function AppContent() {
                 <Route index element={<Navigate to="use-cases" replace />} />
                 <Route path="use-cases" element={<Understand />} />
                 <Route path="tools" element={<KnowledgeBase />} />
-                <Route path="prompts" element={<Prompts />} />
-                <Route path="courses" element={<Courses />} />
+
               </Route>
               <Route path="/use-cases" element={<Navigate to="/learn/use-cases" replace />} />
               <Route path="/learn/use-cases" element={<Navigate to="/learn/use-cases" replace />} />
               <Route path="/knowledge-base" element={<Navigate to="/learn/tools" replace />} />
-              <Route path="/prompts" element={<Navigate to="/learn/prompts" replace />} />
-              <Route path="/courses" element={<Navigate to="/learn/courses" replace />} />
+
               <Route path="/about-us" element={<AboutUs />} />
               <Route path="/explore" element={<Explore />} />
               <Route path="/creator/:username" element={<CreatorProfile />} />

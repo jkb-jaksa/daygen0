@@ -89,8 +89,6 @@ function EditSidebarComponent({
             navigate('/app/avatars');
         } else if (key === 'products') {
             navigate('/app/products');
-        } else if (key === 'inspirations') {
-            navigate('/gallery/inspirations');
         } else if (key === 'my-folders') {
             navigate('/gallery/folders');
         }

@@ -451,6 +451,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   const [avatarImageUploadTarget, setAvatarImageUploadTarget] = useState<string | null>(null);
   const [avatarImageUploadError, setAvatarImageUploadError] = useState<string | null>(null);
   const [uploadingAvatarIds, setUploadingAvatarIds] = useState<Set<string>>(new Set());
+  const uploadingAvatarIdsRef = useRef<Set<string>>(new Set()); // Ref for synchronous access
   const avatarsRef = useRef<StoredAvatar[]>(avatars);
   const pendingUploadsRef = useRef<Map<string, File[]>>(new Map());
   const hasAvatars = avatars.length > 0;
@@ -776,27 +777,38 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       updater: (images: AvatarImage[]) => AvatarImage[],
       nextPrimaryId?: string,
     ): StoredAvatar | null => {
-      let updatedAvatar: StoredAvatar | null = null;
+      // Use ref directly to avoid React 18 batching race condition
+      const currentAvatars = avatarsRef.current;
+      const targetAvatar = currentAvatars.find(record => record.id === avatarId);
 
-      setAvatars(prev => {
-        const updated = prev.map(record => {
-          if (record.id !== avatarId) {
-            return record;
-          }
-          const next = withUpdatedAvatarImages(record, updater, nextPrimaryId);
-          updatedAvatar = next;
-          return next;
-        });
-        if (updatedAvatar) {
-          void persistAvatars(updated);
-          // Synchronize modal state immediately with the same computed avatar
-          setCreationsModalAvatar(current =>
-            current && current.id === avatarId ? updatedAvatar : current,
-          );
-        }
-        return updated;
-      });
+      if (!targetAvatar) {
+        debugLog('[commitAvatarUpdate] Target avatar not found:', avatarId);
+        return null;
+      }
 
+      // Compute the updated avatar synchronously
+      const updatedAvatar = withUpdatedAvatarImages(targetAvatar, updater, nextPrimaryId);
+
+      // Build the new avatars array
+      const updatedAvatars = currentAvatars.map(record =>
+        record.id === avatarId ? updatedAvatar : record
+      );
+
+      // Update ref synchronously (this is the source of truth)
+      avatarsRef.current = updatedAvatars;
+
+      // Trigger React state update for re-render
+      setAvatars(updatedAvatars);
+
+      // Update modal state synchronously  
+      setCreationsModalAvatar(current =>
+        current && current.id === avatarId ? updatedAvatar : current
+      );
+
+      // Persist to storage
+      void persistAvatars(updatedAvatars);
+
+      debugLog('[commitAvatarUpdate] Successfully updated avatar:', avatarId);
       return updatedAvatar;
     },
     [persistAvatars],
@@ -809,23 +821,22 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       source: AvatarImage["source"] = "upload",
       sourceId?: string,
     ) => {
-      // Get the latest avatar state using functional update
-      let targetAvatar: StoredAvatar | null = null;
-      let availableSlots = 0;
-      let avatarsExist = false;
+      debugLog('[processAvatarImageBatch] Entry - avatarId:', avatarId, 'files:', files.length);
 
-      setAvatars(prev => {
-        avatarsExist = prev.length > 0;
-        targetAvatar = prev.find(avatar => avatar.id === avatarId) || null;
-        if (targetAvatar) {
-          availableSlots = Math.max(0, MAX_AVATAR_IMAGES - targetAvatar.images.length);
-        }
-        return prev;
-      });
+      // Use ref directly instead of setAvatars to avoid React 18 state batching race condition
+      const currentAvatars = avatarsRef.current;
+      const avatarsExist = currentAvatars.length > 0;
+      const targetAvatar = currentAvatars.find(avatar => avatar.id === avatarId) || null;
+      const availableSlots = targetAvatar
+        ? Math.max(0, MAX_AVATAR_IMAGES - targetAvatar.images.length)
+        : 0;
+
+      debugLog('[processAvatarImageBatch] targetAvatar:', targetAvatar ? 'found' : 'null', 'availableSlots:', availableSlots);
 
       if (!targetAvatar) {
         // Only show error if avatars have been loaded (not initial empty state)
         if (avatarsExist) {
+          debugLog('[processAvatarImageBatch] Avatar not found - showing error');
           setAvatarImageUploadError("We couldn't find that avatar.");
         }
         return;
@@ -867,6 +878,8 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
       setAvatarImageUploadError(null);
 
       try {
+        debugLog('[processAvatarImageBatch] Processing', validFiles.length, 'files for avatarId:', avatarId);
+
         // Read files as data URLs first
         const dataUrls = await Promise.all(validFiles.map(readFileAsDataUrl));
 
@@ -892,8 +905,10 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
           sourceId,
         }));
 
+        debugLog('[processAvatarImageBatch] Created', newImages.length, 'images, calling commitAvatarUpdate');
         // Use commitAvatarUpdate which now properly synchronizes all state
         const result = commitAvatarUpdate(avatarId, images => [...images, ...newImages]);
+        debugLog('[processAvatarImageBatch] commitAvatarUpdate returned:', result ? 'avatar updated' : 'null');
 
         if (!result) {
           throw new Error("Failed to update avatar");
@@ -962,26 +977,35 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
         return;
       }
 
-      // Check if this avatar is already uploading - if so, queue the files
+      debugLog('[handleAddAvatarImages] Starting upload for avatarId:', avatarId, 'files:', files.length);
+      debugLog('[handleAddAvatarImages] uploadingAvatarIdsRef.current.has(avatarId):', uploadingAvatarIdsRef.current.has(avatarId));
+
+
+
+      // Use ref for synchronous check (React setState callbacks are batched asynchronously)
+      if (uploadingAvatarIdsRef.current.has(avatarId)) {
+        debugLog('[handleAddAvatarImages] Already uploading - queuing files');
+        // Queue these files for later processing
+        const currentQueue = pendingUploadsRef.current.get(avatarId) || [];
+        pendingUploadsRef.current.set(avatarId, [...currentQueue, ...files]);
+        return;
+      }
+
+      // Mark as uploading in ref (synchronous)
+      uploadingAvatarIdsRef.current.add(avatarId);
+      debugLog('[handleAddAvatarImages] Marked as uploading in ref');
+
+
+      // Also update state for UI (triggers re-render to show spinner)
       setUploadingAvatarIds(prev => {
-        if (prev.has(avatarId)) {
-          // Queue these files for later processing
-          const currentQueue = pendingUploadsRef.current.get(avatarId) || [];
-          pendingUploadsRef.current.set(avatarId, [...currentQueue, ...files]);
-          return prev;
-        }
-        // Mark as uploading
         const next = new Set(prev);
         next.add(avatarId);
         return next;
       });
 
-      // If already uploading, the files have been queued and we return
-      if (uploadingAvatarIds.has(avatarId)) {
-        return;
-      }
 
       try {
+        debugLog('[handleAddAvatarImages] Calling processAvatarImageBatch');
         // Process current batch
         await processAvatarImageBatch(avatarId, files, source, sourceId);
 
@@ -996,16 +1020,19 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
           await processAvatarImageBatch(avatarId, queuedFiles, source, sourceId);
         }
       } finally {
-        // Clear upload state
+        // Clear upload state in ref (synchronous)
+        uploadingAvatarIdsRef.current.delete(avatarId);
+        // Also update state for UI
         setUploadingAvatarIds(prev => {
           const next = new Set(prev);
           next.delete(avatarId);
           return next;
         });
         pendingUploadsRef.current.delete(avatarId);
+
       }
     },
-    [uploadingAvatarIds, processAvatarImageBatch],
+    [processAvatarImageBatch],
   );
 
   const handleRemoveAvatarImage = useCallback(
@@ -1107,7 +1134,9 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     (event: ChangeEvent<HTMLInputElement>) => {
       const { files } = event.target;
       const targetId = avatarImageUploadTarget ?? creationsModalAvatar?.id ?? null;
+      debugLog('[handleAvatarImageInputChange] files:', files?.length, 'targetId:', targetId, 'avatarImageUploadTarget:', avatarImageUploadTarget, 'creationsModalAvatar?.id:', creationsModalAvatar?.id);
       if (!files?.length || !targetId) {
+        debugLog('[handleAvatarImageInputChange] No files or no targetId - returning early');
         event.target.value = "";
         return;
       }
@@ -1172,10 +1201,13 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
   }, []);
 
   const handleAddMeFileChange = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
+    const files = Array.from(event.target.files ?? []);
+    if (files.length > 0) {
       setIsAddMeFlow(true);
-      await processImageFile(file);
+      // Process all files sequentially
+      for (const file of files) {
+        await processImageFile(file);
+      }
       setIsPanelOpen(true);
     }
     event.target.value = "";
@@ -1197,10 +1229,13 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
     event.preventDefault();
     event.stopPropagation();
     setIsDraggingOverAddMe(false);
-    const file = event.dataTransfer.files?.[0];
-    if (file) {
+    const files = Array.from(event.dataTransfer.files ?? []);
+    if (files.length > 0) {
       setIsAddMeFlow(true);
-      await processImageFile(file);
+      // Process all files sequentially
+      for (const file of files) {
+        await processImageFile(file);
+      }
       setIsPanelOpen(true);
     }
   }, [processImageFile, setIsAddMeFlow]);
@@ -2999,6 +3034,7 @@ export default function Avatars({ showSidebar = true }: AvatarsProps = {}) {
               ref={addMeFileInputRef}
               type="file"
               accept="image/*"
+              multiple
               className="hidden"
               onChange={handleAddMeFileChange}
             />
