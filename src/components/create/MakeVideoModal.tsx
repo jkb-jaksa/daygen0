@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense, lazy } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Sparkles, Settings, Plus, Scan, Minus, Video, Copy, Bookmark, BookmarkPlus, BookmarkIcon, User, Package, Palette, LayoutGrid, Loader2, Mic } from 'lucide-react';
+import { X, Sparkles, Settings, Plus, Scan, Minus, Video, Copy, Bookmark, BookmarkPlus, BookmarkIcon, User, Package, Palette, LayoutGrid, Loader2, Mic, Fingerprint } from 'lucide-react';
 import { glass, buttons, tooltips } from '../../styles/designSystem';
 import { useReferenceHandlers } from './hooks/useReferenceHandlers';
 import { useParallaxHover } from '../../hooks/useParallaxHover';
@@ -1665,8 +1665,14 @@ const MakeVideoModal: React.FC<MakeVideoModalProps> = ({
                                                     className="h-10 w-10 rounded-lg object-cover"
                                                 />
                                                 <div className="min-w-0 flex-1 text-left">
-                                                    <p className="truncate text-sm font-raleway text-theme-white group-hover:text-n-text">
-                                                        {avatar.name}{avatar.isMe && <span className="text-theme-text/70 ml-1">(me)</span>}
+                                                    <p className="truncate text-sm font-raleway text-theme-white group-hover:text-n-text flex items-center gap-1.5">
+                                                        {avatar.name}
+                                                        {avatar.isMe && (
+                                                            <span className="inline-flex items-center gap-1 rounded-full bg-theme-text/20 px-2 py-0.5 text-[10px] font-medium text-theme-text">
+                                                                <Fingerprint className="w-2.5 h-2.5" />
+                                                                Me
+                                                            </span>
+                                                        )}
                                                     </p>
                                                 </div>
                                                 {isActive && <div className="h-2 w-2 rounded-full bg-theme-text" />}

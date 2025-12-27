@@ -19,6 +19,7 @@ import {
   Wand2,
   X,
   Scan,
+  Fingerprint,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -1393,8 +1394,14 @@ const ChatMode: React.FC = () => {
                                           className="h-10 w-10 rounded-lg object-cover"
                                         />
                                         <div className="min-w-0 flex-1 text-left">
-                                          <p className="truncate text-sm font-raleway text-theme-white">
-                                            {avatar.name}{avatar.isMe && <span className="text-theme-text/70 ml-1">(me)</span>}
+                                          <p className="truncate text-sm font-raleway text-theme-white flex items-center gap-1.5">
+                                            {avatar.name}
+                                            {avatar.isMe && (
+                                              <span className="inline-flex items-center gap-1 rounded-full bg-theme-text/20 px-2 py-0.5 text-[10px] font-medium text-theme-text">
+                                                <Fingerprint className="w-2.5 h-2.5" />
+                                                Me
+                                              </span>
+                                            )}
                                           </p>
                                         </div>
                                         {isActive && <Check className="h-4 w-4 text-theme-text" />}

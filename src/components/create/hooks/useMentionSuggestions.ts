@@ -159,7 +159,7 @@ export function useMentionSuggestions({
                 if (meAvatar) {
                     items.push({
                         id: meAvatar.id,
-                        name: 'me',  // Display as @me
+                        name: meAvatar.name,  // Display actual name, Me badge shown in dropdown
                         imageUrl: meAvatar.imageUrl,
                         type: 'avatar',
                         isMe: true,
@@ -176,7 +176,7 @@ export function useMentionSuggestions({
                 if (!lowerQuery || avatar.name.toLowerCase().includes(lowerQuery)) {
                     items.push({
                         id: avatar.id,
-                        name: avatar.isMe ? `${avatar.name} (me)` : avatar.name,
+                        name: avatar.name,
                         imageUrl: avatar.imageUrl,
                         type: 'avatar',
                         isMe: avatar.isMe,

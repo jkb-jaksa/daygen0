@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { User, Package, BookmarkIcon } from 'lucide-react';
+import { User, Package, BookmarkIcon, Fingerprint } from 'lucide-react';
 import { glass } from '../../styles/designSystem';
 import type { MentionItem, MentionType } from './hooks/useMentionSuggestions';
 
@@ -141,8 +141,14 @@ export const MentionDropdown: React.FC<MentionDropdownProps> = ({
 
             {/* Name/Text */}
             <div className="flex-1 min-w-0">
-                <p className={`text-sm font-raleway truncate ${item.type === 'savedPrompt' ? 'italic' : ''}`}>
+                <p className={`text-sm font-raleway truncate flex items-center gap-1.5 ${item.type === 'savedPrompt' ? 'italic' : ''}`}>
                     {item.name}
+                    {item.isMe && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-theme-text/20 px-2 py-0.5 text-[10px] font-medium text-theme-text">
+                            <Fingerprint className="w-2.5 h-2.5" />
+                            Me
+                        </span>
+                    )}
                 </p>
             </div>
         </button>

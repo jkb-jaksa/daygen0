@@ -29,6 +29,7 @@ import {
   Trash2,
   Upload,
   Check,
+  Fingerprint,
 } from 'lucide-react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useCreateGenerationController } from './hooks/useCreateGenerationController';
@@ -2382,8 +2383,14 @@ const PromptForm = memo<PromptFormProps>(
                             />
                           </div>
                           <div className="min-w-0 flex-1 text-left">
-                            <p className="truncate text-sm font-raleway text-theme-white group-hover:text-n-text">
-                              {avatar.name}{avatar.isMe && <span className="text-theme-text/70 ml-1">(me)</span>}
+                            <p className="truncate text-sm font-raleway text-theme-white group-hover:text-n-text flex items-center gap-1.5">
+                              {avatar.name}
+                              {avatar.isMe && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-theme-text/20 px-2 py-0.5 text-[10px] font-medium text-theme-text">
+                                  <Fingerprint className="w-2.5 h-2.5" />
+                                  Me
+                                </span>
+                              )}
                             </p>
                           </div>
                         </button>
